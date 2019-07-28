@@ -1,4 +1,4 @@
-package org.auther.api.dto;
+package org.auther.service.model;
 
 import org.immutables.value.Value;
 
@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.CLASS) // Make it class retention for incremental compilation
 @Value.Style(
         get = {"is*", "get*"}, // Detect 'get' and 'is' prefixes in accessor methods
-        typeImmutable = "*DTO" // Suffix with DTO
+        typeImmutable = "*BO" // Suffix with BO
 )
-public @interface DTOStyle {
+public @interface BOStyle {
 }
