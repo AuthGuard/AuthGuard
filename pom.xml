@@ -24,6 +24,7 @@
         <immutables.version>2.7.4</immutables.version>
         <jetbrains-annotations.version>13.0</jetbrains-annotations.version>
         <auth0-jwt.version>3.8.1</auth0-jwt.version>
+        <orika.version>1.5.2</orika.version>
 
         <surefire.version>3.0.0-M3</surefire.version>
         <junit.version>5.5.1</junit.version>
@@ -51,6 +52,13 @@
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
             <version>${jetbrains-annotations.version}</version>
+        </dependency>
+
+        <!-- mapping -->
+        <dependency>
+            <groupId>ma.glasnost.orika</groupId>
+            <artifactId>orika-core</artifactId>
+            <version>${orika.version}</version>
         </dependency>
 
         <!-- testing -->
