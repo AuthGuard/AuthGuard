@@ -10,16 +10,16 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import org.auther.service.model.AccountBO;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 
-abstract class AbstractJWTProvider {
+abstract class AbstractJWTHandler {
     private final Algorithm algorithm;
     private final JWTVerifier verifier;
 
-    AbstractJWTProvider(Algorithm algorithm, JWTVerifier verifier) {
+    AbstractJWTHandler(Algorithm algorithm, JWTVerifier verifier) {
         this.algorithm = algorithm;
         this.verifier = verifier;
     }
@@ -27,10 +27,13 @@ abstract class AbstractJWTProvider {
     JWTCreator.Builder generateUnsignedToken(final AccountBO account, final LocalDateTime now) {
         final LocalDateTime exp = now.plusMinutes(20);
 
+        ZoneId.systemDefault().getRules().getOffset(now);
+
         return JWT.create()
                 .withIssuer(this.getClass().getName())
-                .withIssuedAt(Date.from(now.toInstant(ZoneOffset.UTC)))
-                .withExpiresAt(Date.from(exp.toInstant(ZoneOffset.UTC)));
+                // TODO properly handle timezones
+                .withIssuedAt(Date.from(now.toInstant(ZoneId.systemDefault().getRules().getOffset(now))))
+                .withExpiresAt(Date.from(exp.toInstant(ZoneId.systemDefault().getRules().getOffset(now))));
     }
 
     JWTCreator.Builder generateUnsignedRefreshToken(final AccountBO account, final LocalDateTime now) {
@@ -38,8 +41,8 @@ abstract class AbstractJWTProvider {
 
         return JWT.create()
                 .withIssuer(this.getClass().getName())
-                .withIssuedAt(Date.from(now.toInstant(ZoneOffset.UTC)))
-                .withExpiresAt(Date.from(exp.toInstant(ZoneOffset.UTC)));
+                .withIssuedAt(Date.from(now.toInstant(ZoneId.systemDefault().getRules().getOffset(now))))
+                .withExpiresAt(Date.from(exp.toInstant(ZoneId.systemDefault().getRules().getOffset(now))));
     }
 
     Optional<DecodedJWT> decodeAndVerify(final String token) {
@@ -47,6 +50,7 @@ abstract class AbstractJWTProvider {
             return Optional.of(JWT.decode(token))
                     .map(verifier::verify);
         } catch (final JWTVerificationException e) {
+            e.printStackTrace();
             return Optional.empty();
         }
     }

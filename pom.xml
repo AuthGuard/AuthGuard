@@ -28,6 +28,8 @@
         <surefire.version>3.0.0-M3</surefire.version>
         <junit.version>5.5.1</junit.version>
         <assertj.version>3.13.0</assertj.version>
+        <easy-random.version>4.0.0</easy-random.version>
+        <mockito.version>3.0.0</mockito.version>
     </properties>
 
     <dependencies>
@@ -70,6 +72,20 @@
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jeasy</groupId>
+            <artifactId>easy-random-core</artifactId>
+            <version>${easy-random.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
