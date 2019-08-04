@@ -9,7 +9,7 @@ import java.util.List;
 public interface Account {
     String getId();
     String getUsername();
-    String getPassword();
+    HashedPasswordDO getHashedPassword();
     String getRole();
     List<String> getPermissions();
     boolean isActive();

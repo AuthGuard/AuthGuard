@@ -8,6 +8,7 @@ import org.auther.service.SecurePassword;
 import org.auther.service.exceptions.ServiceAuthorizationException;
 import org.auther.service.exceptions.ServiceException;
 import org.auther.service.model.AccountBO;
+import org.auther.service.model.HashedPasswordBO;
 import org.auther.service.model.TokensBO;
 import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.BeforeAll;
@@ -21,6 +22,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AccountServiceImplTest {
@@ -43,15 +45,16 @@ class AccountServiceImplTest {
     void create() {
         final AccountBO account = RANDOM.nextObject(AccountBO.class)
                 .withId(null);
+        final HashedPasswordBO hashedPassword = RANDOM.nextObject(HashedPasswordBO.class);
 
-        Mockito.when(securePassword.hash(any())).thenReturn(RandomStringUtils.randomAlphanumeric(15));
+        Mockito.when(securePassword.hash(any())).thenReturn(hashedPassword);
         Mockito.when(accountsRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0, AccountDO.class));
 
         final AccountBO persisted = accountService.create(account);
 
         assertThat(persisted).isNotNull();
-        assertThat(persisted).isEqualToIgnoringGivenFields(account, "id", "password");
-        assertThat(persisted.getPassword()).isNullOrEmpty();
+        assertThat(persisted).isEqualToIgnoringGivenFields(account, "id", "plainPassword", "hashedPassword");
+        assertThat(persisted.getHashedPassword()).isNull();
     }
 
     @Test
@@ -63,7 +66,7 @@ class AccountServiceImplTest {
         final Optional<AccountBO> retrieved = accountService.getById("");
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(account, "password");
+        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(account, "hashedPassword", "plainPassword");
     }
 
     @Test
@@ -73,9 +76,13 @@ class AccountServiceImplTest {
         final String authorization = "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
         final AccountDO account = RANDOM.nextObject(AccountDO.class).withUsername(username);
         final TokensBO tokens = RANDOM.nextObject(TokensBO.class);
+        final HashedPasswordBO hashedPasswordBO = HashedPasswordBO.builder()
+                .password(account.getHashedPassword().getPassword())
+                .salt(account.getHashedPassword().getSalt())
+                .build();
 
         Mockito.when(accountsRepository.findByUsername(username)).thenReturn(Optional.of(account));
-        Mockito.when(securePassword.verify(password, account.getPassword())).thenReturn(true);
+        Mockito.when(securePassword.verify(eq(password), eq(hashedPasswordBO))).thenReturn(true);
         Mockito.when(jwtProvider.generateToken(any())).thenReturn(tokens);
 
         final Optional<TokensBO> retrieved = accountService.authenticate(authorization);
@@ -102,9 +109,13 @@ class AccountServiceImplTest {
         final String password = "password";
         final String authorization = "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
         final AccountDO account = RANDOM.nextObject(AccountDO.class).withUsername(username);
+        final HashedPasswordBO hashedPasswordBO = HashedPasswordBO.builder()
+                .password(account.getHashedPassword().getPassword())
+                .salt(account.getHashedPassword().getSalt())
+                .build();
 
         Mockito.when(accountsRepository.findByUsername(username)).thenReturn(Optional.of(account));
-        Mockito.when(securePassword.verify(password, account.getPassword())).thenReturn(false);
+        Mockito.when(securePassword.verify(eq(password), eq(hashedPasswordBO))).thenReturn(false);
 
         assertThatThrownBy(() -> accountService.authenticate(authorization)).isInstanceOf(ServiceAuthorizationException.class);
     }

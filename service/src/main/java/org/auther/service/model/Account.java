@@ -10,7 +10,9 @@ import java.util.List;
 public interface Account {
     @Nullable String getId();
     String getUsername();
-    @Nullable String getPassword();
+    @Nullable String getPlainPassword();
+    @Nullable
+    HashedPasswordBO getHashedPassword();
     List<String> getPermissions();
     String getRole();
     boolean isActive();

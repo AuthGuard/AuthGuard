@@ -1,6 +1,8 @@
 package org.auther.service;
 
+import org.auther.service.model.HashedPasswordBO;
+
 public interface SecurePassword {
-    String hash(String plain);
-    boolean verify(String plain, String hashed);
+    HashedPasswordBO hash(String plain);
+    boolean verify(String plain, HashedPasswordBO hashed);
 }

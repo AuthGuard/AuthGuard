@@ -7,9 +7,11 @@ import org.auther.service.SecurePassword;
 import org.auther.service.exceptions.ServiceAuthorizationException;
 import org.auther.service.exceptions.ServiceException;
 import org.auther.service.model.AccountBO;
+import org.auther.service.model.HashedPasswordBO;
 import org.auther.service.model.TokensBO;
 
 import java.util.Base64;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,17 +32,22 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountBO create(final AccountBO account) {
-        final String hashedPassword = securePassword.hash(account.getPassword());
+        Objects.requireNonNull(account.getHashedPassword());
+
+        final HashedPasswordBO hashedPassword = securePassword.hash(account.getPlainPassword());
 
         return Optional.of(account)
                 .map(accountBO -> accountBO
                         .withId(UUID.randomUUID().toString())
-                        .withPassword(hashedPassword)
+                        .withHashedPassword(hashedPassword)
                 )
                 .map(serviceMapper::toDO)
                 .map(accountsRepository::save)
                 .map(serviceMapper::toBO)
-                .map(accountBO -> accountBO.withPassword(""))
+                .map(accountBO -> accountBO
+                        .withPlainPassword(null)
+                        .withHashedPassword(null)
+                )
                 .orElseThrow(IllegalStateException::new);
     }
 
@@ -48,7 +55,7 @@ public class AccountServiceImpl implements AccountService {
     public Optional<AccountBO> getById(final String accountId) {
         return accountsRepository.getById(accountId)
                 .map(serviceMapper::toBO)
-                .map(accountBO -> accountBO.withPassword("")); // no matter what, there's no reason for it to leave the service
+                .map(accountBO -> accountBO.withPlainPassword(null).withHashedPassword(null)); // no matter what, there's no reason for it to leave the service
     }
 
     @Override
@@ -77,7 +84,7 @@ public class AccountServiceImpl implements AccountService {
                 .map(serviceMapper::toBO);
 
         if (account.isPresent()) {
-            if (!securePassword.verify(password, account.get().getPassword())) {
+            if (!securePassword.verify(password, account.get().getHashedPassword())) {
                 throw new ServiceAuthorizationException("Passwords don't match");
             }
         }
