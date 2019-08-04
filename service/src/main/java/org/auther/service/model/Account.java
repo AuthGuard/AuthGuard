@@ -8,8 +8,11 @@ import java.util.List;
 @Value.Immutable
 @BOStyle
 public interface Account {
-    String getId();
+    @Nullable String getId();
     String getUsername();
     @Nullable String getPassword();
-    List<String> permissions();
+    List<String> getPermissions();
+    String getRole();
+    boolean isActive();
+    boolean isDeleted();
 }

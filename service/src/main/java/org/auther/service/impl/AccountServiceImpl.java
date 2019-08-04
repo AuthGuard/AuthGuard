@@ -1,7 +1,6 @@
 package org.auther.service.impl;
 
 import org.auther.dal.AccountsRepository;
-import org.auther.dal.model.AccountDO;
 import org.auther.service.AccountService;
 import org.auther.service.JWTProvider;
 import org.auther.service.SecurePassword;
@@ -18,32 +17,37 @@ public class AccountServiceImpl implements AccountService {
     private final AccountsRepository accountsRepository;
     private final SecurePassword securePassword;
     private final JWTProvider jwtProvider;
+    private final ServiceMapper serviceMapper;
 
     public AccountServiceImpl(final AccountsRepository accountsRepository, final SecurePassword securePassword,
                               final JWTProvider jwtProvider) {
         this.accountsRepository = accountsRepository;
         this.securePassword = securePassword;
         this.jwtProvider = jwtProvider;
+
+        this.serviceMapper = ServiceMapper.INSTANCE;
     }
 
     @Override
     public AccountBO create(final AccountBO account) {
         final String hashedPassword = securePassword.hash(account.getPassword());
 
-        return Optional.of(Mappers.getMapper().map(account, AccountDO.class))
-                .map(accountDO -> accountDO
+        return Optional.of(account)
+                .map(accountBO -> accountBO
                         .withId(UUID.randomUUID().toString())
                         .withPassword(hashedPassword)
                 )
+                .map(serviceMapper::toDO)
                 .map(accountsRepository::save)
-                .map(createdAccount -> Mappers.getMapper().map(createdAccount, AccountBO.class))
+                .map(serviceMapper::toBO)
+                .map(accountBO -> accountBO.withPassword(""))
                 .orElseThrow(IllegalStateException::new);
     }
 
     @Override
     public Optional<AccountBO> getById(final String accountId) {
         return accountsRepository.getById(accountId)
-                .map(accountDO -> Mappers.getMapper().map(accountDO, AccountBO.class))
+                .map(serviceMapper::toBO)
                 .map(accountBO -> accountBO.withPassword("")); // no matter what, there's no reason for it to leave the service
     }
 
@@ -70,7 +74,7 @@ public class AccountServiceImpl implements AccountService {
         final String password = decoded[1];
 
         final Optional<AccountBO> account = accountsRepository.findByUsername(username)
-                .map(accountDO -> Mappers.getMapper().map(accountDO, AccountBO.class));
+                .map(serviceMapper::toBO);
 
         if (account.isPresent()) {
             if (!securePassword.verify(password, account.get().getPassword())) {
