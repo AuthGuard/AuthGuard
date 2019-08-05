@@ -33,6 +33,7 @@
         <assertj.version>3.13.0</assertj.version>
         <easy-random.version>4.0.0</easy-random.version>
         <mockito.version>3.0.0</mockito.version>
+        <rest-assured.version>4.0.0</rest-assured.version>
     </properties>
 
     <dependencies>

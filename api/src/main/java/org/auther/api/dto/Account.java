@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 @Value.Immutable
 @DTOStyle
 @JsonSerialize(as = AccountDTO.class)
@@ -12,5 +14,9 @@ import org.jetbrains.annotations.Nullable;
 public interface Account {
     @Nullable String getId();
     String getUsername();
-    String getPassword();
+    @Nullable String getPlainPassword();
+    List<String> getPermissions();
+    String getRole();
+    boolean isActive();
+    boolean isDeleted();
 }
