@@ -1,5 +1,6 @@
 package org.auther.api.routes;
 
+import io.restassured.http.ContentType;
 import org.auther.api.dto.AccountDTO;
 import org.auther.service.model.AccountBO;
 import org.jeasy.random.EasyRandom;
@@ -27,13 +28,14 @@ class UsersRouteTest extends TestServer {
         final AccountDTO accountDTO = RANDOM.nextObject(AccountDTO.class);
         final AccountBO accountBO = RestMapper.INSTANCE.toBO(accountDTO);
 
-        Mockito.when(getAccountService().create(eq(accountBO))).thenReturn(accountBO
+        Mockito.when(getAccountsService().create(eq(accountBO))).thenReturn(accountBO
                 .withId(UUID.randomUUID().toString())
                 .withPlainPassword(null)
                 .withHashedPassword(null)
         );
 
         final AccountDTO response = given().body(accountDTO)
+                .contentType(ContentType.JSON)
                 .post(url())
                 .getBody()
                 .as(AccountDTO.class);

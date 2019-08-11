@@ -1,28 +1,29 @@
 package org.auther.service.impl;
 
 import org.auther.dal.AccountsRepository;
-import org.auther.service.AccountService;
+import org.auther.service.AccountsService;
 import org.auther.service.JWTProvider;
 import org.auther.service.SecurePassword;
 import org.auther.service.exceptions.ServiceAuthorizationException;
 import org.auther.service.exceptions.ServiceException;
+import org.auther.service.exceptions.ServiceNotFoundException;
 import org.auther.service.model.AccountBO;
 import org.auther.service.model.HashedPasswordBO;
+import org.auther.service.model.PermissionBO;
 import org.auther.service.model.TokensBO;
 
-import java.util.Base64;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class AccountServiceImpl implements AccountService {
+public class AccountsServiceImpl implements AccountsService {
     private final AccountsRepository accountsRepository;
     private final SecurePassword securePassword;
     private final JWTProvider jwtProvider;
     private final ServiceMapper serviceMapper;
 
-    public AccountServiceImpl(final AccountsRepository accountsRepository, final SecurePassword securePassword,
-                              final JWTProvider jwtProvider) {
+    public AccountsServiceImpl(final AccountsRepository accountsRepository, final SecurePassword securePassword,
+                               final JWTProvider jwtProvider) {
         this.accountsRepository = accountsRepository;
         this.securePassword = securePassword;
         this.jwtProvider = jwtProvider;
@@ -68,6 +69,46 @@ public class AccountServiceImpl implements AccountService {
         } else {
             throw new ServiceException("Unsupported authorization scheme");
         }
+    }
+
+    @Override
+    public AccountBO grantPermissions(final String accountId, final List<PermissionBO> permissions) {
+        final AccountBO account = accountsRepository.getById(accountId)
+                .map(serviceMapper::toBO)
+                .orElseThrow(ServiceNotFoundException::new);
+
+        // TODO verify permissions using permissions service
+
+        final List<PermissionBO> combinedPermissions = Stream.concat(account.getPermissions().stream(), permissions.stream())
+                .distinct()
+                .collect(Collectors.toList());
+
+        final AccountBO updated = account.withPermissions(combinedPermissions);
+
+        accountsRepository.update(serviceMapper.toDO(updated));
+
+        return updated
+                .withHashedPassword(null)
+                .withPlainPassword(null);
+    }
+
+    @Override
+    public AccountBO revokePermissions(final String accountId, final List<PermissionBO> permissions) {
+        final AccountBO account = accountsRepository.getById(accountId)
+                .map(serviceMapper::toBO)
+                .orElseThrow(ServiceNotFoundException::new);
+
+        final List<PermissionBO> combinedPermissions = account.getPermissions().stream()
+                .filter(permission -> !permissions.contains(permission))
+                .collect(Collectors.toList());
+
+        final AccountBO updated = account.withPermissions(combinedPermissions);
+
+        accountsRepository.update(serviceMapper.toDO(updated));
+
+        return updated
+                .withHashedPassword(null)
+                .withPlainPassword(null);
     }
 
     private Optional<AccountBO> handleBasicAuthentication(final String base64Credentials) {

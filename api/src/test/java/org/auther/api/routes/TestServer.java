@@ -2,7 +2,7 @@ package org.auther.api.routes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
-import org.auther.service.AccountService;
+import org.auther.service.AccountsService;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
@@ -13,25 +13,24 @@ import static io.javalin.apibuilder.ApiBuilder.path;
 abstract class TestServer {
     private int port;
 
-    private AccountService accountService;
+    private AccountsService accountsService;
 
     @BeforeAll
     void setupServer() {
-        final ObjectMapper mapper = new ObjectMapper();
-        final AccountService accountService = Mockito.mock(AccountService.class);
+        final AccountsService accountsService = Mockito.mock(AccountsService.class);
 
         final Javalin app = Javalin.create().start();
         port = app.port();
 
         app.routes(() -> {
-            path("/users", new UsersRoute(mapper, accountService));
+            path("/users", new UsersRoute(accountsService));
         });
 
-        this.accountService = accountService;
+        this.accountsService = accountsService;
     }
 
-    AccountService getAccountService() {
-        return accountService;
+    AccountsService getAccountsService() {
+        return accountsService;
     }
 
     int getPort() {

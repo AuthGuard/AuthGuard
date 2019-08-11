@@ -9,6 +9,7 @@ import org.auther.service.exceptions.ServiceAuthorizationException;
 import org.auther.service.exceptions.ServiceException;
 import org.auther.service.model.AccountBO;
 import org.auther.service.model.HashedPasswordBO;
+import org.auther.service.model.PermissionBO;
 import org.auther.service.model.TokensBO;
 import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.BeforeAll;
@@ -16,8 +17,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -25,11 +29,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class AccountServiceImplTest {
+class AccountsServiceImplTest {
     private AccountsRepository accountsRepository;
     private SecurePassword securePassword;
     private JWTProvider jwtProvider;
-    private AccountServiceImpl accountService;
+    private AccountsServiceImpl accountService;
 
     private final static EasyRandom RANDOM = new EasyRandom();
 
@@ -38,7 +42,7 @@ class AccountServiceImplTest {
         accountsRepository = Mockito.mock(AccountsRepository.class);
         securePassword = Mockito.mock(SecurePassword.class);
         jwtProvider = Mockito.mock(JWTProvider.class);
-        accountService = new AccountServiceImpl(accountsRepository, securePassword, jwtProvider);
+        accountService = new AccountsServiceImpl(accountsRepository, securePassword, jwtProvider);
     }
 
     @Test
@@ -66,7 +70,15 @@ class AccountServiceImplTest {
         final Optional<AccountBO> retrieved = accountService.getById("");
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(account, "hashedPassword", "plainPassword");
+        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(account, "hashedPassword", "plainPassword", "permissions");
+        assertThat(retrieved.get().getHashedPassword()).isNull();
+        assertThat(retrieved.get().getPlainPassword()).isNull();
+        assertThat(retrieved.get().getPermissions()).containsExactly(account.getPermissions().stream()
+                .map(permissionDO -> PermissionBO.builder()
+                        .group(permissionDO.getGroup())
+                        .name(permissionDO.getName())
+                        .build()
+                ).toArray(PermissionBO[]::new));
     }
 
     @Test
@@ -136,5 +148,49 @@ class AccountServiceImplTest {
     void authenticateBadBasicScheme() {
         final String authorization = "Basic dGhpc2RvbmVzbid0Zmx5aW5vdXJjaXR5";
         assertThatThrownBy(() -> accountService.authenticate(authorization)).isInstanceOf(ServiceException.class);
+    }
+
+    @Test
+    void grantPermissions() {
+        final AccountDO account = RANDOM.nextObject(AccountDO.class);
+
+        Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
+
+        final List<PermissionBO> permissions = Arrays.asList(
+                RANDOM.nextObject(PermissionBO.class),
+                RANDOM.nextObject(PermissionBO.class)
+        );
+
+        final AccountBO updated = accountService.grantPermissions(account.getId(), permissions);
+
+        assertThat(updated).isNotEqualTo(account);
+        assertThat(updated.getPermissions()).contains(permissions.toArray(new PermissionBO[0]));
+        assertThat(updated.getHashedPassword()).isNull();
+        assertThat(updated.getPlainPassword()).isNull();
+    }
+
+    @Test
+    void revokePermissions() {
+        final AccountDO account = RANDOM.nextObject(AccountDO.class);
+        final List<PermissionBO> currentPermissions = account.getPermissions().stream()
+                .map(permissionDO -> PermissionBO.builder()
+                        .group(permissionDO.getGroup())
+                        .name(permissionDO.getName())
+                        .build()
+                ).collect(Collectors.toList());
+
+        Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
+
+        final List<PermissionBO> permissionsToRevoke = Arrays.asList(
+                currentPermissions.get(0),
+                currentPermissions.get(1)
+        );
+
+        final AccountBO updated = accountService.revokePermissions(account.getId(), permissionsToRevoke);
+
+        assertThat(updated).isNotEqualTo(account);
+        assertThat(updated.getPermissions()).doesNotContain(permissionsToRevoke.toArray(new PermissionBO[0]));
+        assertThat(updated.getHashedPassword()).isNull();
+        assertThat(updated.getPlainPassword()).isNull();
     }
 }

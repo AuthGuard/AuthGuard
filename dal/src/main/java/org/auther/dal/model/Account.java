@@ -11,7 +11,8 @@ public interface Account {
     String getUsername();
     HashedPasswordDO getHashedPassword();
     String getRole();
-    List<String> getPermissions();
+    List<PermissionDO> getPermissions();
+    List<String> getScopes();
     boolean isActive();
     boolean isDeleted();
 }

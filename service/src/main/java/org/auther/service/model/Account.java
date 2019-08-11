@@ -13,7 +13,8 @@ public interface Account {
     @Nullable String getPlainPassword();
     @Nullable
     HashedPasswordBO getHashedPassword();
-    List<String> getPermissions();
+    List<PermissionBO> getPermissions();
+    List<String> getScopes();
     String getRole();
     boolean isActive();
     boolean isDeleted();
