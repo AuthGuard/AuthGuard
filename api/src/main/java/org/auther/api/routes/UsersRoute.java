@@ -1,13 +1,11 @@
 package org.auther.api.routes;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import org.auther.api.dto.*;
 import org.auther.service.AccountsService;
 import org.auther.service.model.PermissionBO;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
