@@ -1,5 +1,6 @@
 package org.auther.api.routes;
 
+import com.auther.config.ConfigContext;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import org.auther.api.dto.*;
@@ -11,21 +12,29 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static io.javalin.apibuilder.ApiBuilder.post;
+import static io.javalin.apibuilder.ApiBuilder.get;
 
 public class UsersRoute implements EndpointGroup {
     private final AccountsService accountsService;
     private final RestMapper restMapper;
+    private final ConfigContext configContext;
 
-    public UsersRoute(final AccountsService accountsService) {
+    public UsersRoute(final AccountsService accountsService, final ConfigContext configContext) {
         this.accountsService = accountsService;
+        this.configContext = configContext;
         restMapper = RestMapper.INSTANCE;
     }
 
     public void addEndpoints() {
+        get("/", this::index);
         post("/", this::create);
         post("/authenticate", this::authenticate);
         post("/:id/permission/grant", this::grantPermissions);
         post("/:id/permission/revoke", this::revokePermissions);
+    }
+
+    private void index(final Context context){
+        context.status(200).json(this.configContext.get("jwt"));
     }
 
     private void create(final Context context) {

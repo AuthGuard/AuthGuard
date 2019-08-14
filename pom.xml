@@ -13,6 +13,7 @@
         <module>service</module>
         <module>api</module>
         <module>dal</module>
+        <module>config</module>
     </modules>
 
     <properties>

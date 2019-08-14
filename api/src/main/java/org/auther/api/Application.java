@@ -1,5 +1,6 @@
 package org.auther.api;
 
+import com.auther.config.LightbendConfigContext;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.Javalin;
 import org.auther.api.routes.UsersRoute;
@@ -11,9 +12,10 @@ public class Application {
     public static void main(final String[] args) {
         final Javalin app = Javalin.create().start(3000);
         final AccountsService accountsService = null;
+        final LightbendConfigContext configContext = new LightbendConfigContext();
 
         app.routes(() -> {
-            path("/users", new UsersRoute(accountsService));
+            path("/users", new UsersRoute(accountsService, configContext));
         });
 
         // if we failed to process a request body

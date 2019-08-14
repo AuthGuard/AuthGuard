@@ -1,5 +1,6 @@
 package org.auther.api.routes;
 
+import com.auther.config.LightbendConfigContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import org.auther.service.AccountsService;
@@ -18,12 +19,13 @@ abstract class TestServer {
     @BeforeAll
     void setupServer() {
         final AccountsService accountsService = Mockito.mock(AccountsService.class);
+        final LightbendConfigContext configContext = new LightbendConfigContext();
 
         final Javalin app = Javalin.create().start();
         port = app.port();
 
         app.routes(() -> {
-            path("/users", new UsersRoute(accountsService));
+            path("/users", new UsersRoute(accountsService, configContext));
         });
 
         this.accountsService = accountsService;
