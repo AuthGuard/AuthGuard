@@ -42,7 +42,7 @@ class AccountsServiceImplTest {
         accountsRepository = Mockito.mock(AccountsRepository.class);
         securePassword = Mockito.mock(SecurePassword.class);
         jwtProvider = Mockito.mock(JWTProvider.class);
-        accountService = new AccountsServiceImpl(accountsRepository, securePassword, jwtProvider);
+        accountService = new AccountsServiceImpl(accountsRepository, securePassword, jwtProvider, new ServiceMapperImpl());
     }
 
     @Test

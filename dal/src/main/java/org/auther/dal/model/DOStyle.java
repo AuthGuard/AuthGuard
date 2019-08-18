@@ -11,7 +11,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.CLASS) // Make it class retention for incremental compilation
 @Value.Style(
         get = {"is*", "get*"}, // Detect 'get' and 'is' prefixes in accessor methods
-        typeImmutable = "*DO" // Suffix with DO
+        typeImmutable = "*DO", // Suffix with DO
+        jdkOnly = true // Prevent the use of Guava's collections, Mapstruct doesn't like them
 )
 public @interface DOStyle {
 }

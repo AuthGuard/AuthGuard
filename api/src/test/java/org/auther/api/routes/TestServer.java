@@ -1,6 +1,5 @@
 package org.auther.api.routes;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import org.auther.service.AccountsService;
 import org.junit.jupiter.api.BeforeAll;
@@ -23,7 +22,7 @@ abstract class TestServer {
         port = app.port();
 
         app.routes(() -> {
-            path("/users", new UsersRoute(accountsService));
+            path("/users", new UsersRoute(accountsService, new RestMapperImpl()));
         });
 
         this.accountsService = accountsService;

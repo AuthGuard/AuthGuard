@@ -2,16 +2,16 @@ package org.auther.service.impl;
 
 import com.google.inject.Inject;
 import org.auther.dal.PermissionsRepository;
-import org.auther.service.PermissionGroupBO;
-import org.auther.service.PermissionsServices;
+import org.auther.service.PermissionsService;
 import org.auther.service.exceptions.ServiceException;
 import org.auther.service.model.PermissionBO;
+import org.auther.service.model.PermissionGroupBO;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class PermissionsServiceImpl implements PermissionsServices {
+public class PermissionsServiceImpl implements PermissionsService {
     private final PermissionsRepository permissionsRepository;
     private final ServiceMapper serviceMapper;
 

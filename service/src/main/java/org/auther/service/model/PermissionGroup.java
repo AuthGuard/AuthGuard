@@ -1,6 +1,5 @@
-package org.auther.service;
+package org.auther.service.model;
 
-import org.auther.service.model.BOStyle;
 import org.immutables.value.Value;
 
 @Value.Immutable

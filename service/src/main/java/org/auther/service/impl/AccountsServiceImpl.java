@@ -25,12 +25,11 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Inject
     public AccountsServiceImpl(final AccountsRepository accountsRepository, final SecurePassword securePassword,
-                               final JWTProvider jwtProvider) {
+                               final JWTProvider jwtProvider, final ServiceMapper serviceMapper) {
         this.accountsRepository = accountsRepository;
         this.securePassword = securePassword;
         this.jwtProvider = jwtProvider;
-
-        this.serviceMapper = ServiceMapper.INSTANCE;
+        this.serviceMapper = serviceMapper;
     }
 
     @Override

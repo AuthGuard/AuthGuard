@@ -3,16 +3,13 @@ package org.auther.service.impl;
 import org.auther.dal.model.AccountDO;
 import org.auther.dal.model.PermissionDO;
 import org.auther.dal.model.PermissionGroupDO;
-import org.auther.service.PermissionGroupBO;
 import org.auther.service.model.AccountBO;
 import org.auther.service.model.PermissionBO;
+import org.auther.service.model.PermissionGroupBO;
 import org.mapstruct.Mapper;
-import org.mapstruct.factory.Mappers;
 
 @Mapper
 public interface ServiceMapper {
-    ServiceMapper INSTANCE = Mappers.getMapper(ServiceMapper.class);
-
     AccountDO toDO(AccountBO accountBO);
     AccountBO toBO(AccountDO accountDO);
 

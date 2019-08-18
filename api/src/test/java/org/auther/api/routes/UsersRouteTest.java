@@ -26,7 +26,7 @@ class UsersRouteTest extends TestServer {
     @Test
     void create() {
         final AccountDTO accountDTO = RANDOM.nextObject(AccountDTO.class);
-        final AccountBO accountBO = RestMapper.INSTANCE.toBO(accountDTO);
+        final AccountBO accountBO = new RestMapperImpl().toBO(accountDTO);
 
         Mockito.when(getAccountsService().create(eq(accountBO))).thenReturn(accountBO
                 .withId(UUID.randomUUID().toString())

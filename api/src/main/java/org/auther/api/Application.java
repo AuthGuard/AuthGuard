@@ -1,23 +1,22 @@
 package org.auther.api;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import io.javalin.Javalin;
 import org.auther.api.routes.PermissionsRoute;
 import org.auther.api.routes.UsersRoute;
-import org.auther.service.AccountsService;
-import org.auther.service.PermissionsServices;
 
 import static io.javalin.apibuilder.ApiBuilder.path;
 
 public class Application {
     public static void main(final String[] args) {
         final Javalin app = Javalin.create().start(3000);
-        final AccountsService accountsService = null;
-        final PermissionsServices permissionsServices = null;
+        final Injector injector = Guice.createInjector(new InjectorModule());
 
         app.routes(() -> {
-            path("/users", new UsersRoute(accountsService));
-            path("/admin", new PermissionsRoute(permissionsServices));
+            path("/users", injector.getInstance(UsersRoute.class));
+            path("/admin", injector.getInstance(PermissionsRoute.class));
         });
 
         // if we failed to process a request body

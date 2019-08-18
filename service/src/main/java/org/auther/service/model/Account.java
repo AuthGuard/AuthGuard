@@ -11,8 +11,7 @@ public interface Account {
     @Nullable String getId();
     String getUsername();
     @Nullable String getPlainPassword();
-    @Nullable
-    HashedPasswordBO getHashedPassword();
+    @Nullable HashedPasswordBO getHashedPassword();
     List<PermissionBO> getPermissions();
     List<String> getScopes();
     String getRole();

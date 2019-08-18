@@ -1,10 +1,11 @@
 package org.auther.api.routes;
 
+import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import org.auther.api.dto.PermissionDTO;
 import org.auther.api.dto.PermissionGroupDTO;
-import org.auther.service.PermissionsServices;
+import org.auther.service.PermissionsService;
 import org.auther.service.model.PermissionBO;
 
 import java.util.List;
@@ -16,12 +17,13 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.get;
 
 public class PermissionsRoute implements EndpointGroup {
-    private final PermissionsServices permissionsServices;
+    private final PermissionsService permissionsService;
     private final RestMapper restMapper;
 
-    public PermissionsRoute(final PermissionsServices permissionsServices) {
-        this.permissionsServices = permissionsServices;
-        this.restMapper = RestMapper.INSTANCE;
+    @Inject
+    PermissionsRoute(final PermissionsService permissionsService, final RestMapper restMapper) {
+        this.permissionsService = permissionsService;
+        this.restMapper = restMapper;
     }
 
     @Override
@@ -37,7 +39,7 @@ public class PermissionsRoute implements EndpointGroup {
 
         Optional.of(permissionGroup)
                 .map(restMapper::toBO)
-                .map(permissionsServices::createPermissionGroup)
+                .map(permissionsService::createPermissionGroup)
                 .map(restMapper::toDTO)
                 .map(context::json);
     }
@@ -47,7 +49,7 @@ public class PermissionsRoute implements EndpointGroup {
 
         Optional.of(permissionGroup)
                 .map(restMapper::toBO)
-                .map(permissionsServices::createPermission)
+                .map(permissionsService::createPermission)
                 .map(restMapper::toDTO)
                 .map(context::json);
     }
@@ -56,13 +58,13 @@ public class PermissionsRoute implements EndpointGroup {
         final String groupName = context.queryParam("group");
 
         if (groupName == null) {
-            final List<PermissionDTO> permissions = permissionsServices.getPermissions().stream()
+            final List<PermissionDTO> permissions = permissionsService.getPermissions().stream()
                     .map(restMapper::toDTO)
                     .collect(Collectors.toList());
 
             context.json(permissions);
         } else {
-            final Optional<List<PermissionBO>> permissions = permissionsServices.getPermissionsByGroup(groupName);
+            final Optional<List<PermissionBO>> permissions = permissionsService.getPermissionsByGroup(groupName);
 
             if (permissions.isPresent()) {
                 context.json(
@@ -81,7 +83,7 @@ public class PermissionsRoute implements EndpointGroup {
 
         final Optional<PermissionBO> permission = Optional.of(permissionGroup)
                 .map(restMapper::toBO)
-                .flatMap(permissionsServices::deletePermission);
+                .flatMap(permissionsService::deletePermission);
 
         if (permission.isPresent()) {
             context.json(restMapper.toDTO(permission.get()));

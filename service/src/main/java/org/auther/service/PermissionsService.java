@@ -1,11 +1,12 @@
 package org.auther.service;
 
 import org.auther.service.model.PermissionBO;
+import org.auther.service.model.PermissionGroupBO;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface PermissionsServices {
+public interface PermissionsService {
     PermissionGroupBO createPermissionGroup(PermissionGroupBO permissionGroup);
     PermissionBO createPermission(PermissionBO permission);
     List<PermissionBO> getPermissions();

@@ -1,5 +1,6 @@
 package org.auther.api.routes;
 
+import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import org.auther.api.dto.*;
@@ -16,9 +17,10 @@ public class UsersRoute implements EndpointGroup {
     private final AccountsService accountsService;
     private final RestMapper restMapper;
 
-    public UsersRoute(final AccountsService accountsService) {
+    @Inject
+    UsersRoute(final AccountsService accountsService, final RestMapper restMapper) {
         this.accountsService = accountsService;
-        restMapper = RestMapper.INSTANCE;
+        this.restMapper = restMapper;
     }
 
     public void addEndpoints() {
