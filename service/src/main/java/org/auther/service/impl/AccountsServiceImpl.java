@@ -1,5 +1,6 @@
 package org.auther.service.impl;
 
+import com.google.inject.Inject;
 import org.auther.dal.AccountsRepository;
 import org.auther.service.AccountsService;
 import org.auther.service.JWTProvider;
@@ -22,6 +23,7 @@ public class AccountsServiceImpl implements AccountsService {
     private final JWTProvider jwtProvider;
     private final ServiceMapper serviceMapper;
 
+    @Inject
     public AccountsServiceImpl(final AccountsRepository accountsRepository, final SecurePassword securePassword,
                                final JWTProvider jwtProvider) {
         this.accountsRepository = accountsRepository;

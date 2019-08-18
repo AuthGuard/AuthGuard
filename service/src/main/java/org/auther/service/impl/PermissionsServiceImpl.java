@@ -1,5 +1,6 @@
 package org.auther.service.impl;
 
+import com.google.inject.Inject;
 import org.auther.dal.PermissionsRepository;
 import org.auther.service.PermissionGroupBO;
 import org.auther.service.PermissionsServices;
@@ -14,6 +15,7 @@ public class PermissionsServiceImpl implements PermissionsServices {
     private final PermissionsRepository permissionsRepository;
     private final ServiceMapper serviceMapper;
 
+    @Inject
     public PermissionsServiceImpl(final PermissionsRepository permissionsRepository, final ServiceMapper serviceMapper) {
         this.permissionsRepository = permissionsRepository;
         this.serviceMapper = serviceMapper;

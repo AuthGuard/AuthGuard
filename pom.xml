@@ -13,6 +13,8 @@
         <module>service</module>
         <module>api</module>
         <module>dal</module>
+        <module>emb</module>
+        <module>injection</module>
     </modules>
 
     <properties>
@@ -27,6 +29,8 @@
         <apache-commons.version>3.7</apache-commons.version>
         <mapstruct.version>1.3.0.Final</mapstruct.version>
         <bouncy-castle.version>1.62</bouncy-castle.version>
+        <reflections.version>0.9.11</reflections.version>
+        <guice.version>4.2.2</guice.version>
 
         <surefire.version>3.0.0-M3</surefire.version>
         <junit.version>5.5.1</junit.version>
@@ -79,6 +83,12 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- dependency injection -->
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>${guice.version}</version>
+        </dependency>
 
         <!-- testing -->
         <dependency>

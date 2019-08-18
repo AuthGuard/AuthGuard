@@ -2,6 +2,7 @@ package org.auther.service.impl;
 
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.google.inject.Inject;
 import org.auther.service.JTIProvider;
 import org.auther.service.JWTProvider;
 import org.auther.service.model.AccountBO;
@@ -13,6 +14,7 @@ import java.util.Optional;
 public class StatefulJWTHandler extends AbstractJWTHandler implements JWTProvider {
     private final JTIProvider jtiProvider;
 
+    @Inject
     public StatefulJWTHandler(final Algorithm algorithm, final JWTVerifier verifier, final JTIProvider jtiProvider) {
         super(algorithm, verifier);
         this.jtiProvider = jtiProvider;

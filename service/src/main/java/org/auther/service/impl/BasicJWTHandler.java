@@ -2,6 +2,7 @@ package org.auther.service.impl;
 
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.google.inject.Inject;
 import org.auther.service.JWTProvider;
 import org.auther.service.model.AccountBO;
 import org.auther.service.model.TokensBO;
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 public class BasicJWTHandler extends AbstractJWTHandler implements JWTProvider {
+    @Inject
     public BasicJWTHandler(final Algorithm algorithm, final JWTVerifier verifier) {
         super(algorithm, verifier);
     }
