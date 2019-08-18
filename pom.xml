@@ -22,6 +22,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
 
         <javalin.version>3.3.0</javalin.version>
+        <logback.version>1.2.3</logback.version>
         <jackson.version>2.9.9</jackson.version>
         <immutables.version>2.7.4</immutables.version>
         <jetbrains-annotations.version>13.0</jetbrains-annotations.version>
@@ -41,10 +42,11 @@
     </properties>
 
     <dependencies>
+        <!-- logging -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.7.26</version>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
         </dependency>
 
         <!-- used for generating entities across the board -->
