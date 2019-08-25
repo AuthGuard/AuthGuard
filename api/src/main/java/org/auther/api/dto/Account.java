@@ -17,7 +17,7 @@ public interface Account {
     @Nullable String getPlainPassword();
     List<PermissionDTO> getPermissions();
     List<String> getScopes();
-    String getRole();
+    List<String> getRoles();
     boolean isActive();
     boolean isDeleted();
 }

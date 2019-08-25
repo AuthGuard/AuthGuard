@@ -14,7 +14,7 @@ public interface Account {
     @Nullable HashedPasswordBO getHashedPassword();
     List<PermissionBO> getPermissions();
     List<String> getScopes();
-    String getRole();
+    List<String> getRoles();
     boolean isActive();
     boolean isDeleted();
 }

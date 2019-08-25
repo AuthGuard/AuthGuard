@@ -13,4 +13,6 @@ public interface AccountsService {
     Optional<TokensBO> authenticate(String autherization);
     AccountBO grantPermissions(String accountId, List<PermissionBO> permissions);
     AccountBO revokePermissions(String accountId, List<PermissionBO> permissions);
+    AccountBO grantRoles(String accountId, List<String> roles);
+    AccountBO revokeRoles(String accountId, List<String> roles);
 }

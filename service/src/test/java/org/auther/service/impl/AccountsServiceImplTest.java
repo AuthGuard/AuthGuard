@@ -12,6 +12,7 @@ import org.auther.service.model.HashedPasswordBO;
 import org.auther.service.model.PermissionBO;
 import org.auther.service.model.TokensBO;
 import org.jeasy.random.EasyRandom;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -43,6 +44,11 @@ class AccountsServiceImplTest {
         securePassword = Mockito.mock(SecurePassword.class);
         jwtProvider = Mockito.mock(JWTProvider.class);
         accountService = new AccountsServiceImpl(accountsRepository, securePassword, jwtProvider, new ServiceMapperImpl());
+    }
+
+    @AfterEach
+    void resetMocks() {
+        Mockito.reset(accountsRepository);
     }
 
     @Test
@@ -190,6 +196,47 @@ class AccountsServiceImplTest {
 
         assertThat(updated).isNotEqualTo(account);
         assertThat(updated.getPermissions()).doesNotContain(permissionsToRevoke.toArray(new PermissionBO[0]));
+        assertThat(updated.getHashedPassword()).isNull();
+        assertThat(updated.getPlainPassword()).isNull();
+    }
+
+    @Test
+    void grantRoles() {
+        final AccountDO account = RANDOM.nextObject(AccountDO.class);
+
+        Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
+        Mockito.when(accountsRepository.update(any())).thenAnswer(invocation -> Optional.of(invocation.getArgument(0, AccountDO.class)));
+
+        final List<String> roles = Arrays.asList(
+                RANDOM.nextObject(String.class),
+                RANDOM.nextObject(String.class)
+        );
+
+        final AccountBO updated = accountService.grantRoles(account.getId(), roles);
+
+        assertThat(updated).isNotEqualTo(account);
+        assertThat(updated.getRoles()).contains(roles.toArray(new String[0]));
+        assertThat(updated.getHashedPassword()).isNull();
+        assertThat(updated.getPlainPassword()).isNull();
+    }
+
+    @Test
+    void revokeRoles() {
+        final AccountDO account = RANDOM.nextObject(AccountDO.class);
+        final List<String> currentRoles = account.getRoles();
+
+        Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
+        Mockito.when(accountsRepository.update(any())).thenAnswer(invocation -> Optional.of(invocation.getArgument(0, AccountDO.class)));
+
+        final List<String> rolesToRevoke = Arrays.asList(
+                currentRoles.get(0),
+                currentRoles.get(1)
+        );
+
+        final AccountBO updated = accountService.revokeRoles(account.getId(), rolesToRevoke);
+
+        assertThat(updated).isNotEqualTo(account);
+        assertThat(updated.getRoles()).doesNotContain(rolesToRevoke.toArray(new String[0]));
         assertThat(updated.getHashedPassword()).isNull();
         assertThat(updated.getPlainPassword()).isNull();
     }

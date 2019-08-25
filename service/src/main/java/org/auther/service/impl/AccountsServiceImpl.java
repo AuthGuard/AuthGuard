@@ -8,10 +8,7 @@ import org.auther.service.SecurePassword;
 import org.auther.service.exceptions.ServiceAuthorizationException;
 import org.auther.service.exceptions.ServiceException;
 import org.auther.service.exceptions.ServiceNotFoundException;
-import org.auther.service.model.AccountBO;
-import org.auther.service.model.HashedPasswordBO;
-import org.auther.service.model.PermissionBO;
-import org.auther.service.model.TokensBO;
+import org.auther.service.model.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -46,10 +43,7 @@ public class AccountsServiceImpl implements AccountsService {
                 .map(serviceMapper::toDO)
                 .map(accountsRepository::save)
                 .map(serviceMapper::toBO)
-                .map(accountBO -> accountBO
-                        .withPlainPassword(null)
-                        .withHashedPassword(null)
-                )
+                .map(this::removeSensitiveInformation)
                 .orElseThrow(IllegalStateException::new);
     }
 
@@ -57,7 +51,7 @@ public class AccountsServiceImpl implements AccountsService {
     public Optional<AccountBO> getById(final String accountId) {
         return accountsRepository.getById(accountId)
                 .map(serviceMapper::toBO)
-                .map(accountBO -> accountBO.withPlainPassword(null).withHashedPassword(null)); // no matter what, there's no reason for it to leave the service
+                .map(this::removeSensitiveInformation); // no matter what, there's no reason for it to leave the service
     }
 
     @Override
@@ -88,9 +82,7 @@ public class AccountsServiceImpl implements AccountsService {
 
         accountsRepository.update(serviceMapper.toDO(updated));
 
-        return updated
-                .withHashedPassword(null)
-                .withPlainPassword(null);
+        return removeSensitiveInformation(updated);
     }
 
     @Override
@@ -99,17 +91,56 @@ public class AccountsServiceImpl implements AccountsService {
                 .map(serviceMapper::toBO)
                 .orElseThrow(ServiceNotFoundException::new);
 
-        final List<PermissionBO> combinedPermissions = account.getPermissions().stream()
+        final List<PermissionBO> filteredPermissions = account.getPermissions().stream()
                 .filter(permission -> !permissions.contains(permission))
                 .collect(Collectors.toList());
 
-        final AccountBO updated = account.withPermissions(combinedPermissions);
+        final AccountBO updated = account.withPermissions(filteredPermissions);
 
         accountsRepository.update(serviceMapper.toDO(updated));
 
-        return updated
-                .withHashedPassword(null)
-                .withPlainPassword(null);
+        return removeSensitiveInformation(updated);
+    }
+
+    @Override
+    public AccountBO grantRoles(final String accountId, final List<String> roles) {
+        final AccountBO account = accountsRepository.getById(accountId)
+                .map(serviceMapper::toBO)
+                .orElseThrow(ServiceNotFoundException::new);
+
+        final List<String> combinedRoles = Stream.concat(account.getRoles().stream(), roles.stream())
+                .distinct()
+                .collect(Collectors.toList());
+
+        final AccountBO updated = account.withRoles(combinedRoles);
+
+        return accountsRepository.update(serviceMapper.toDO(updated))
+                .map(serviceMapper::toBO)
+                .map(this::removeSensitiveInformation)
+                .orElseThrow(IllegalStateException::new);
+    }
+
+    @Override
+    public AccountBO revokeRoles(final String accountId, final List<String> roles) {
+        final AccountBO account = accountsRepository.getById(accountId)
+                .map(serviceMapper::toBO)
+                .orElseThrow(ServiceNotFoundException::new);
+
+        final List<String> filteredRoles = account.getRoles().stream()
+                .filter(role -> !roles.contains(role))
+                .collect(Collectors.toList());
+
+        final AccountBO updated = account.withRoles(filteredRoles);
+
+        return accountsRepository.update(serviceMapper.toDO(updated))
+                .map(serviceMapper::toBO)
+                .map(this::removeSensitiveInformation)
+                .orElseThrow(IllegalStateException::new);
+    }
+
+    private AccountBO removeSensitiveInformation(final AccountBO account) {
+        return account.withPlainPassword(null)
+                .withHashedPassword(null);
     }
 
     private Optional<AccountBO> handleBasicAuthentication(final String base64Credentials) {
