@@ -1,17 +1,14 @@
 package org.auther.service.impl;
 
-import org.auther.dal.model.AccountDO;
-import org.auther.dal.model.PermissionDO;
-import org.auther.dal.model.PermissionGroupDO;
-import org.auther.dal.model.RoleDO;
-import org.auther.service.model.AccountBO;
-import org.auther.service.model.PermissionBO;
-import org.auther.service.model.PermissionGroupBO;
-import org.auther.service.model.RoleBO;
+import org.auther.dal.model.*;
+import org.auther.service.model.*;
 import org.mapstruct.Mapper;
 
 @Mapper
 public interface ServiceMapper {
+    CredentialsDO toDO(CredentialsBO credentialsBO);
+    CredentialsBO toBO(CredentialsDO credentialsDO);
+
     AccountDO toDO(AccountBO accountBO);
     AccountBO toBO(AccountDO accountDO);
 

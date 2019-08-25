@@ -13,8 +13,6 @@ import java.util.List;
 @JsonDeserialize(as = AccountDTO.class)
 public interface Account {
     @Nullable String getId();
-    String getUsername();
-    @Nullable String getPlainPassword();
     List<PermissionDTO> getPermissions();
     List<String> getScopes();
     List<String> getRoles();

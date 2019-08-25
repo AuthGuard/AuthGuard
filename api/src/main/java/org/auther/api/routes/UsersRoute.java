@@ -3,7 +3,8 @@ package org.auther.api.routes;
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
-import org.auther.api.dto.*;
+import org.auther.api.dto.AccountDTO;
+import org.auther.api.dto.PermissionsRequestDTO;
 import org.auther.service.AccountsService;
 import org.auther.service.model.PermissionBO;
 
@@ -25,7 +26,6 @@ public class UsersRoute implements EndpointGroup {
 
     public void addEndpoints() {
         post("/", this::create);
-        post("/authenticate", this::authenticate);
         post("/:id/permission/grant", this::grantPermissions);
         post("/:id/permission/revoke", this::revokePermissions);
     }
@@ -41,19 +41,6 @@ public class UsersRoute implements EndpointGroup {
             context.json(createdAccount.get());
         } else {
             context.status(400).result("Failed to create account");
-        }
-    }
-
-    private void authenticate(final Context context) {
-        final AuthenticationRequestDTO authenticationRequest = context.bodyAsClass(AuthenticationRequestDTO.class);
-
-        final Optional<TokensDTO> tokens = accountsService.authenticate(authenticationRequest.getAuthorization())
-                .map(restMapper::toDTO);
-
-        if (tokens.isPresent()) {
-            context.json(tokens.get());
-        } else {
-            context.status(400).result("Failed to authenticate user");
         }
     }
 

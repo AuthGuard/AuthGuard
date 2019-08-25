@@ -30,8 +30,6 @@ class UsersRouteTest extends TestServer {
 
         Mockito.when(getAccountsService().create(eq(accountBO))).thenReturn(accountBO
                 .withId(UUID.randomUUID().toString())
-                .withPlainPassword(null)
-                .withHashedPassword(null)
         );
 
         final AccountDTO response = given().body(accountDTO)
