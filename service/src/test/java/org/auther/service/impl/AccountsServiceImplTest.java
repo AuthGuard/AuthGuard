@@ -2,6 +2,8 @@ package org.auther.service.impl;
 
 import org.auther.dal.AccountsRepository;
 import org.auther.dal.model.AccountDO;
+import org.auther.service.PermissionsService;
+import org.auther.service.exceptions.ServiceException;
 import org.auther.service.model.AccountBO;
 import org.auther.service.model.PermissionBO;
 import org.jeasy.random.EasyRandom;
@@ -17,11 +19,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AccountsServiceImplTest {
     private AccountsRepository accountsRepository;
+    private PermissionsService permissionsService;
     private AccountsServiceImpl accountService;
 
     private final static EasyRandom RANDOM = new EasyRandom();
@@ -29,12 +33,14 @@ class AccountsServiceImplTest {
     @BeforeAll
     void setup() {
         accountsRepository = Mockito.mock(AccountsRepository.class);
-        accountService = new AccountsServiceImpl(accountsRepository, new ServiceMapperImpl());
+        permissionsService = Mockito.mock(PermissionsService.class);
+        accountService = new AccountsServiceImpl(accountsRepository, permissionsService, new ServiceMapperImpl());
     }
 
     @AfterEach
     void resetMocks() {
         Mockito.reset(accountsRepository);
+        Mockito.reset(permissionsService);
     }
 
     @Test
@@ -73,6 +79,7 @@ class AccountsServiceImplTest {
         final AccountDO account = RANDOM.nextObject(AccountDO.class);
 
         Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
+        Mockito.when(permissionsService.verifyPermissions(any())).thenAnswer(invocation -> invocation.getArgument(0, List.class));
 
         final List<PermissionBO> permissions = Arrays.asList(
                 RANDOM.nextObject(PermissionBO.class),
@@ -83,6 +90,20 @@ class AccountsServiceImplTest {
 
         assertThat(updated).isNotEqualTo(account);
         assertThat(updated.getPermissions()).contains(permissions.toArray(new PermissionBO[0]));
+    }
+
+    @Test
+    void grantPermissionsInvalidPermission() {
+        final AccountDO account = RANDOM.nextObject(AccountDO.class);
+
+        Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
+
+        final List<PermissionBO> permissions = Arrays.asList(
+                RANDOM.nextObject(PermissionBO.class),
+                RANDOM.nextObject(PermissionBO.class)
+        );
+
+        assertThatThrownBy(() -> accountService.grantPermissions(account.getId(), permissions)).isInstanceOf(ServiceException.class);
     }
 
     @Test

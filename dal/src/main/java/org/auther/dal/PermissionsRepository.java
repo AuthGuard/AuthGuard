@@ -15,4 +15,5 @@ public interface PermissionsRepository {
     Optional<PermissionDO> deletePermission(PermissionDO permission);
     List<PermissionDO> getAllPermissions();
     Optional<List<PermissionDO>> getPermissions(String permissionGroup);
+    Optional<PermissionDO> getPermission(String permissionGroup, String permissionName);
 }

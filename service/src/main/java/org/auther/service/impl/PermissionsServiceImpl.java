@@ -43,6 +43,13 @@ public class PermissionsServiceImpl implements PermissionsService {
     }
 
     @Override
+    public List<PermissionBO> verifyPermissions(final List<PermissionBO> permissions) {
+        return permissions.stream()
+                .filter(permission -> permissionsRepository.getPermission(permission.getGroup(), permission.getName()).isPresent())
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<PermissionBO> getPermissions() {
         return permissionsRepository.getAllPermissions().stream()
                 .map(serviceMapper::toBO)
