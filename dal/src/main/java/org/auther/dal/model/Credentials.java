@@ -8,6 +8,5 @@ public interface Credentials {
     String getId();
     String getAccountId();
     String getUsername();
-    String getPlainPassword();
     HashedPasswordDO getHashedPassword();
 }

@@ -9,6 +9,9 @@ public interface ServiceMapper {
     CredentialsDO toDO(CredentialsBO credentialsBO);
     CredentialsBO toBO(CredentialsDO credentialsDO);
 
+    CredentialsAuditDO toDO(CredentialsAuditBO credentialsBO);
+    CredentialsAuditBO toBO(CredentialsAuditDO credentialsDO);
+
     AccountDO toDO(AccountBO accountBO);
     AccountBO toBO(AccountDO accountDO);
 
