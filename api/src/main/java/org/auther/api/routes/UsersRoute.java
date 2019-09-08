@@ -1,36 +1,68 @@
 package org.auther.api.routes;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import org.auther.api.dto.AccountDTO;
+import org.auther.api.dto.PermissionsRequestDTO;
+import org.auther.service.AccountsService;
+import org.auther.service.model.PermissionBO;
 
-import java.io.IOException;
-import java.util.UUID;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static io.javalin.apibuilder.ApiBuilder.post;
 
 public class UsersRoute implements EndpointGroup {
-    private final ObjectMapper mapper;
+    private final AccountsService accountsService;
+    private final RestMapper restMapper;
 
-    public UsersRoute(final ObjectMapper mapper) {
-        this.mapper = mapper;
+    @Inject
+    UsersRoute(final AccountsService accountsService, final RestMapper restMapper) {
+        this.accountsService = accountsService;
+        this.restMapper = restMapper;
     }
 
     public void addEndpoints() {
         post("/", this::create);
-        post("/authenticate", this::authenticate);
+        post("/:id/permission/grant", this::grantPermissions);
+        post("/:id/permission/revoke", this::revokePermissions);
     }
 
-    private void create(final Context context) throws IOException {
-        final AccountDTO account = mapper.readValue(context.body(), AccountDTO.class);
+    private void create(final Context context) {
+        final AccountDTO account = context.bodyAsClass(AccountDTO.class);
 
-        // do some work
+        final Optional<AccountDTO> createdAccount = Optional.of(restMapper.toBO(account))
+                .map(accountsService::create)
+                .map(restMapper::toDTO);
 
-        context.json(account.withId(UUID.randomUUID().toString()));
+        if (createdAccount.isPresent()) {
+            context.json(createdAccount.get());
+        } else {
+            context.status(400).result("Failed to create account");
+        }
     }
 
-    private void authenticate(final Context context) {
-        context.status(400).result("You're not very welcome yet");
+    private void grantPermissions(final Context context) {
+        final String accountId = context.pathParam("id");
+        final PermissionsRequestDTO permissionsRequest = context.bodyAsClass(PermissionsRequestDTO.class);
+        final List<PermissionBO> permissions = permissionsRequest.getPermissions().stream()
+                .map(restMapper::toBO)
+                .collect(Collectors.toList());
+
+        final AccountDTO updatedAccount = restMapper.toDTO(accountsService.grantPermissions(accountId, permissions));
+        context.json(updatedAccount);
+    }
+
+    private void revokePermissions(final Context context) {
+        final String accountId = context.pathParam("id");
+        final PermissionsRequestDTO permissionsRequest = context.bodyAsClass(PermissionsRequestDTO.class);
+        final List<PermissionBO> permissions = permissionsRequest.getPermissions().stream()
+                .map(restMapper::toBO)
+                .collect(Collectors.toList());
+
+        final AccountDTO updatedAccount = restMapper.toDTO(accountsService.revokePermissions(accountId, permissions));
+        context.json(updatedAccount);
     }
 }
