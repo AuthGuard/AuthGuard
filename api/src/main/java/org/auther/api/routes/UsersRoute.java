@@ -1,7 +1,6 @@
 package org.auther.api.routes;
 
 import com.google.inject.Inject;
-import com.auther.config.ConfigContext;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import org.auther.api.dto.AccountDTO;
@@ -14,29 +13,21 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static io.javalin.apibuilder.ApiBuilder.post;
-import static io.javalin.apibuilder.ApiBuilder.get;
 
 public class UsersRoute implements EndpointGroup {
     private final AccountsService accountsService;
     private final RestMapper restMapper;
-    private final ConfigContext configContext;
 
     @Inject
-    UsersRoute(final AccountsService accountsService, final RestMapper restMapper, final ConfigContext configContext) {
+    UsersRoute(final AccountsService accountsService, final RestMapper restMapper) {
         this.accountsService = accountsService;
-        this.configContext = configContext;
         this.restMapper = restMapper;
     }
 
     public void addEndpoints() {
-        get("/", this::index);
         post("/", this::create);
         post("/:id/permission/grant", this::grantPermissions);
         post("/:id/permission/revoke", this::revokePermissions);
-    }
-
-    private void index(final Context context){
-        context.status(200).json(this.configContext.get("jwt"));
     }
 
     private void create(final Context context) {

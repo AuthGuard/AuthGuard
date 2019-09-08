@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.javalin.Javalin;
-import org.auther.api.routes.PermissionsRoute;
+import org.auther.api.routes.AdminRoute;
 import org.auther.api.routes.UsersRoute;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +37,7 @@ public class Application {
 
         app.routes(() -> {
             path("/users", injector.getInstance(UsersRoute.class));
-            path("/admin", injector.getInstance(PermissionsRoute.class));
+            path("/admin", injector.getInstance(AdminRoute.class));
         });
 
         // if we failed to process a request body

@@ -1,5 +1,6 @@
 package org.auther.service.impl;
 
+import com.google.inject.Inject;
 import org.auther.dal.RolesRepository;
 import org.auther.service.RolesService;
 import org.auther.service.exceptions.ServiceNotFoundException;
@@ -15,11 +16,11 @@ public class RolesServiceImpl implements RolesService {
     private final RolesRepository rolesRepository;
     private final ServiceMapper serviceMapper;
 
+    @Inject
     public RolesServiceImpl(final RolesRepository rolesRepository, final ServiceMapper serviceMapper) {
         this.rolesRepository = rolesRepository;
         this.serviceMapper = serviceMapper;
     }
-
 
     @Override
     public List<RoleBO> getRoles() {

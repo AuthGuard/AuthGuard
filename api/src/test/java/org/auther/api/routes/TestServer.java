@@ -25,11 +25,7 @@ abstract class TestServer {
         port = app.port();
 
         app.routes(() -> {
-<<<<<<< HEAD
-            path("/users", new UsersRoute(accountsService, new RestMapperImpl()));
-=======
-            path("/users", new UsersRoute(accountsService, configContext));
->>>>>>> origin/configuration
+            path("/users", new UsersRoute(accountsService, new RestMapperImpl(), configContext));
         });
 
         this.accountsService = accountsService;

@@ -3,14 +3,18 @@ package org.auther.api;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auther.config.ConfigContext;
+import com.auther.config.LightbendConfigContext;
 import com.google.inject.AbstractModule;
 import org.auther.api.routes.RestMapper;
 import org.auther.api.routes.RestMapperImpl;
 import org.auther.dal.AccountsRepository;
 import org.auther.dal.PermissionsRepository;
+import org.auther.dal.RolesRepository;
 import org.auther.dal.model.AccountDO;
 import org.auther.dal.model.PermissionDO;
 import org.auther.dal.model.PermissionGroupDO;
+import org.auther.dal.model.RoleDO;
 import org.auther.service.*;
 import org.auther.service.impl.*;
 import org.auther.service.impl.passwords.SCryptPassword;
@@ -30,6 +34,9 @@ public class InjectorModule extends AbstractModule {
 
         final Algorithm jwtAlgorithm = Algorithm.HMAC256(randomSecret);
 
+        // --- Config
+        bind(ConfigContext.class).to(LightbendConfigContext.class);
+
         // --- Auth0 configuration
         bind(Algorithm.class).toInstance(jwtAlgorithm);
         bind(JWTVerifier.class).toInstance(JWT.require(jwtAlgorithm).build());
@@ -41,11 +48,13 @@ public class InjectorModule extends AbstractModule {
         // DAL
         bind(AccountsRepository.class).to(AccountsRepositoryImpl.class);
         bind(PermissionsRepository.class).to(PermissionsRepositoryImpl.class);
+        bind(RolesRepository.class).to(RolesRepositoryImpl.class);
 
         // Services
         bind(ServiceMapper.class).to(ServiceMapperImpl.class);
         bind(AccountsService.class).to(AccountsServiceImpl.class);
         bind(PermissionsService.class).to(PermissionsServiceImpl.class);
+        bind(RolesService.class).to(RolesServiceImpl.class);
         bind(SecurePassword.class).to(SCryptPassword.class);
 
         // Mappers
@@ -113,6 +122,34 @@ public class InjectorModule extends AbstractModule {
 
         @Override
         public Optional<PermissionDO> getPermission(final String permissionGroup, final String permissionName) {
+            return Optional.empty();
+        }
+    }
+
+    static class RolesRepositoryImpl implements RolesRepository {
+
+        @Override
+        public List<RoleDO> getAll() {
+            return null;
+        }
+
+        @Override
+        public Optional<RoleDO> getByName(final String name) {
+            return Optional.empty();
+        }
+
+        @Override
+        public RoleDO save(final RoleDO role) {
+            return null;
+        }
+
+        @Override
+        public Optional<RoleDO> delete(final String name) {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<RoleDO> update(final RoleDO role) {
             return Optional.empty();
         }
     }

@@ -22,4 +22,9 @@ public class LightbendConfigContext implements ConfigContext {
     public Object get(String key) {
         return this.config.getAnyRef(key);
     }
+
+    @Override
+    public String toString() {
+        return config.getConfig("jwt").toString();
+    }
 }
