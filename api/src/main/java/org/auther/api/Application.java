@@ -1,5 +1,6 @@
 package org.auther.api;
 
+import com.auther.config.LightbendConfigContext;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -17,6 +18,8 @@ public class Application {
     public static void main(final String[] args) {
         final Javalin app = Javalin.create()
                 .start(3000);
+
+        final LightbendConfigContext configContext = new LightbendConfigContext();
         final Injector injector = Guice.createInjector(new InjectorModule());
 
         app.before(context -> context.attribute("time", System.currentTimeMillis()));

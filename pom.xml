@@ -15,6 +15,7 @@
         <module>dal</module>
         <module>emb</module>
         <module>injection</module>
+        <module>config</module>
     </modules>
 
     <properties>

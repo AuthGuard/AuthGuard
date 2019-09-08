@@ -1,5 +1,7 @@
 package org.auther.api.routes;
 
+import com.auther.config.LightbendConfigContext;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import org.auther.service.AccountsService;
 import org.junit.jupiter.api.BeforeAll;
@@ -17,12 +19,17 @@ abstract class TestServer {
     @BeforeAll
     void setupServer() {
         final AccountsService accountsService = Mockito.mock(AccountsService.class);
+        final LightbendConfigContext configContext = new LightbendConfigContext();
 
         final Javalin app = Javalin.create().start();
         port = app.port();
 
         app.routes(() -> {
+<<<<<<< HEAD
             path("/users", new UsersRoute(accountsService, new RestMapperImpl()));
+=======
+            path("/users", new UsersRoute(accountsService, configContext));
+>>>>>>> origin/configuration
         });
 
         this.accountsService = accountsService;
