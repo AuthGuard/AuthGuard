@@ -11,6 +11,7 @@ public interface RolesService {
     RoleBO createRole(RoleBO role);
     Optional<RoleBO> getRoleByName(String name);
     Optional<RoleBO> deleteRoleByName(String name);
+    List<PermissionBO> getPermissionsByName(String name);
     Optional<RoleBO> grantPermissions(String name, List<PermissionBO> permission);
     Optional<RoleBO> revokePermissions(String name, List<PermissionBO> permissions);
 }

@@ -4,14 +4,13 @@ import com.google.inject.Inject;
 import org.auther.dal.AccountsRepository;
 import org.auther.service.AccountsService;
 import org.auther.service.PermissionsService;
+import org.auther.service.RolesService;
 import org.auther.service.exceptions.ServiceException;
 import org.auther.service.exceptions.ServiceNotFoundException;
 import org.auther.service.model.AccountBO;
 import org.auther.service.model.PermissionBO;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -20,12 +19,16 @@ public class AccountsServiceImpl implements AccountsService {
     private final PermissionsService permissionsService;
     private final ServiceMapper serviceMapper;
 
+    private final PermissionsAggregator permissionsAggregator;
+
     @Inject
     public AccountsServiceImpl(final AccountsRepository accountsRepository, final PermissionsService permissionsService,
-                               final ServiceMapper serviceMapper) {
+                               final RolesService rolesService, final ServiceMapper serviceMapper) {
         this.accountsRepository = accountsRepository;
         this.permissionsService = permissionsService;
         this.serviceMapper = serviceMapper;
+
+        this.permissionsAggregator = new PermissionsAggregator(rolesService, permissionsService);
     }
 
     @Override
@@ -44,6 +47,14 @@ public class AccountsServiceImpl implements AccountsService {
     public Optional<AccountBO> getById(final String accountId) {
         return accountsRepository.getById(accountId)
                 .map(serviceMapper::toBO);
+    }
+
+    @Override
+    public List<PermissionBO> getPermissions(final String accountId) {
+        final AccountBO account = getById(accountId)
+                .orElseThrow(ServiceNotFoundException::new);
+
+        return permissionsAggregator.aggregate(account.getRoles(), account.getPermissions());
     }
 
     @Override

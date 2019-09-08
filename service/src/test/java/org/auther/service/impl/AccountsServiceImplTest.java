@@ -3,6 +3,7 @@ package org.auther.service.impl;
 import org.auther.dal.AccountsRepository;
 import org.auther.dal.model.AccountDO;
 import org.auther.service.PermissionsService;
+import org.auther.service.RolesService;
 import org.auther.service.exceptions.ServiceException;
 import org.auther.service.model.AccountBO;
 import org.auther.service.model.PermissionBO;
@@ -26,6 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 class AccountsServiceImplTest {
     private AccountsRepository accountsRepository;
     private PermissionsService permissionsService;
+    private RolesService rolesService;
     private AccountsServiceImpl accountService;
 
     private final static EasyRandom RANDOM = new EasyRandom();
@@ -34,7 +36,8 @@ class AccountsServiceImplTest {
     void setup() {
         accountsRepository = Mockito.mock(AccountsRepository.class);
         permissionsService = Mockito.mock(PermissionsService.class);
-        accountService = new AccountsServiceImpl(accountsRepository, permissionsService, new ServiceMapperImpl());
+        rolesService = Mockito.mock(RolesService.class);
+        accountService = new AccountsServiceImpl(accountsRepository, permissionsService, rolesService, new ServiceMapperImpl());
     }
 
     @AfterEach

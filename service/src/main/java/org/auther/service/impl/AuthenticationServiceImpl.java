@@ -1,5 +1,6 @@
-package org.auther.service;
+package org.auther.service.impl;
 
+import org.auther.service.*;
 import org.auther.service.exceptions.ServiceAuthorizationException;
 import org.auther.service.exceptions.ServiceException;
 import org.auther.service.model.AccountBO;

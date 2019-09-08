@@ -51,6 +51,13 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
+    public List<PermissionBO> getPermissionsByName(final String name) {
+        return getRoleByName(name)
+                .map(RoleBO::getPermissions)
+                .orElseThrow(ServiceNotFoundException::new);
+    }
+
+    @Override
     public Optional<RoleBO> grantPermissions(final String name, final List<PermissionBO> permission) {
         return rolesRepository.getByName(name)
                 .map(serviceMapper::toBO)

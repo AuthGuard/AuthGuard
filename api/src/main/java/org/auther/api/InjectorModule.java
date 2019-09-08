@@ -110,5 +110,10 @@ public class InjectorModule extends AbstractModule {
         public Optional<List<PermissionDO>> getPermissions(final String permissionGroup) {
             return Optional.empty();
         }
+
+        @Override
+        public Optional<PermissionDO> getPermission(final String permissionGroup, final String permissionName) {
+            return Optional.empty();
+        }
     }
 }
