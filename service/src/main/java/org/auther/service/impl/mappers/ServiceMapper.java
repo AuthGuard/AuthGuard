@@ -1,4 +1,4 @@
-package org.auther.service.impl;
+package org.auther.service.impl.mappers;
 
 import org.auther.dal.model.*;
 import org.auther.service.model.*;

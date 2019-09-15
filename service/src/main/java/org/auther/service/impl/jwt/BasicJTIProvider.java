@@ -1,4 +1,4 @@
-package org.auther.service.impl;
+package org.auther.service.impl.jwt;
 
 import org.auther.service.JTIProvider;
 
@@ -6,6 +6,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListSet;
 
+/**
+ * This class is only here until a proper implementation is available
+ */
 public class BasicJTIProvider implements JTIProvider {
     private final Set<String> generatedIds;
     private final Set<String> usedIds;

@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import org.auther.dal.PermissionsRepository;
 import org.auther.service.PermissionsService;
 import org.auther.service.exceptions.ServiceException;
+import org.auther.service.impl.mappers.ServiceMapper;
 import org.auther.service.model.PermissionBO;
 import org.auther.service.model.PermissionGroupBO;
 

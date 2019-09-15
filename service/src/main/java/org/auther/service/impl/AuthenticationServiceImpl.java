@@ -1,5 +1,6 @@
 package org.auther.service.impl;
 
+import com.google.inject.Inject;
 import org.auther.service.*;
 import org.auther.service.exceptions.ServiceAuthorizationException;
 import org.auther.service.exceptions.ServiceException;
@@ -14,10 +15,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final CredentialsService credentialsService;
     private final AccountsService accountsService;
     private final SecurePassword securePassword;
-    private final JWTProvider jwtProvider;
+    private final JwtProvider jwtProvider;
 
+    @Inject
     public AuthenticationServiceImpl(final CredentialsService credentialsService, final AccountsService accountsService,
-                                     final SecurePassword securePassword, final JWTProvider jwtProvider) {
+                                     final SecurePassword securePassword, final JwtProvider jwtProvider) {
         this.credentialsService = credentialsService;
         this.accountsService = accountsService;
         this.securePassword = securePassword;

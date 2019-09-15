@@ -1,5 +1,6 @@
-package org.auther.service.impl;
+package org.auther.service.impl.jwt;
 
+import org.auther.service.impl.jwt.BasicJTIProvider;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
