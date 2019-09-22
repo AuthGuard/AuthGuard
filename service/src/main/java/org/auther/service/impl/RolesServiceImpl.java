@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import org.auther.dal.RolesRepository;
 import org.auther.service.RolesService;
 import org.auther.service.exceptions.ServiceNotFoundException;
+import org.auther.service.impl.mappers.ServiceMapper;
 import org.auther.service.model.PermissionBO;
 import org.auther.service.model.RoleBO;
 

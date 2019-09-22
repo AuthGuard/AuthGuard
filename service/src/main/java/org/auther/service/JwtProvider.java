@@ -5,7 +5,7 @@ import org.auther.service.model.TokensBO;
 
 import java.util.Optional;
 
-public interface JWTProvider {
+public interface JwtProvider {
     /**
      * Generate a token and (optionally) a refresh token.
      * @return

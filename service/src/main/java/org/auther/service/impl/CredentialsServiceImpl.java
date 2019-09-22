@@ -6,6 +6,7 @@ import org.auther.dal.CredentialsRepository;
 import org.auther.service.CredentialsService;
 import org.auther.service.SecurePassword;
 import org.auther.service.exceptions.ServiceNotFoundException;
+import org.auther.service.impl.mappers.ServiceMapper;
 import org.auther.service.model.CredentialsAudit;
 import org.auther.service.model.CredentialsAuditBO;
 import org.auther.service.model.CredentialsBO;

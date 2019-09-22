@@ -1,8 +1,11 @@
 package com.auther.config;
 
-/**
- * Created by tao on 8/15/2019.
- */
 public interface ConfigContext {
+    String ROOT_CONFIG_PROPERTY = "authguard";
+
     Object get(String key);
+    String getAsString(String key);
+    boolean getAsBoolean(String key);
+
+    ConfigContext getSubContext(String key);
 }

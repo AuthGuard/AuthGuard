@@ -29,7 +29,7 @@ class AuthenticationServiceImplTest {
     private AccountsService accountsService;
     private CredentialsService credentialsService;
     private SecurePassword securePassword;
-    private JWTProvider jwtProvider;
+    private JwtProvider jwtProvider;
     private AuthenticationService authenticationService;
 
     private final static EasyRandom RANDOM = new EasyRandom();
@@ -39,7 +39,7 @@ class AuthenticationServiceImplTest {
         accountsService = Mockito.mock(AccountsService.class);
         credentialsService = Mockito.mock(CredentialsService.class);
         securePassword = Mockito.mock(SecurePassword.class);
-        jwtProvider = Mockito.mock(JWTProvider.class);
+        jwtProvider = Mockito.mock(JwtProvider.class);
         authenticationService = new AuthenticationServiceImpl(credentialsService, accountsService, securePassword, jwtProvider);
     }
 

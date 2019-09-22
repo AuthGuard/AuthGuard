@@ -1,6 +1,6 @@
 package org.auther.service;
 
-public interface JTIProvider {
+public interface JtiProvider {
     String next();
     boolean validate(String jti);
 }

@@ -1,67 +1,71 @@
-package org.auther.api;
+package org.auther.api.injectors;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auther.config.ConfigContext;
-import com.auther.config.LightbendConfigContext;
 import com.google.inject.AbstractModule;
-import org.auther.api.routes.RestMapper;
-import org.auther.api.routes.RestMapperImpl;
-import org.auther.dal.AccountsRepository;
-import org.auther.dal.PermissionsRepository;
-import org.auther.dal.RolesRepository;
-import org.auther.dal.model.AccountDO;
-import org.auther.dal.model.PermissionDO;
-import org.auther.dal.model.PermissionGroupDO;
-import org.auther.dal.model.RoleDO;
-import org.auther.service.*;
-import org.auther.service.impl.*;
-import org.auther.service.impl.passwords.SCryptPassword;
+import org.auther.dal.*;
+import org.auther.dal.model.*;
 
-import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
 
-public class InjectorModule extends AbstractModule {
-    // TODO read the configuration
+public class DalBinder extends AbstractModule {
 
     @Override
     public void configure() {
-        // JWT stuff
-        final byte[] randomSecret = new byte[256];
-        new SecureRandom().nextBytes(randomSecret);
-
-        final Algorithm jwtAlgorithm = Algorithm.HMAC256(randomSecret);
-
-        // --- Config
-        bind(ConfigContext.class).to(LightbendConfigContext.class);
-
-        // --- Auth0 configuration
-        bind(Algorithm.class).toInstance(jwtAlgorithm);
-        bind(JWTVerifier.class).toInstance(JWT.require(jwtAlgorithm).build());
-
-        // --- Provider instances
-        bind(JTIProvider.class).to(BasicJTIProvider.class);
-        bind(JWTProvider.class).to(BasicJWTHandler.class);
-
-        // DAL
+        bind(CredentialsRepository.class).to(CredentialsRepositoryImpl.class);
+        bind(CredentialsAuditRepository.class).to(CredentialsAuditRepositoryImpl.class);
         bind(AccountsRepository.class).to(AccountsRepositoryImpl.class);
         bind(PermissionsRepository.class).to(PermissionsRepositoryImpl.class);
         bind(RolesRepository.class).to(RolesRepositoryImpl.class);
-
-        // Services
-        bind(ServiceMapper.class).to(ServiceMapperImpl.class);
-        bind(AccountsService.class).to(AccountsServiceImpl.class);
-        bind(PermissionsService.class).to(PermissionsServiceImpl.class);
-        bind(RolesService.class).to(RolesServiceImpl.class);
-        bind(SecurePassword.class).to(SCryptPassword.class);
-
-        // Mappers
-        bind(RestMapper.class).to(RestMapperImpl.class);
     }
 
+
     // mocks until the actual implementations are ready
+    static class CredentialsRepositoryImpl implements CredentialsRepository {
+
+        @Override
+        public CredentialsDO save(final CredentialsDO credentials) {
+            return null;
+        }
+
+        @Override
+        public Optional<CredentialsDO> getById(final String id) {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<CredentialsDO> findByUsername(final String username) {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<CredentialsDO> update(final CredentialsDO credentials) {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<CredentialsDO> delete(final String id) {
+            return Optional.empty();
+        }
+    }
+
+    static class CredentialsAuditRepositoryImpl implements CredentialsAuditRepository {
+
+        @Override
+        public CredentialsAuditDO save(final CredentialsAuditDO credentialsAudit) {
+            return null;
+        }
+
+        @Override
+        public Optional<CredentialsAuditDO> getById(final String id) {
+            return Optional.empty();
+        }
+
+        @Override
+        public List<CredentialsAuditDO> findByCredentialsId(final String credentialsId) {
+            return null;
+        }
+    }
+
     static class AccountsRepositoryImpl implements AccountsRepository {
         @Override
         public AccountDO save(final AccountDO account) {

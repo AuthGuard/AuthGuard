@@ -5,6 +5,7 @@ import org.auther.dal.CredentialsRepository;
 import org.auther.dal.model.CredentialsAuditDO;
 import org.auther.dal.model.CredentialsDO;
 import org.auther.service.SecurePassword;
+import org.auther.service.impl.mappers.ServiceMapperImpl;
 import org.auther.service.model.CredentialsBO;
 import org.auther.service.model.HashedPasswordBO;
 import org.jeasy.random.EasyRandom;

@@ -1,11 +1,12 @@
 package org.auther.api;
 
-import com.auther.config.LightbendConfigContext;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.javalin.Javalin;
+import org.auther.api.injectors.*;
 import org.auther.api.routes.AdminRoute;
+import org.auther.api.routes.AuthenticationRoute;
 import org.auther.api.routes.UsersRoute;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +20,8 @@ public class Application {
         final Javalin app = Javalin.create()
                 .start(3000);
 
-        final LightbendConfigContext configContext = new LightbendConfigContext();
-        final Injector injector = Guice.createInjector(new InjectorModule());
+        final Injector injector = Guice.createInjector(new MappersBinder(), new ConfigBinder(),
+                new ServicesBinder(), new JwtBinder(), new DalBinder());
 
         app.before(context -> context.attribute("time", System.currentTimeMillis()));
 
@@ -36,6 +37,7 @@ public class Application {
         });
 
         app.routes(() -> {
+            path("/authenticate", injector.getInstance(AuthenticationRoute.class));
             path("/users", injector.getInstance(UsersRoute.class));
             path("/admin", injector.getInstance(AdminRoute.class));
         });

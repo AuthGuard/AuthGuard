@@ -4,7 +4,8 @@
       "algorithm": "HS256",
       "key": "FKvL11DI5rwgt51QgB3CVob3oWYrFNBzF0ROvu9Yaj8",
       "tokenLife": "20m",
-      "issuer": "Authen-provider",
+      "refreshTokenLife": "1d",
+      "issuer": "Authguard",
       "strategy": {
         "useJTI": true
       },
