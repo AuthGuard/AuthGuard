@@ -1,10 +1,11 @@
 package org.auther.api.injectors;
 
+import com.google.inject.AbstractModule;
 import org.auther.service.*;
 import org.auther.service.impl.*;
 import org.auther.service.impl.passwords.SCryptPassword;
 
-public class ServicesBinder extends MappersBinder {
+public class ServicesBinder extends AbstractModule {
 
     @Override
     public void configure() {

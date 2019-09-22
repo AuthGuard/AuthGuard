@@ -1,12 +1,13 @@
 package org.auther.api.injectors;
 
+import com.google.inject.AbstractModule;
 import org.auther.dal.*;
 import org.auther.dal.model.*;
 
 import java.util.List;
 import java.util.Optional;
 
-public class DALBinder extends MappersBinder {
+public class DalBinder extends AbstractModule {
 
     @Override
     public void configure() {

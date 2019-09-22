@@ -20,10 +20,6 @@ public class ConfigBinder extends AbstractModule {
                 .toInstance(configContext.getSubContext("jwt"));
 
         bind(ConfigContext.class)
-                .annotatedWith(Names.named("repository"))
-                .toInstance(configContext.getSubContext("repository"));
-
-        bind(ConfigContext.class)
                 .toInstance(configContext);
     }
 }

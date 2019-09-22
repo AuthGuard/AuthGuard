@@ -7,7 +7,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auther.config.ConfigContext;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.auther.service.JTIProvider;
+import org.auther.service.JtiProvider;
 import org.auther.service.JwtProvider;
 import org.auther.service.model.AccountBO;
 import org.auther.service.model.TokensBO;
@@ -15,14 +15,14 @@ import org.auther.service.model.TokensBO;
 import java.util.Optional;
 
 public class JwtProviderImpl implements JwtProvider {
-    private final JTIProvider jtiProvider;
-    private final JWTConfig jwtConfig;
+    private final JtiProvider jtiProvider;
+    private final JwtConfig jwtConfig;
     private final TokenGenerator tokenGenerator;
 
     @Inject
-    public JwtProviderImpl(@Named("jwt") final ConfigContext configContext, final JTIProvider jtiProvider) {
+    public JwtProviderImpl(@Named("jwt") final ConfigContext configContext, final JtiProvider jtiProvider) {
         this.jtiProvider = jtiProvider;
-        this.jwtConfig = new JWTConfig(configContext);
+        this.jwtConfig = new JwtConfig(configContext);
         this.tokenGenerator = new TokenGenerator(jwtConfig);
     }
 
@@ -30,7 +30,7 @@ public class JwtProviderImpl implements JwtProvider {
     public TokensBO generateToken(final AccountBO account) {
         final JWTCreator.Builder tokenBuilder = tokenGenerator.generateUnsignedToken(account);
 
-        if (jwtConfig.useJTI()) {
+        if (jwtConfig.useJti()) { // TODO move to token generator
             tokenBuilder.withJWTId(jtiProvider.next());
         }
 
@@ -49,7 +49,7 @@ public class JwtProviderImpl implements JwtProvider {
     public Optional<String> validateToken(final String token) {
         return decodeAndVerify(token)
                 .map(decodedJWT -> {
-                    if (jwtConfig.useJTI()) {
+                    if (jwtConfig.useJti()) {
                         if (jtiProvider.validate(decodedJWT.getId())) {
                             return token;
                         } else {
@@ -61,7 +61,7 @@ public class JwtProviderImpl implements JwtProvider {
                 });
     }
 
-    Optional<DecodedJWT> decodeAndVerify(final String token) {
+    private Optional<DecodedJWT> decodeAndVerify(final String token) {
         try {
             return Optional.of(JWT.decode(token))
                     .map(jwtConfig.verifier()::verify);

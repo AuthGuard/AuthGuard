@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class BasicJTIProviderTest {
+class BasicJtiProviderTest {
     private final BasicJTIProvider provider = new BasicJTIProvider();
 
     @Test

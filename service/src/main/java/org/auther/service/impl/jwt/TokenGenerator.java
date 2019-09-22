@@ -8,21 +8,22 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 
-public class TokenGenerator {
-    private final JWTConfig jwtConfig;
+class TokenGenerator {
+    private final JwtConfig jwtConfig;
 
-    public TokenGenerator(final JWTConfig jwtConfig) {
+    TokenGenerator(final JwtConfig jwtConfig) {
         this.jwtConfig = jwtConfig;
     }
 
     JWTCreator.Builder generateUnsignedToken(final AccountBO account) {
         final LocalDateTime now = LocalDateTime.now();
-        final LocalDateTime exp = now.plusMinutes(20);
+        final LocalDateTime exp = now.plus(jwtConfig.tokenLife());
 
         ZoneId.systemDefault().getRules().getOffset(now);
 
         return JWT.create()
                 .withIssuer(jwtConfig.issuer())
+                .withSubject(account.getId())
                 // TODO properly handle timezones
                 .withIssuedAt(Date.from(now.toInstant(ZoneId.systemDefault().getRules().getOffset(now))))
                 .withExpiresAt(Date.from(exp.toInstant(ZoneId.systemDefault().getRules().getOffset(now))));
@@ -30,10 +31,12 @@ public class TokenGenerator {
 
     JWTCreator.Builder generateUnsignedRefreshToken(final AccountBO account) {
         final LocalDateTime now = LocalDateTime.now();
-        final LocalDateTime exp = now.plusDays(1);
+        final LocalDateTime exp = now.plus(jwtConfig.refreshTokenLife());
 
         return JWT.create()
                 .withIssuer(jwtConfig.issuer())
+                .withSubject(account.getId())
+                // TODO properly handle timezones
                 .withIssuedAt(Date.from(now.toInstant(ZoneId.systemDefault().getRules().getOffset(now))))
                 .withExpiresAt(Date.from(exp.toInstant(ZoneId.systemDefault().getRules().getOffset(now))));
     }

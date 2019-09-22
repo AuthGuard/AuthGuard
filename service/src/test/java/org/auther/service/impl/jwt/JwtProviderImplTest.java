@@ -5,7 +5,7 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auther.config.ConfigContext;
-import org.auther.service.JTIProvider;
+import org.auther.service.JtiProvider;
 import org.auther.service.model.AccountBO;
 import org.auther.service.model.TokensBO;
 import org.jeasy.random.EasyRandom;
@@ -25,7 +25,7 @@ class JwtProviderImplTest {
     private static final String ISSUER = "test";
 
     private ConfigContext configContext;
-    private JTIProvider jtiProvider;
+    private JtiProvider jtiProvider;
     private JwtProviderImpl jwtProvider;
 
     private final static EasyRandom RANDOM = new EasyRandom();
@@ -34,20 +34,24 @@ class JwtProviderImplTest {
         Mockito.when(configContext.getAsString("algorithm")).thenReturn(ALGORITHM);
         Mockito.when(configContext.getAsString("key")).thenReturn(KEY);
         Mockito.when(configContext.getAsString("issuer")).thenReturn(ISSUER);
-        Mockito.when(configContext.getAsBoolean("strategy.useJTI")).thenReturn(false);
+        Mockito.when(configContext.getAsBoolean("strategy.useJti")).thenReturn(false);
+        Mockito.when(configContext.getAsString("tokenLife")).thenReturn("20m");
+        Mockito.when(configContext.getAsString("refreshTokenLife")).thenReturn("2d");
     }
 
     private void jtiConfig() {
         Mockito.when(configContext.getAsString("algorithm")).thenReturn(ALGORITHM);
         Mockito.when(configContext.getAsString("key")).thenReturn(KEY);
         Mockito.when(configContext.getAsString("issuer")).thenReturn(ISSUER);
-        Mockito.when(configContext.getAsBoolean("strategy.useJTI")).thenReturn(true);
+        Mockito.when(configContext.getAsBoolean("strategy.useJti")).thenReturn(true);
+        Mockito.when(configContext.getAsString("tokenLife")).thenReturn("20m");
+        Mockito.when(configContext.getAsString("refreshTokenLife")).thenReturn("2d");
     }
 
     @BeforeAll
     void setup() {
         configContext = Mockito.mock(ConfigContext.class);
-        jtiProvider = Mockito.mock(JTIProvider.class);
+        jtiProvider = Mockito.mock(JtiProvider.class);
 
         jwtProvider = new JwtProviderImpl(configContext, jtiProvider);
     }
@@ -68,11 +72,11 @@ class JwtProviderImplTest {
     }
 
     @Test
-    void generateWithJTI() {
+    void generateWithJti() {
         jtiConfig();
 
         final String jti = UUID.randomUUID().toString();
-        Mockito.when(configContext.getAsBoolean("strategy.useJTI")).thenReturn(true);
+        Mockito.when(configContext.getAsBoolean("strategy.useJti")).thenReturn(true);
         Mockito.when(jtiProvider.next()).thenReturn(jti);
 
         final TokensBO tokens = getToken();
@@ -98,7 +102,7 @@ class JwtProviderImplTest {
     }
 
     @Test
-    void validateWithJTI() {
+    void validateWithJti() {
         jtiConfig();
 
         final String jti = UUID.randomUUID().toString();

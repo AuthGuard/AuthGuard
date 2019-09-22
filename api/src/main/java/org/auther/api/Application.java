@@ -21,7 +21,7 @@ public class Application {
                 .start(3000);
 
         final Injector injector = Guice.createInjector(new MappersBinder(), new ConfigBinder(),
-                new ServicesBinder(), new JWTBinder(), new DALBinder());
+                new ServicesBinder(), new JwtBinder(), new DalBinder());
 
         app.before(context -> context.attribute("time", System.currentTimeMillis()));
 
