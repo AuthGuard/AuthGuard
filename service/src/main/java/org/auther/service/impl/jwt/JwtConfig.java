@@ -17,6 +17,8 @@ class JwtConfig {
     private static final String KEY_CONFIG_PROPERTY = "key";
     private static final String ISSUER_CONFIG_PROPERTY = "issuer";
     private static final String JTI_CONFIG_PROPERTY = "strategy.useJti";
+    private static final String PERMISSIONS_CONFIG_PROPERTY = "strategy.includePermissions";
+    private static final String SCOPES_CONFIG_PROPERTY = "strategy.includeScopes";
     private static final String TOKEN_LIFE_PROPERTY = "tokenLife";
     private static final String REFRESH_TOKEN_LIFE_PROPERTY = "refreshTokenLife";
 
@@ -67,6 +69,14 @@ class JwtConfig {
 
     boolean useJti() {
         return configContext.getAsBoolean(JTI_CONFIG_PROPERTY);
+    }
+
+    boolean includePermissions() {
+        return configContext.getAsBoolean(PERMISSIONS_CONFIG_PROPERTY);
+    }
+
+    boolean includeScopes() {
+        return configContext.getAsBoolean(SCOPES_CONFIG_PROPERTY);
     }
 
     Duration tokenLife() {

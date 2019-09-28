@@ -46,17 +46,13 @@ public class JwtProviderImpl implements JwtProvider {
     }
 
     @Override
-    public Optional<String> validateToken(final String token) {
+    public Optional<DecodedJWT> validateToken(final String token) {
         return decodeAndVerify(token)
-                .map(decodedJWT -> {
+                .map(decoded -> {
                     if (jwtConfig.useJti()) {
-                        if (jtiProvider.validate(decodedJWT.getId())) {
-                            return token;
-                        } else {
-                            return null;
-                        }
+                        return jtiProvider.validate(decoded.getId()) ? decoded : null;
                     } else {
-                        return token;
+                        return decoded;
                     }
                 });
     }

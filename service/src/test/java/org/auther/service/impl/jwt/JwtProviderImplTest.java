@@ -4,14 +4,18 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.auth0.jwt.interfaces.Verification;
 import com.auther.config.ConfigContext;
 import org.auther.service.JtiProvider;
 import org.auther.service.model.AccountBO;
+import org.auther.service.model.PermissionBO;
 import org.auther.service.model.TokensBO;
 import org.jeasy.random.EasyRandom;
+import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,9 +32,9 @@ class JwtProviderImplTest {
     private JtiProvider jtiProvider;
     private JwtProviderImpl jwtProvider;
 
-    private final static EasyRandom RANDOM = new EasyRandom();
+    private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
 
-    private void nonJtiConfig() {
+    private void basicConfig() {
         Mockito.when(configContext.getAsString("algorithm")).thenReturn(ALGORITHM);
         Mockito.when(configContext.getAsString("key")).thenReturn(KEY);
         Mockito.when(configContext.getAsString("issuer")).thenReturn(ISSUER);
@@ -40,12 +44,16 @@ class JwtProviderImplTest {
     }
 
     private void jtiConfig() {
-        Mockito.when(configContext.getAsString("algorithm")).thenReturn(ALGORITHM);
-        Mockito.when(configContext.getAsString("key")).thenReturn(KEY);
-        Mockito.when(configContext.getAsString("issuer")).thenReturn(ISSUER);
+        basicConfig();
+
         Mockito.when(configContext.getAsBoolean("strategy.useJti")).thenReturn(true);
-        Mockito.when(configContext.getAsString("tokenLife")).thenReturn("20m");
-        Mockito.when(configContext.getAsString("refreshTokenLife")).thenReturn("2d");
+    }
+
+    private void permissionsAndScopesConfig() {
+        basicConfig();
+
+        Mockito.when(configContext.getAsBoolean("strategy.includePermissions")).thenReturn(true);
+        Mockito.when(configContext.getAsBoolean("strategy.includeScopes")).thenReturn(true);
     }
 
     @BeforeAll
@@ -58,17 +66,18 @@ class JwtProviderImplTest {
 
     @Test
     void generate() {
-        nonJtiConfig();
+        basicConfig();
 
-        final TokensBO tokens = getToken();
+        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final TokensBO tokens = getToken(account);
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
         assertThat(tokens.getRefreshToken()).isNotNull();
         assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
 
-        verifyToken(tokens.getToken());
-        verifyToken(tokens.getRefreshToken());
+        verifyToken(tokens.getToken(), account.getId(), null, null, null);
+        verifyToken(tokens.getRefreshToken(), account.getId(), null, null, null);
     }
 
     @Test
@@ -79,26 +88,46 @@ class JwtProviderImplTest {
         Mockito.when(configContext.getAsBoolean("strategy.useJti")).thenReturn(true);
         Mockito.when(jtiProvider.next()).thenReturn(jti);
 
-        final TokensBO tokens = getToken();
+        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final TokensBO tokens = getToken(account);
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
         assertThat(tokens.getRefreshToken()).isNotNull();
         assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
 
-        verifyToken(tokens.getToken(), jti);
-        verifyToken(tokens.getRefreshToken());
+        verifyToken(tokens.getToken(), account.getId(), jti, null, null);
+        verifyToken(tokens.getRefreshToken(), account.getId(), null, null, null);
+    }
+
+    @Test
+    void generateWithPermissionsAndScopes() {
+        permissionsAndScopesConfig();
+
+        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final TokensBO tokens = getToken(account);
+
+        assertThat(tokens).isNotNull();
+        assertThat(tokens.getToken()).isNotNull();
+        assertThat(tokens.getRefreshToken()).isNotNull();
+        assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
+
+        System.out.println(tokens);
+
+        verifyToken(tokens.getToken(), account.getId(), null, account.getPermissions(), account.getScopes());
+        verifyToken(tokens.getRefreshToken(), account.getId(), null, null, null);
     }
 
     @Test
     void validate() {
-        nonJtiConfig();
+        basicConfig();
 
-        final TokensBO tokens = getToken();
-        final Optional<String> validatedToken = jwtProvider.validateToken(tokens.getToken());
+        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final TokensBO tokens = getToken(account);
+        final Optional<DecodedJWT> validatedToken = jwtProvider.validateToken(tokens.getToken());
 
         assertThat(validatedToken).isNotEmpty();
-        assertThat(validatedToken.get()).isEqualTo(tokens.getToken());
+        verifyToken(validatedToken.get(), account.getId(), null, null, null);
     }
 
     @Test
@@ -110,11 +139,12 @@ class JwtProviderImplTest {
         Mockito.when(jtiProvider.next()).thenReturn(jti);
         Mockito.when(jtiProvider.validate(jti)).thenReturn(true);
 
-        final TokensBO tokens = getToken();
-        final Optional<String> validatedToken = jwtProvider.validateToken(tokens.getToken());
+        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final TokensBO tokens = getToken(account);
+        final Optional<DecodedJWT> validatedToken = jwtProvider.validateToken(tokens.getToken());
 
         assertThat(validatedToken).isNotEmpty();
-        assertThat(validatedToken.get()).isEqualTo(tokens.getToken());
+        verifyToken(validatedToken.get(), account.getId(), jti, null, null);
     }
 
     @Test
@@ -126,42 +156,80 @@ class JwtProviderImplTest {
         Mockito.when(jtiProvider.next()).thenReturn(jti);
         Mockito.when(jtiProvider.validate(jti)).thenReturn(false);
 
-        final TokensBO tokens = getToken();
-        final Optional<String> validatedToken = jwtProvider.validateToken(tokens.getToken());
+        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final TokensBO tokens = getToken(account);
+        final Optional<DecodedJWT> validatedToken = jwtProvider.validateToken(tokens.getToken());
 
         assertThat(validatedToken).isEmpty();
     }
 
     @Test
     void validateWithAlgNone() {
-        final TokensBO tokens = getToken();
+        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final TokensBO tokens = getToken(account);
         final String payload = tokens.getToken().split("\\.")[1];
         final String maliciousToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." + payload + ".signature";
 
         assertThat(jwtProvider.validateToken(maliciousToken)).isEmpty();
     }
 
-    private TokensBO getToken() {
-        return jwtProvider.generateToken(RANDOM.nextObject(AccountBO.class));
+    @Test
+    void validateWithPermissionsAndScopes() {
+        permissionsAndScopesConfig();
+
+        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final TokensBO tokens = getToken(account);
+        final Optional<DecodedJWT> validatedToken = jwtProvider.validateToken(tokens.getToken());
+
+        assertThat(validatedToken).isNotEmpty();
+        verifyToken(validatedToken.get(), account.getId(), null, account.getPermissions(), account.getScopes());
     }
 
-    private void verifyToken(final String token) {
-        final JWTVerifier verifier = JWT.require(Algorithm.HMAC256(KEY))
+    private TokensBO getToken(final AccountBO account) {
+        return jwtProvider.generateToken(account);
+    }
+
+    private void verifyToken(final String token, final String subject, final String jti, final List<PermissionBO> permissions,
+                             final List<String> scopes) {
+        final Verification verifier = JWT.require(Algorithm.HMAC256(KEY))
                 .withIssuer(ISSUER)
-                .build();
+                .withSubject(subject);
 
-        verifier.verify(token);
+        if (jti != null) {
+            verifier.withJWTId(jti);
+        }
+
+        final DecodedJWT decodedJWT = verifier.build().verify(token);
+
+        if (permissions != null) {
+            assertThat(decodedJWT.getClaim("permissions").asArray(String.class)).hasSameSizeAs(permissions);
+        }
+
+        if (scopes != null) {
+            assertThat(decodedJWT.getClaim("scopes").asArray(String.class)).containsExactlyInAnyOrder(scopes.toArray(new String[0]));
+        }
     }
 
-    private void verifyToken(final String token, final String jti) {
-        final DecodedJWT decodedJWT = JWT.decode(token);
-
+    private void verifyToken(final DecodedJWT decodedJWT, final String subject, final String jti, final List<PermissionBO> permissions,
+                             final List<String> scopes) {
         final JWTVerifier verifier = JWT.require(Algorithm.HMAC256(KEY))
                 .build();
 
         verifier.verify(decodedJWT);
 
         assertThat(decodedJWT.getIssuer()).isEqualTo(ISSUER);
-        assertThat(decodedJWT.getId()).isEqualTo(jti);
+        assertThat(decodedJWT.getSubject()).isEqualTo(subject);
+
+        if (jti != null) {
+            assertThat(decodedJWT.getId()).isEqualTo(jti);
+        }
+
+        if (permissions != null) {
+            assertThat(decodedJWT.getClaim("permissions").asArray(String.class)).hasSameSizeAs(permissions);
+        }
+
+        if (scopes != null) {
+            assertThat(decodedJWT.getClaim("scopes").asArray(String.class)).containsExactlyInAnyOrder(scopes.toArray(new String[0]));
+        }
     }
 }

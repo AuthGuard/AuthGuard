@@ -1,5 +1,6 @@
 package org.auther.service;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import org.auther.service.model.AccountBO;
 import org.auther.service.model.TokensBO;
 
@@ -20,7 +21,7 @@ public interface JwtProvider {
     /**
      * Validate that a token is valid.
      * @param token The JWT.
-     * @return An empty optional to signal failure, or the same token.
+     * @return An empty optional to signal failure, or the token decoded.
      */
-    Optional<String> validateToken(String token);
+    Optional<DecodedJWT> validateToken(String token);
 }
