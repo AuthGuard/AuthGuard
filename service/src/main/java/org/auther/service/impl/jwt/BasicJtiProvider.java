@@ -9,11 +9,11 @@ import java.util.concurrent.ConcurrentSkipListSet;
 /**
  * This class is only here until a proper implementation is available
  */
-public class BasicJTIProvider implements JtiProvider {
+public class BasicJtiProvider implements JtiProvider {
     private final Set<String> generatedIds;
     private final Set<String> usedIds;
 
-    public BasicJTIProvider() {
+    public BasicJtiProvider() {
         usedIds = new ConcurrentSkipListSet<>();
         generatedIds = new ConcurrentSkipListSet<>();
     }

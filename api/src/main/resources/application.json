@@ -7,7 +7,10 @@
       "refreshTokenLife": "1d",
       "issuer": "Authguard",
       "strategy": {
-        "useJTI": true
+        "useJTI": true,
+        "includePermissions": true,
+        "includeRoles": true,
+        "includeScopes": true
       },
       "allowedAlgorithms": ["HS256"],
       "trustedIssuers": ["self"]

@@ -8,4 +8,6 @@ public interface ConfigContext {
     boolean getAsBoolean(String key);
 
     ConfigContext getSubContext(String key);
+
+    Object getAsConfigBean(String key, Class<?> clazz);
 }

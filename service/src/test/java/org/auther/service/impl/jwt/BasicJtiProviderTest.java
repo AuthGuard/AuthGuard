@@ -1,12 +1,11 @@
 package org.auther.service.impl.jwt;
 
-import org.auther.service.impl.jwt.BasicJTIProvider;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class BasicJtiProviderTest {
-    private final BasicJTIProvider provider = new BasicJTIProvider();
+    private final BasicJtiProvider provider = new BasicJtiProvider();
 
     @Test
     void generate() {
