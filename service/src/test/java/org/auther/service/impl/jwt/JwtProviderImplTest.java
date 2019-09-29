@@ -43,15 +43,15 @@ class JwtProviderImplTest {
         Mockito.when(configContext.getAsString("refreshTokenLife")).thenReturn("2d");
     }
 
-    private void jtiConfig() {
-        basicConfig();
+    private void signedRefreshTokensConfig() {
+        Mockito.when(configContext.getAsBoolean("strategy.signedRefreshTokens")).thenReturn(true);
+    }
 
+    private void jtiConfig() {
         Mockito.when(configContext.getAsBoolean("strategy.useJti")).thenReturn(true);
     }
 
     private void permissionsAndScopesConfig() {
-        basicConfig();
-
         Mockito.when(configContext.getAsBoolean("strategy.includePermissions")).thenReturn(true);
         Mockito.when(configContext.getAsBoolean("strategy.includeScopes")).thenReturn(true);
     }
@@ -77,12 +77,28 @@ class JwtProviderImplTest {
         assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
 
         verifyToken(tokens.getToken(), account.getId(), null, null, null);
+    }
+
+    @Test
+    void generateWithSignedRefreshToken() {
+        basicConfig();
+        signedRefreshTokensConfig();
+
+        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final TokensBO tokens = getToken(account);
+
+        assertThat(tokens).isNotNull();
+        assertThat(tokens.getToken()).isNotNull();
+        assertThat(tokens.getRefreshToken()).isNotNull();
+        assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
+
+        verifyToken(tokens.getToken(), account.getId(), null, null, null);
         verifyToken(tokens.getRefreshToken(), account.getId(), null, null, null);
     }
 
     @Test
     void generateWithJti() {
-        jtiConfig();
+        basicConfig();
 
         final String jti = UUID.randomUUID().toString();
         Mockito.when(configContext.getAsBoolean("strategy.useJti")).thenReturn(true);
@@ -97,11 +113,11 @@ class JwtProviderImplTest {
         assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
 
         verifyToken(tokens.getToken(), account.getId(), jti, null, null);
-        verifyToken(tokens.getRefreshToken(), account.getId(), null, null, null);
     }
 
     @Test
     void generateWithPermissionsAndScopes() {
+        basicConfig();
         permissionsAndScopesConfig();
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
@@ -112,10 +128,7 @@ class JwtProviderImplTest {
         assertThat(tokens.getRefreshToken()).isNotNull();
         assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
 
-        System.out.println(tokens);
-
         verifyToken(tokens.getToken(), account.getId(), null, account.getPermissions(), account.getScopes());
-        verifyToken(tokens.getRefreshToken(), account.getId(), null, null, null);
     }
 
     @Test
@@ -175,6 +188,7 @@ class JwtProviderImplTest {
 
     @Test
     void validateWithPermissionsAndScopes() {
+        basicConfig();
         permissionsAndScopesConfig();
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);

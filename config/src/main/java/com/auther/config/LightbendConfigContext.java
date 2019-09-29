@@ -1,6 +1,7 @@
 package com.auther.config;
 
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigBeanFactory;
 import com.typesafe.config.ConfigFactory;
 
 public class LightbendConfigContext implements ConfigContext {
@@ -32,6 +33,11 @@ public class LightbendConfigContext implements ConfigContext {
     @Override
     public ConfigContext getSubContext(final String key) {
         return new LightbendConfigContext(config.getConfig(key));
+    }
+
+    @Override
+    public Object getAsConfigBean(final String key, final Class<?> clazz) {
+        return ConfigBeanFactory.create(config.getConfig(key), clazz);
     }
 
     @Override

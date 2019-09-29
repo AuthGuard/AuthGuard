@@ -15,29 +15,30 @@ import org.auther.service.model.TokensBO;
 import java.util.Optional;
 
 public class JwtProviderImpl implements JwtProvider {
-    private final JtiProvider jtiProvider;
+    private final JtiProvider jti;
     private final JwtConfig jwtConfig;
     private final TokenGenerator tokenGenerator;
 
     @Inject
-    public JwtProviderImpl(@Named("jwt") final ConfigContext configContext, final JtiProvider jtiProvider) {
-        this.jtiProvider = jtiProvider;
+    public JwtProviderImpl(@Named("jwt") final ConfigContext configContext, final JtiProvider jti) {
+        this.jti = jti;
         this.jwtConfig = new JwtConfig(configContext);
-        this.tokenGenerator = new TokenGenerator(jwtConfig);
+        this.tokenGenerator = new TokenGenerator(jwtConfig, jti);
     }
 
     @Override
     public TokensBO generateToken(final AccountBO account) {
         final JWTCreator.Builder tokenBuilder = tokenGenerator.generateUnsignedToken(account);
 
-        if (jwtConfig.useJti()) { // TODO move to token generator
-            tokenBuilder.withJWTId(jtiProvider.next());
-        }
-
         final String token = tokenBuilder.sign(jwtConfig.algorithm());
 
-        final String refreshToken = tokenGenerator.generateUnsignedRefreshToken(account)
-                .sign(jwtConfig.algorithm());
+        final String refreshToken;
+        if (jwtConfig.signedRefreshTokens()) {
+            refreshToken = tokenGenerator.generateUnsignedRefreshToken(account)
+                    .sign(jwtConfig.algorithm());
+        } else {
+            refreshToken = tokenGenerator.generateUnsignedRefreshToken();
+        }
 
         return TokensBO.builder()
                 .token(token)
@@ -50,7 +51,7 @@ public class JwtProviderImpl implements JwtProvider {
         return decodeAndVerify(token)
                 .map(decoded -> {
                     if (jwtConfig.useJti()) {
-                        return jtiProvider.validate(decoded.getId()) ? decoded : null;
+                        return jti.validate(decoded.getId()) ? decoded : null;
                     } else {
                         return decoded;
                     }
