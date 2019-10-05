@@ -1,4 +1,4 @@
-package org.auther.api.routes;
+package org.auther.api;
 
 import com.auther.config.ConfigContext;
 import com.google.inject.Inject;

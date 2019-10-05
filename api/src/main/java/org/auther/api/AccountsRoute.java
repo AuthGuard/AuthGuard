@@ -1,4 +1,4 @@
-package org.auther.api.routes;
+package org.auther.api;
 
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
@@ -14,12 +14,12 @@ import java.util.stream.Collectors;
 
 import static io.javalin.apibuilder.ApiBuilder.post;
 
-public class UsersRoute implements EndpointGroup {
+public class AccountsRoute implements EndpointGroup {
     private final AccountsService accountsService;
     private final RestMapper restMapper;
 
     @Inject
-    UsersRoute(final AccountsService accountsService, final RestMapper restMapper) {
+    AccountsRoute(final AccountsService accountsService, final RestMapper restMapper) {
         this.accountsService = accountsService;
         this.restMapper = restMapper;
     }
@@ -38,7 +38,7 @@ public class UsersRoute implements EndpointGroup {
                 .map(restMapper::toDTO);
 
         if (createdAccount.isPresent()) {
-            context.json(createdAccount.get());
+            context.status(201).json(createdAccount.get());
         } else {
             context.status(400).result("Failed to create account");
         }
