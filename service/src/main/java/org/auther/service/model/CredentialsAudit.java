@@ -2,8 +2,6 @@ package org.auther.service.model;
 
 import org.immutables.value.Value;
 
-import javax.annotation.Nullable;
-
 @Value.Immutable
 @BOStyle
 public interface CredentialsAudit {
@@ -11,7 +9,7 @@ public interface CredentialsAudit {
     String getCredentialId();
     Action getAction();
     String getUsername();
-    @Nullable HashedPasswordBO getPassword();
+    HashedPasswordBO getPassword();
 
     enum Action {
         ATTEMPT,

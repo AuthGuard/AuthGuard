@@ -10,18 +10,25 @@ class TestServer {
     private int port;
 
     private final Injector injector;
+    private final Javalin app;
+
+    private Server server;
 
     TestServer() {
         injector = Guice.createInjector(new MocksBinder(), new MappersBinder(), new ConfigBinder());
+        app = Javalin.create();
     }
 
     void start() {
-        final Javalin app = Javalin.create();
-        final Server server = new Server(injector);
+        server = new Server(injector);
 
         this.port = app.port();
 
         server.start(app);
+    }
+
+    void stop() {
+        app.stop();
     }
 
     <T> T getMock(Class<T> clazz) {

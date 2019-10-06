@@ -5,7 +5,6 @@ import io.restassured.response.ValidatableResponse;
 import org.auther.api.dto.CredentialsDTO;
 import org.auther.service.CredentialsService;
 import org.auther.service.model.CredentialsBO;
-import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
