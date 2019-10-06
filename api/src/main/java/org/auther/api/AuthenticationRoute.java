@@ -1,4 +1,4 @@
-package org.auther.api.routes;
+package org.auther.api;
 
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;

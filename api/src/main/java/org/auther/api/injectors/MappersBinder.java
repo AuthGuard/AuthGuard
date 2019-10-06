@@ -1,8 +1,8 @@
 package org.auther.api.injectors;
 
 import com.google.inject.AbstractModule;
-import org.auther.api.routes.RestMapper;
-import org.auther.api.routes.RestMapperImpl;
+import org.auther.api.RestMapper;
+import org.auther.api.RestMapperImpl;
 import org.auther.service.impl.mappers.ServiceMapper;
 import org.auther.service.impl.mappers.ServiceMapperImpl;
 

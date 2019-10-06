@@ -1,19 +1,16 @@
-package org.auther.api.routes;
+package org.auther.api;
 
-import org.auther.api.dto.AccountDTO;
-import org.auther.api.dto.PermissionDTO;
-import org.auther.api.dto.PermissionGroupDTO;
-import org.auther.api.dto.TokensDTO;
-import org.auther.service.model.AccountBO;
-import org.auther.service.model.PermissionBO;
-import org.auther.service.model.PermissionGroupBO;
-import org.auther.service.model.TokensBO;
+import org.auther.api.dto.*;
+import org.auther.service.model.*;
 import org.mapstruct.Mapper;
 
 @Mapper
 public interface RestMapper {
     AccountBO toBO(AccountDTO accountDTO);
     AccountDTO toDTO(AccountBO accountBO);
+
+    CredentialsBO toBO(CredentialsDTO credentialsDTO);
+    CredentialsDTO toDTO(CredentialsBO credentialsBO);
 
     TokensBO toBO(TokensDTO tokensDTO);
     TokensDTO toDTO(TokensBO tokensBO);
