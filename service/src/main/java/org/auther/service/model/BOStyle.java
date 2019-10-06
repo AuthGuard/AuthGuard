@@ -12,7 +12,8 @@ import java.lang.annotation.Target;
 @Value.Style(
         get = {"is*", "get*"}, // Detect 'get' and 'is' prefixes in accessor methods
         typeImmutable = "*BO", // Suffix with BO
-        jdkOnly = true // Prevent the use of Guava's collections, Mapstruct doesn't like them
+        jdkOnly = true, // Prevent the use of Guava's collections, Mapstruct doesn't like them
+        validationMethod = Value.Style.ValidationMethod.NONE
 )
 @interface BOStyle {
 }

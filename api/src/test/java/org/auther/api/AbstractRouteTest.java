@@ -1,6 +1,7 @@
 package org.auther.api;
 
 import org.jeasy.random.EasyRandom;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 
@@ -31,6 +32,14 @@ abstract class AbstractRouteTest {
     @BeforeAll
     void startServer() {
         server.start();
+    }
+
+    /**
+     * This is ugly but gets the job done for now.
+     */
+    @AfterAll
+    void stopServer() {
+        server.stop();
     }
 
     <T> T randomObject(final Class<T> clazz) {
