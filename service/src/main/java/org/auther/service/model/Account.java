@@ -8,6 +8,7 @@ import java.util.List;
 @BOStyle
 public interface Account {
     String getId();
+    String getCredentialsId();
     List<PermissionBO> getPermissions();
     List<String> getScopes();
     List<String> getRoles();

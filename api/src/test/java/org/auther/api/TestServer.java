@@ -24,7 +24,7 @@ class TestServer {
 
         this.port = app.port();
 
-        server.start(app);
+        server.start(app, app.port());
     }
 
     void stop() {
