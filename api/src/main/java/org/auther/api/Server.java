@@ -17,7 +17,7 @@ class Server {
         this.injector = injector;
     }
 
-    void start(final Javalin app) {
+    void start(final Javalin app, final int port) {
         app.before(context -> context.attribute("time", System.currentTimeMillis()));
 
         app.after(context -> {
@@ -41,7 +41,12 @@ class Server {
         // if we failed to process a request body
         app.exception(JsonMappingException.class, (e, context) -> context.status(422).result("Unprocessable entity"));
 
+        app.exception(Exception.class, (e, context) -> {
+            log.error("An exception was thrown {}", e);
+            context.status(500).result("Internal server error");
+        });
+
         // run
-        app.start();
+        app.start(port);
     }
 }

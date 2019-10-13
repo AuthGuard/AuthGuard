@@ -8,6 +8,7 @@ import java.util.List;
 @DOStyle
 public interface Account {
     String getId();
+    String getCredentialsId();
     List<String> getRoles();
     List<PermissionDO> getPermissions();
     List<String> getScopes();

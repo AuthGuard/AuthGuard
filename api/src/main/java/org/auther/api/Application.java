@@ -14,6 +14,6 @@ public class Application {
         final Injector injector = Guice.createInjector(new MappersBinder(), new ConfigBinder(),
                 new ServicesBinder(), new JwtBinder(), new DalBinder());
 
-        new Server(injector).start(Javalin.create().start(3000));
+        new Server(injector).start(Javalin.create(), 3000);
     }
 }
