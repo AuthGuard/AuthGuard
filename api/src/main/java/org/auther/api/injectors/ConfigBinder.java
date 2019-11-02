@@ -4,6 +4,7 @@ import com.auther.config.ConfigContext;
 import com.auther.config.LightbendConfigContext;
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
+import org.auther.service.impl.jwt.config.ModifiableJwtConfig;
 
 public class ConfigBinder extends AbstractModule {
     private final ConfigContext configContext;
@@ -15,6 +16,8 @@ public class ConfigBinder extends AbstractModule {
 
     @Override
     protected void configure() {
+        Object jwtConfig = configContext.getAsConfigBean("jwt", ModifiableJwtConfig.class);
+
         bind(ConfigContext.class)
                 .annotatedWith(Names.named("jwt"))
                 .toInstance(configContext.getSubContext("jwt"));

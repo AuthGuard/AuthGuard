@@ -32,7 +32,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         if (parts[0].equals("Basic")) {
             return handleBasicAuthentication(parts[1])
-                    .map(jwtProvider::generateToken);
+                    .map((AccountBO account) -> jwtProvider.generateToken(account, JwtScenario.USER_TOKEN));
         } else {
             throw new ServiceException("Unsupported authorization scheme");
         }

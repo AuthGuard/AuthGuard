@@ -16,7 +16,7 @@ public interface JwtProvider {
      *                will be generated.
      * @return The generated tokens.
      */
-    TokensBO generateToken(AccountBO account);
+    TokensBO generateToken(AccountBO account, JwtScenario jwtScenario);
 
     /**
      * Validate that a token is valid.

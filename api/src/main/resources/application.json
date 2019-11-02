@@ -6,11 +6,13 @@
       "tokenLife": "20m",
       "refreshTokenLife": "1d",
       "issuer": "Authguard",
-      "strategy": {
-        "useJTI": true,
-        "includePermissions": true,
-        "includeRoles": true,
-        "includeScopes": true
+      "strategies": {
+        "regular": {
+          "useJti": true,
+          "includePermissions": true,
+          "includeRoles": true,
+          "includeScopes": true
+        }
       },
       "allowedAlgorithms": ["HS256"],
       "trustedIssuers": ["self"]
