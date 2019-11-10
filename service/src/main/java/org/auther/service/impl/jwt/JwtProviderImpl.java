@@ -1,46 +1,46 @@
 package org.auther.service.impl.jwt;
 
 import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTCreator;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.auther.config.ConfigContext;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import org.auther.service.JtiProvider;
 import org.auther.service.JwtProvider;
+import org.auther.service.JwtStrategy;
+import org.auther.service.config.ImmutableJwtConfig;
 import org.auther.service.model.AccountBO;
+import org.auther.service.model.TokenBuilderBO;
 import org.auther.service.model.TokensBO;
 
 import java.util.Optional;
 
 public class JwtProviderImpl implements JwtProvider {
     private final JtiProvider jti;
-    private final JwtConfig jwtConfig;
-    private final TokenGenerator tokenGenerator;
+    private final JwtStrategy strategy;
+
+    private final Algorithm algorithm;
+    private final JWTVerifier verifier;
 
     @Inject
-    public JwtProviderImpl(@Named("jwt") final ConfigContext configContext, final JtiProvider jti) {
+    public JwtProviderImpl(final ImmutableJwtConfig jwtConfig,
+                           final JwtStrategy strategy,
+                           final JtiProvider jti) {
         this.jti = jti;
-        this.jwtConfig = new JwtConfig(configContext);
-        this.tokenGenerator = new TokenGenerator(jwtConfig, jti);
+        this.strategy = strategy.configure(jti, new TokenGenerator(jwtConfig));
+        this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getKey());
+        this.verifier = JWT.require(algorithm).build();
     }
 
     @Override
     public TokensBO generateToken(final AccountBO account) {
-        final JWTCreator.Builder tokenBuilder = tokenGenerator.generateUnsignedToken(account);
-
-        final String token = tokenBuilder.sign(jwtConfig.algorithm());
-
-        final String refreshToken;
-        if (jwtConfig.signedRefreshTokens()) {
-            refreshToken = tokenGenerator.generateUnsignedRefreshToken(account)
-                    .sign(jwtConfig.algorithm());
-        } else {
-            refreshToken = tokenGenerator.generateUnsignedRefreshToken();
-        }
+        final TokenBuilderBO tokenBuilder = strategy.generateToken(account);
+        final String token = tokenBuilder.getBuilder().sign(algorithm);
+        final String refreshToken = strategy.generateRefreshToken(account);
 
         return TokensBO.builder()
+                .id(tokenBuilder.getId().orElse(null))
                 .token(token)
                 .refreshToken(refreshToken)
                 .build();
@@ -50,7 +50,7 @@ public class JwtProviderImpl implements JwtProvider {
     public Optional<DecodedJWT> validateToken(final String token) {
         return decodeAndVerify(token)
                 .map(decoded -> {
-                    if (jwtConfig.useJti()) {
+                    if (strategy.getConfig().getUseJti()) {
                         return jti.validate(decoded.getId()) ? decoded : null;
                     } else {
                         return decoded;
@@ -61,7 +61,7 @@ public class JwtProviderImpl implements JwtProvider {
     private Optional<DecodedJWT> decodeAndVerify(final String token) {
         try {
             return Optional.of(JWT.decode(token))
-                    .map(jwtConfig.verifier()::verify);
+                    .map(verifier::verify);
         } catch (final JWTVerificationException e) {
             return Optional.empty();
         }

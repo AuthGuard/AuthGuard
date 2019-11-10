@@ -1,19 +1,35 @@
 {
   "authguard": {
     "jwt": {
-      "algorithm": "HS256",
+      "algorithm": "HMAC256",
       "key": "FKvL11DI5rwgt51QgB3CVob3oWYrFNBzF0ROvu9Yaj8",
-      "tokenLife": "20m",
-      "refreshTokenLife": "1d",
       "issuer": "Authguard",
-      "strategy": {
-        "useJTI": true,
-        "includePermissions": true,
-        "includeRoles": true,
-        "includeScopes": true
+      "strategies": {
+        "accessToken": {
+          "tokenLife": "20m",
+          "refreshTokenLife": "1d",
+          "useJti": true,
+          "includePermissions": true,
+          "includeRoles": true,
+          "includeScopes": true
+        },
+        "idToken": {
+          "tokenLife": "1d",
+          "refreshTokenLife": "1d",
+          "useJti": true,
+          "includePermissions": true,
+          "includeRoles": true,
+          "includeScopes": true
+        }
       },
-      "allowedAlgorithms": ["HS256"],
+      "allowedAlgorithms": ["HMAC256"],
       "trustedIssuers": ["self"]
+    },
+    "authentication": {
+      "strategy": "idToken"
+    },
+    "authorization": {
+      "strategy": "accessToken"
     }
   }
 }

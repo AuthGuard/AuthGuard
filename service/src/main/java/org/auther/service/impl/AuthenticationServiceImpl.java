@@ -1,6 +1,7 @@
 package org.auther.service.impl;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.auther.service.*;
 import org.auther.service.exceptions.ServiceAuthorizationException;
 import org.auther.service.exceptions.ServiceException;
@@ -19,7 +20,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Inject
     public AuthenticationServiceImpl(final CredentialsService credentialsService, final AccountsService accountsService,
-                                     final SecurePassword securePassword, final JwtProvider jwtProvider) {
+                                     final SecurePassword securePassword,
+                                     @Named("authenticationTokenProvider") final JwtProvider jwtProvider) {
         this.credentialsService = credentialsService;
         this.accountsService = accountsService;
         this.securePassword = securePassword;
@@ -27,8 +29,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public Optional<TokensBO> authenticate(final String authHeader) {
-        final String[] parts = parseAuthorization(authHeader);
+    public Optional<TokensBO> authenticate(final String header) {
+        final String[] parts = parseAuthorization(header);
 
         if (parts[0].equals("Basic")) {
             return handleBasicAuthentication(parts[1])

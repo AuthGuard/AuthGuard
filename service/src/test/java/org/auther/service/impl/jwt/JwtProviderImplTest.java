@@ -1,14 +1,17 @@
 package org.auther.service.impl.jwt;
 
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Verification;
-import com.auther.config.ConfigContext;
 import org.auther.service.JtiProvider;
+import org.auther.service.JwtStrategy;
+import org.auther.service.config.*;
 import org.auther.service.model.AccountBO;
 import org.auther.service.model.PermissionBO;
+import org.auther.service.model.TokenBuilderBO;
 import org.auther.service.model.TokensBO;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
@@ -20,6 +23,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -28,45 +32,42 @@ class JwtProviderImplTest {
     private static final String KEY = "this secret is only for testing purposes";
     private static final String ISSUER = "test";
 
-    private ConfigContext configContext;
     private JtiProvider jtiProvider;
     private JwtProviderImpl jwtProvider;
+    private JwtStrategy jwtStrategy;
 
     private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
 
-    private void basicConfig() {
-        Mockito.when(configContext.getAsString("algorithm")).thenReturn(ALGORITHM);
-        Mockito.when(configContext.getAsString("key")).thenReturn(KEY);
-        Mockito.when(configContext.getAsString("issuer")).thenReturn(ISSUER);
-        Mockito.when(configContext.getAsBoolean("strategy.useJti")).thenReturn(false);
-        Mockito.when(configContext.getAsString("tokenLife")).thenReturn("20m");
-        Mockito.when(configContext.getAsString("refreshTokenLife")).thenReturn("2d");
+    // TODO clean up this config mess and use a resource file
+    private ModifiableJwtConfig jwtConfig() {
+        final ModifiableJwtConfig config = new ModifiableJwtConfig();
+
+        config.setAlgorithm(ALGORITHM);
+        config.setKey(KEY);
+        config.setIssuer(ISSUER);
+
+        return config;
     }
 
-    private void signedRefreshTokensConfig() {
-        Mockito.when(configContext.getAsBoolean("strategy.signedRefreshTokens")).thenReturn(true);
-    }
-
-    private void jtiConfig() {
-        Mockito.when(configContext.getAsBoolean("strategy.useJti")).thenReturn(true);
-    }
-
-    private void permissionsAndScopesConfig() {
-        Mockito.when(configContext.getAsBoolean("strategy.includePermissions")).thenReturn(true);
-        Mockito.when(configContext.getAsBoolean("strategy.includeScopes")).thenReturn(true);
-    }
-
-    @BeforeAll
-    void setup() {
-        configContext = Mockito.mock(ConfigContext.class);
+    private JwtProviderImpl newProviderInstance(final ImmutableStrategyConfig strategyConfig) {
         jtiProvider = Mockito.mock(JtiProvider.class);
+        jwtStrategy = Mockito.mock(JwtStrategy.class);
 
-        jwtProvider = new JwtProviderImpl(configContext, jtiProvider);
+        Mockito.when(jwtStrategy.configure(any(), any())).thenReturn(jwtStrategy);
+        Mockito.when(jwtStrategy.getConfig()).thenReturn(strategyConfig);
+
+        jwtProvider = new JwtProviderImpl(jwtConfig().toImmutable(), jwtStrategy, jtiProvider);
+
+        return jwtProvider;
     }
 
     @Test
     void generate() {
-        basicConfig();
+        final ImmutableStrategyConfig strategyConfig = ImmutableStrategyConfig.builder()
+                .useJti(false)
+                .build();
+
+        newProviderInstance(strategyConfig);
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
         final TokensBO tokens = getToken(account);
@@ -77,35 +78,22 @@ class JwtProviderImplTest {
         assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
 
         verifyToken(tokens.getToken(), account.getId(), null, null, null);
-    }
-
-    @Test
-    void generateWithSignedRefreshToken() {
-        basicConfig();
-        signedRefreshTokensConfig();
-
-        final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final TokensBO tokens = getToken(account);
-
-        assertThat(tokens).isNotNull();
-        assertThat(tokens.getToken()).isNotNull();
-        assertThat(tokens.getRefreshToken()).isNotNull();
-        assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
-
-        verifyToken(tokens.getToken(), account.getId(), null, null, null);
-        verifyToken(tokens.getRefreshToken(), account.getId(), null, null, null);
     }
 
     @Test
     void generateWithJti() {
-        basicConfig();
+        final ImmutableStrategyConfig strategyConfig = ImmutableStrategyConfig.builder()
+                .useJti(true)
+                .build();
+
+        newProviderInstance(strategyConfig);
 
         final String jti = UUID.randomUUID().toString();
-        Mockito.when(configContext.getAsBoolean("strategy.useJti")).thenReturn(true);
+
         Mockito.when(jtiProvider.next()).thenReturn(jti);
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final TokensBO tokens = getToken(account);
+        final TokensBO tokens = getToken(account, jti);
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
@@ -116,24 +104,12 @@ class JwtProviderImplTest {
     }
 
     @Test
-    void generateWithPermissionsAndScopes() {
-        basicConfig();
-        permissionsAndScopesConfig();
-
-        final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final TokensBO tokens = getToken(account);
-
-        assertThat(tokens).isNotNull();
-        assertThat(tokens.getToken()).isNotNull();
-        assertThat(tokens.getRefreshToken()).isNotNull();
-        assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
-
-        verifyToken(tokens.getToken(), account.getId(), null, account.getPermissions(), account.getScopes());
-    }
-
-    @Test
     void validate() {
-        basicConfig();
+        final ImmutableStrategyConfig strategyConfig = ImmutableStrategyConfig.builder()
+                .useJti(false)
+                .build();
+
+        newProviderInstance(strategyConfig);
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
         final TokensBO tokens = getToken(account);
@@ -145,7 +121,11 @@ class JwtProviderImplTest {
 
     @Test
     void validateWithJti() {
-        jtiConfig();
+        final ImmutableStrategyConfig strategyConfig = ImmutableStrategyConfig.builder()
+                .useJti(true)
+                .build();
+
+        newProviderInstance(strategyConfig);
 
         final String jti = UUID.randomUUID().toString();
 
@@ -153,7 +133,7 @@ class JwtProviderImplTest {
         Mockito.when(jtiProvider.validate(jti)).thenReturn(true);
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final TokensBO tokens = getToken(account);
+        final TokensBO tokens = getToken(account, jti);
         final Optional<DecodedJWT> validatedToken = jwtProvider.validateToken(tokens.getToken());
 
         assertThat(validatedToken).isNotEmpty();
@@ -162,7 +142,11 @@ class JwtProviderImplTest {
 
     @Test
     void validateWithJtiBlacklisted() {
-        jtiConfig();
+        final ImmutableStrategyConfig strategyConfig = ImmutableStrategyConfig.builder()
+                .useJti(true)
+                                .build();
+
+        newProviderInstance(strategyConfig);
 
         final String jti = UUID.randomUUID().toString();
 
@@ -170,7 +154,7 @@ class JwtProviderImplTest {
         Mockito.when(jtiProvider.validate(jti)).thenReturn(false);
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final TokensBO tokens = getToken(account);
+        final TokensBO tokens = getToken(account, jti);
         final Optional<DecodedJWT> validatedToken = jwtProvider.validateToken(tokens.getToken());
 
         assertThat(validatedToken).isEmpty();
@@ -178,6 +162,12 @@ class JwtProviderImplTest {
 
     @Test
     void validateWithAlgNone() {
+        final ImmutableStrategyConfig strategyConfig = ImmutableStrategyConfig.builder()
+                .useJti(false)
+                                .build();
+
+        newProviderInstance(strategyConfig);
+
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
         final TokensBO tokens = getToken(account);
         final String payload = tokens.getToken().split("\\.")[1];
@@ -186,20 +176,26 @@ class JwtProviderImplTest {
         assertThat(jwtProvider.validateToken(maliciousToken)).isEmpty();
     }
 
-    @Test
-    void validateWithPermissionsAndScopes() {
-        basicConfig();
-        permissionsAndScopesConfig();
+    private TokensBO getToken(final AccountBO account) {
+        final JWTCreator.Builder token = JWT.create()
+                .withIssuer(ISSUER)
+                .withSubject(account.getId());
 
-        final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final TokensBO tokens = getToken(account);
-        final Optional<DecodedJWT> validatedToken = jwtProvider.validateToken(tokens.getToken());
+        Mockito.when(jwtStrategy.generateToken(account)).thenReturn(TokenBuilderBO.builder().builder(token).build());
+        Mockito.when(jwtStrategy.generateRefreshToken(account)).thenReturn(RANDOM.nextObject(String.class));
 
-        assertThat(validatedToken).isNotEmpty();
-        verifyToken(validatedToken.get(), account.getId(), null, account.getPermissions(), account.getScopes());
+        return jwtProvider.generateToken(account);
     }
 
-    private TokensBO getToken(final AccountBO account) {
+    private TokensBO getToken(final AccountBO account, final String jti) {
+        final JWTCreator.Builder token = JWT.create()
+                .withJWTId(jti)
+                .withIssuer(ISSUER)
+                .withSubject(account.getId());
+
+        Mockito.when(jwtStrategy.generateToken(account)).thenReturn(TokenBuilderBO.builder().builder(token).build());
+        Mockito.when(jwtStrategy.generateRefreshToken(account)).thenReturn(RANDOM.nextObject(String.class));
+
         return jwtProvider.generateToken(account);
     }
 

@@ -36,8 +36,13 @@ public class LightbendConfigContext implements ConfigContext {
     }
 
     @Override
-    public Object getAsConfigBean(final String key, final Class<?> clazz) {
+    public <T> T getAsConfigBean(final String key, final Class<T> clazz) {
         return ConfigBeanFactory.create(config.getConfig(key), clazz);
+    }
+
+    @Override
+    public <T> T asConfigBean(final Class<T> clazz) {
+        return ConfigBeanFactory.create(config, clazz);
     }
 
     @Override

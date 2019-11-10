@@ -16,6 +16,7 @@ public class DalBinder extends AbstractModule {
         bind(AccountsRepository.class).to(AccountsRepositoryImpl.class);
         bind(PermissionsRepository.class).to(PermissionsRepositoryImpl.class);
         bind(RolesRepository.class).to(RolesRepositoryImpl.class);
+        bind(AccountTokensRepository.class).to(AccountTokensRepositoryImpl.class);
     }
 
 
@@ -154,6 +155,18 @@ public class DalBinder extends AbstractModule {
 
         @Override
         public Optional<RoleDO> update(final RoleDO role) {
+            return Optional.empty();
+        }
+    }
+
+    static class AccountTokensRepositoryImpl implements AccountTokensRepository {
+        @Override
+        public AccountTokenDO save(final AccountTokenDO tokenDO) {
+            return null;
+        }
+
+        @Override
+        public Optional<AccountTokenDO> getByToken(final String token) {
             return Optional.empty();
         }
     }

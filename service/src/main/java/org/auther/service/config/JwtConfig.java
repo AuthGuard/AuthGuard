@@ -1,4 +1,4 @@
-package org.auther.service.impl.jwt.experimental;
+package org.auther.service.config;
 
 
 import org.immutables.value.Value;
@@ -12,12 +12,10 @@ import java.util.List;
         beanFriendlyModifiables = true,
         validationMethod = Value.Style.ValidationMethod.NONE
 )
-public interface ExperimentalJwtConfig {
+public interface JwtConfig {
     String getAlgorithm();
     String getKey();
     String getIssuer();
-    String getTokenLife();
-    String getRefreshTokenLife();
     List<String> getAllowedAlgorithms();
     List<String> getTrustedIssuers();
 }

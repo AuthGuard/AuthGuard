@@ -9,5 +9,7 @@ public interface ConfigContext {
 
     ConfigContext getSubContext(String key);
 
-    Object getAsConfigBean(String key, Class<?> clazz);
+    <T> T getAsConfigBean(String key, Class<T> clazz);
+
+    <T> T asConfigBean(Class<T> clazz);
 }
