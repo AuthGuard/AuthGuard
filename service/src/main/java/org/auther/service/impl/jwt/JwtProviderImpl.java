@@ -8,10 +8,10 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.inject.Inject;
 import org.auther.service.JtiProvider;
 import org.auther.service.JwtProvider;
-import org.auther.service.JwtScenario;
 import org.auther.service.JwtStrategy;
-import org.auther.service.impl.jwt.config.ImmutableJwtConfig;
+import org.auther.service.config.ImmutableJwtConfig;
 import org.auther.service.model.AccountBO;
+import org.auther.service.model.TokenBuilderBO;
 import org.auther.service.model.TokensBO;
 
 import java.util.Optional;
@@ -28,17 +28,19 @@ public class JwtProviderImpl implements JwtProvider {
                            final JwtStrategy strategy,
                            final JtiProvider jti) {
         this.jti = jti;
-        this.strategy = strategy;
+        this.strategy = strategy.configure(jti, new TokenGenerator(jwtConfig));
         this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getKey());
         this.verifier = JWT.require(algorithm).build();
     }
 
     @Override
-    public TokensBO generateToken(final AccountBO account, final JwtScenario scenario) {
-        final String token = strategy.generateToken(account).sign(algorithm);
+    public TokensBO generateToken(final AccountBO account) {
+        final TokenBuilderBO tokenBuilder = strategy.generateToken(account);
+        final String token = tokenBuilder.getBuilder().sign(algorithm);
         final String refreshToken = strategy.generateRefreshToken(account);
 
         return TokensBO.builder()
+                .id(tokenBuilder.getId().orElse(null))
                 .token(token)
                 .refreshToken(refreshToken)
                 .build();

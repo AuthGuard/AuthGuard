@@ -1,42 +1,55 @@
 package org.auther.service.impl.jwt;
 
 import com.auth0.jwt.JWTCreator;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.auther.service.JtiProvider;
 import org.auther.service.JwtStrategy;
-import org.auther.service.impl.jwt.config.ImmutableStrategyConfig;
+import org.auther.service.config.ImmutableStrategyConfig;
 import org.auther.service.model.AccountBO;
 import org.auther.service.model.PermissionBO;
+import org.auther.service.model.TokenBuilderBO;
 
 public class AccessTokenStrategy implements JwtStrategy {
     private final ImmutableStrategyConfig strategyConfig;
-    private final JtiProvider jti;
-    private final TokenGenerator tokenGenerator;
+    private JtiProvider jti;
+    private TokenGenerator tokenGenerator;
 
-    public AccessTokenStrategy(final ImmutableStrategyConfig strategyConfig, final JtiProvider jti,
-                               final TokenGenerator tokenGenerator) {
+    @Inject
+    public AccessTokenStrategy(@Named("accessToken") final ImmutableStrategyConfig strategyConfig) {
         this.strategyConfig = strategyConfig;
-        this.jti = jti;
-        this.tokenGenerator = tokenGenerator;
     }
 
     @Override
-    public JWTCreator.Builder generateToken(final AccountBO account) {
-        final JWTCreator.Builder tokenBuilder = tokenGenerator.generateUnsignedToken(account, JwtConfigParser.parseDuration(strategyConfig.getTokenLife()));
+    public JwtStrategy configure(final JtiProvider jti, final TokenGenerator tokenGenerator) {
+        this.jti = jti;
+        this.tokenGenerator = tokenGenerator;
+
+        return this;
+    }
+
+    @Override
+    public TokenBuilderBO generateToken(final AccountBO account) {
+        final TokenBuilderBO.Builder tokenBuilder = TokenBuilderBO.builder();
+        final JWTCreator.Builder jwtBuilder = tokenGenerator.generateUnsignedToken(account,
+                JwtConfigParser.parseDuration(strategyConfig.getTokenLife()));
 
         if (strategyConfig.getUseJti()) {
-            tokenBuilder.withJWTId(jti.next());
+            final String id = jti.next();
+            jwtBuilder.withJWTId(id);
+            tokenBuilder.id(id);
         }
 
         if (strategyConfig.getIncludePermissions()) {
-            tokenBuilder.withArrayClaim("permissions", account.getPermissions().stream()
+            jwtBuilder.withArrayClaim("permissions", account.getPermissions().stream()
                     .map(this::permissionToString).toArray(String[]::new));
         }
 
         if (strategyConfig.getIncludeScopes()) {
-            tokenBuilder.withArrayClaim("scopes", account.getScopes().toArray(new String[0]));
+            jwtBuilder.withArrayClaim("scopes", account.getScopes().toArray(new String[0]));
         }
 
-        return tokenBuilder;
+        return tokenBuilder.builder(jwtBuilder).build();
     }
 
     @Override

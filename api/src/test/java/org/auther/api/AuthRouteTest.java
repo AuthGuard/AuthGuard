@@ -2,7 +2,7 @@ package org.auther.api;
 
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
-import org.auther.api.dto.AuthenticationRequestDTO;
+import org.auther.api.dto.AuthRequestDTO;
 import org.auther.api.dto.TokensDTO;
 import org.auther.service.AuthenticationService;
 import org.auther.service.model.TokensBO;
@@ -18,10 +18,10 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class AuthenticationRouteTest extends AbstractRouteTest {
+class AuthRouteTest extends AbstractRouteTest {
     private static final String ENDPOINT = "auth";
 
-    AuthenticationRouteTest() {
+    AuthRouteTest() {
         super(ENDPOINT);
     }
 
@@ -39,7 +39,7 @@ class AuthenticationRouteTest extends AbstractRouteTest {
 
     @Test
     void authenticate() {
-        final AuthenticationRequestDTO requestDTO = randomObject(AuthenticationRequestDTO.class);
+        final AuthRequestDTO requestDTO = randomObject(AuthRequestDTO.class);
         final TokensBO tokensBO = randomObject(TokensBO.class);
         final TokensDTO tokensDTO = mapper().toDTO(tokensBO);
 
@@ -62,7 +62,7 @@ class AuthenticationRouteTest extends AbstractRouteTest {
 
     @Test
     void authenticateUnsuccessful() {
-        final AuthenticationRequestDTO requestDTO = randomObject(AuthenticationRequestDTO.class);
+        final AuthRequestDTO requestDTO = randomObject(AuthRequestDTO.class);
 
         Mockito.when(authenticationService.authenticate(requestDTO.getAuthorization())).thenReturn(Optional.empty());
 

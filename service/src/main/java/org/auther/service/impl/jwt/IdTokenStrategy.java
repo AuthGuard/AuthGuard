@@ -1,29 +1,44 @@
 package org.auther.service.impl.jwt;
 
 import com.auth0.jwt.JWTCreator;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.auther.service.JtiProvider;
 import org.auther.service.JwtStrategy;
-import org.auther.service.impl.jwt.config.ImmutableStrategyConfig;
+import org.auther.service.config.ImmutableStrategyConfig;
 import org.auther.service.model.AccountBO;
+import org.auther.service.model.TokenBuilderBO;
 
 public class IdTokenStrategy implements JwtStrategy {
     private final ImmutableStrategyConfig strategyConfig;
-    private final JtiProvider jti;
-    private final TokenGenerator tokenGenerator;
+    private JtiProvider jti;
+    private TokenGenerator tokenGenerator;
 
-    public IdTokenStrategy(final ImmutableStrategyConfig strategyConfig, final JtiProvider jti, final TokenGenerator tokenGenerator) {
+    @Inject
+    public IdTokenStrategy(@Named("idToken") final ImmutableStrategyConfig strategyConfig) {
         this.strategyConfig = strategyConfig;
+    }
+
+    // TODO this is a terrible solution but it's just a hack to get around the limitations of DI for now
+    public JwtStrategy configure(final JtiProvider jti, final TokenGenerator tokenGenerator) {
         this.jti = jti;
         this.tokenGenerator = tokenGenerator;
+
+        return this;
     }
 
     @Override
-    public JWTCreator.Builder generateToken(final AccountBO account) {
-        final JWTCreator.Builder tokenBuilder = tokenGenerator.generateUnsignedToken(account, JwtConfigParser.parseDuration(strategyConfig.getTokenLife()));
+    public TokenBuilderBO generateToken(final AccountBO account) {
+        final JWTCreator.Builder jwtBuilder = tokenGenerator
+                .generateUnsignedToken(account, JwtConfigParser.parseDuration(strategyConfig.getTokenLife()));
 
-        tokenBuilder.withJWTId(jti.next());
+        final String id = jti.next();
+        jwtBuilder.withJWTId(id);
 
-        return tokenBuilder;
+        return TokenBuilderBO.builder()
+                .id(id)
+                .builder(jwtBuilder)
+                .build();
     }
 
     @Override

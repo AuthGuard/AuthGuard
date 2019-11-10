@@ -1,6 +1,7 @@
 package org.auther.api;
 
 import org.jeasy.random.EasyRandom;
+import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -15,7 +16,7 @@ abstract class AbstractRouteTest {
 
     AbstractRouteTest(final String endpoint) {
         this.server = new TestServer();
-        this.easyRandom = new EasyRandom();
+        this.easyRandom = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
         this.restMapper = new RestMapperImpl();
 
         this.endpoint = endpoint;

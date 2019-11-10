@@ -6,8 +6,8 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @DTOStyle
-@JsonSerialize(as = AuthenticationRequestDTO.class)
-@JsonDeserialize(as = AuthenticationRequestDTO.class)
-public interface AuthenticationRequest {
+@JsonSerialize(as = AuthRequestDTO.class)
+@JsonDeserialize(as = AuthRequestDTO.class)
+public interface AuthRequest {
     String getAuthorization();
 }

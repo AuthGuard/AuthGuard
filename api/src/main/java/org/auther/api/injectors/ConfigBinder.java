@@ -4,7 +4,7 @@ import com.auther.config.ConfigContext;
 import com.auther.config.LightbendConfigContext;
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
-import org.auther.service.impl.jwt.config.ModifiableJwtConfig;
+import org.auther.service.config.ModifiableJwtConfig;
 
 public class ConfigBinder extends AbstractModule {
     private final ConfigContext configContext;

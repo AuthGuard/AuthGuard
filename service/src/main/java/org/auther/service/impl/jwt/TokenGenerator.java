@@ -2,7 +2,7 @@ package org.auther.service.impl.jwt;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
-import org.auther.service.impl.jwt.config.ImmutableJwtConfig;
+import org.auther.service.config.ImmutableJwtConfig;
 import org.auther.service.model.AccountBO;
 
 import java.security.SecureRandom;
@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 
-class TokenGenerator {
+public class TokenGenerator {
     private static final int RANDOM_SIZE = 1024;
 
     private final ImmutableJwtConfig jwtConfig;

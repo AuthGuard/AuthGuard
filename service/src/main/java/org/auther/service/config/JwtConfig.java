@@ -1,4 +1,4 @@
-package org.auther.service.impl.jwt.config;
+package org.auther.service.config;
 
 
 import org.immutables.value.Value;

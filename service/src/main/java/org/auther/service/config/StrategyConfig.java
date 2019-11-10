@@ -1,4 +1,4 @@
-package org.auther.service.impl.jwt.config;
+package org.auther.service.config;
 
 import org.immutables.value.Value;
 
@@ -18,5 +18,4 @@ public interface StrategyConfig {
     boolean getIncludePermissions();
     boolean getIncludeRoles();
     boolean getIncludeScopes();
-    boolean getSignedRefreshTokens();
 }

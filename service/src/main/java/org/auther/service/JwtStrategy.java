@@ -1,12 +1,15 @@
 package org.auther.service;
 
-import com.auth0.jwt.JWTCreator;
-import org.auther.service.impl.jwt.config.ImmutableStrategyConfig;
+import org.auther.service.impl.jwt.TokenGenerator;
+import org.auther.service.config.ImmutableStrategyConfig;
 import org.auther.service.model.AccountBO;
+import org.auther.service.model.TokenBuilderBO;
 
 public interface JwtStrategy {
-    JWTCreator.Builder generateToken(AccountBO account);
-    String generateRefreshToken(AccountBO accountBO);
+    TokenBuilderBO generateToken(AccountBO account);
+    String generateRefreshToken(AccountBO account);
+    JwtStrategy configure(JtiProvider jti, TokenGenerator tokenGenerator);
 
+    // TODO this is a design flaw and needs to be fixed, the strategy should not have to expose its config
     ImmutableStrategyConfig getConfig();
 }

@@ -1,4 +1,4 @@
-package org.auther.service.impl.jwt.config;
+package org.auther.service.config;
 
 import org.immutables.value.Value;
 
@@ -10,7 +10,6 @@ import org.immutables.value.Value;
         validationMethod = Value.Style.ValidationMethod.NONE
 )
 public interface StrategiesConfig {
-    ModifiableStrategyConfig getRegular();
     ModifiableStrategyConfig getIdToken();
     ModifiableStrategyConfig getAccessToken();
 }

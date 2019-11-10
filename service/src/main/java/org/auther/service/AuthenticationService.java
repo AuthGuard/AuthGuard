@@ -13,11 +13,11 @@ public interface AuthenticationService {
     /**
      * Authenticate a user using the value of an Authorization
      * header and generate a token.
-     * @param authHeader Authorization header
+     * @param header Authorization header
      * @return An optional of the generated tokens or an
      * empty optional if the user was not found.
      * @throws org.auther.service.exceptions.ServiceAuthorizationException
      *         if anything was wrong in the header.
      */
-    Optional<TokensBO> authenticate(String authHeader);
+    Optional<TokensBO> authenticate(String header);
 }
