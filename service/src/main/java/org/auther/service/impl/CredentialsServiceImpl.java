@@ -13,6 +13,7 @@ import org.auther.service.model.CredentialsBO;
 import org.auther.service.model.HashedPasswordBO;
 
 import java.util.Optional;
+import java.util.UUID;
 
 public class CredentialsServiceImpl implements CredentialsService {
     private final CredentialsRepository credentialsRepository;
@@ -33,7 +34,7 @@ public class CredentialsServiceImpl implements CredentialsService {
     public CredentialsBO create(final CredentialsBO credentials) {
         final HashedPasswordBO hashedPassword = securePassword.hash(credentials.getPlainPassword());
 
-        return Optional.of(credentials.withHashedPassword(hashedPassword))
+        return Optional.of(credentials.withHashedPassword(hashedPassword).withId(UUID.randomUUID().toString()))
                 .map(serviceMapper::toDO)
                 .map(credentialsRepository::save)
                 .map(serviceMapper::toBO)
@@ -53,6 +54,12 @@ public class CredentialsServiceImpl implements CredentialsService {
         return credentialsRepository.findByUsername(username)
                 .map(serviceMapper::toBO)
                 .map(this::removeSensitiveInformation);
+    }
+
+    @Override
+    public Optional<CredentialsBO> getByUsernameUnsafe(final String username) {
+        return credentialsRepository.findByUsername(username)
+                .map(serviceMapper::toBO);
     }
 
     @Override

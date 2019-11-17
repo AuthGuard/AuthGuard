@@ -6,7 +6,9 @@ import java.util.List;
 
 @Value.Immutable
 @DOStyle
-public interface Role {
+public interface Role extends AbstractDO {
     String getName();
     List<PermissionDO> getPermissions();
+
+    interface Builder extends AbstractDO.Builder {}
 }

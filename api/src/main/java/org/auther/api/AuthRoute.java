@@ -48,7 +48,7 @@ public class AuthRoute implements EndpointGroup {
         final AuthRequestDTO authenticationRequest = context.bodyAsClass(AuthRequestDTO.class);
 
         final Optional<TokensDTO> tokens = authorizationService.authorize(authenticationRequest.getAuthorization())
-                .map(restMapper::toDTO);
+                .map(tokensBO -> restMapper.toDTO(tokensBO));
 
         if (tokens.isPresent()) {
             context.json(tokens.get());

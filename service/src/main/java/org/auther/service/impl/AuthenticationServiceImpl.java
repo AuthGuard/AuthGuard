@@ -50,7 +50,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         final String username =  decoded[0];
         final String password = decoded[1];
 
-        final Optional<CredentialsBO> credentials = credentialsService.getByUsername(username);
+        final Optional<CredentialsBO> credentials = credentialsService.getByUsernameUnsafe(username);
 
         if (credentials.isPresent()) {
             if (securePassword.verify(password, credentials.get().getHashedPassword())) {

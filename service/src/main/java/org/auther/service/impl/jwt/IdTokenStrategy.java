@@ -43,7 +43,7 @@ public class IdTokenStrategy implements JwtStrategy {
 
     @Override
     public String generateRefreshToken(final AccountBO account) {
-        return tokenGenerator.generateRandomRefreshToken();
+        return null;
     }
 
     @Override

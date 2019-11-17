@@ -13,13 +13,6 @@ class BasicJtiProviderTest {
     }
 
     @Test
-    void canOnlyBeUsedOnce() {
-        final String jti = provider.next();
-        assertThat(provider.validate(jti)).isTrue();
-        assertThat(provider.validate(jti)).isFalse();
-    }
-
-    @Test
     void notGenerated() {
         assertThat(provider.validate("malicious")).isFalse();
     }

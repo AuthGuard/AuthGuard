@@ -4,8 +4,7 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @DOStyle
-public interface CredentialsAudit {
-    String getId();
+public interface CredentialsAudit extends AbstractDO {
     Action getAction();
     String getCredentialId();
     String getUsername();
@@ -15,4 +14,6 @@ public interface CredentialsAudit {
         ATTEMPT,
         UPDATED
     }
+
+    interface Builder extends AbstractDO.Builder {}
 }
