@@ -79,11 +79,6 @@ class ClassSearchTest {
         }
 
         @Override
-        public Optional<AccountDO> findByUsername(final String username) {
-            return Optional.empty();
-        }
-
-        @Override
         public Optional<AccountDO> update(final AccountDO account) {
             return Optional.empty();
         }

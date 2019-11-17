@@ -6,12 +6,11 @@ import java.util.List;
 
 @Value.Immutable
 @DOStyle
-public interface Account {
-    String getId();
-    String getCredentialsId();
+public interface Account extends AbstractDO {
     List<String> getRoles();
     List<PermissionDO> getPermissions();
     List<String> getScopes();
     boolean isActive();
-    boolean isDeleted();
+
+    interface Builder extends AbstractDO.Builder {}
 }

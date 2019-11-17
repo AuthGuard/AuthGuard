@@ -2,6 +2,9 @@ package org.auther.api.injectors;
 
 import com.google.inject.AbstractModule;
 import org.auther.dal.*;
+import org.auther.dal.mock.MockAccountsRepository;
+import org.auther.dal.mock.MockAccountsTokensRepository;
+import org.auther.dal.mock.MockCredentialsRepository;
 import org.auther.dal.model.*;
 
 import java.util.List;
@@ -11,44 +14,16 @@ public class DalBinder extends AbstractModule {
 
     @Override
     public void configure() {
-        bind(CredentialsRepository.class).to(CredentialsRepositoryImpl.class);
+        bind(CredentialsRepository.class).to(MockCredentialsRepository.class);
         bind(CredentialsAuditRepository.class).to(CredentialsAuditRepositoryImpl.class);
-        bind(AccountsRepository.class).to(AccountsRepositoryImpl.class);
+        bind(AccountsRepository.class).to(MockAccountsRepository.class);
         bind(PermissionsRepository.class).to(PermissionsRepositoryImpl.class);
         bind(RolesRepository.class).to(RolesRepositoryImpl.class);
-        bind(AccountTokensRepository.class).to(AccountTokensRepositoryImpl.class);
+        bind(AccountTokensRepository.class).to(MockAccountsTokensRepository.class);
     }
 
 
     // mocks until the actual implementations are ready
-    static class CredentialsRepositoryImpl implements CredentialsRepository {
-
-        @Override
-        public CredentialsDO save(final CredentialsDO credentials) {
-            return null;
-        }
-
-        @Override
-        public Optional<CredentialsDO> getById(final String id) {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<CredentialsDO> findByUsername(final String username) {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<CredentialsDO> update(final CredentialsDO credentials) {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<CredentialsDO> delete(final String id) {
-            return Optional.empty();
-        }
-    }
-
     static class CredentialsAuditRepositoryImpl implements CredentialsAuditRepository {
 
         @Override
@@ -64,28 +39,6 @@ public class DalBinder extends AbstractModule {
         @Override
         public List<CredentialsAuditDO> findByCredentialsId(final String credentialsId) {
             return null;
-        }
-    }
-
-    static class AccountsRepositoryImpl implements AccountsRepository {
-        @Override
-        public AccountDO save(final AccountDO account) {
-            return null;
-        }
-
-        @Override
-        public Optional<AccountDO> getById(final String accountId) {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<AccountDO> findByUsername(final String username) {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<AccountDO> update(final AccountDO account) {
-            return Optional.empty();
         }
     }
 
@@ -155,18 +108,6 @@ public class DalBinder extends AbstractModule {
 
         @Override
         public Optional<RoleDO> update(final RoleDO role) {
-            return Optional.empty();
-        }
-    }
-
-    static class AccountTokensRepositoryImpl implements AccountTokensRepository {
-        @Override
-        public AccountTokenDO save(final AccountTokenDO tokenDO) {
-            return null;
-        }
-
-        @Override
-        public Optional<AccountTokenDO> getByToken(final String token) {
             return Optional.empty();
         }
     }

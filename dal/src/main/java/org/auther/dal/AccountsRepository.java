@@ -7,6 +7,5 @@ import java.util.Optional;
 public interface AccountsRepository {
     AccountDO save(AccountDO account);
     Optional<AccountDO> getById(String accountId);
-    Optional<AccountDO> findByUsername(String username);
     Optional<AccountDO> update(AccountDO account);
 }

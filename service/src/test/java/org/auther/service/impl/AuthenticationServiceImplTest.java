@@ -63,7 +63,7 @@ class AuthenticationServiceImplTest {
                 .salt(credentials.getHashedPassword().getSalt())
                 .build();
 
-        Mockito.when(credentialsService.getByUsername(username)).thenReturn(Optional.of(credentials));
+        Mockito.when(credentialsService.getByUsernameUnsafe(username)).thenReturn(Optional.of(credentials));
         Mockito.when(accountsService.getById(credentials.getAccountId())).thenReturn(Optional.of(account));
         Mockito.when(securePassword.verify(eq(password), eq(hashedPasswordBO))).thenReturn(true);
         Mockito.when(jwtProvider.generateToken(any())).thenReturn(tokens);
@@ -91,14 +91,13 @@ class AuthenticationServiceImplTest {
         final String password = "password";
         final String authorization = "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final AccountDO account = RANDOM.nextObject(AccountDO.class);
         final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class).withUsername(username);
         final HashedPasswordBO hashedPasswordBO = HashedPasswordBO.builder()
                 .password(credentials.getHashedPassword().getPassword())
                 .salt(credentials.getHashedPassword().getSalt())
                 .build();
 
-        Mockito.when(credentialsService.getByUsername(username)).thenReturn(Optional.of(credentials));
+        Mockito.when(credentialsService.getByUsernameUnsafe(username)).thenReturn(Optional.of(credentials));
         Mockito.when(securePassword.verify(eq(password), eq(hashedPasswordBO))).thenReturn(false);
 
         assertThatThrownBy(() -> authenticationService.authenticate(authorization)).isInstanceOf(ServiceAuthorizationException.class);

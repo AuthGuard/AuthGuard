@@ -36,6 +36,14 @@ public interface CredentialsService {
     Optional<CredentialsBO> getByUsername(String username);
 
     /**
+     * Find credentials by username.
+     * @param username The username of the credentials.
+     * @return An optional of the retrieved credentials
+     *         or empty if none was found.
+     */
+    Optional<CredentialsBO> getByUsernameUnsafe(String username);
+
+    /**
      * Update any updatable field other than the password.
      * @param credentials The credentials object to update.
      * @return An optional of the updated credentials or

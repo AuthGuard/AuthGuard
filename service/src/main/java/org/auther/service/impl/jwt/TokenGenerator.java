@@ -9,10 +9,11 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Base64;
 import java.util.Date;
 
 public class TokenGenerator {
-    private static final int RANDOM_SIZE = 1024;
+    private static final int RANDOM_SIZE = 128;
 
     private final ImmutableJwtConfig jwtConfig;
 
@@ -24,7 +25,6 @@ public class TokenGenerator {
         secureRandom = new SecureRandom();
     }
 
-    // TODO add token type
     JWTCreator.Builder generateUnsignedToken(final AccountBO account, final Duration tokenLife) {
         final LocalDateTime now = LocalDateTime.now();
         final LocalDateTime exp = now.plus(tokenLife);
@@ -39,24 +39,11 @@ public class TokenGenerator {
                 .withExpiresAt(Date.from(exp.toInstant(ZoneId.systemDefault().getRules().getOffset(now))));
     }
 
-    // TODO add token type
-    JWTCreator.Builder generateRandomRefreshToken(final AccountBO account, final Duration tokenLife) {
-        final LocalDateTime now = LocalDateTime.now();
-        final LocalDateTime exp = now.plus(tokenLife);
-
-        return JWT.create()
-                .withIssuer(jwtConfig.getIssuer())
-                .withSubject(account.getId())
-                // TODO properly handle timezones
-                .withIssuedAt(Date.from(now.toInstant(ZoneId.systemDefault().getRules().getOffset(now))))
-                .withExpiresAt(Date.from(exp.toInstant(ZoneId.systemDefault().getRules().getOffset(now))));
-    }
-
     String generateRandomRefreshToken() {
         final byte[] bytes = new byte[RANDOM_SIZE];
 
         secureRandom.nextBytes(bytes);
 
-        return new String(bytes);
+        return Base64.getEncoder().encodeToString(bytes);
     }
 }

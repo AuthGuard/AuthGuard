@@ -1,0 +1,226 @@
+{
+	"info": {
+		"_postman_id": "655b0d60-d544-434b-90f0-31ebd5293bc2",
+		"name": "AuthGuard",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "create account",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "f8250156-b324-4710-b76e-9b95a7866a23",
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"let response = pm.response.json();",
+							"pm.globals.set(\"accountId\", response.id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create credentials",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "e48d3061-04e9-44bc-87ee-607e3a970303",
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"accountId\": \"{{accountId}}\",\n\t\"username\": \"username\",\n\t\"plainPassword\": \"password\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/credentials",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"credentials"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "33e436a4-babd-49e2-afca-ff7f95166f15",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"let response = pm.response.json();",
+							"pm.globals.set(\"idToken\", response.token);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"authorization\": \"Basic dXNlcm5hbWU6cGFzc3dvcmQ=\"\n}"
+				},
+				"url": {
+					"raw": "{{authguard}}/auth/authenticate",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"auth",
+						"authenticate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "authorize",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "a562f372-ee7d-4fd8-a3a3-4b892dcb9490",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"authorization\": \"Bearer {{idToken}}\"\n}"
+				},
+				"url": {
+					"raw": "{{authguard}}/auth/authorize",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"auth",
+						"authorize"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "e4f1620c-9d2c-40ba-8778-356ad47483b5",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "19d47577-6299-4570-b55b-a28e27ffd3ea",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "cdb3b836-5b73-48c5-940b-ff29c3653c09",
+			"key": "authguard",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	],
+	"protocolProfileBehavior": {}
+}

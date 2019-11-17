@@ -9,6 +9,7 @@ import org.auther.service.impl.mappers.ServiceMapperImpl;
 import org.auther.service.model.AccountBO;
 import org.auther.service.model.PermissionBO;
 import org.jeasy.random.EasyRandom;
+import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -31,14 +32,17 @@ class AccountsServiceImplTest {
     private RolesService rolesService;
     private AccountsServiceImpl accountService;
 
-    private final static EasyRandom RANDOM = new EasyRandom();
+    private final static EasyRandom RANDOM = new EasyRandom(
+            new EasyRandomParameters().collectionSizeRange(1, 4)
+    );
 
     @BeforeAll
     void setup() {
         accountsRepository = Mockito.mock(AccountsRepository.class);
         permissionsService = Mockito.mock(PermissionsService.class);
         rolesService = Mockito.mock(RolesService.class);
-        accountService = new AccountsServiceImpl(accountsRepository, permissionsService, rolesService, new ServiceMapperImpl());
+        accountService = new AccountsServiceImpl(accountsRepository, permissionsService, rolesService,
+                new ServiceMapperImpl());
     }
 
     @AfterEach
@@ -50,9 +54,11 @@ class AccountsServiceImplTest {
     @Test
     void create() {
         final AccountBO account = RANDOM.nextObject(AccountBO.class)
+                .withDeleted(false)
                 .withId(null);
 
-        Mockito.when(accountsRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0, AccountDO.class));
+        Mockito.when(accountsRepository.save(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0, AccountDO.class));
 
         final AccountBO persisted = accountService.create(account);
 
@@ -62,7 +68,8 @@ class AccountsServiceImplTest {
 
     @Test
     void getById() {
-        final AccountDO account = RANDOM.nextObject(AccountDO.class);
+        final AccountDO account = RANDOM.nextObject(AccountDO.class)
+                .withDeleted(false);
 
         Mockito.when(accountsRepository.getById(any())).thenReturn(Optional.of(account));
 
@@ -83,7 +90,8 @@ class AccountsServiceImplTest {
         final AccountDO account = RANDOM.nextObject(AccountDO.class);
 
         Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
-        Mockito.when(permissionsService.verifyPermissions(any())).thenAnswer(invocation -> invocation.getArgument(0, List.class));
+        Mockito.when(permissionsService.verifyPermissions(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0, List.class));
 
         final List<PermissionBO> permissions = Arrays.asList(
                 RANDOM.nextObject(PermissionBO.class),
@@ -107,7 +115,8 @@ class AccountsServiceImplTest {
                 RANDOM.nextObject(PermissionBO.class)
         );
 
-        assertThatThrownBy(() -> accountService.grantPermissions(account.getId(), permissions)).isInstanceOf(ServiceException.class);
+        assertThatThrownBy(() -> accountService.grantPermissions(account.getId(), permissions))
+                .isInstanceOf(ServiceException.class);
     }
 
     @Test
@@ -138,7 +147,8 @@ class AccountsServiceImplTest {
         final AccountDO account = RANDOM.nextObject(AccountDO.class);
 
         Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
-        Mockito.when(accountsRepository.update(any())).thenAnswer(invocation -> Optional.of(invocation.getArgument(0, AccountDO.class)));
+        Mockito.when(accountsRepository.update(any()))
+                .thenAnswer(invocation -> Optional.of(invocation.getArgument(0, AccountDO.class)));
 
         final List<String> roles = Arrays.asList(
                 RANDOM.nextObject(String.class),
@@ -157,7 +167,8 @@ class AccountsServiceImplTest {
         final List<String> currentRoles = account.getRoles();
 
         Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
-        Mockito.when(accountsRepository.update(any())).thenAnswer(invocation -> Optional.of(invocation.getArgument(0, AccountDO.class)));
+        Mockito.when(accountsRepository.update(any()))
+                .thenAnswer(invocation -> Optional.of(invocation.getArgument(0, AccountDO.class)));
 
         final List<String> rolesToRevoke = Arrays.asList(
                 currentRoles.get(0),

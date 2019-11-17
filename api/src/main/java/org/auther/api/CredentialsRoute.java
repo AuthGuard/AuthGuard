@@ -29,7 +29,6 @@ public class CredentialsRoute implements EndpointGroup {
     }
 
     private void create(final Context context) {
-        System.out.println(context.body());
         final CredentialsDTO credentials = context.bodyAsClass(CredentialsDTO.class);
 
         final Optional<CredentialsDTO> created = Optional.of(credentials)
