@@ -39,14 +39,12 @@ class JwtProviderImplTest {
     private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
 
     // TODO clean up this config mess and use a resource file
-    private ModifiableJwtConfig jwtConfig() {
-        final ModifiableJwtConfig config = new ModifiableJwtConfig();
-
-        config.setAlgorithm(ALGORITHM);
-        config.setKey(KEY);
-        config.setIssuer(ISSUER);
-
-        return config;
+    private ImmutableJwtConfig jwtConfig() {
+        return ImmutableJwtConfig.builder()
+                .algorithm(ALGORITHM)
+                .key(KEY)
+                .issuer(ISSUER)
+                .build();
     }
 
     private JwtProviderImpl newProviderInstance(final ImmutableStrategyConfig strategyConfig) {
@@ -56,7 +54,7 @@ class JwtProviderImplTest {
         Mockito.when(jwtStrategy.configure(any(), any())).thenReturn(jwtStrategy);
         Mockito.when(jwtStrategy.getConfig()).thenReturn(strategyConfig);
 
-        jwtProvider = new JwtProviderImpl(jwtConfig().toImmutable(), jwtStrategy, jtiProvider);
+        jwtProvider = new JwtProviderImpl(jwtConfig(), jwtStrategy, jtiProvider);
 
         return jwtProvider;
     }
