@@ -1,17 +1,17 @@
 package org.auther.service.config;
 
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
 import java.util.List;
 
 @Value.Immutable
-@Value.Modifiable
 @Value.Style(
-        create = "new",
-        beanFriendlyModifiables = true,
-        validationMethod = Value.Style.ValidationMethod.NONE
+        validationMethod = Value.Style.ValidationMethod.NONE,
+        jdkOnly = true
 )
+@JsonDeserialize(as = ImmutableJwtConfig.class)
 public interface JwtConfig {
     String getAlgorithm();
     String getKey();

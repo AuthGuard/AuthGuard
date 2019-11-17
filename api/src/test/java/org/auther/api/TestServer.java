@@ -1,10 +1,14 @@
 package org.auther.api;
 
+import com.auther.config.ConfigContext;
+import com.auther.config.JacksonConfigContext;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.javalin.Javalin;
 import org.auther.api.injectors.ConfigBinder;
 import org.auther.api.injectors.MappersBinder;
+
+import java.io.File;
 
 class TestServer {
     private int port;
@@ -15,7 +19,11 @@ class TestServer {
     private Server server;
 
     TestServer() {
-        injector = Guice.createInjector(new MocksBinder(), new MappersBinder(), new ConfigBinder());
+        final ConfigContext configContext = new JacksonConfigContext(
+                new File(Application.class.getClassLoader().getResource("application.json").getFile())
+        ).getSubContext(ConfigContext.ROOT_CONFIG_PROPERTY);
+
+        injector = Guice.createInjector(new MocksBinder(), new MappersBinder(), new ConfigBinder(configContext));
         app = Javalin.create();
     }
 

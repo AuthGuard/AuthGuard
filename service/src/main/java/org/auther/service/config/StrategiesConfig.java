@@ -1,15 +1,15 @@
 package org.auther.service.config;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@Value.Modifiable
 @Value.Style(
-        create = "new",
-        beanFriendlyModifiables = true,
-        validationMethod = Value.Style.ValidationMethod.NONE
+        validationMethod = Value.Style.ValidationMethod.NONE,
+        jdkOnly = true
 )
+@JsonDeserialize(as = ImmutableStrategiesConfig.class)
 public interface StrategiesConfig {
-    ModifiableStrategyConfig getIdToken();
-    ModifiableStrategyConfig getAccessToken();
+    ImmutableStrategyConfig getIdToken();
+    ImmutableStrategyConfig getAccessToken();
 }
