@@ -4,10 +4,9 @@ import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import org.auther.rest.dto.PermissionDTO;
-import org.auther.rest.dto.PermissionGroupDTO;
 import org.auther.service.PermissionsService;
-import org.auther.service.model.PermissionBO;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -26,20 +25,8 @@ public class PermissionsRoute implements EndpointGroup {
 
     @Override
     public void addEndpoints() {
-        post("/permissions/groups", this::createGroup);
         post("/permissions", this::createPermission);
         get("/permissions", this::getPermissions);
-        delete("/permissions", this::deletePermission);
-    }
-
-    private void createGroup(final Context context) {
-        final PermissionGroupDTO permissionGroup = context.bodyAsClass(PermissionGroupDTO.class);
-
-        Optional.of(permissionGroup)
-                .map(restMapper::toBO)
-                .map(permissionsService::createPermissionGroup)
-                .map(restMapper::toDTO)
-                .map(context::json);
     }
 
     private void createPermission(final Context context) {
@@ -47,7 +34,7 @@ public class PermissionsRoute implements EndpointGroup {
 
         Optional.of(permissionGroup)
                 .map(restMapper::toBO)
-                .map(permissionsService::createPermission)
+                .map(permissionsService::create)
                 .map(restMapper::toDTO)
                 .map(context::json);
     }
@@ -56,37 +43,18 @@ public class PermissionsRoute implements EndpointGroup {
         final String groupName = context.queryParam("group");
 
         if (groupName == null) {
-            final List<PermissionDTO> permissions = permissionsService.getPermissions().stream()
+            final List<PermissionDTO> permissions = permissionsService.getAll().stream()
                     .map(restMapper::toDTO)
                     .collect(Collectors.toList());
 
             context.json(permissions);
         } else {
-            final Optional<List<PermissionBO>> permissions = permissionsService.getPermissionsByGroup(groupName);
+            final Collection<PermissionDTO> permissions = permissionsService.getAllForGroup(groupName).
+                    stream()
+                    .map(restMapper::toDTO)
+                    .collect(Collectors.toList());
 
-            if (permissions.isPresent()) {
-                context.json(
-                        permissions.get().stream()
-                                .map(restMapper::toDTO)
-                                .collect(Collectors.toList())
-                );
-            } else {
-                context.status(404).result("No permission group " + groupName + " found");
-            }
-        }
-    }
-
-    private void deletePermission(final Context context) {
-        final PermissionDTO permissionGroup = context.bodyAsClass(PermissionDTO.class);
-
-        final Optional<PermissionBO> permission = Optional.of(permissionGroup)
-                .map(restMapper::toBO)
-                .flatMap(permissionsService::deletePermission);
-
-        if (permission.isPresent()) {
-            context.json(restMapper.toDTO(permission.get()));
-        } else {
-            context.status(404).result("");
+            context.status(200).json(permissions);
         }
     }
 }

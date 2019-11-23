@@ -5,14 +5,13 @@ import org.auther.dal.AccountsRepository;
 import org.auther.dal.PermissionsRepository;
 import org.auther.dal.model.AccountDO;
 import org.auther.dal.model.PermissionDO;
-import org.auther.dal.model.PermissionGroupDO;
 import org.junit.jupiter.api.Test;
 import org.reflections.Reflections;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -92,43 +91,33 @@ class ClassSearchTest {
     // --- PermissionsRepository
     private static class PermissionsRepositoryImpl implements PermissionsRepository {
         @Override
-        public PermissionGroupDO createPermissionGroup(final PermissionGroupDO permissionGroup) {
+        public PermissionDO save(final PermissionDO permission) {
             return null;
         }
 
         @Override
-        public Optional<PermissionGroupDO> deletePermissionGroup() {
+        public Optional<PermissionDO> getById(final String id) {
             return Optional.empty();
         }
 
         @Override
-        public Optional<PermissionGroupDO> getPermissionGroupByName(final String groupName) {
+        public Optional<PermissionDO> search(final String group, final String name) {
             return Optional.empty();
         }
 
         @Override
-        public PermissionDO createPermission(final PermissionDO permission) {
+        public Optional<PermissionDO> delete(final String id) {
+            return Optional.empty();
+        }
+
+        @Override
+        public Collection<PermissionDO> getAll() {
             return null;
         }
 
         @Override
-        public Optional<PermissionDO> deletePermission(final PermissionDO permission) {
-            return Optional.empty();
-        }
-
-        @Override
-        public List<PermissionDO> getAllPermissions() {
+        public Collection<PermissionDO> getAllForGroup(final String group) {
             return null;
-        }
-
-        @Override
-        public Optional<List<PermissionDO>> getPermissions(final String permissionGroup) {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<PermissionDO> getPermission(final String permissionGroup, final String permissionName) {
-            return Optional.empty();
         }
     }
 

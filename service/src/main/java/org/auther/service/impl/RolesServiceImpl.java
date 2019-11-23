@@ -24,7 +24,7 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public List<RoleBO> getRoles() {
+    public List<RoleBO> getAll() {
         return rolesRepository.getAll()
                 .stream()
                 .map(serviceMapper::toBO)
@@ -32,7 +32,7 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public RoleBO createRole(final RoleBO role) {
+    public RoleBO create(final RoleBO role) {
         return Optional.of(role)
                 .map(serviceMapper::toDO)
                 .map(rolesRepository::save)
@@ -43,12 +43,6 @@ public class RolesServiceImpl implements RolesService {
     @Override
     public Optional<RoleBO> getRoleByName(final String name) {
         return rolesRepository.getByName(name)
-                .map(serviceMapper::toBO);
-    }
-
-    @Override
-    public Optional<RoleBO> deleteRoleByName(final String name) {
-        return rolesRepository.delete(name)
                 .map(serviceMapper::toBO);
     }
 

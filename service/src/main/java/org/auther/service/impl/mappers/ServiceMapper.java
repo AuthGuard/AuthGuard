@@ -15,9 +15,6 @@ public interface ServiceMapper {
     AccountDO toDO(AccountBO accountBO);
     AccountBO toBO(AccountDO accountDO);
 
-    PermissionGroupDO toDO(PermissionGroupBO permissionGroupDO);
-    PermissionGroupBO toBO(PermissionGroupDO permissionGroupBO);
-
     PermissionDO toDO(PermissionBO permissionBO);
     PermissionBO toBO(PermissionDO permissionDO);
 

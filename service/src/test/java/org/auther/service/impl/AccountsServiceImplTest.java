@@ -90,7 +90,7 @@ class AccountsServiceImplTest {
         final AccountDO account = RANDOM.nextObject(AccountDO.class);
 
         Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
-        Mockito.when(permissionsService.verifyPermissions(any()))
+        Mockito.when(permissionsService.validate(any()))
                 .thenAnswer(invocation -> invocation.getArgument(0, List.class));
 
         final List<PermissionBO> permissions = Arrays.asList(

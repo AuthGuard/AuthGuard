@@ -44,7 +44,7 @@ public class RolesRoute implements EndpointGroup {
 
         final RoleDTO created = Optional.of(role)
                 .map(restMapper::toBO)
-                .map(rolesService::createRole)
+                .map(rolesService::create)
                 .map(restMapper::toDTO)
                 .orElseThrow();
 
