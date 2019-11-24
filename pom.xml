@@ -11,7 +11,7 @@
 
     <modules>
         <module>service</module>
-        <module>api</module>
+        <module>rest</module>
         <module>dal</module>
         <module>emb</module>
         <module>injection</module>

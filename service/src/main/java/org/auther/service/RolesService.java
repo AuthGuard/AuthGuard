@@ -15,14 +15,14 @@ public interface RolesService {
     /**
      * @return All created roles.
      */
-    List<RoleBO> getRoles();
+    List<RoleBO> getAll();
 
     /**
      * Create a role.
      * @param role The role.
      * @return The created role.
      */
-    RoleBO createRole(RoleBO role);
+    RoleBO create(RoleBO role);
 
     /**
      * Find a role by name.
@@ -31,14 +31,6 @@ public interface RolesService {
      *         if none was found.
      */
     Optional<RoleBO> getRoleByName(String name);
-
-    /**
-     * Delete a role by name.
-     * @param name The name of the role.
-     * @return Optional of the deleted role or empty
-     *         if none was found.
-     */
-    Optional<RoleBO> deleteRoleByName(String name);
 
     /**
      * Find permissions of a role by name.

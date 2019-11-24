@@ -2,7 +2,6 @@ package org.auther.service.impl;
 
 import org.auther.service.PermissionsService;
 import org.auther.service.RolesService;
-import org.auther.service.exceptions.ServiceNotFoundException;
 import org.auther.service.model.PermissionBO;
 
 import java.util.Collection;
@@ -34,9 +33,8 @@ class PermissionsAggregator {
     private List<PermissionBO> expand(final Stream<PermissionBO> permissionsStream) {
         return permissionsStream.flatMap(permission -> {
                     if (permission.isWildCard()) {
-                        return permissionsService.getPermissionsByGroup(permission.getGroup())
-                                .map(Collection::stream)
-                                .orElseThrow(ServiceNotFoundException::new);
+                        return permissionsService.getAllForGroup(permission.getGroup())
+                                .stream();
                     } else {
                         return Stream.of(permission);
                     }

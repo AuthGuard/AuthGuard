@@ -62,7 +62,7 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public AccountBO grantPermissions(final String accountId, final List<PermissionBO> permissions) {
-        final List<PermissionBO> verifiedPermissions = permissionsService.verifyPermissions(permissions);
+        final List<PermissionBO> verifiedPermissions = permissionsService.validate(permissions);
 
         if (verifiedPermissions.size() != permissions.size()) {
             final List<PermissionBO> difference = permissions.stream()

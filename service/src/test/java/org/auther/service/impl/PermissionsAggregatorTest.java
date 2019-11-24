@@ -47,8 +47,8 @@ class PermissionsAggregatorTest {
                 .map(permission -> permission.withGroup(wildCardPermission.getGroup()))
                 .collect(Collectors.toList());
 
-        Mockito.when(permissionsService.getPermissionsByGroup(wildCardPermission.getGroup()))
-                .thenReturn(Optional.of(wildCardGroupPermissions));
+        Mockito.when(permissionsService.getAllForGroup(wildCardPermission.getGroup()))
+                .thenReturn(wildCardGroupPermissions);
 
         final List<PermissionBO> expectedPermissions = Stream.concat(Stream.of(standardPermission), wildCardGroupPermissions.stream())
                 .collect(Collectors.toList());
@@ -70,8 +70,8 @@ class PermissionsAggregatorTest {
 
         Mockito.when(rolesService.getPermissionsByName(role)).thenReturn(Arrays.asList(standardPermission, wildCardPermission));
 
-        Mockito.when(permissionsService.getPermissionsByGroup(wildCardPermission.getGroup()))
-                .thenReturn(Optional.of(wildCardGroupPermissions));
+        Mockito.when(permissionsService.getAllForGroup(wildCardPermission.getGroup()))
+                .thenReturn(wildCardGroupPermissions);
 
         final List<PermissionBO> expectedPermissions = Stream.concat(Stream.of(standardPermission), wildCardGroupPermissions.stream())
                 .collect(Collectors.toList());
