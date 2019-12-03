@@ -29,6 +29,7 @@ public class AuthRoute implements EndpointGroup {
     public void addEndpoints() {
         post("/authenticate", this::authenticate);
         post("/authorize", this::authorize);
+        post("/authorize/refresh", this::refresh);
     }
 
     private void authenticate(final Context context) {
@@ -48,7 +49,20 @@ public class AuthRoute implements EndpointGroup {
         final AuthRequestDTO authenticationRequest = context.bodyAsClass(AuthRequestDTO.class);
 
         final Optional<TokensDTO> tokens = authorizationService.authorize(authenticationRequest.getAuthorization())
-                .map(tokensBO -> restMapper.toDTO(tokensBO));
+                .map(restMapper::toDTO);
+
+        if (tokens.isPresent()) {
+            context.json(tokens.get());
+        } else {
+            context.status(400).result("Failed to authorize user");
+        }
+    }
+
+    private void refresh(final Context context) {
+        final AuthRequestDTO authenticationRequest = context.bodyAsClass(AuthRequestDTO.class);
+
+        final Optional<TokensDTO> tokens = authorizationService.refresh(authenticationRequest.getAuthorization())
+                .map(restMapper::toDTO);
 
         if (tokens.isPresent()) {
             context.json(tokens.get());
