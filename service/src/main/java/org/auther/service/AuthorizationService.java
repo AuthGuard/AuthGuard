@@ -11,4 +11,11 @@ public interface AuthorizationService {
      * @return
      */
     Optional<TokensBO> authorize(String header);
+
+    /**
+     * Refresh an access token using the refresh token
+     * @param refreshToken
+     * @return
+     */
+    Optional<TokensBO> refresh(String refreshToken);
 }

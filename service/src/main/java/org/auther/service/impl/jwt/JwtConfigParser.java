@@ -5,8 +5,8 @@ import org.auther.service.exceptions.ServiceException;
 
 import java.time.Duration;
 
-class JwtConfigParser {
-    static Algorithm parseAlgorithm(final String algorithmName, final String key) {
+public class JwtConfigParser {
+    public static Algorithm parseAlgorithm(final String algorithmName, final String key) {
         switch (algorithmName) {
             case "HMAC256":
                 return Algorithm.HMAC256(key);
@@ -19,7 +19,7 @@ class JwtConfigParser {
         }
     }
 
-    static Duration parseDuration(final String str) {
+    public static Duration parseDuration(final String str) {
         final int amount = Integer.parseInt(str.substring(0, str.length() - 1));
         final char unit = str.charAt(str.length() - 1);
 

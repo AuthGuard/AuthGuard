@@ -18,7 +18,7 @@
 							"});",
 							"",
 							"let response = pm.response.json();",
-							"pm.globals.set(\"accountId\", response.id);"
+							"pm.environment.set(\"accountId\", response.id);"
 						],
 						"type": "text/javascript"
 					}
@@ -158,7 +158,10 @@
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
-							"});"
+							"});",
+							"",
+							"let response = pm.response.json();",
+							"pm.environment.set(\"refreshToken\", response.refreshToken);"
 						],
 						"type": "text/javascript"
 					}
@@ -190,6 +193,51 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "refresh",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "a562f372-ee7d-4fd8-a3a3-4b892dcb9490",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"authorization\": \"{{refreshToken}}\"\n}"
+				},
+				"url": {
+					"raw": "{{authguard}}/auth/authorize/refresh",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"auth",
+						"authorize",
+						"refresh"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"event": [
@@ -216,7 +264,7 @@
 	],
 	"variable": [
 		{
-			"id": "cdb3b836-5b73-48c5-940b-ff29c3653c09",
+			"id": "630aa2e6-6495-4c2a-bb76-7ba0c6789901",
 			"key": "authguard",
 			"value": "http://localhost:3000",
 			"type": "string"
