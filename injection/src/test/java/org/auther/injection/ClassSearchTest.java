@@ -5,17 +5,12 @@ import org.auther.dal.AccountsRepository;
 import org.auther.dal.PermissionsRepository;
 import org.auther.dal.mock.MockAccountsRepository;
 import org.auther.dal.mock.MockPermissionsRepository;
-import org.auther.dal.model.AccountDO;
-import org.auther.dal.model.PermissionDO;
 import org.auther.emb.MessagePublisher;
 import org.junit.jupiter.api.Test;
 import org.reflections.Reflections;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
-
-import java.util.Collection;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

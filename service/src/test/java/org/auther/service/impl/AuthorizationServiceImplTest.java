@@ -8,7 +8,6 @@ import org.auther.service.AuthorizationService;
 import org.auther.service.JwtProvider;
 import org.auther.service.config.ImmutableStrategyConfig;
 import org.auther.service.exceptions.ServiceAuthorizationException;
-import org.auther.service.impl.jwt.AccessTokenStrategy;
 import org.auther.service.model.AccountBO;
 import org.auther.service.model.TokensBO;
 import org.jeasy.random.EasyRandom;
@@ -41,10 +40,9 @@ class AuthorizationServiceImplTest {
         accessTokenProvider = Mockito.mock(JwtProvider.class);
         accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
 
-        final AccessTokenStrategy accessTokenStrategy = new AccessTokenStrategy(
-                ImmutableStrategyConfig.builder()
+        final ImmutableStrategyConfig accessTokenStrategy = ImmutableStrategyConfig.builder()
                         .refreshTokenLife("5m")
-                        .build());
+                        .build();
 
         authorizationService = new AuthorizationServiceImpl(accountsService, idTokenProvider,
                 accessTokenProvider, accountTokensRepository, accessTokenStrategy);

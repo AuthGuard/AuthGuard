@@ -18,4 +18,5 @@ public interface JwtConfig {
     String getIssuer();
     List<String> getAllowedAlgorithms();
     List<String> getTrustedIssuers();
+    ImmutableStrategiesConfig getStrategies();
 }
