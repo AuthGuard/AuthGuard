@@ -3,6 +3,7 @@ package org.auther.rest.routes;
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
+import org.auther.rest.access.ActorRole;
 import org.auther.rest.dto.PermissionDTO;
 import org.auther.service.PermissionsService;
 
@@ -12,6 +13,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
+import static io.javalin.core.security.SecurityUtil.roles;
 
 public class PermissionsRoute implements EndpointGroup {
     private final PermissionsService permissionsService;
@@ -25,8 +27,8 @@ public class PermissionsRoute implements EndpointGroup {
 
     @Override
     public void addEndpoints() {
-        post("/permissions", this::createPermission);
-        get("/permissions", this::getPermissions);
+        post("/permissions", this::createPermission, roles(ActorRole.of("admin")));
+        get("/permissions", this::getPermissions, roles(ActorRole.of("admin")));
     }
 
     private void createPermission(final Context context) {

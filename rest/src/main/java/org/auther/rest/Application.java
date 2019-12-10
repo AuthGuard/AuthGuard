@@ -5,6 +5,7 @@ import com.auther.config.JacksonConfigContext;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.javalin.Javalin;
+import org.auther.rest.access.RolesAccessManager;
 import org.auther.rest.injectors.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,12 @@ public class Application {
         final Injector injector = Guice.createInjector(new MappersBinder(), new ConfigBinder(configContext),
                 new ServicesBinder(), new JwtBinder(configContext), new DalBinder());
 
-        new Server(injector).start(Javalin.create(), 3000);
+        // run bootstraps
+        injector.getInstance(Bootstrap.class).bootstrapOneTimeAdmin();
+
+        // run the server
+        new Server(injector).start(Javalin.create(config -> {
+            config.accessManager(new RolesAccessManager());
+        }), 3000);
     }
 }

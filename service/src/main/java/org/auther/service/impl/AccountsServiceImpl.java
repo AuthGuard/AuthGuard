@@ -137,4 +137,12 @@ public class AccountsServiceImpl implements AccountsService {
                 .map(serviceMapper::toBO)
                 .orElseThrow(IllegalStateException::new);
     }
+
+    @Override
+    public List<AccountBO> getAdmins() {
+        return accountsRepository.getAdmins()
+                .stream()
+                .map(serviceMapper::toBO)
+                .collect(Collectors.toList());
+    }
 }

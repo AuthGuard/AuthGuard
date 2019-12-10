@@ -3,6 +3,7 @@ package org.auther.rest;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.inject.Injector;
 import io.javalin.Javalin;
+import org.auther.rest.access.AuthorizationHandler;
 import org.auther.rest.routes.AccountsRoute;
 import org.auther.rest.routes.AdminRoute;
 import org.auther.rest.routes.AuthRoute;
@@ -25,6 +26,7 @@ class Server {
 
     void start(final Javalin app, final int port) {
         app.before(context -> context.attribute("time", System.currentTimeMillis()));
+        app.before(injector.getInstance(AuthorizationHandler.class));
 
         app.after(context -> {
             final Long now = System.currentTimeMillis();
@@ -51,7 +53,7 @@ class Server {
         app.exception(ServiceAuthorizationException.class, (e, context) -> context.status(401));
 
         app.exception(Exception.class, (e, context) -> {
-            log.error("An exception was thrown {}", e);
+            log.error("An exception was thrown", e);
             context.status(500).result("Internal server error");
         });
 

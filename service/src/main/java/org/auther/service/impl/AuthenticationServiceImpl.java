@@ -40,6 +40,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
     }
 
+    @Override
+    public Optional<AccountBO> authenticate(final String username, final String password) {
+        return verifyCredentials(username, password);
+    }
+
     private Optional<AccountBO> handleBasicAuthentication(final String base64Credentials) {
         final String[] decoded = new String(Base64.getDecoder().decode(base64Credentials)).split(":");
 
@@ -50,6 +55,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         final String username =  decoded[0];
         final String password = decoded[1];
 
+        return verifyCredentials(username, password);
+    }
+
+    private Optional<AccountBO> verifyCredentials(final String username, final String password) {
         final Optional<CredentialsBO> credentials = credentialsService.getByUsernameUnsafe(username);
 
         if (credentials.isPresent()) {

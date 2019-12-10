@@ -12,4 +12,6 @@ public interface ConfigContext {
     <T> T getAsConfigBean(String key, Class<T> clazz);
 
     <T> T asConfigBean(Class<T> clazz);
+
+    Iterable<String> subContexts();
 }

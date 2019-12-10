@@ -3,6 +3,7 @@ package org.auther.rest.routes;
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
+import org.auther.rest.access.ActorRole;
 import org.auther.rest.dto.AccountDTO;
 import org.auther.rest.dto.PermissionsRequestDTO;
 import org.auther.service.AccountsService;
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.post;
+import static io.javalin.core.security.SecurityUtil.roles;
 
 public class AccountsRoute implements EndpointGroup {
     private final AccountsService accountsService;
@@ -28,8 +30,8 @@ public class AccountsRoute implements EndpointGroup {
     public void addEndpoints() {
         post("/", this::create);
         get("/:id", this::getById);
-        post("/:id/permission/grant", this::grantPermissions);
-        post("/:id/permission/revoke", this::revokePermissions);
+        post("/:id/permission/grant", this::grantPermissions, roles(ActorRole.of("admin")));
+        post("/:id/permission/revoke", this::revokePermissions, roles(ActorRole.of("admin")));
     }
 
     private void create(final Context context) {

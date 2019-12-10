@@ -5,11 +5,14 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class JacksonConfigContext implements ConfigContext {
     private final ObjectNode rootNode;
@@ -75,5 +78,10 @@ public class JacksonConfigContext implements ConfigContext {
         } catch (final JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Override
+    public Iterable<String> subContexts() {
+        return rootNode::fieldNames;
     }
 }
