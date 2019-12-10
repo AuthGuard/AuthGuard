@@ -8,9 +8,9 @@ import org.auther.dal.model.AccountTokenDO;
 import org.auther.service.AccountsService;
 import org.auther.service.AuthorizationService;
 import org.auther.service.JwtProvider;
+import org.auther.service.config.ImmutableStrategyConfig;
 import org.auther.service.exceptions.ServiceAuthorizationException;
 import org.auther.service.exceptions.ServiceException;
-import org.auther.service.impl.jwt.AccessTokenStrategy;
 import org.auther.service.impl.jwt.JwtConfigParser;
 import org.auther.service.model.AccountBO;
 import org.auther.service.model.TokensBO;
@@ -23,14 +23,14 @@ public class AuthorizationServiceImpl implements AuthorizationService {
     private final JwtProvider idTokenProvider;
     private final JwtProvider accessTokenProvider;
     private final AccountTokensRepository accountTokensRepository;
-    private final AccessTokenStrategy accessTokenStrategy;
+    private final ImmutableStrategyConfig accessTokenStrategy;
 
     @Inject
     public AuthorizationServiceImpl(final AccountsService accountsService,
                                     @Named("authenticationTokenProvider") final JwtProvider idTokenProvider,
                                     @Named("authorizationTokenProvider") final JwtProvider accessTokenProvider,
                                     final AccountTokensRepository accountTokensRepository,
-                                    final AccessTokenStrategy accessTokenStrategy) {
+                                    @Named("accessToken") final ImmutableStrategyConfig accessTokenStrategy) {
         this.accountsService = accountsService;
         this.idTokenProvider = idTokenProvider;
         this.accessTokenProvider = accessTokenProvider;
@@ -115,7 +115,7 @@ public class AuthorizationServiceImpl implements AuthorizationService {
 
     private ZonedDateTime getExpirationDateTime() {
         return ZonedDateTime.now()
-                .plus(JwtConfigParser.parseDuration(accessTokenStrategy.getConfig().getRefreshTokenLife()));
+                .plus(JwtConfigParser.parseDuration(accessTokenStrategy.getRefreshTokenLife()));
     }
 
     private boolean validateExpirationDateTime(final AccountTokenDO accountToken) {

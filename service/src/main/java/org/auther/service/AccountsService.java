@@ -91,4 +91,11 @@ public interface AccountsService {
      *         if no account was found.
      */
     AccountBO revokeRoles(String accountId, List<String> roles);
+
+    /**
+     * Finds a list of all admins. This is useful only when deciding
+     * if a one-time admin account should be created or not.
+     * @return
+     */
+    List<AccountBO> getAdmins();
 }

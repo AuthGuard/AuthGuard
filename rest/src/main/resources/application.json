@@ -30,6 +30,11 @@
     },
     "authorization": {
       "strategy": "accessToken"
+    },
+
+    "oneTimeAdmin": {
+      "usernameVariable": "AUTHGUARD_OTA_USERNAME",
+      "passwordVariable": "AUTHGUARD_OTA_PASSWORD"
     }
   }
 }

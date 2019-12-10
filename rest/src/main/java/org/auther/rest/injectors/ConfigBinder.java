@@ -13,9 +13,9 @@ public class ConfigBinder extends AbstractModule {
 
     @Override
     protected void configure() {
-        bind(ConfigContext.class)
-                .annotatedWith(Names.named("jwt"))
-                .toInstance(configContext.getSubContext("jwt"));
+        configContext.subContexts().forEach(subContext -> bind(ConfigContext.class)
+                .annotatedWith(Names.named(subContext))
+                .toInstance(configContext.getSubContext(subContext)));
 
         bind(ConfigContext.class)
                 .toInstance(configContext);
