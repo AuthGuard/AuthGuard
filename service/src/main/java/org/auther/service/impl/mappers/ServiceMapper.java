@@ -3,6 +3,7 @@ package org.auther.service.impl.mappers;
 import org.auther.dal.model.*;
 import org.auther.service.model.*;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper
 public interface ServiceMapper {
@@ -15,9 +16,18 @@ public interface ServiceMapper {
     AccountDO toDO(AccountBO accountBO);
     AccountBO toBO(AccountDO accountDO);
 
+    AppDO toDO(AppBO appBO);
+    AppBO toBO(AppDO appDO);
+
     PermissionDO toDO(PermissionBO permissionBO);
     PermissionBO toBO(PermissionDO permissionDO);
 
     RoleDO toDO(RoleBO roleBO);
     RoleBO toBO(RoleDO roleDO);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "jti", source = "tokensBO.id")
+    @Mapping(target = "key", source = "tokensBO.token")
+    @Mapping(target = "appId", source = "appBO.id")
+    ApiKeyDO toDO(TokensBO tokensBO, AppBO appBO);
 }

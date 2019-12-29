@@ -1,9 +1,11 @@
 package org.auther.service.impl.jwt;
 
+import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.inject.Inject;
+import org.auther.service.JtiProvider;
 import org.auther.service.JwtProvider;
 import org.auther.service.config.ImmutableJwtConfig;
 import org.auther.service.config.ImmutableStrategyConfig;
@@ -14,36 +16,37 @@ import org.auther.service.model.TokensBO;
 
 import java.util.Optional;
 
-public class IdTokenProvider implements JwtProvider {
+public class ApiTokenProvider implements JwtProvider {
     private final Algorithm algorithm;
-    private final TokenGenerator tokenGenerator;
     private final TokenVerifier tokenVerifier;
-    private final ImmutableStrategyConfig strategy;
+    private final JtiProvider jti;
 
     @Inject
-    public IdTokenProvider(final ImmutableJwtConfig jwtConfig) {
-        this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getKey());
-        this.tokenGenerator = new TokenGenerator(jwtConfig);
-        this.strategy = jwtConfig.getStrategies().getIdToken();
+    public ApiTokenProvider(final ImmutableJwtConfig jwtConfig, final JtiProvider jti) {
+        this.jti = jti;
 
-        this.tokenVerifier = new TokenVerifier(this.strategy, algorithm);
+        this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getKey());
+
+        final ImmutableStrategyConfig strategy = ImmutableStrategyConfig.builder().useJti(true).build();
+
+        this.tokenVerifier = new TokenVerifier(strategy, jti, algorithm);
     }
+
 
     @Override
     public TokensBO generateToken(final AccountBO account) {
-        final TokenBuilderBO tokenBuilder = generateIdToke(account);
-        final String token = tokenBuilder.getBuilder().sign(algorithm);
-        final String refreshToken = tokenGenerator.generateRandomRefreshToken();
+        throw new UnsupportedOperationException("API keys cannot be generated for an account");
 
-        return TokensBO.builder()
-                .token(token)
-                .refreshToken(refreshToken)
-                .build();
     }
 
     @Override
     public TokensBO generateToken(final AppBO app) {
-        throw new UnsupportedOperationException("ID tokens cannot be generated for an application");
+        final TokenBuilderBO tokenBuilder = generateApiToken(app);
+        final String token = tokenBuilder.getBuilder().sign(algorithm);
+
+        return TokensBO.builder()
+                .token(token)
+                .build();
     }
 
     @Override
@@ -51,11 +54,16 @@ public class IdTokenProvider implements JwtProvider {
         return tokenVerifier.verify(token);
     }
 
-    private TokenBuilderBO generateIdToke(final AccountBO account) {
-        final JWTCreator.Builder jwtBuilder = tokenGenerator
-                .generateUnsignedToken(account, JwtConfigParser.parseDuration(strategy.getTokenLife()));
+    private TokenBuilderBO generateApiToken(final AppBO app) {
+        final String keyId = jti.next();
+
+        final JWTCreator.Builder jwtBuilder = JWT.create()
+                .withSubject(app.getId())
+                .withJWTId(keyId)
+                .withClaim("type", "API");
 
         return TokenBuilderBO.builder()
+                .id(keyId)
                 .builder(jwtBuilder)
                 .build();
     }

@@ -6,7 +6,8 @@ import org.immutables.value.Value;
 @Value.Immutable
 @Value.Style(
         validationMethod = Value.Style.ValidationMethod.NONE,
-        jdkOnly = true
+        jdkOnly = true,
+        get = {"get*", "use*", "include*"}
 )
 @JsonDeserialize(as = ImmutableStrategyConfig.class)
 public interface StrategyConfig {

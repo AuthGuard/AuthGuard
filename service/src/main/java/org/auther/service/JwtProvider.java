@@ -2,6 +2,7 @@ package org.auther.service;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import org.auther.service.model.AccountBO;
+import org.auther.service.model.AppBO;
 import org.auther.service.model.TokensBO;
 
 import java.util.Optional;
@@ -17,6 +18,11 @@ public interface JwtProvider {
      * @return The generated tokens.
      */
     TokensBO generateToken(AccountBO account);
+
+    /**
+     * Generate a token for an app.
+     */
+    TokensBO generateToken(AppBO app);
 
     /**
      * Validate that a token is valid.

@@ -15,6 +15,8 @@ public class DalBinder extends AbstractModule {
         bind(CredentialsRepository.class).to(MockCredentialsRepository.class);
         bind(CredentialsAuditRepository.class).to(MockCredentialsAuditRepository.class);
         bind(AccountsRepository.class).to(MockAccountsRepository.class);
+        bind(ApplicationsRepository.class).to(MockApplicationsRepository.class);
+        bind(ApiKeysRepository.class).to(MockApiKeysRepository.class);
         bind(PermissionsRepository.class).to(MockPermissionsRepository.class);
         bind(RolesRepository.class).to(MockRolesRepository.class);
         bind(AccountTokensRepository.class).to(MockAccountsTokensRepository.class);

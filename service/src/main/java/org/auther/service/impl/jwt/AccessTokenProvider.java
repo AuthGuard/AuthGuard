@@ -8,10 +8,7 @@ import org.auther.service.JtiProvider;
 import org.auther.service.JwtProvider;
 import org.auther.service.config.ImmutableJwtConfig;
 import org.auther.service.config.ImmutableStrategyConfig;
-import org.auther.service.model.AccountBO;
-import org.auther.service.model.PermissionBO;
-import org.auther.service.model.TokenBuilderBO;
-import org.auther.service.model.TokensBO;
+import org.auther.service.model.*;
 
 import java.util.Optional;
 
@@ -43,6 +40,11 @@ public class AccessTokenProvider implements JwtProvider {
                 .token(token)
                 .refreshToken(refreshToken)
                 .build();
+    }
+
+    @Override
+    public TokensBO generateToken(final AppBO app) {
+        throw new UnsupportedOperationException("Access tokens cannot be generated for an application");
     }
 
     @Override

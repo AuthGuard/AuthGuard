@@ -20,4 +20,7 @@ public interface RestMapper {
 
     RoleBO toBO(RoleDTO permissionDTO);
     RoleDTO toDTO(RoleBO permissionBO);
+
+    AppBO toBO(AppDTO appDTO);
+    AppDTO toDTO(AppBO appBO);
 }
