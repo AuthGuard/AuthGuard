@@ -13,8 +13,11 @@ public class ServicesBinder extends AbstractModule {
         bind(AuthenticationService.class).to(AuthenticationServiceImpl.class);
         bind(AuthorizationService.class).to(AuthorizationServiceImpl.class);
         bind(AccountsService.class).to(AccountsServiceImpl.class);
+        bind(ApplicationsService.class).to(ApplicationsServiceImpl.class);
+        bind(ApiKeysService.class).to(ApiKeysServiceImpl.class);
         bind(PermissionsService.class).to(PermissionsServiceImpl.class);
         bind(RolesService.class).to(RolesServiceImpl.class);
+
         bind(SecurePassword.class).to(SCryptPassword.class);
     }
 }

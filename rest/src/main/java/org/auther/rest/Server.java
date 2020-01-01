@@ -4,10 +4,8 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.inject.Injector;
 import io.javalin.Javalin;
 import org.auther.rest.access.AuthorizationHandler;
-import org.auther.rest.routes.AccountsRoute;
-import org.auther.rest.routes.AdminRoute;
-import org.auther.rest.routes.AuthRoute;
-import org.auther.rest.routes.CredentialsRoute;
+import org.auther.rest.routes.*;
+import org.auther.service.ApplicationsService;
 import org.auther.service.exceptions.ServiceAuthorizationException;
 import org.auther.service.exceptions.ServiceException;
 import org.slf4j.Logger;
@@ -42,7 +40,9 @@ class Server {
         app.routes(() -> {
             path("/credentials", injector.getInstance(CredentialsRoute.class));
             path("/auth", injector.getInstance(AuthRoute.class));
+            path("/keys", injector.getInstance(ApiKeysRoute.class));
             path("/accounts", injector.getInstance(AccountsRoute.class));
+            path("/apps", injector.getInstance(ApplicationsRoute.class));
             path("/admin", injector.getInstance(AdminRoute.class));
         });
 

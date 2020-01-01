@@ -66,7 +66,7 @@ class AuthenticationServiceImplTest {
         Mockito.when(credentialsService.getByUsernameUnsafe(username)).thenReturn(Optional.of(credentials));
         Mockito.when(accountsService.getById(credentials.getAccountId())).thenReturn(Optional.of(account));
         Mockito.when(securePassword.verify(eq(password), eq(hashedPasswordBO))).thenReturn(true);
-        Mockito.when(jwtProvider.generateToken(any())).thenReturn(tokens);
+        Mockito.when(jwtProvider.generateToken(any(AccountBO.class))).thenReturn(tokens);
 
         final Optional<TokensBO> result = authenticationService.authenticate(authorization);
 
