@@ -40,6 +40,7 @@ class Server {
         app.routes(() -> {
             path("/credentials", injector.getInstance(CredentialsRoute.class));
             path("/auth", injector.getInstance(AuthRoute.class));
+            path("/keys", injector.getInstance(ApiKeysRoute.class));
             path("/accounts", injector.getInstance(AccountsRoute.class));
             path("/apps", injector.getInstance(ApplicationsRoute.class));
             path("/admin", injector.getInstance(AdminRoute.class));

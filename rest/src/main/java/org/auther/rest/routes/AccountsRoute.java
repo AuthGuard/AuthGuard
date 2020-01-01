@@ -5,8 +5,10 @@ import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import org.auther.rest.access.ActorRole;
 import org.auther.rest.dto.AccountDTO;
+import org.auther.rest.dto.AppDTO;
 import org.auther.rest.dto.PermissionsRequestDTO;
 import org.auther.service.AccountsService;
+import org.auther.service.ApplicationsService;
 import org.auther.service.model.PermissionBO;
 
 import java.util.List;
@@ -19,11 +21,14 @@ import static io.javalin.core.security.SecurityUtil.roles;
 
 public class AccountsRoute implements EndpointGroup {
     private final AccountsService accountsService;
+    private final ApplicationsService applicationsService;
     private final RestMapper restMapper;
 
     @Inject
-    AccountsRoute(final AccountsService accountsService, final RestMapper restMapper) {
+    AccountsRoute(final AccountsService accountsService, final ApplicationsService applicationsService,
+                  final RestMapper restMapper) {
         this.accountsService = accountsService;
+        this.applicationsService = applicationsService;
         this.restMapper = restMapper;
     }
 
@@ -32,6 +37,7 @@ public class AccountsRoute implements EndpointGroup {
         get("/:id", this::getById);
         post("/:id/permission/grant", this::grantPermissions, roles(ActorRole.of("admin")));
         post("/:id/permission/revoke", this::revokePermissions, roles(ActorRole.of("admin")));
+        get("/:id/apps", this::getApps);
     }
 
     private void create(final Context context) {
@@ -81,5 +87,16 @@ public class AccountsRoute implements EndpointGroup {
 
         final AccountDTO updatedAccount = restMapper.toDTO(accountsService.revokePermissions(accountId, permissions));
         context.json(updatedAccount);
+    }
+
+    private void getApps(final Context context) {
+        final String accountId = context.pathParam("id");
+
+        final List<AppDTO> apps = applicationsService.getByAccountId(accountId)
+                .stream()
+                .map(restMapper::toDTO)
+                .collect(Collectors.toList());
+
+        context.status(200).json(apps);
     }
 }

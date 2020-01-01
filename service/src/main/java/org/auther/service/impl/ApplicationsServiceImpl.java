@@ -8,8 +8,10 @@ import org.auther.service.exceptions.ServiceNotFoundException;
 import org.auther.service.impl.mappers.ServiceMapper;
 import org.auther.service.model.AppBO;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class ApplicationsServiceImpl implements ApplicationsService {
     private final ApplicationsRepository applicationsRepository;
@@ -62,5 +64,13 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     public Optional<AppBO> delete(final String id) {
         return applicationsRepository.delete(id)
                 .map(serviceMapper::toBO);
+    }
+
+    @Override
+    public List<AppBO> getByAccountId(final String accountId) {
+        return applicationsRepository.getAllForAccount(accountId)
+                .stream()
+                .map(serviceMapper::toBO)
+                .collect(Collectors.toList());
     }
 }

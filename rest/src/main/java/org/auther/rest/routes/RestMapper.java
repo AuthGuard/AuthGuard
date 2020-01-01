@@ -2,7 +2,9 @@ package org.auther.rest.routes;
 
 import org.auther.rest.dto.*;
 import org.auther.service.model.*;
+import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper
 public interface RestMapper {
@@ -21,6 +23,8 @@ public interface RestMapper {
     RoleBO toBO(RoleDTO permissionDTO);
     RoleDTO toDTO(RoleBO permissionBO);
 
+    @Mapping(target = "parentAccountId", source = "accountId")
     AppBO toBO(AppDTO appDTO);
+    @InheritInverseConfiguration
     AppDTO toDTO(AppBO appBO);
 }
