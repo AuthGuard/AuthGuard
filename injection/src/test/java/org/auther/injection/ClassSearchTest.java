@@ -6,6 +6,7 @@ import org.auther.dal.PermissionsRepository;
 import org.auther.dal.mock.MockAccountsRepository;
 import org.auther.dal.mock.MockPermissionsRepository;
 import org.auther.emb.MessagePublisher;
+import org.auther.emb.model.MessageMO;
 import org.junit.jupiter.api.Test;
 import org.reflections.Reflections;
 import org.reflections.util.ClasspathHelper;
@@ -77,7 +78,12 @@ class ClassSearchTest {
     private static class PermissionsRepositoryInjector extends AbstractModule {}
 
     // --- EMB
-    private static class MessagePublisherImpl implements MessagePublisher {}
+    private static class MessagePublisherImpl implements MessagePublisher {
+        @Override
+        public void publish(final MessageMO message) {
+            
+        }
+    }
 
     interface MessagePublisherNotImpl extends MessagePublisher {}
 }

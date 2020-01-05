@@ -1,8 +1,10 @@
 package org.auther.service.impl;
 
+import com.auther.config.ConfigContext;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.auther.service.*;
+import org.auther.service.config.ImmutableAuthenticationConfig;
 import org.auther.service.exceptions.ServiceAuthorizationException;
 import org.auther.service.exceptions.ServiceException;
 import org.auther.service.model.AccountBO;
@@ -14,18 +16,25 @@ import java.util.Optional;
 
 public class AuthenticationServiceImpl implements AuthenticationService {
     private final CredentialsService credentialsService;
+    private final OtpService otpService;
     private final AccountsService accountsService;
     private final SecurePassword securePassword;
     private final JwtProvider jwtProvider;
+    private final ImmutableAuthenticationConfig authenticationConfig;
 
     @Inject
-    public AuthenticationServiceImpl(final CredentialsService credentialsService, final AccountsService accountsService,
+    public AuthenticationServiceImpl(final CredentialsService credentialsService,
+                                     final OtpService otpService,
+                                     final AccountsService accountsService,
                                      final SecurePassword securePassword,
-                                     @Named("authenticationTokenProvider") final JwtProvider jwtProvider) {
+                                     @Named("authenticationTokenProvider") final JwtProvider jwtProvider,
+                                     @Named("authentication") final ConfigContext authenticationConfig) {
         this.credentialsService = credentialsService;
+        this.otpService = otpService;
         this.accountsService = accountsService;
         this.securePassword = securePassword;
         this.jwtProvider = jwtProvider;
+        this.authenticationConfig = authenticationConfig.asConfigBean(ImmutableAuthenticationConfig.class);
     }
 
     @Override
@@ -33,8 +42,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         final String[] parts = parseAuthorization(header);
 
         if (parts[0].equals("Basic")) {
-            return handleBasicAuthentication(parts[1])
-                    .map(jwtProvider::generateToken);
+            final Optional<AccountBO> account =  handleBasicAuthentication(parts[1]);
+
+            if (authenticationConfig.getUseOtp()) {
+                return account.map(otpService::generate);
+            } else {
+                return account.map(jwtProvider::generateToken);
+            }
         } else {
             throw new ServiceException("Unsupported authorization scheme");
         }

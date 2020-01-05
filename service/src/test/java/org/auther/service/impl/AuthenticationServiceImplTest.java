@@ -1,8 +1,10 @@
 package org.auther.service.impl;
 
+import com.auther.config.ConfigContext;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.auther.dal.model.AccountDO;
 import org.auther.service.*;
+import org.auther.service.config.ImmutableAuthenticationConfig;
 import org.auther.service.exceptions.ServiceAuthorizationException;
 import org.auther.service.exceptions.ServiceException;
 import org.auther.service.model.AccountBO;
@@ -27,9 +29,11 @@ import static org.mockito.ArgumentMatchers.eq;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AuthenticationServiceImplTest {
     private AccountsService accountsService;
+    private OtpService otpService;
     private CredentialsService credentialsService;
     private SecurePassword securePassword;
     private JwtProvider jwtProvider;
+    private ConfigContext configContext;
     private AuthenticationService authenticationService;
 
     private final static EasyRandom RANDOM = new EasyRandom();
@@ -37,10 +41,20 @@ class AuthenticationServiceImplTest {
     @BeforeAll
     void setup() {
         accountsService = Mockito.mock(AccountsService.class);
+        otpService = Mockito.mock(OtpService.class);
         credentialsService = Mockito.mock(CredentialsService.class);
         securePassword = Mockito.mock(SecurePassword.class);
         jwtProvider = Mockito.mock(JwtProvider.class);
-        authenticationService = new AuthenticationServiceImpl(credentialsService, accountsService, securePassword, jwtProvider);
+        configContext = Mockito.mock(ConfigContext.class);
+
+        final ImmutableAuthenticationConfig config = ImmutableAuthenticationConfig.builder()
+                .useOtp(false)
+                .build();
+
+        Mockito.when(configContext.asConfigBean(ImmutableAuthenticationConfig.class)).thenReturn(config);
+
+        authenticationService = new AuthenticationServiceImpl(credentialsService, otpService, accountsService,
+                securePassword, jwtProvider, configContext);
     }
 
     @AfterEach

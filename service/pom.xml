@@ -26,6 +26,12 @@
 
         <dependency>
             <groupId>org.auther</groupId>
+            <artifactId>emb</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.auther</groupId>
             <artifactId>config</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -40,6 +46,16 @@
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk15on</artifactId>
             <version>${bouncy-castle.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.7</version>
         </dependency>
     </dependencies>
 

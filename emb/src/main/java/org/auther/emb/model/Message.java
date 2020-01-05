@@ -6,8 +6,8 @@ import java.time.OffsetDateTime;
 
 @Value.Immutable
 @MOStyle
-public interface Message {
+public interface Message<T> {
     OffsetDateTime getTimestamp();
     EventType getEventType();
-    MessageBody getMessageBody();
+    T getMessageBody();
 }
