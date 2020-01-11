@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 
 class OtpServiceImplTest {
     private final EasyRandom random = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
@@ -31,6 +32,7 @@ class OtpServiceImplTest {
     private OtpRepository mockOtpRepository;
     private AccountsService mockAccountsService;
     private JwtProvider mockJwtProvider;
+    private MessagePublisher mockMessagePublisher;
 
     private OtpServiceImpl otpService;
 
@@ -38,12 +40,13 @@ class OtpServiceImplTest {
         mockOtpRepository = Mockito.mock(OtpRepository.class);
         mockAccountsService = Mockito.mock(AccountsService.class);
         mockJwtProvider = Mockito.mock(JwtProvider.class);
+        mockMessagePublisher = Mockito.mock(MessagePublisher.class);
 
         final ConfigContext configContext = Mockito.mock(ConfigContext.class);
 
         Mockito.when(configContext.asConfigBean(ImmutableOtpConfig.class)).thenReturn(otpConfig);
 
-        otpService = new OtpServiceImpl(mockOtpRepository, Mockito.mock(MessagePublisher.class),
+        otpService = new OtpServiceImpl(mockOtpRepository, mockMessagePublisher,
                 mockAccountsService, mockJwtProvider, new ServiceMapperImpl(), configContext);
     }
 
@@ -68,6 +71,7 @@ class OtpServiceImplTest {
         final ArgumentCaptor<OneTimePasswordDO> argumentCaptor = ArgumentCaptor.forClass(OneTimePasswordDO.class);
 
         Mockito.verify(mockOtpRepository).save(argumentCaptor.capture());
+        Mockito.verify(mockMessagePublisher).publish(any());
 
         final OneTimePasswordDO persisted = argumentCaptor.getValue();
 
@@ -101,6 +105,7 @@ class OtpServiceImplTest {
         final ArgumentCaptor<OneTimePasswordDO> argumentCaptor = ArgumentCaptor.forClass(OneTimePasswordDO.class);
 
         Mockito.verify(mockOtpRepository).save(argumentCaptor.capture());
+        Mockito.verify(mockMessagePublisher).publish(any());
 
         final OneTimePasswordDO persisted = argumentCaptor.getValue();
 
@@ -138,6 +143,7 @@ class OtpServiceImplTest {
         final ArgumentCaptor<OneTimePasswordDO> argumentCaptor = ArgumentCaptor.forClass(OneTimePasswordDO.class);
 
         Mockito.verify(mockOtpRepository).save(argumentCaptor.capture());
+        Mockito.verify(mockMessagePublisher).publish(any());
 
         final OneTimePasswordDO persisted = argumentCaptor.getValue();
 

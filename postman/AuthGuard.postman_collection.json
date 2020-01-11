@@ -146,7 +146,7 @@
 									"});",
 									"",
 									"let response = pm.response.json();",
-									"pm.globals.set(\"idToken\", response.token);"
+									"pm.environment.set(\"idToken\", response.token);"
 								],
 								"type": "text/javascript"
 							}
@@ -174,6 +174,217 @@
 							"path": [
 								"auth",
 								"authenticate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "authorize",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a562f372-ee7d-4fd8-a3a3-4b892dcb9490",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let response = pm.response.json();",
+									"pm.environment.set(\"refreshToken\", response.refreshToken);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"authorization\": \"Bearer {{idToken}}\"\n}"
+						},
+						"url": {
+							"raw": "{{authguard}}/auth/authorize",
+							"host": [
+								"{{authguard}}"
+							],
+							"path": [
+								"auth",
+								"authorize"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "refresh",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a562f372-ee7d-4fd8-a3a3-4b892dcb9490",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"authorization\": \"{{refreshToken}}\"\n}"
+						},
+						"url": {
+							"raw": "{{authguard}}/auth/authorize/refresh",
+							"host": [
+								"{{authguard}}"
+							],
+							"path": [
+								"auth",
+								"authorize",
+								"refresh"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "ab2eb5d2-b26c-4e25-827e-ece939c7f77b",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "3d595706-9ea8-42bb-a748-602599dc2137",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "account auth OTP",
+			"item": [
+				{
+					"name": "login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "33e436a4-babd-49e2-afca-ff7f95166f15",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let response = pm.response.json();",
+									"pm.environment.set(\"otp-id\", response.token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"authorization\": \"Basic dXNlcm5hbWU6cGFzc3dvcmQ=\"\n}"
+						},
+						"url": {
+							"raw": "{{authguard}}/auth/authenticate",
+							"host": [
+								"{{authguard}}"
+							],
+							"path": [
+								"auth",
+								"authenticate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "verify OTP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "33e436a4-babd-49e2-afca-ff7f95166f15",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let response = pm.response.json();",
+									"pm.environment.set(\"idToken\", response.token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"passwordId\": \"{{otp-id}}\",\n\t\"password\": \"271609\"\n}"
+						},
+						"url": {
+							"raw": "{{authguard}}/otp/verify",
+							"host": [
+								"{{authguard}}"
+							],
+							"path": [
+								"otp",
+								"verify"
 							]
 						}
 					},
@@ -457,7 +668,7 @@
 	],
 	"variable": [
 		{
-			"id": "d17adf3b-3291-45b3-bad3-4b847660be5c",
+			"id": "90357687-7b27-4be0-8f31-196a4f5ab68b",
 			"key": "authguard",
 			"value": "http://localhost:3000",
 			"type": "string"

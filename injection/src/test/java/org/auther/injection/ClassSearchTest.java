@@ -81,7 +81,7 @@ class ClassSearchTest {
     private static class MessagePublisherImpl implements MessagePublisher {
         @Override
         public void publish(final MessageMO message) {
-            
+
         }
     }
 

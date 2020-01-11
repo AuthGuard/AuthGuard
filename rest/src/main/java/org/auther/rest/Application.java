@@ -21,7 +21,7 @@ public class Application {
         ).getSubContext(ConfigContext.ROOT_CONFIG_PROPERTY);
 
         final Injector injector = Guice.createInjector(new MappersBinder(), new ConfigBinder(configContext),
-                new ServicesBinder(), new JwtBinder(configContext), new DalBinder(), new EmbBinder());
+                new ServicesBinder(configContext), new JwtBinder(configContext), new DalBinder(), new EmbBinder());
 
         // run bootstraps
         injector.getInstance(Bootstrap.class).bootstrapOneTimeAdmin();

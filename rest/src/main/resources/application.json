@@ -26,7 +26,8 @@
       "trustedIssuers": ["self"]
     },
     "authentication": {
-      "strategy": "idToken"
+      "strategy": "idToken",
+      "useOtp": true
     },
     "authorization": {
       "strategy": "accessToken"

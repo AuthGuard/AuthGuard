@@ -63,7 +63,7 @@ public class OtpServiceImpl implements OtpService {
 
         // a place holder until actual implementation is available
         emb.publish(MessageMO.builder()
-                .eventType(EventType.AUTHENTICATION)
+                .eventType(EventType.OTP)
                 .timestamp(OffsetDateTime.now())
                 .messageBody(oneTimePassword)
                 .build());
