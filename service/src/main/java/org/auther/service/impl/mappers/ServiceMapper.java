@@ -30,4 +30,7 @@ public interface ServiceMapper {
     @Mapping(target = "key", source = "tokensBO.token")
     @Mapping(target = "appId", source = "appBO.id")
     ApiKeyDO toDO(TokensBO tokensBO, AppBO appBO);
+
+    OneTimePasswordDO toDO(OneTimePasswordBO oneTimePasswordBO);
+    OneTimePasswordBO toBO(OneTimePasswordDO oneTimePasswordDO);
 }

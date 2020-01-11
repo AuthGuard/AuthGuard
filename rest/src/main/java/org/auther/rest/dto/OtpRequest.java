@@ -6,10 +6,9 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @DTOStyle
-@JsonSerialize(as = TokensDTO.class)
-@JsonDeserialize(as = TokensDTO.class)
-public interface Tokens {
-    String getType();
-    String getToken();
-    String getRefreshToken();
+@JsonDeserialize(as = OtpRequestDTO.class)
+@JsonSerialize(as = OtpRequestDTO.class)
+public interface OtpRequest {
+    String getPasswordId();
+    String getPassword();
 }
