@@ -1,3 +1,3 @@
 # Under Construction
 
-[![Build Status](https://travis-ci.com/kmehrunes/Auther.svg?branch=master)](https://travis-ci.com/kmehrunes/Auther)
+[![Build Status](https://travis-ci.com/AuthGuard/AuthGuard.svg?branch=master)](https://travis-ci.com/AuthGuard/AuthGuard)
