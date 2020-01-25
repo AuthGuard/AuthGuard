@@ -21,10 +21,10 @@ public class Application {
                 new File(Application.class.getClassLoader().getResource("application.json").getFile())
         ).getSubContext(ConfigContext.ROOT_CONFIG_PROPERTY);
 
-        log.info("Initialed configuration context");
+        log.info("Initialized configuration context");
 
         // injectors
-        final String classSearchPrefix = "org.auther";
+        final String classSearchPrefix = "com.authguard";
 
         final Injector injector = Guice.createInjector(new MappersBinder(),
                 new ConfigBinder(configContext),

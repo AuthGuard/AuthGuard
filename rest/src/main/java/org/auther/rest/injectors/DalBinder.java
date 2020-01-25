@@ -2,13 +2,8 @@ package org.auther.rest.injectors;
 
 import com.google.inject.AbstractModule;
 import org.auther.dal.*;
-import org.auther.dal.mock.*;
-import org.auther.dal.model.*;
 import org.auther.injection.ClassSearch;
 import org.reflections.Reflections;
-
-import java.util.List;
-import java.util.Optional;
 
 public class DalBinder extends AbstractModule {
 
