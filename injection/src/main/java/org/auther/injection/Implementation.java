@@ -2,11 +2,11 @@ package org.auther.injection;
 
 import com.google.inject.AbstractModule;
 
-public class Implementaion<T> {
+public class Implementation<T> {
     private final Class<? extends T> implementationClass;
     private final Class<? extends AbstractModule> injectorModule;
 
-    public Implementaion(final Class<? extends T> implementationClass, final Class<? extends AbstractModule> injectorModule) {
+    public Implementation(final Class<? extends T> implementationClass, final Class<? extends AbstractModule> injectorModule) {
         this.implementationClass = implementationClass;
         this.injectorModule = injectorModule;
     }

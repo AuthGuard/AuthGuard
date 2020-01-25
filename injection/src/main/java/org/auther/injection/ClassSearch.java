@@ -16,26 +16,27 @@ public class ClassSearch {
         this.reflections = reflections;
     }
 
-    public Implementaion<AccountsRepository> findAccountsRepositoryImplementation() throws InjectionException {
+    public Implementation<AccountsRepository> findAccountsRepositoryImplementation() throws InjectionException {
         final Class<? extends AccountsRepository> implementationClass = findImplementationClass(AccountsRepository.class);
         final Class<? extends AbstractModule> injectorModule = getInjectorModules().stream()
                 .filter(clazz -> clazz.getAnnotation(InjectorModule.class).target().equals(AccountsRepository.class))
                 .findFirst()
                 .orElse(null);
 
-        return new Implementaion<>(implementationClass, injectorModule);
+        return new Implementation<>(implementationClass, injectorModule);
     }
 
-    public Implementaion<PermissionsRepository> findPermissionsRepositoryImplementation() throws InjectionException {
+    public Implementation<PermissionsRepository> findPermissionsRepositoryImplementation() throws InjectionException {
         final Class<? extends PermissionsRepository> implementationClass = findImplementationClass(PermissionsRepository.class);
         final Class<? extends AbstractModule> injectorModule = getInjectorModules().stream()
                 .filter(clazz -> clazz.getAnnotation(InjectorModule.class).target().equals(PermissionsRepository.class))
                 .findFirst()
                 .orElse(null);
 
-        return new Implementaion<>(implementationClass, injectorModule);
+        return new Implementation<>(implementationClass, injectorModule);
     }
 
+    @SuppressWarnings("unchecked")
     private Set<Class<? extends AbstractModule>> getInjectorModules() throws InvalidInjectorModule {
         if (injectorModules == null) {
             final Set<Class<?>> modules = reflections.getTypesAnnotatedWith(InjectorModule.class);
@@ -58,7 +59,7 @@ public class ClassSearch {
         return injectorModules;
     }
 
-    private <T> Class<? extends T> findImplementationClass(final Class<T> base) throws NoImplementationFoundException {
+    public <T> Class<? extends T> findImplementationClass(final Class<T> base) throws NoImplementationFoundException {
         final Set<Class<? extends T>> implementations = reflections.getSubTypesOf(base);
 
         return implementations.stream()

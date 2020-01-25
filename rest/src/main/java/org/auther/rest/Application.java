@@ -16,15 +16,29 @@ public class Application {
     private final static Logger log = LoggerFactory.getLogger(Application.class.getSimpleName());
 
     public static void main(final String[] args) {
+        // config
         final ConfigContext configContext = new JacksonConfigContext(
                 new File(Application.class.getClassLoader().getResource("application.json").getFile())
         ).getSubContext(ConfigContext.ROOT_CONFIG_PROPERTY);
 
-        final Injector injector = Guice.createInjector(new MappersBinder(), new ConfigBinder(configContext),
-                new ServicesBinder(configContext), new JwtBinder(configContext), new DalBinder(), new EmbBinder());
+        log.info("Initialized configuration context");
+
+        // injectors
+        final String classSearchPrefix = "com.authguard";
+
+        final Injector injector = Guice.createInjector(new MappersBinder(),
+                new ConfigBinder(configContext),
+                new ServicesBinder(configContext),
+                new JwtBinder(configContext),
+                new DalBinder(classSearchPrefix),
+                new EmbBinder(classSearchPrefix));
+
+        log.info("Initialed injection binders");
 
         // run bootstraps
         injector.getInstance(Bootstrap.class).bootstrapOneTimeAdmin();
+
+        log.info("Completed bootstrap");
 
         // run the server
         new Server(injector).start(Javalin.create(config -> {
