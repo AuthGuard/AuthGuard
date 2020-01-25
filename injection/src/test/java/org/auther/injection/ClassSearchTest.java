@@ -21,7 +21,7 @@ class ClassSearchTest {
     @Test
     void findAccountsRepositoryImplementation() throws Exception {
         final ClassSearch classSearch = new ClassSearch(new Reflections("org.auther"));
-        final Implementaion<AccountsRepository> implementation = classSearch.findAccountsRepositoryImplementation();
+        final Implementation<AccountsRepository> implementation = classSearch.findAccountsRepositoryImplementation();
 
         assertThat(implementation).isNotNull();
         assertThat(implementation.getImplementationClass()).isEqualTo(MockAccountsRepository.class);
@@ -43,7 +43,7 @@ class ClassSearchTest {
     @Test
     void findPermissionsRepositoryImplementation() throws Exception {
         final ClassSearch classSearch = new ClassSearch(new Reflections("org.auther"));
-        final Implementaion<PermissionsRepository> implementation = classSearch.findPermissionsRepositoryImplementation();
+        final Implementation<PermissionsRepository> implementation = classSearch.findPermissionsRepositoryImplementation();
 
         assertThat(implementation).isNotNull();
         assertThat(implementation.getImplementationClass()).isEqualTo(MockPermissionsRepository.class);
