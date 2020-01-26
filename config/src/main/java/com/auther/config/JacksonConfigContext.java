@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jetbrains.annotations.NotNull;
 
@@ -55,6 +56,18 @@ public class JacksonConfigContext implements ConfigContext {
     @Override
     public boolean getAsBoolean(final String key) {
         return rootNode.get(key).asBoolean();
+    }
+
+    @Override
+    public <T> Collection<T> getAsCollection(final String key, final Class<T> targetClass) {
+        final JsonNode child = rootNode.get(key);
+
+        if (child.isArray()) {
+            return objectMapper.convertValue(child,
+                    objectMapper.getTypeFactory().constructCollectionType(ArrayList.class, targetClass));
+        } else {
+            throw new RuntimeException("Field " + key + " does not represent a JSON array");
+        }
     }
 
     @Override

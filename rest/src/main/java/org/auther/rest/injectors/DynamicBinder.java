@@ -1,7 +1,7 @@
 package org.auther.rest.injectors;
 
 import org.auther.injection.ClassSearch;
-import org.auther.injection.NoImplementationFoundException;
+import org.auther.injection.InjectionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +21,7 @@ class DynamicBinder {
             log.debug("Found a binding for {} -> {}", clazz, impl);
 
             return impl;
-        } catch (final NoImplementationFoundException e) {
+        } catch (final InjectionException e) {
             log.error("An exception was thrown during dynamic class search", e);
             System.exit(-1);
             return null;

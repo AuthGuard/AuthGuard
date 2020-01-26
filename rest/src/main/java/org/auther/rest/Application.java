@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.Collection;
 
 public class Application {
     private final static Logger log = LoggerFactory.getLogger(Application.class.getSimpleName());
@@ -24,14 +25,15 @@ public class Application {
         log.info("Initialized configuration context");
 
         // injectors
-        final String classSearchPrefix = "com.authguard";
+        final Collection<String> searchPackages = configContext.getSubContext("injection")
+                .getAsCollection("packages", String.class);
 
         final Injector injector = Guice.createInjector(new MappersBinder(),
                 new ConfigBinder(configContext),
                 new ServicesBinder(configContext),
                 new JwtBinder(configContext),
-                new DalBinder(classSearchPrefix),
-                new EmbBinder(classSearchPrefix));
+                new DalBinder(searchPackages),
+                new EmbBinder(searchPackages));
 
         log.info("Initialed injection binders");
 
