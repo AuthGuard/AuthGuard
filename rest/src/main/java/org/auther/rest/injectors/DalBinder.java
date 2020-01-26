@@ -3,14 +3,15 @@ package org.auther.rest.injectors;
 import com.google.inject.AbstractModule;
 import org.auther.dal.*;
 import org.auther.injection.ClassSearch;
-import org.reflections.Reflections;
+
+import java.util.Collection;
 
 public class DalBinder extends AbstractModule {
 
     private final DynamicBinder dynamicBinder;
 
-    public DalBinder(final String classSearchPrefix) {
-        dynamicBinder = new DynamicBinder(new ClassSearch(new Reflections(classSearchPrefix)));
+    public DalBinder(final Collection<String> searchPackages) {
+        dynamicBinder = new DynamicBinder(new ClassSearch(searchPackages));
     }
 
     @Override

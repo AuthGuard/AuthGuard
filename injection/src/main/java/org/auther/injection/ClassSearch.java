@@ -5,12 +5,17 @@ import org.auther.dal.AccountsRepository;
 import org.auther.dal.PermissionsRepository;
 import org.reflections.Reflections;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
 public class ClassSearch {
     private final Reflections reflections;
     private Set<Class<? extends AbstractModule>> injectorModules;
+
+    public ClassSearch(final Collection<String> searchPackages) {
+        this.reflections = new Reflections(searchPackages);
+    }
 
     public ClassSearch(final Reflections reflections) {
         this.reflections = reflections;
