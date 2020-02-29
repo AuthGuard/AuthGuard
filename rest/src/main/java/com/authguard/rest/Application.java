@@ -1,13 +1,14 @@
 package com.authguard.rest;
 
+import com.authguard.bootstrap.BootstrapRunner;
 import com.authguard.config.ConfigContext;
 import com.authguard.config.JacksonConfigContext;
+import com.authguard.injection.ClassSearch;
 import com.authguard.rest.access.RolesAccessManager;
 import com.authguard.rest.injectors.*;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.javalin.Javalin;
-import com.authguard.rest.injectors.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,10 +26,13 @@ public class Application {
 
         log.info("Initialized configuration context");
 
-        // injectors
+        // class search
         final Collection<String> searchPackages = configContext.getSubContext("injection")
                 .getAsCollection("packages", String.class);
 
+        final ClassSearch classSearch = new ClassSearch(searchPackages);
+
+        // injectors
         final Injector injector = Guice.createInjector(new MappersBinder(),
                 new ConfigBinder(configContext),
                 new ServicesBinder(configContext),
@@ -39,7 +43,7 @@ public class Application {
         log.info("Initialed injection binders");
 
         // run bootstraps
-        injector.getInstance(Bootstrap.class).bootstrapOneTimeAdmin();
+        new BootstrapRunner(classSearch, injector).runAll();
 
         log.info("Completed bootstrap");
 

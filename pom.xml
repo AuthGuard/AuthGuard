@@ -16,6 +16,8 @@
         <module>emb</module>
         <module>injection</module>
         <module>config</module>
+        <module>bootstrap</module>
+        <module>bootstrap-steps</module>
     </modules>
 
     <properties>
