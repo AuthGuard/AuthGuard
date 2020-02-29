@@ -8,6 +8,7 @@ import org.reflections.Reflections;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ClassSearch {
     private final Reflections reflections;
@@ -42,7 +43,7 @@ public class ClassSearch {
     }
 
     @SuppressWarnings("unchecked")
-    private Set<Class<? extends AbstractModule>> getInjectorModules() throws InvalidInjectorModule {
+    public Set<Class<? extends AbstractModule>> getInjectorModules() throws InvalidInjectorModule {
         if (injectorModules == null) {
             final Set<Class<?>> modules = reflections.getTypesAnnotatedWith(InjectorModule.class);
             final Set<Class<? extends AbstractModule>> validModules = new HashSet<>(modules.size());
@@ -71,5 +72,13 @@ public class ClassSearch {
                 .filter(clazz -> !clazz.isInterface())
                 .findFirst()
                 .orElseThrow(() -> new NoImplementationFoundException("No class implementation was found for " + base.getSimpleName()));
+    }
+
+    public <T> Set<Class<? extends T>> findAllImplementationClass(final Class<T> base) {
+        final Set<Class<? extends T>> implementations = reflections.getSubTypesOf(base);
+
+        return implementations.stream()
+                .filter(clazz -> !clazz.isInterface())
+                .collect(Collectors.toSet());
     }
 }

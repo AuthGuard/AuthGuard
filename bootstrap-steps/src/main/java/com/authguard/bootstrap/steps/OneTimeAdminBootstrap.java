@@ -1,44 +1,47 @@
-package com.authguard.rest;
+package com.authguard.bootstrap.steps;
 
+import com.authguard.bootstrap.BootstrapStep;
 import com.authguard.config.ConfigContext;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.authguard.service.AccountsService;
 import com.authguard.service.CredentialsService;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.CredentialsBO;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
 
-public class Bootstrap {
-    private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
+public class OneTimeAdminBootstrap implements BootstrapStep {
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final AccountsService accountsService;
     private final CredentialsService credentialsService;
     private final ConfigContext oneTimeAdminConfig;
 
     @Inject
-    public Bootstrap(final AccountsService accountsService, final CredentialsService credentialsService,
-                     @Named("oneTimeAdmin") final ConfigContext oneTimeAdminConfig) {
+    public OneTimeAdminBootstrap(final AccountsService accountsService,
+                                 final CredentialsService credentialsService,
+                                 @Named("oneTimeAdmin") final ConfigContext oneTimeAdminConfig) {
         this.accountsService = accountsService;
         this.credentialsService = credentialsService;
         this.oneTimeAdminConfig = oneTimeAdminConfig;
     }
 
-    public void bootstrapOneTimeAdmin() {
+    @Override
+    public void run() {
         final List<AccountBO> admins = accountsService.getAdmins();
 
         if (admins.isEmpty()) {
-            LOG.info("No admin accounts were found, a one-time admin account will be created");
+            log.info("No admin accounts were found, a one-time admin account will be created");
 
             final AccountBO createdAccount = accountsService.create(oneTimeAccount());
             final CredentialsBO createdCredentials = credentialsService
                     .create(oneTimeAdminCredentials(createdAccount.getId()));
 
-            LOG.info("A one-time admin account was created with username {}", createdCredentials.getUsername());
+            log.info("A one-time admin account was created with username {}", createdCredentials.getUsername());
         }
     }
 
