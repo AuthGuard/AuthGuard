@@ -14,6 +14,7 @@ public interface Account extends AbstractDO {
     List<String> getRoles();
     List<PermissionDO> getPermissions();
     List<String> getScopes();
+    List<AccountEmailDO> getAccountEmails();
     boolean isActive();
 
     interface Builder extends AbstractDO.Builder {}
