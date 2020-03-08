@@ -4,8 +4,8 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.authguard.service.AccountsService;
 import com.authguard.service.AuthorizationService;
 import com.authguard.service.JwtProvider;
+import com.authguard.service.config.ConfigParser;
 import com.authguard.service.exceptions.ServiceException;
-import com.authguard.service.impl.jwt.JwtConfigParser;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.authguard.dal.AccountTokensRepository;
@@ -115,7 +115,7 @@ public class AuthorizationServiceImpl implements AuthorizationService {
 
     private ZonedDateTime getExpirationDateTime() {
         return ZonedDateTime.now()
-                .plus(JwtConfigParser.parseDuration(accessTokenStrategy.getRefreshTokenLife()));
+                .plus(ConfigParser.parseDuration(accessTokenStrategy.getRefreshTokenLife()));
     }
 
     private boolean validateExpirationDateTime(final AccountTokenDO accountToken) {

@@ -37,6 +37,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.authguard</groupId>
+            <artifactId>email</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
             <version>${bouncy-castle.version}</version>

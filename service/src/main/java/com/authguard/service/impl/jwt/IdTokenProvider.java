@@ -3,6 +3,7 @@ package com.authguard.service.impl.jwt;
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.authguard.service.config.ConfigParser;
 import com.google.inject.Inject;
 import com.authguard.service.JwtProvider;
 import com.authguard.service.config.ImmutableJwtConfig;
@@ -53,7 +54,7 @@ public class IdTokenProvider implements JwtProvider {
 
     private TokenBuilderBO generateIdToke(final AccountBO account) {
         final JWTCreator.Builder jwtBuilder = tokenGenerator
-                .generateUnsignedToken(account, JwtConfigParser.parseDuration(strategy.getTokenLife()));
+                .generateUnsignedToken(account, ConfigParser.parseDuration(strategy.getTokenLife()));
 
         return TokenBuilderBO.builder()
                 .builder(jwtBuilder)

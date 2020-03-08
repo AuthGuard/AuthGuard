@@ -1,7 +1,7 @@
 package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
-import com.authguard.service.impl.jwt.JwtConfigParser;
+import com.authguard.service.config.ConfigParser;
 import com.authguard.service.impl.mappers.ServiceMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -55,7 +55,7 @@ public class OtpServiceImpl implements OtpService {
         final OneTimePasswordBO oneTimePassword = OneTimePasswordBO.builder()
                 .id(passwordId)
                 .accountId(account.getId())
-                .expiresAt(ZonedDateTime.now().plus(JwtConfigParser.parseDuration(otpConfig.getLifeTime())))
+                .expiresAt(ZonedDateTime.now().plus(ConfigParser.parseDuration(otpConfig.getLifeTime())))
                 .password(password)
                 .build();
 
