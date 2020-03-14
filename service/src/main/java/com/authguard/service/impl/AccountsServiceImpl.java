@@ -56,7 +56,7 @@ public class AccountsServiceImpl implements AccountsService {
                 .map(accountsRepository::save)
                 .map(serviceMapper::toBO)
                 .map(created -> {
-                    if (accountConfig.isVerifyEmail()) {
+                    if (accountConfig.verifyEmail()) {
                         verificationService.sendVerificationEmail(account);
                     }
 

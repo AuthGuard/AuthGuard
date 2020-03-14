@@ -38,7 +38,8 @@ public class Application {
                 new ServicesBinder(configContext),
                 new JwtBinder(configContext),
                 new DalBinder(searchPackages),
-                new EmbBinder(searchPackages));
+                new EmbBinder(searchPackages),
+                new ExternalProvidersBinder(searchPackages));
 
         log.info("Initialed injection binders");
 

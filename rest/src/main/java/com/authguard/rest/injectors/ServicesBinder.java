@@ -4,7 +4,6 @@ import com.authguard.config.ConfigContext;
 import com.authguard.service.*;
 import com.authguard.service.impl.*;
 import com.google.inject.AbstractModule;
-import com.authguard.service.*;
 import com.authguard.service.impl.passwords.SCryptPassword;
 
 public class ServicesBinder extends AbstractModule {
@@ -25,6 +24,7 @@ public class ServicesBinder extends AbstractModule {
         bind(ApiKeysService.class).to(ApiKeysServiceImpl.class);
         bind(PermissionsService.class).to(PermissionsServiceImpl.class);
         bind(RolesService.class).to(RolesServiceImpl.class);
+        bind(VerificationService.class).to(VerificationServiceImpl.class);
 
         bind(SecurePassword.class).to(SCryptPassword.class);
 

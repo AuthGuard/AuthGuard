@@ -50,7 +50,7 @@ class AccountsServiceImplTest {
         final ConfigContext configContext = Mockito.mock(ConfigContext.class);
 
         final ImmutableAccountConfig accountConfig = ImmutableAccountConfig.builder()
-                .isVerifyEmail(true)
+                .verifyEmail(true)
                 .build();
 
         Mockito.when(configContext.asConfigBean(ImmutableAccountConfig.class))
