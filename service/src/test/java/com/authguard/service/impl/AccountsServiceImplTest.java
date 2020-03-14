@@ -1,8 +1,11 @@
 package com.authguard.service.impl;
 
+import com.authguard.config.ConfigContext;
 import com.authguard.dal.AccountsRepository;
 import com.authguard.service.PermissionsService;
 import com.authguard.service.RolesService;
+import com.authguard.service.VerificationService;
+import com.authguard.service.config.ImmutableAccountConfig;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.dal.model.AccountDO;
 import com.authguard.service.impl.mappers.ServiceMapperImpl;
@@ -30,6 +33,7 @@ class AccountsServiceImplTest {
     private AccountsRepository accountsRepository;
     private PermissionsService permissionsService;
     private RolesService rolesService;
+    private VerificationService verificationService;
     private AccountsServiceImpl accountService;
 
     private final static EasyRandom RANDOM = new EasyRandom(
@@ -41,8 +45,19 @@ class AccountsServiceImplTest {
         accountsRepository = Mockito.mock(AccountsRepository.class);
         permissionsService = Mockito.mock(PermissionsService.class);
         rolesService = Mockito.mock(RolesService.class);
-        accountService = new AccountsServiceImpl(accountsRepository, permissionsService, rolesService,
-                new ServiceMapperImpl());
+        verificationService = Mockito.mock(VerificationService.class);
+
+        final ConfigContext configContext = Mockito.mock(ConfigContext.class);
+
+        final ImmutableAccountConfig accountConfig = ImmutableAccountConfig.builder()
+                .isVerifyEmail(true)
+                .build();
+
+        Mockito.when(configContext.asConfigBean(ImmutableAccountConfig.class))
+                .thenReturn(accountConfig);
+
+        accountService = new AccountsServiceImpl(accountsRepository, permissionsService,
+                verificationService, rolesService, new ServiceMapperImpl(), configContext);
     }
 
     @AfterEach
@@ -76,7 +91,7 @@ class AccountsServiceImplTest {
         final Optional<AccountBO> retrieved = accountService.getById("");
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(account, "permissions");
+        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(account, "permissions", "accountEmails");
         assertThat(retrieved.get().getPermissions()).containsExactly(account.getPermissions().stream()
                 .map(permissionDO -> PermissionBO.builder()
                         .group(permissionDO.getGroup())

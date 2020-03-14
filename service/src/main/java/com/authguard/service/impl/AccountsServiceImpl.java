@@ -1,5 +1,8 @@
 package com.authguard.service.impl;
 
+import com.authguard.config.ConfigContext;
+import com.authguard.service.VerificationService;
+import com.authguard.service.config.ImmutableAccountConfig;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.impl.mappers.ServiceMapper;
@@ -10,6 +13,7 @@ import com.authguard.service.PermissionsService;
 import com.authguard.service.RolesService;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.PermissionBO;
+import com.google.inject.name.Named;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,16 +24,24 @@ import java.util.stream.Stream;
 public class AccountsServiceImpl implements AccountsService {
     private final AccountsRepository accountsRepository;
     private final PermissionsService permissionsService;
+    private final ImmutableAccountConfig accountConfig;
+    private final VerificationService verificationService;
     private final ServiceMapper serviceMapper;
 
     private final PermissionsAggregator permissionsAggregator;
 
     @Inject
-    public AccountsServiceImpl(final AccountsRepository accountsRepository, final PermissionsService permissionsService,
-                               final RolesService rolesService, final ServiceMapper serviceMapper) {
+    public AccountsServiceImpl(final AccountsRepository accountsRepository,
+                               final PermissionsService permissionsService,
+                               final VerificationService verificationService,
+                               final RolesService rolesService,
+                               final ServiceMapper serviceMapper,
+                               final @Named("account") ConfigContext accountConfigContext) {
         this.accountsRepository = accountsRepository;
         this.permissionsService = permissionsService;
+        this.verificationService = verificationService;
         this.serviceMapper = serviceMapper;
+        this.accountConfig = accountConfigContext.asConfigBean(ImmutableAccountConfig.class);
 
         this.permissionsAggregator = new PermissionsAggregator(rolesService, permissionsService);
     }
@@ -43,6 +55,13 @@ public class AccountsServiceImpl implements AccountsService {
                 .map(serviceMapper::toDO)
                 .map(accountsRepository::save)
                 .map(serviceMapper::toBO)
+                .map(created -> {
+                    if (accountConfig.isVerifyEmail()) {
+                        verificationService.sendVerificationEmail(account);
+                    }
+
+                    return created;
+                })
                 .orElseThrow(IllegalStateException::new);
     }
 
