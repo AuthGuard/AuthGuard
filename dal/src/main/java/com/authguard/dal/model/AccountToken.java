@@ -14,6 +14,7 @@ public interface AccountToken extends AbstractDO {
     String getToken();
     String getAssociatedAccountId();
     ZonedDateTime expiresAt();
+    Object getAdditionalInformation();
 
     interface Builder extends AbstractDO.Builder {}
 }

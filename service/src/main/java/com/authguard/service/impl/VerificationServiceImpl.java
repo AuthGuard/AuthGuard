@@ -1,84 +1,69 @@
 package com.authguard.service.impl;
 
-import com.authguard.config.ConfigContext;
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
-import com.authguard.external.email.EmailProvider;
-import com.authguard.external.email.ImmutableEmail;
+import com.authguard.service.AccountsService;
 import com.authguard.service.VerificationService;
-import com.authguard.service.config.ConfigParser;
-import com.authguard.service.config.ImmutableVerificationConfig;
+import com.authguard.service.exceptions.ServiceException;
+import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AccountEmailBO;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 
 import java.time.ZonedDateTime;
-import java.util.Base64;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class VerificationServiceImpl implements VerificationService {
-    private final String EMAIL_TEMPLATE = "verify-email";
-
-    private final EmailProvider emailProvider;
     private final AccountTokensRepository accountTokensRepository;
-    private final ImmutableVerificationConfig verificationConfig;
+    private final AccountsService accountsService;
 
     @Inject
-    public VerificationServiceImpl(final EmailProvider emailProvider,
-                                   final AccountTokensRepository accountTokensRepository,
-                                   final @Named("verification") ConfigContext configContext) {
-        this.emailProvider = emailProvider;
+    public VerificationServiceImpl(final AccountTokensRepository accountTokensRepository,
+                                   final AccountsService accountsService) {
         this.accountTokensRepository = accountTokensRepository;
-        this.verificationConfig = configContext.asConfigBean(ImmutableVerificationConfig.class);
+        this.accountsService = accountsService;
     }
+
 
     @Override
-    public void sendVerificationEmail(final AccountBO account) {
-        final List<String> unverifiedEmails = account.getAccountEmails().stream()
-                .filter(accountEmailBO -> !accountEmailBO.isVerified())
-                .map(AccountEmailBO::getEmail)
-                .collect(Collectors.toList());
+    public void verifyEmail(final String verificationToken) {
+        final AccountTokenDO accountToken = accountTokensRepository.getByToken(verificationToken)
+                .orElseThrow(() -> new ServiceNotFoundException("Account token " + verificationToken + " does not exist"));
 
-        sendVerificationEmail(account, unverifiedEmails);
-    }
+        if (accountToken.getAdditionalInformation() == null
+                || !(accountToken.getAdditionalInformation() instanceof String)) {
+            throw new ServiceException("Invalid account token: no valid additional information");
+        }
 
-    @Override
-    public void sendVerificationEmail(final AccountBO account, final List<String> emails) {
-        emails.forEach(email -> {
-            final String token = generateVerificationString();
+        if (accountToken.expiresAt().isBefore(ZonedDateTime.now())) {
+            throw new ServiceException("Token " + verificationToken + " has expired");
+        }
 
-            final ZonedDateTime expiration = ZonedDateTime.now()
-                    .plus(ConfigParser.parseDuration(verificationConfig.getEmailVerificationLife()));
+        final String verifiedEmail = (String) accountToken.getAdditionalInformation();
+        final AccountBO account = accountsService.getById(accountToken.getAssociatedAccountId())
+                .orElseThrow(() -> new ServiceNotFoundException("Account " + accountToken.getAssociatedAccountId() + " does not exist"));
 
-            final AccountTokenDO accountToken = AccountTokenDO.builder()
-                    .expiresAt(expiration)
-                    .associatedAccountId(account.getId())
-                    .token(token)
-                    .build();
+        final List<AccountEmailBO> updatedEmails = new ArrayList<>();
+        boolean emailFound = false;
 
-            accountTokensRepository.save(accountToken);
+        for (final AccountEmailBO email : account.getAccountEmails()) {
+            if (email.getEmail().equals(verifiedEmail)) {
+                updatedEmails.add(AccountEmailBO.builder().from(email).verified(true).build());
+                emailFound = true;
+            } else {
+                updatedEmails.add(email);
+            }
+        }
 
-            final String url = generateVerificationUrl(token);
+        if (!emailFound) {
+            throw new ServiceException("Account " + account.getId() + " does not contain email " + verifiedEmail);
+        }
 
-            final ImmutableEmail email1 = ImmutableEmail.builder()
-                    .template(EMAIL_TEMPLATE)
-                    .to(email)
-                    .putParameters("url", url)
-                    .build();
+        final AccountBO updated = AccountBO.builder().from(account)
+                .accountEmails(updatedEmails)
+                .build();
 
-            emailProvider.send(email1);
-        });
-    }
-
-    private String generateVerificationString() {
-        final byte[] verificationCode = UUID.randomUUID().toString().getBytes();
-        return Base64.getEncoder().encodeToString(verificationCode);
-    }
-
-    private String generateVerificationUrl(final String token) {
-        return verificationConfig.getVerifyEmailUrlTemplate().replace("${token}", token);
+        accountsService.update(updated);
     }
 }

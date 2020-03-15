@@ -1,7 +1,7 @@
 package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
-import com.authguard.service.VerificationService;
+import com.authguard.service.VerificationMessageService;
 import com.authguard.service.config.ImmutableAccountConfig;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
@@ -26,7 +26,7 @@ public class AccountsServiceImpl implements AccountsService {
     private final AccountsRepository accountsRepository;
     private final PermissionsService permissionsService;
     private final ImmutableAccountConfig accountConfig;
-    private final VerificationService verificationService;
+    private final VerificationMessageService verificationMessageService;
     private final ServiceMapper serviceMapper;
 
     private final PermissionsAggregator permissionsAggregator;
@@ -34,13 +34,13 @@ public class AccountsServiceImpl implements AccountsService {
     @Inject
     public AccountsServiceImpl(final AccountsRepository accountsRepository,
                                final PermissionsService permissionsService,
-                               final VerificationService verificationService,
+                               final VerificationMessageService verificationMessageService,
                                final RolesService rolesService,
                                final ServiceMapper serviceMapper,
                                final @Named("account") ConfigContext accountConfigContext) {
         this.accountsRepository = accountsRepository;
         this.permissionsService = permissionsService;
-        this.verificationService = verificationService;
+        this.verificationMessageService = verificationMessageService;
         this.serviceMapper = serviceMapper;
         this.accountConfig = accountConfigContext.asConfigBean(ImmutableAccountConfig.class);
 
@@ -58,12 +58,24 @@ public class AccountsServiceImpl implements AccountsService {
                 .map(serviceMapper::toBO)
                 .map(created -> {
                     if (accountConfig.verifyEmail()) {
-                        verificationService.sendVerificationEmail(account);
+                        verificationMessageService.sendVerificationEmail(created);
                     }
 
                     return created;
                 })
                 .orElseThrow(IllegalStateException::new);
+    }
+
+    @Override
+    public Optional<AccountBO> getById(final String accountId) {
+        return accountsRepository.getById(accountId)
+                .map(serviceMapper::toBO);
+    }
+
+    @Override
+    public Optional<AccountBO> update(final AccountBO account) {
+        return accountsRepository.update(serviceMapper.toDO(account))
+                .map(serviceMapper::toBO);
     }
 
     @Override
@@ -80,8 +92,7 @@ public class AccountsServiceImpl implements AccountsService {
                 .accountEmails(newEmails)
                 .build();
 
-        return accountsRepository.update(serviceMapper.toDO(updated))
-                .map(serviceMapper::toBO);
+        return update(updated);
     }
 
     @Override
@@ -102,14 +113,7 @@ public class AccountsServiceImpl implements AccountsService {
                 .addAllAccountEmails(newEmails)
                 .build();
 
-        return accountsRepository.update(serviceMapper.toDO(updated))
-                .map(serviceMapper::toBO);
-    }
-
-    @Override
-    public Optional<AccountBO> getById(final String accountId) {
-        return accountsRepository.getById(accountId)
-                .map(serviceMapper::toBO);
+        return update(updated);
     }
 
     @Override

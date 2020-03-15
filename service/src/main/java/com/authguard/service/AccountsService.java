@@ -25,10 +25,6 @@ public interface AccountsService {
      */
     AccountBO create(AccountBO account);
 
-    Optional<AccountBO> removeEmails(String accountId, List<String> emails);
-
-    Optional<AccountBO> addEmails(String accountId, List<AccountEmailBO> emails);
-
     /**
      * Find an account by ID.
      * @param accountId The ID of the account. This is different
@@ -37,6 +33,8 @@ public interface AccountsService {
      *         empty if none was found.
      */
     Optional<AccountBO> getById(String accountId);
+
+    Optional<AccountBO> update(AccountBO account);
 
     /**
      * Get all permissions of an account. Implementations of
@@ -50,6 +48,10 @@ public interface AccountsService {
      *         if no account was found.
      */
     List<PermissionBO> getPermissions(String accountId);
+
+    Optional<AccountBO> removeEmails(String accountId, List<String> emails);
+
+    Optional<AccountBO> addEmails(String accountId, List<AccountEmailBO> emails);
 
     /**
      * Grant permissions to an account. This should only updatePatch

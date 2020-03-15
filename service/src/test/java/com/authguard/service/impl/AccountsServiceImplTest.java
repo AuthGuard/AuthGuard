@@ -5,7 +5,7 @@ import com.authguard.dal.AccountsRepository;
 import com.authguard.dal.model.AccountEmailDO;
 import com.authguard.service.PermissionsService;
 import com.authguard.service.RolesService;
-import com.authguard.service.VerificationService;
+import com.authguard.service.VerificationMessageService;
 import com.authguard.service.config.ImmutableAccountConfig;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.dal.model.AccountDO;
@@ -35,7 +35,7 @@ class AccountsServiceImplTest {
     private AccountsRepository accountsRepository;
     private PermissionsService permissionsService;
     private RolesService rolesService;
-    private VerificationService verificationService;
+    private VerificationMessageService verificationMessageService;
     private AccountsServiceImpl accountService;
 
     private final static EasyRandom RANDOM = new EasyRandom(
@@ -47,7 +47,7 @@ class AccountsServiceImplTest {
         accountsRepository = Mockito.mock(AccountsRepository.class);
         permissionsService = Mockito.mock(PermissionsService.class);
         rolesService = Mockito.mock(RolesService.class);
-        verificationService = Mockito.mock(VerificationService.class);
+        verificationMessageService = Mockito.mock(VerificationMessageService.class);
 
         final ConfigContext configContext = Mockito.mock(ConfigContext.class);
 
@@ -59,7 +59,7 @@ class AccountsServiceImplTest {
                 .thenReturn(accountConfig);
 
         accountService = new AccountsServiceImpl(accountsRepository, permissionsService,
-                verificationService, rolesService, new ServiceMapperImpl(), configContext);
+                verificationMessageService, rolesService, new ServiceMapperImpl(), configContext);
     }
 
     @AfterEach
