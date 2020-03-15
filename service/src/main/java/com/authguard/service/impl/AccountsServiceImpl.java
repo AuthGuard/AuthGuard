@@ -6,6 +6,7 @@ import com.authguard.service.config.ImmutableAccountConfig;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.impl.mappers.ServiceMapper;
+import com.authguard.service.model.AccountEmailBO;
 import com.google.inject.Inject;
 import com.authguard.dal.AccountsRepository;
 import com.authguard.service.AccountsService;
@@ -63,6 +64,46 @@ public class AccountsServiceImpl implements AccountsService {
                     return created;
                 })
                 .orElseThrow(IllegalStateException::new);
+    }
+
+    @Override
+    public Optional<AccountBO> removeEmails(final String accountId, final List<String> emails) {
+        final AccountBO existing = accountsRepository.getById(accountId)
+                .map(serviceMapper::toBO)
+                .orElseThrow(ServiceNotFoundException::new);
+
+        final List<AccountEmailBO> newEmails = existing.getAccountEmails().stream()
+                .filter(email -> !emails.contains(email.getEmail()))
+                .collect(Collectors.toList());
+
+        final AccountBO updated = AccountBO.builder().from(existing)
+                .accountEmails(newEmails)
+                .build();
+
+        return accountsRepository.update(serviceMapper.toDO(updated))
+                .map(serviceMapper::toBO);
+    }
+
+    @Override
+    public Optional<AccountBO> addEmails(final String accountId, final List<AccountEmailBO> emails) {
+        final AccountBO existing = accountsRepository.getById(accountId)
+                .map(serviceMapper::toBO)
+                .orElseThrow(ServiceNotFoundException::new);
+
+        final List<String> currentEmails = existing.getAccountEmails().stream()
+                .map(AccountEmailBO::getEmail)
+                .collect(Collectors.toList());
+
+        final List<AccountEmailBO> newEmails = emails.stream()
+                .filter(email -> !currentEmails.contains(email.getEmail()))
+                .collect(Collectors.toList());
+
+        final AccountBO updated = AccountBO.builder().from(existing)
+                .addAllAccountEmails(newEmails)
+                .build();
+
+        return accountsRepository.update(serviceMapper.toDO(updated))
+                .map(serviceMapper::toBO);
     }
 
     @Override

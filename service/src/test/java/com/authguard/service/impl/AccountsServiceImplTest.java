@@ -2,6 +2,7 @@ package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.AccountsRepository;
+import com.authguard.dal.model.AccountEmailDO;
 import com.authguard.service.PermissionsService;
 import com.authguard.service.RolesService;
 import com.authguard.service.VerificationService;
@@ -10,6 +11,7 @@ import com.authguard.service.exceptions.ServiceException;
 import com.authguard.dal.model.AccountDO;
 import com.authguard.service.impl.mappers.ServiceMapperImpl;
 import com.authguard.service.model.AccountBO;
+import com.authguard.service.model.AccountEmailBO;
 import com.authguard.service.model.PermissionBO;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
@@ -37,7 +39,7 @@ class AccountsServiceImplTest {
     private AccountsServiceImpl accountService;
 
     private final static EasyRandom RANDOM = new EasyRandom(
-            new EasyRandomParameters().collectionSizeRange(1, 4)
+            new EasyRandomParameters().collectionSizeRange(3, 5)
     );
 
     @BeforeAll
@@ -194,5 +196,49 @@ class AccountsServiceImplTest {
 
         assertThat(updated).isNotEqualTo(account);
         assertThat(updated.getRoles()).doesNotContain(rolesToRevoke.toArray(new String[0]));
+    }
+
+    @Test
+    void addEmails() {
+        final AccountDO account = RANDOM.nextObject(AccountDO.class);
+
+        Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
+        Mockito.when(accountsRepository.update(any()))
+                .thenAnswer(invocation -> Optional.of(invocation.getArgument(0, AccountDO.class)));
+
+        final List<AccountEmailBO> emails = Arrays.asList(
+                RANDOM.nextObject(AccountEmailBO.class),
+                RANDOM.nextObject(AccountEmailBO.class)
+        );
+
+        final Optional<AccountBO> updated = accountService.addEmails(account.getId(), emails);
+
+        assertThat(updated).isPresent();
+        assertThat(updated.get()).isNotEqualTo(account);
+        assertThat(updated.get().getAccountEmails()).contains(emails.toArray(new AccountEmailBO[0]));
+    }
+
+    @Test
+    void removeEmails() {
+        final AccountDO account = RANDOM.nextObject(AccountDO.class);
+        final List<String> currentEmails = account.getAccountEmails().stream()
+                .map(AccountEmailDO::getEmail)
+                .collect(Collectors.toList());
+
+        Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
+        Mockito.when(accountsRepository.update(any()))
+                .thenAnswer(invocation -> Optional.of(invocation.getArgument(0, AccountDO.class)));
+
+        final List<String> emailsToRemove = Arrays.asList(
+                currentEmails.get(0),
+                currentEmails.get(1)
+        );
+
+        final Optional<AccountBO> updated = accountService.removeEmails(account.getId(), emailsToRemove);
+
+        assertThat(updated).isPresent();
+        assertThat(updated.get()).isNotEqualTo(account);
+        assertThat(updated.get().getAccountEmails().stream().map(AccountEmailBO::getEmail).collect(Collectors.toList()))
+                .doesNotContain(emailsToRemove.toArray(new String[0]));
     }
 }

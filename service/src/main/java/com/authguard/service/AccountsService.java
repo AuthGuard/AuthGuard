@@ -3,6 +3,7 @@ package com.authguard.service;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.impl.AccountsServiceImpl;
 import com.authguard.service.model.AccountBO;
+import com.authguard.service.model.AccountEmailBO;
 import com.authguard.service.model.PermissionBO;
 
 import java.util.List;
@@ -23,6 +24,10 @@ public interface AccountsService {
      * @return The stored account in the repository.
      */
     AccountBO create(AccountBO account);
+
+    Optional<AccountBO> removeEmails(String accountId, List<String> emails);
+
+    Optional<AccountBO> addEmails(String accountId, List<AccountEmailBO> emails);
 
     /**
      * Find an account by ID.
@@ -47,7 +52,7 @@ public interface AccountsService {
     List<PermissionBO> getPermissions(String accountId);
 
     /**
-     * Grant permissions to an account. This should only update
+     * Grant permissions to an account. This should only updatePatch
      * the permissions field.
      * @param accountId The ID of the account. This is different
      *                  from credentials ID
@@ -59,7 +64,7 @@ public interface AccountsService {
     AccountBO grantPermissions(String accountId, List<PermissionBO> permissions);
 
     /**
-     * Revoke permissions of an account. This should only update
+     * Revoke permissions of an account. This should only updatePatch
      * the permissions field.
      * @param accountId The ID of the account. This is different
      *                  from credentials ID
@@ -71,7 +76,7 @@ public interface AccountsService {
     AccountBO revokePermissions(String accountId, List<PermissionBO> permissions);
 
     /**
-     * Grant roles to an account. This should only update the roles
+     * Grant roles to an account. This should only updatePatch the roles
      * field.
      * @param accountId The ID of the account. This is different
      *                  from credentials ID
@@ -83,7 +88,7 @@ public interface AccountsService {
     AccountBO grantRoles(String accountId, List<String> roles);
 
     /**
-     * Revoke roles of an account. This should only update the roles
+     * Revoke roles of an account. This should only updatePatch the roles
      * field.
      * @param accountId The ID of the account. This is different
      *                  from credentials ID
