@@ -45,6 +45,7 @@ class Server {
             path("/accounts", injector.getInstance(AccountsRoute.class));
             path("/apps", injector.getInstance(ApplicationsRoute.class));
             path("/admin", injector.getInstance(AdminRoute.class));
+            path("/verification", injector.getInstance(VerificationRoute.class));
         });
 
         // if we failed to process a request body

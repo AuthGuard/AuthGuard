@@ -7,8 +7,8 @@ import org.immutables.value.Value;
 @ConfigStyle
 @JsonDeserialize(as = ImmutableAccountConfig.class)
 public interface AccountConfig {
-    boolean isEmailRequired();
-    boolean isPhoneNumberRequired();
-    boolean isVerifyEmail();
-    boolean isVerifyPhoneNumber();
+    boolean requireEmail();
+    boolean requirePhoneNumber();
+    boolean verifyEmail();
+    boolean verifyPhoneNumber();
 }

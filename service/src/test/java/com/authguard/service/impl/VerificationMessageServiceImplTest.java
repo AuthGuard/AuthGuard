@@ -1,12 +1,11 @@
 package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
-import com.authguard.config.JacksonConfigContext;
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.external.email.EmailProvider;
 import com.authguard.external.email.ImmutableEmail;
-import com.authguard.service.VerificationService;
+import com.authguard.service.VerificationMessageService;
 import com.authguard.service.config.ImmutableVerificationConfig;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AccountEmailBO;
@@ -21,12 +20,12 @@ import java.util.Arrays;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class VerificationServiceImplTest {
+class VerificationMessageServiceImplTest {
 
     private EmailProvider mockEmailProvider;
     private AccountTokensRepository mockAccountTokensRepository;
 
-    private VerificationService verificationService;
+    private VerificationMessageService verificationMessageService;
 
     @BeforeAll
     void setup() {
@@ -42,7 +41,7 @@ class VerificationServiceImplTest {
         Mockito.when(configContext.asConfigBean(ImmutableVerificationConfig.class))
                 .thenReturn(verificationConfig);
 
-        verificationService = new VerificationServiceImpl(mockEmailProvider, mockAccountTokensRepository, configContext);
+        verificationMessageService = new VerificationMessageServiceImpl(mockEmailProvider, mockAccountTokensRepository, configContext);
     }
 
     @Test
@@ -61,7 +60,7 @@ class VerificationServiceImplTest {
                 ))
                 .build();
 
-        verificationService.sendVerificationEmail(account);
+        verificationMessageService.sendVerificationEmail(account);
 
         final ArgumentCaptor<AccountTokenDO> accountTokenCaptor = ArgumentCaptor.forClass(AccountTokenDO.class);
         final ArgumentCaptor<ImmutableEmail> emailCaptor = ArgumentCaptor.forClass(ImmutableEmail.class);
@@ -74,6 +73,7 @@ class VerificationServiceImplTest {
         final ImmutableEmail email = emailCaptor.getValue();
 
         assertThat(accountToken.getAssociatedAccountId()).isEqualTo(account.getId());
+        assertThat(accountToken.getAdditionalInformation()).isEqualTo("unverified");
         assertThat(accountToken.getToken()).isNotNull();
         assertThat(accountToken.expiresAt()).isNotNull();
 

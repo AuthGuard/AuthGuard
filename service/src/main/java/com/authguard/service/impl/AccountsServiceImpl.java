@@ -1,11 +1,12 @@
 package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
-import com.authguard.service.VerificationService;
+import com.authguard.service.VerificationMessageService;
 import com.authguard.service.config.ImmutableAccountConfig;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.impl.mappers.ServiceMapper;
+import com.authguard.service.model.AccountEmailBO;
 import com.google.inject.Inject;
 import com.authguard.dal.AccountsRepository;
 import com.authguard.service.AccountsService;
@@ -25,7 +26,7 @@ public class AccountsServiceImpl implements AccountsService {
     private final AccountsRepository accountsRepository;
     private final PermissionsService permissionsService;
     private final ImmutableAccountConfig accountConfig;
-    private final VerificationService verificationService;
+    private final VerificationMessageService verificationMessageService;
     private final ServiceMapper serviceMapper;
 
     private final PermissionsAggregator permissionsAggregator;
@@ -33,13 +34,13 @@ public class AccountsServiceImpl implements AccountsService {
     @Inject
     public AccountsServiceImpl(final AccountsRepository accountsRepository,
                                final PermissionsService permissionsService,
-                               final VerificationService verificationService,
+                               final VerificationMessageService verificationMessageService,
                                final RolesService rolesService,
                                final ServiceMapper serviceMapper,
                                final @Named("account") ConfigContext accountConfigContext) {
         this.accountsRepository = accountsRepository;
         this.permissionsService = permissionsService;
-        this.verificationService = verificationService;
+        this.verificationMessageService = verificationMessageService;
         this.serviceMapper = serviceMapper;
         this.accountConfig = accountConfigContext.asConfigBean(ImmutableAccountConfig.class);
 
@@ -56,8 +57,8 @@ public class AccountsServiceImpl implements AccountsService {
                 .map(accountsRepository::save)
                 .map(serviceMapper::toBO)
                 .map(created -> {
-                    if (accountConfig.isVerifyEmail()) {
-                        verificationService.sendVerificationEmail(account);
+                    if (accountConfig.verifyEmail()) {
+                        verificationMessageService.sendVerificationEmail(created);
                     }
 
                     return created;
@@ -69,6 +70,50 @@ public class AccountsServiceImpl implements AccountsService {
     public Optional<AccountBO> getById(final String accountId) {
         return accountsRepository.getById(accountId)
                 .map(serviceMapper::toBO);
+    }
+
+    @Override
+    public Optional<AccountBO> update(final AccountBO account) {
+        return accountsRepository.update(serviceMapper.toDO(account))
+                .map(serviceMapper::toBO);
+    }
+
+    @Override
+    public Optional<AccountBO> removeEmails(final String accountId, final List<String> emails) {
+        final AccountBO existing = accountsRepository.getById(accountId)
+                .map(serviceMapper::toBO)
+                .orElseThrow(ServiceNotFoundException::new);
+
+        final List<AccountEmailBO> newEmails = existing.getAccountEmails().stream()
+                .filter(email -> !emails.contains(email.getEmail()))
+                .collect(Collectors.toList());
+
+        final AccountBO updated = AccountBO.builder().from(existing)
+                .accountEmails(newEmails)
+                .build();
+
+        return update(updated);
+    }
+
+    @Override
+    public Optional<AccountBO> addEmails(final String accountId, final List<AccountEmailBO> emails) {
+        final AccountBO existing = accountsRepository.getById(accountId)
+                .map(serviceMapper::toBO)
+                .orElseThrow(ServiceNotFoundException::new);
+
+        final List<String> currentEmails = existing.getAccountEmails().stream()
+                .map(AccountEmailBO::getEmail)
+                .collect(Collectors.toList());
+
+        final List<AccountEmailBO> newEmails = emails.stream()
+                .filter(email -> !currentEmails.contains(email.getEmail()))
+                .collect(Collectors.toList());
+
+        final AccountBO updated = AccountBO.builder().from(existing)
+                .addAllAccountEmails(newEmails)
+                .build();
+
+        return update(updated);
     }
 
     @Override
