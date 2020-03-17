@@ -5,12 +5,13 @@ import com.authguard.dal.model.RoleDO;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public interface RolesRepository {
-    RoleDO save(RoleDO role);
-    Optional<RoleDO> getById(final String id);
-    Collection<RoleDO> getAll();
-    Optional<RoleDO> getByName(String name);
-    Optional<RoleDO> update(RoleDO role);
-    Optional<RoleDO> delete(String id);
+    CompletableFuture<RoleDO> save(RoleDO role);
+    CompletableFuture<Optional<RoleDO>> getById(final String id);
+    CompletableFuture<Collection<RoleDO>> getAll();
+    CompletableFuture<Optional<RoleDO>> getByName(String name);
+    CompletableFuture<Optional<RoleDO>> update(RoleDO role);
+    CompletableFuture<Optional<RoleDO>> delete(String id);
 }

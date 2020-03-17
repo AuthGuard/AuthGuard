@@ -24,6 +24,7 @@ import org.mockito.Mockito;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -75,7 +76,7 @@ class AccountsServiceImplTest {
                 .withId(null);
 
         Mockito.when(accountsRepository.save(any()))
-                .thenAnswer(invocation -> invocation.getArgument(0, AccountDO.class));
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountDO.class)));
 
         final AccountBO persisted = accountService.create(account);
 
@@ -88,7 +89,7 @@ class AccountsServiceImplTest {
         final AccountDO account = RANDOM.nextObject(AccountDO.class)
                 .withDeleted(false);
 
-        Mockito.when(accountsRepository.getById(any())).thenReturn(Optional.of(account));
+        Mockito.when(accountsRepository.getById(any())).thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         final Optional<AccountBO> retrieved = accountService.getById("");
 
@@ -106,7 +107,8 @@ class AccountsServiceImplTest {
     void grantPermissions() {
         final AccountDO account = RANDOM.nextObject(AccountDO.class);
 
-        Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
+        Mockito.when(accountsRepository.getById(account.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
         Mockito.when(permissionsService.validate(any()))
                 .thenAnswer(invocation -> invocation.getArgument(0, List.class));
 
@@ -125,7 +127,8 @@ class AccountsServiceImplTest {
     void grantPermissionsInvalidPermission() {
         final AccountDO account = RANDOM.nextObject(AccountDO.class);
 
-        Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
+        Mockito.when(accountsRepository.getById(account.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         final List<PermissionBO> permissions = Arrays.asList(
                 RANDOM.nextObject(PermissionBO.class),
@@ -146,7 +149,8 @@ class AccountsServiceImplTest {
                         .build()
                 ).collect(Collectors.toList());
 
-        Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
+        Mockito.when(accountsRepository.getById(account.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         final List<PermissionBO> permissionsToRevoke = Arrays.asList(
                 currentPermissions.get(0),
@@ -163,9 +167,10 @@ class AccountsServiceImplTest {
     void grantRoles() {
         final AccountDO account = RANDOM.nextObject(AccountDO.class);
 
-        Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
+        Mockito.when(accountsRepository.getById(account.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
         Mockito.when(accountsRepository.update(any()))
-                .thenAnswer(invocation -> Optional.of(invocation.getArgument(0, AccountDO.class)));
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
         final List<String> roles = Arrays.asList(
                 RANDOM.nextObject(String.class),
@@ -183,9 +188,10 @@ class AccountsServiceImplTest {
         final AccountDO account = RANDOM.nextObject(AccountDO.class);
         final List<String> currentRoles = account.getRoles();
 
-        Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
+        Mockito.when(accountsRepository.getById(account.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
         Mockito.when(accountsRepository.update(any()))
-                .thenAnswer(invocation -> Optional.of(invocation.getArgument(0, AccountDO.class)));
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
         final List<String> rolesToRevoke = Arrays.asList(
                 currentRoles.get(0),
@@ -202,9 +208,10 @@ class AccountsServiceImplTest {
     void addEmails() {
         final AccountDO account = RANDOM.nextObject(AccountDO.class);
 
-        Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
+        Mockito.when(accountsRepository.getById(account.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
         Mockito.when(accountsRepository.update(any()))
-                .thenAnswer(invocation -> Optional.of(invocation.getArgument(0, AccountDO.class)));
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
         final List<AccountEmailBO> emails = Arrays.asList(
                 RANDOM.nextObject(AccountEmailBO.class),
@@ -225,9 +232,10 @@ class AccountsServiceImplTest {
                 .map(AccountEmailDO::getEmail)
                 .collect(Collectors.toList());
 
-        Mockito.when(accountsRepository.getById(account.getId())).thenReturn(Optional.of(account));
+        Mockito.when(accountsRepository.getById(account.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
         Mockito.when(accountsRepository.update(any()))
-                .thenAnswer(invocation -> Optional.of(invocation.getArgument(0, AccountDO.class)));
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
         final List<String> emailsToRemove = Arrays.asList(
                 currentEmails.get(0),

@@ -18,6 +18,7 @@ import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,7 +52,7 @@ class CredentialsServiceImplTest {
         final HashedPasswordBO hashedPassword = RANDOM.nextObject(HashedPasswordBO.class);
 
         Mockito.when(securePassword.hash(any())).thenReturn(hashedPassword);
-        Mockito.when(credentialsRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0, CredentialsDO.class));
+        Mockito.when(credentialsRepository.save(any())).thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CredentialsDO.class)));
 
         final CredentialsBO persisted = credentialsService.create(credentials);
 
@@ -64,7 +65,7 @@ class CredentialsServiceImplTest {
     void getById() {
         final CredentialsDO credentials = RANDOM.nextObject(CredentialsDO.class);
 
-        Mockito.when(credentialsRepository.getById(any())).thenReturn(Optional.of(credentials));
+        Mockito.when(credentialsRepository.getById(any())).thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
 
         final Optional<CredentialsBO> retrieved = credentialsService.getById("");
 
@@ -76,7 +77,7 @@ class CredentialsServiceImplTest {
 
     @Test
     void getByIdNotFound() {
-        Mockito.when(credentialsRepository.getById(any())).thenReturn(Optional.empty());
+        Mockito.when(credentialsRepository.getById(any())).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         assertThat(credentialsService.getById("")).isEmpty();
     }
@@ -85,7 +86,7 @@ class CredentialsServiceImplTest {
     void getByUsername() {
         final CredentialsDO credentials = RANDOM.nextObject(CredentialsDO.class);
 
-        Mockito.when(credentialsRepository.findByUsername(any())).thenReturn(Optional.of(credentials));
+        Mockito.when(credentialsRepository.findByUsername(any())).thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
 
         final Optional<CredentialsBO> retrieved = credentialsService.getByUsername("");
 
@@ -97,9 +98,10 @@ class CredentialsServiceImplTest {
 
     @Test
     void getByUsernameNotFound() {
-        Mockito.when(credentialsRepository.findByUsername(any())).thenReturn(Optional.empty());
+        Mockito.when(credentialsRepository.findByUsername(any()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        assertThat(credentialsService.getById("")).isEmpty();
+        assertThat(credentialsService.getByUsername("")).isEmpty();
     }
 
     @Test
@@ -107,10 +109,12 @@ class CredentialsServiceImplTest {
         final CredentialsDO credentials = RANDOM.nextObject(CredentialsDO.class);
         final CredentialsBO update = RANDOM.nextObject(CredentialsBO.class).withId(credentials.getId());
 
-        Mockito.when(credentialsRepository.getById(credentials.getId())).thenReturn(Optional.of(credentials));
-        Mockito.when(credentialsRepository.update(any())).thenAnswer(invocation -> Optional.of(invocation.getArgument(0, CredentialsDO.class)));
-        Mockito.when(credentialsAuditRepository.save(any())).thenAnswer(invocation ->
-                invocation.getArgument(0, CredentialsAuditDO.class));
+        Mockito.when(credentialsRepository.getById(credentials.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
+        Mockito.when(credentialsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, CredentialsDO.class))));
+        Mockito.when(credentialsAuditRepository.save(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CredentialsAuditDO.class)));
 
         final Optional<CredentialsBO> result = credentialsService.update(update);
 
@@ -145,10 +149,12 @@ class CredentialsServiceImplTest {
         final CredentialsDO credentials = RANDOM.nextObject(CredentialsDO.class);
         final CredentialsBO update = RANDOM.nextObject(CredentialsBO.class).withId(credentials.getId());
 
-        Mockito.when(credentialsRepository.getById(credentials.getId())).thenReturn(Optional.of(credentials));
-        Mockito.when(credentialsRepository.update(any())).thenAnswer(invocation -> Optional.of(invocation.getArgument(0, CredentialsDO.class)));
-        Mockito.when(credentialsAuditRepository.save(any())).thenAnswer(invocation ->
-                invocation.getArgument(0, CredentialsAuditDO.class));
+        Mockito.when(credentialsRepository.getById(credentials.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
+        Mockito.when(credentialsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, CredentialsDO.class))));
+        Mockito.when(credentialsAuditRepository.save(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CredentialsAuditDO.class)));
 
         final Optional<CredentialsBO> result = credentialsService.updatePassword(update);
 

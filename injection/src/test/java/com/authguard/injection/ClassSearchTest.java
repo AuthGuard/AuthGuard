@@ -16,6 +16,7 @@ import org.reflections.util.FilterBuilder;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -71,22 +72,22 @@ class ClassSearchTest {
     // --- AccountsRepository
     class MockAccountsRepository implements AccountsRepository {
         @Override
-        public AccountDO save(final AccountDO account) {
+        public CompletableFuture<AccountDO> save(final AccountDO account) {
             return null;
         }
 
         @Override
-        public Optional<AccountDO> getById(final String accountId) {
-            return Optional.empty();
+        public CompletableFuture<Optional<AccountDO>> getById(final String accountId) {
+            return null;
         }
 
         @Override
-        public Optional<AccountDO> update(final AccountDO account) {
-            return Optional.empty();
+        public CompletableFuture<Optional<AccountDO>> update(final AccountDO account) {
+            return null;
         }
 
         @Override
-        public List<AccountDO> getAdmins() {
+        public CompletableFuture<List<AccountDO>> getAdmins() {
             return null;
         }
     }
@@ -98,33 +99,34 @@ class ClassSearchTest {
 
     // --- PermissionsRepository
     class MockPermissionsRepository implements PermissionsRepository {
+
         @Override
-        public PermissionDO save(final PermissionDO permission) {
+        public CompletableFuture<PermissionDO> save(final PermissionDO permission) {
             return null;
         }
 
         @Override
-        public Optional<PermissionDO> getById(final String id) {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<PermissionDO> search(final String group, final String name) {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<PermissionDO> delete(final String id) {
-            return Optional.empty();
-        }
-
-        @Override
-        public Collection<PermissionDO> getAll() {
+        public CompletableFuture<Optional<PermissionDO>> getById(final String id) {
             return null;
         }
 
         @Override
-        public Collection<PermissionDO> getAllForGroup(final String group) {
+        public CompletableFuture<Optional<PermissionDO>> search(final String group, final String name) {
+            return null;
+        }
+
+        @Override
+        public CompletableFuture<Optional<PermissionDO>> delete(final String id) {
+            return null;
+        }
+
+        @Override
+        public CompletableFuture<Collection<PermissionDO>> getAll() {
+            return null;
+        }
+
+        @Override
+        public CompletableFuture<Collection<PermissionDO>> getAllForGroup(final String group) {
             return null;
         }
     }

@@ -1,5 +1,6 @@
 package com.authguard.service.impl;
 
+import com.authguard.dal.model.AppDO;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.impl.mappers.ServiceMapper;
 import com.google.inject.Inject;
@@ -38,39 +39,40 @@ public class ApplicationsServiceImpl implements ApplicationsService {
          * account or not. So for now, no check is done on
          * the accountId.
          */
-        return Optional.of(app)
-                .map(appBO -> appBO.withId(UUID.randomUUID().toString()))
-                .map(serviceMapper::toDO)
-                .map(applicationsRepository::save)
-                .map(serviceMapper::toBO)
-                .orElseThrow(IllegalStateException::new);
+        final AppDO appDO = serviceMapper.toDO(app.withId(UUID.randomUUID().toString()));
+
+        return applicationsRepository.save(appDO)
+                .thenApply(serviceMapper::toBO)
+                .join();
     }
 
     @Override
     public Optional<AppBO> getById(final String id) {
         return applicationsRepository.getById(id)
-                .map(serviceMapper::toBO);
+                .thenApply(optional -> optional.map(serviceMapper::toBO))
+                .join();
     }
 
     @Override
     public Optional<AppBO> update(final AppBO app) {
-        return Optional.of(app)
-                .map(serviceMapper::toDO)
-                .flatMap(applicationsRepository::update)
-                .map(serviceMapper::toBO);
+        final AppDO appDO = serviceMapper.toDO(app);
+
+        return applicationsRepository.update(appDO)
+                .thenApply(optional -> optional.map(serviceMapper::toBO))
+                .join();
     }
 
     @Override
     public Optional<AppBO> delete(final String id) {
         return applicationsRepository.delete(id)
-                .map(serviceMapper::toBO);
+                .thenApply(optional -> optional.map(serviceMapper::toBO))
+                .join();
     }
 
     @Override
     public List<AppBO> getByAccountId(final String accountId) {
         return applicationsRepository.getAllForAccount(accountId)
-                .stream()
-                .map(serviceMapper::toBO)
-                .collect(Collectors.toList());
+                .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()))
+                .join();
     }
 }

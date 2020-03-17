@@ -10,6 +10,7 @@ import com.authguard.service.config.ImmutableStrategyConfig;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.TokensBO;
+import org.assertj.core.api.Condition;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.*;
@@ -19,6 +20,8 @@ import org.mockito.Mockito;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -68,12 +71,10 @@ class AuthorizationServiceImplTest {
         Mockito.when(accessTokenProvider.generateToken(account)).thenReturn(tokens);
 
         // call
-        final Optional<TokensBO> generatedTokens = authorizationService
-                .authorize(authorizationHeader);
+        final TokensBO generatedTokens = authorizationService.authorize(authorizationHeader);
 
         // assert
-        assertThat(generatedTokens).isPresent();
-        assertThat(generatedTokens).contains(tokens);
+        assertThat(generatedTokens).isEqualTo(tokens);
 
         final ArgumentCaptor<AccountTokenDO> accountTokenArg = ArgumentCaptor
                 .forClass(AccountTokenDO.class);
@@ -111,19 +112,18 @@ class AuthorizationServiceImplTest {
 
         // prepare mocks
         Mockito.when(accountTokensRepository.getByToken(refreshToken))
-                .thenReturn(Optional.of(existingAccountToken));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(existingAccountToken)));
 
         Mockito.when(accountsService.getById(existingAccountToken.getAssociatedAccountId()))
                 .thenReturn(Optional.of(account));
         Mockito.when(accessTokenProvider.generateToken(account)).thenReturn(tokens);
 
         // call
-        final Optional<TokensBO> generatedTokens = authorizationService
+        final TokensBO generatedTokens = authorizationService
                 .refresh(refreshToken);
 
         // assert
-        assertThat(generatedTokens).isPresent();
-        assertThat(generatedTokens).contains(tokens);
+        assertThat(generatedTokens).isEqualTo(tokens);
 
         final ArgumentCaptor<AccountTokenDO> accountTokenArg = ArgumentCaptor
                 .forClass(AccountTokenDO.class);
@@ -156,10 +156,12 @@ class AuthorizationServiceImplTest {
 
         // prepare mocks
         Mockito.when(accountTokensRepository.getByToken(refreshToken))
-                .thenReturn(Optional.of(existingAccountToken));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(existingAccountToken)));
 
         // call
         assertThatThrownBy(() -> authorizationService.refresh(refreshToken))
+                .isInstanceOf(CompletionException.class)
+                .extracting("cause")
                 .isInstanceOf(ServiceAuthorizationException.class);
     }
 }

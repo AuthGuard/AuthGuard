@@ -1,5 +1,6 @@
 package com.authguard.service.impl;
 
+import com.authguard.dal.model.RoleDO;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.impl.mappers.ServiceMapper;
 import com.google.inject.Inject;
@@ -26,6 +27,7 @@ public class RolesServiceImpl implements RolesService {
     @Override
     public List<RoleBO> getAll() {
         return rolesRepository.getAll()
+                .join()
                 .stream()
                 .map(serviceMapper::toBO)
                 .collect(Collectors.toList());
@@ -33,17 +35,18 @@ public class RolesServiceImpl implements RolesService {
 
     @Override
     public RoleBO create(final RoleBO role) {
-        return Optional.of(role)
-                .map(serviceMapper::toDO)
-                .map(rolesRepository::save)
-                .map(serviceMapper::toBO)
-                .orElseThrow(IllegalStateException::new);
+        final RoleDO roleDO = serviceMapper.toDO(role);
+
+        return rolesRepository.save(roleDO)
+                .thenApply(serviceMapper::toBO)
+                .join();
     }
 
     @Override
     public Optional<RoleBO> getRoleByName(final String name) {
         return rolesRepository.getByName(name)
-                .map(serviceMapper::toBO);
+                .thenApply(optional -> optional.map(serviceMapper::toBO))
+                .join();
     }
 
     @Override
@@ -56,19 +59,27 @@ public class RolesServiceImpl implements RolesService {
     @Override
     public Optional<RoleBO> grantPermissions(final String name, final List<PermissionBO> permission) {
         return rolesRepository.getByName(name)
-                .map(serviceMapper::toBO)
-                .map(role -> role.withPermissions(
-                        Stream.concat(role.getPermissions().stream(), permission.stream())
-                                .distinct().collect(Collectors.toList())
-                ))
-                .map(serviceMapper::toDO)
-                .flatMap(rolesRepository::update)
-                .map(serviceMapper::toBO);
+                .thenApply(optional -> optional.map(serviceMapper::toBO)
+                        .map(role -> role.withPermissions(
+                                Stream.concat(role.getPermissions().stream(), permission.stream())
+                                        .distinct().collect(Collectors.toList()))
+                        ).map(serviceMapper::toDO)
+                )
+                .thenApply(optional -> {
+                    if (optional.isPresent()) {
+                        return rolesRepository.update(optional.get())
+                                .thenApply(opt -> opt.map(serviceMapper::toBO))
+                                .join();
+                    } else {
+                        return Optional.<RoleBO>empty();
+                    }
+                }).join();
     }
 
     @Override
     public Optional<RoleBO> revokePermissions(final String name, final List<PermissionBO> permissions) {
         final RoleBO role = rolesRepository.getByName(name)
+                .join()
                 .map(serviceMapper::toBO)
                 .orElseThrow(ServiceNotFoundException::new);
 
@@ -77,6 +88,7 @@ public class RolesServiceImpl implements RolesService {
                 .collect(Collectors.toList());
 
         return rolesRepository.update(serviceMapper.toDO(role.withPermissions(updatedPermissions)))
-                .map(serviceMapper::toBO);
+                .thenApply(optional -> optional.map(serviceMapper::toBO))
+                .join();
     }
 }
