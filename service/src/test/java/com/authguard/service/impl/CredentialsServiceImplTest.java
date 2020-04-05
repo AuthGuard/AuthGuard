@@ -2,18 +2,18 @@ package com.authguard.service.impl;
 
 import com.authguard.dal.CredentialsAuditRepository;
 import com.authguard.dal.CredentialsRepository;
+import com.authguard.service.AccountsService;
 import com.authguard.service.SecurePassword;
 import com.authguard.dal.model.CredentialsAuditDO;
 import com.authguard.dal.model.CredentialsDO;
 import com.authguard.service.exceptions.ServiceConflictException;
+import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.impl.mappers.ServiceMapperImpl;
+import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.CredentialsBO;
 import com.authguard.service.model.HashedPasswordBO;
 import org.jeasy.random.EasyRandom;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class CredentialsServiceImplTest {
+    private AccountsService accountsService;
     private CredentialsRepository credentialsRepository;
     private CredentialsAuditRepository credentialsAuditRepository;
     private SecurePassword securePassword;
@@ -35,16 +36,20 @@ class CredentialsServiceImplTest {
 
     @BeforeAll
     void setup() {
+        accountsService = Mockito.mock(AccountsService.class);
         credentialsRepository = Mockito.mock(CredentialsRepository.class);
         credentialsAuditRepository = Mockito.mock(CredentialsAuditRepository.class);
         securePassword = Mockito.mock(SecurePassword.class);
-        credentialsService = new CredentialsServiceImpl(credentialsRepository, credentialsAuditRepository, securePassword, new ServiceMapperImpl());
+        credentialsService = new CredentialsServiceImpl(accountsService, credentialsRepository, credentialsAuditRepository, securePassword, new ServiceMapperImpl());
     }
 
-    @AfterEach
+    @BeforeEach
     void resetMocks() {
+        Mockito.reset(accountsService);
         Mockito.reset(credentialsRepository);
         Mockito.reset(credentialsAuditRepository);
+
+        Mockito.when(accountsService.getById(any())).thenReturn(Optional.of(RANDOM.nextObject(AccountBO.class)));
     }
 
     @Test
@@ -69,6 +74,15 @@ class CredentialsServiceImplTest {
         Mockito.when(credentialsRepository.findByUsername(credentials.getUsername())).thenReturn(Optional.of(CredentialsDO.builder().build()));
 
         assertThatThrownBy(() -> credentialsService.create(credentials)).isInstanceOf(ServiceConflictException.class);
+    }
+
+    @Test
+    void createNonExistingAccount() {
+        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class);
+
+        Mockito.when(accountsService.getById(credentials.getAccountId())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> credentialsService.create(credentials)).isInstanceOf(ServiceException.class);
     }
 
     @Test
