@@ -1,18 +1,11 @@
 package com.authguard.rest.injectors;
 
-import com.authguard.config.ConfigContext;
 import com.authguard.service.*;
 import com.authguard.service.impl.*;
 import com.google.inject.AbstractModule;
 import com.authguard.service.impl.passwords.SCryptPassword;
 
 public class ServicesBinder extends AbstractModule {
-
-    private final ConfigContext rootConfig;
-
-    public ServicesBinder(final ConfigContext rootConfig) {
-        this.rootConfig = rootConfig;
-    }
 
     @Override
     public void configure() {
@@ -26,11 +19,8 @@ public class ServicesBinder extends AbstractModule {
         bind(RolesService.class).to(RolesServiceImpl.class);
         bind(VerificationMessageService.class).to(VerificationMessageServiceImpl.class);
         bind(VerificationService.class).to(VerificationServiceImpl.class);
+        bind(OtpService.class).to(OtpServiceImpl.class);
 
         bind(SecurePassword.class).to(SCryptPassword.class);
-
-        if (rootConfig.get("otp") != null) {
-            bind(OtpService.class).to(OtpServiceImpl.class);
-        }
     }
 }

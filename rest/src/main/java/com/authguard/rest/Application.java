@@ -35,7 +35,7 @@ public class Application {
         // injectors
         final Injector injector = Guice.createInjector(new MappersBinder(),
                 new ConfigBinder(configContext),
-                new ServicesBinder(configContext),
+                new ServicesBinder(),
                 new JwtBinder(configContext),
                 new DalBinder(searchPackages),
                 new EmbBinder(searchPackages),
