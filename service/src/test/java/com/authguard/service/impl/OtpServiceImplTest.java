@@ -21,6 +21,7 @@ import org.mockito.Mockito;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -175,7 +176,7 @@ class OtpServiceImplTest {
                 .withId(otp.getAccountId());
         final TokensBO tokens = random.nextObject(TokensBO.class);
 
-        Mockito.when(mockOtpRepository.getById(otp.getId())).thenReturn(Optional.of(otp));
+        Mockito.when(mockOtpRepository.getById(otp.getId())).thenReturn(CompletableFuture.completedFuture(Optional.of(otp)));
         Mockito.when(mockAccountsService.getById(account.getId())).thenReturn(Optional.of(account));
         Mockito.when(mockJwtProvider.generateToken(account)).thenReturn(tokens);
 
@@ -199,7 +200,7 @@ class OtpServiceImplTest {
                 .withId(otp.getAccountId());
         final TokensBO tokens = random.nextObject(TokensBO.class);
 
-        Mockito.when(mockOtpRepository.getById(otp.getId())).thenReturn(Optional.of(otp));
+        Mockito.when(mockOtpRepository.getById(otp.getId())).thenReturn(CompletableFuture.completedFuture(Optional.of(otp)));
         Mockito.when(mockAccountsService.getById(account.getId())).thenReturn(Optional.of(account));
         Mockito.when(mockJwtProvider.generateToken(account)).thenReturn(tokens);
 
@@ -219,7 +220,7 @@ class OtpServiceImplTest {
 
         final OneTimePasswordDO otp = random.nextObject(OneTimePasswordDO.class);
 
-        Mockito.when(mockOtpRepository.getById(otp.getId())).thenReturn(Optional.of(otp));
+        Mockito.when(mockOtpRepository.getById(otp.getId())).thenReturn(CompletableFuture.completedFuture(Optional.of(otp)));
         Mockito.when(mockAccountsService.getById(otp.getAccountId())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> otpService.authenticate(otp.getId(), otp.getPassword()))
@@ -238,7 +239,7 @@ class OtpServiceImplTest {
 
         final OneTimePasswordDO otp = random.nextObject(OneTimePasswordDO.class);
 
-        Mockito.when(mockOtpRepository.getById(otp.getId())).thenReturn(Optional.empty());
+        Mockito.when(mockOtpRepository.getById(otp.getId())).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         assertThatThrownBy(() -> otpService.authenticate(otp.getId(), otp.getPassword()))
                 .isInstanceOf(ServiceAuthorizationException.class);

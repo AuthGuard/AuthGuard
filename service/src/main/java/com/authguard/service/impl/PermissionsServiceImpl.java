@@ -1,5 +1,6 @@
 package com.authguard.service.impl;
 
+import com.authguard.dal.model.PermissionDO;
 import com.authguard.service.impl.mappers.ServiceMapper;
 import com.google.inject.Inject;
 import com.authguard.dal.PermissionsRepository;
@@ -23,23 +24,24 @@ public class PermissionsServiceImpl implements PermissionsService {
 
     @Override
     public PermissionBO create(final PermissionBO permission) {
-        return Optional.of(permission)
-                .map(serviceMapper::toDO)
-                .map(permissionsRepository::save)
-                .map(serviceMapper::toBO)
-                .orElseThrow(IllegalStateException::new);
+        final PermissionDO permissionDO = serviceMapper.toDO(permission);
+
+        return permissionsRepository.save(permissionDO)
+                .thenApply(serviceMapper::toBO)
+                .join();
     }
 
     @Override
     public List<PermissionBO> validate(final List<PermissionBO> permissions) {
         return permissions.stream()
-                .filter(permission -> permissionsRepository.search(permission.getGroup(), permission.getName()).isPresent())
+                .filter(permission -> permissionsRepository.search(permission.getGroup(), permission.getName()).join().isPresent())
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<PermissionBO> getAll() {
-        return permissionsRepository.getAll().stream()
+        return permissionsRepository.getAll().join()
+                .stream()
                 .map(serviceMapper::toBO)
                 .collect(Collectors.toList());
     }
@@ -47,6 +49,7 @@ public class PermissionsServiceImpl implements PermissionsService {
     @Override
     public Collection<PermissionBO> getAllForGroup(final String group) {
         return permissionsRepository.getAllForGroup(group)
+                .join()
                 .stream()
                 .map(serviceMapper::toBO)
                 .collect(Collectors.toList());
@@ -55,6 +58,7 @@ public class PermissionsServiceImpl implements PermissionsService {
     @Override
     public Optional<PermissionBO> delete(final String id) {
         return permissionsRepository.delete(id)
-                .map(serviceMapper::toBO);
+                .thenApply(optional -> optional.map(serviceMapper::toBO))
+                .join();
     }
 }

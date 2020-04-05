@@ -74,7 +74,8 @@ public class OtpServiceImpl implements OtpService {
     @Override
     public TokensBO authenticate(final String passwordId, final String otp) {
         final OneTimePasswordBO generated = otpRepository.getById(passwordId)
-                .map(serviceMapper::toBO)
+                .thenApply(optional -> optional.map(serviceMapper::toBO))
+                .join()
                 .orElseThrow(() -> new ServiceAuthorizationException("Invalid OTP ID"));
 
         if (generated.getExpiresAt().isBefore(ZonedDateTime.now())) {

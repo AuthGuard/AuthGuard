@@ -1,6 +1,7 @@
 package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
+import com.authguard.dal.model.AccountDO;
 import com.authguard.service.VerificationMessageService;
 import com.authguard.service.config.ImmutableAccountConfig;
 import com.authguard.service.exceptions.ServiceException;
@@ -49,38 +50,37 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public AccountBO create(final AccountBO account) {
-        return Optional.of(account)
-                .map(accountBO -> accountBO
-                        .withId(UUID.randomUUID().toString())
-                )
-                .map(serviceMapper::toDO)
-                .map(accountsRepository::save)
-                .map(serviceMapper::toBO)
-                .map(created -> {
+        final AccountDO accountDO = serviceMapper.toDO(account.withId(UUID.randomUUID().toString()));
+
+        return accountsRepository.save(accountDO)
+                .thenApply(serviceMapper::toBO)
+                .thenApply(created -> {
                     if (accountConfig.verifyEmail()) {
                         verificationMessageService.sendVerificationEmail(created);
                     }
 
                     return created;
-                })
-                .orElseThrow(IllegalStateException::new);
+                }).join();
     }
 
     @Override
     public Optional<AccountBO> getById(final String accountId) {
         return accountsRepository.getById(accountId)
+                .join()
                 .map(serviceMapper::toBO);
     }
 
     @Override
     public Optional<AccountBO> update(final AccountBO account) {
         return accountsRepository.update(serviceMapper.toDO(account))
+                .join()
                 .map(serviceMapper::toBO);
     }
 
     @Override
     public Optional<AccountBO> removeEmails(final String accountId, final List<String> emails) {
         final AccountBO existing = accountsRepository.getById(accountId)
+                .join()
                 .map(serviceMapper::toBO)
                 .orElseThrow(ServiceNotFoundException::new);
 
@@ -98,6 +98,7 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public Optional<AccountBO> addEmails(final String accountId, final List<AccountEmailBO> emails) {
         final AccountBO existing = accountsRepository.getById(accountId)
+                .join()
                 .map(serviceMapper::toBO)
                 .orElseThrow(ServiceNotFoundException::new);
 
@@ -137,6 +138,7 @@ public class AccountsServiceImpl implements AccountsService {
         }
 
         final AccountBO account = accountsRepository.getById(accountId)
+                .join()
                 .map(serviceMapper::toBO)
                 .orElseThrow(ServiceNotFoundException::new);
 
@@ -154,6 +156,7 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public AccountBO revokePermissions(final String accountId, final List<PermissionBO> permissions) {
         final AccountBO account = accountsRepository.getById(accountId)
+                .join()
                 .map(serviceMapper::toBO)
                 .orElseThrow(ServiceNotFoundException::new);
 
@@ -171,6 +174,7 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public AccountBO grantRoles(final String accountId, final List<String> roles) {
         final AccountBO account = accountsRepository.getById(accountId)
+                .join()
                 .map(serviceMapper::toBO)
                 .orElseThrow(ServiceNotFoundException::new);
 
@@ -181,6 +185,7 @@ public class AccountsServiceImpl implements AccountsService {
         final AccountBO updated = account.withRoles(combinedRoles);
 
         return accountsRepository.update(serviceMapper.toDO(updated))
+                .join()
                 .map(serviceMapper::toBO)
                 .orElseThrow(IllegalStateException::new);
     }
@@ -188,6 +193,7 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public AccountBO revokeRoles(final String accountId, final List<String> roles) {
         final AccountBO account = accountsRepository.getById(accountId)
+                .join()
                 .map(serviceMapper::toBO)
                 .orElseThrow(ServiceNotFoundException::new);
 
@@ -198,6 +204,7 @@ public class AccountsServiceImpl implements AccountsService {
         final AccountBO updated = account.withRoles(filteredRoles);
 
         return accountsRepository.update(serviceMapper.toDO(updated))
+                .join()
                 .map(serviceMapper::toBO)
                 .orElseThrow(IllegalStateException::new);
     }
@@ -205,6 +212,7 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public List<AccountBO> getAdmins() {
         return accountsRepository.getAdmins()
+                .join()
                 .stream()
                 .map(serviceMapper::toBO)
                 .collect(Collectors.toList());

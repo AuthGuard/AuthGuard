@@ -3,8 +3,9 @@ package com.authguard.dal;
 import com.authguard.dal.model.OneTimePasswordDO;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public interface OtpRepository {
-    OneTimePasswordDO save(OneTimePasswordDO password);
-    Optional<OneTimePasswordDO> getById(String id);
+    CompletableFuture<OneTimePasswordDO> save(OneTimePasswordDO password);
+    CompletableFuture<Optional<OneTimePasswordDO>> getById(String id);
 }

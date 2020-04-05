@@ -1,5 +1,6 @@
 package com.authguard.service.impl;
 
+import com.authguard.dal.model.CredentialsDO;
 import com.authguard.service.AccountsService;
 import com.authguard.service.exceptions.ServiceConflictException;
 import com.authguard.service.exceptions.ServiceException;
@@ -44,33 +45,39 @@ public class CredentialsServiceImpl implements CredentialsService {
         ensureNoDuplicate(credentials);
 
         final HashedPasswordBO hashedPassword = securePassword.hash(credentials.getPlainPassword());
+        final CredentialsBO credentialsHashedPassword = CredentialsBO.builder()
+                .from(credentials)
+                .hashedPassword(hashedPassword)
+                .id(UUID.randomUUID().toString())
+                .build();
 
-        return Optional.of(credentials.withHashedPassword(hashedPassword).withId(UUID.randomUUID().toString()))
-                .map(serviceMapper::toDO)
-                .map(credentialsRepository::save)
-                .map(serviceMapper::toBO)
-                .map(this::removeSensitiveInformation)
-                .orElseThrow(IllegalStateException::new);
+        final CredentialsDO credentialsDO = serviceMapper.toDO(credentialsHashedPassword);
+
+        return credentialsRepository.save(credentialsDO)
+                .thenApply(serviceMapper::toBO)
+                .thenApply(this::removeSensitiveInformation)
+                .join();
     }
 
     @Override
     public Optional<CredentialsBO> getById(final String id) {
         return credentialsRepository.getById(id)
-                .map(serviceMapper::toBO)
-                .map(this::removeSensitiveInformation);
+                .thenApply(optional -> optional.map(serviceMapper::toBO).map(this::removeSensitiveInformation))
+                .join();
     }
 
     @Override
     public Optional<CredentialsBO> getByUsername(final String username) {
         return credentialsRepository.findByUsername(username)
-                .map(serviceMapper::toBO)
-                .map(this::removeSensitiveInformation);
+                .thenApply(optional -> optional.map(serviceMapper::toBO).map(this::removeSensitiveInformation))
+                .join();
     }
 
     @Override
     public Optional<CredentialsBO> getByUsernameUnsafe(final String username) {
         return credentialsRepository.findByUsername(username)
-                .map(serviceMapper::toBO);
+                .thenApply(optional -> optional.map(serviceMapper::toBO))
+                .join();
     }
 
     @Override
@@ -90,7 +97,8 @@ public class CredentialsServiceImpl implements CredentialsService {
         ensureNoDuplicate(credentials);
 
         final CredentialsBO existing = credentialsRepository.getById(credentials.getId())
-                .map(serviceMapper::toBO)
+                .thenApply(optional -> optional.map(serviceMapper::toBO))
+                .join()
                 .orElseThrow(ServiceNotFoundException::new);
 
         final CredentialsBO update = credentials.getHashedPassword() == null ?
@@ -100,7 +108,8 @@ public class CredentialsServiceImpl implements CredentialsService {
         storeAuditRecord(removeSensitiveInformation(existing), CredentialsAudit.Action.ATTEMPT);
 
         return credentialsRepository.update(serviceMapper.toDO(update))
-                .map(serviceMapper::toBO)
+                .thenApply(optional -> optional.map(serviceMapper::toBO))
+                .join()
                 .map(c -> {
                     if (storePasswordAudit) {
                         storeAuditRecord(existing, CredentialsAudit.Action.UPDATED);
@@ -115,8 +124,8 @@ public class CredentialsServiceImpl implements CredentialsService {
     @Override
     public Optional<CredentialsBO> delete(final String id) {
         return credentialsRepository.delete(id)
-                .map(serviceMapper::toBO)
-                .map(this::removeSensitiveInformation);
+                .thenApply(optional -> optional.map(serviceMapper::toBO).map(this::removeSensitiveInformation))
+                .join();
     }
 
     private CredentialsBO removeSensitiveInformation(final CredentialsBO credentials) {
@@ -138,6 +147,7 @@ public class CredentialsServiceImpl implements CredentialsService {
 
     private void ensureNoDuplicate(final CredentialsBO credentials) {
         credentialsRepository.findByUsername(credentials.getUsername())
+                .join()
                 .ifPresent(ignored -> { throw new ServiceConflictException("Username already exists"); });
     }
 

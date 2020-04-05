@@ -4,9 +4,10 @@ import com.authguard.dal.model.CredentialsAuditDO;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public interface CredentialsAuditRepository {
-    CredentialsAuditDO save(CredentialsAuditDO credentialsAudit);
-    Optional<CredentialsAuditDO> getById(String id);
-    List<CredentialsAuditDO> findByCredentialsId(String credentialsId);
+    CompletableFuture<CredentialsAuditDO> save(CredentialsAuditDO credentialsAudit);
+    CompletableFuture<Optional<CredentialsAuditDO>> getById(String id);
+    CompletableFuture<List<CredentialsAuditDO>> findByCredentialsId(String credentialsId);
 }

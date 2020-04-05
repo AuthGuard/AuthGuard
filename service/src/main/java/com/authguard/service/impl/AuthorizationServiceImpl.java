@@ -39,7 +39,7 @@ public class AuthorizationServiceImpl implements AuthorizationService {
     }
 
     @Override
-    public Optional<TokensBO> authorize(final String header) {
+    public TokensBO authorize(final String header) {
         final String[] parts = parseAuthorization(header);
 
         if (parts[0].equals("Bearer")) {
@@ -50,31 +50,29 @@ public class AuthorizationServiceImpl implements AuthorizationService {
     }
 
     @Override
-    public Optional<TokensBO> refresh(final String refreshToken) {
-        final Optional<AccountTokenDO> accountToken = accountTokensRepository.getByToken(refreshToken);
-
-        if (accountToken.isEmpty()) {
-            throw new ServiceAuthorizationException("Non-existing or expired service token");
-        }
-
-        return accountToken
-                .filter(this::validateExpirationDateTime)
-                .map(AccountTokenDO::getAssociatedAccountId)
-                .flatMap(this::generateTokenForAccount);
+    public TokensBO refresh(final String refreshToken) {
+        return accountTokensRepository.getByToken(refreshToken)
+                .thenApply(optional -> optional
+                        .filter(this::validateExpirationDateTime)
+                        .map(AccountTokenDO::getAssociatedAccountId)
+                        .map(this::generateTokenForAccount)
+                        .orElseThrow(() -> new ServiceAuthorizationException("Non-existing or expired refresh token")))
+                .join();
     }
 
-    private Optional<TokensBO> handleIdTokenAuthorization(final String token) {
+    private TokensBO handleIdTokenAuthorization(final String token) {
         final String associatedAccountId = getAssociatedAccountId(validateToken(token));
 
         return generateTokenForAccount(associatedAccountId);
     }
 
-    private Optional<TokensBO> generateTokenForAccount(final String accountId) {
-        final Optional<TokensBO> tokens = Optional.of(accountId)
+    private TokensBO generateTokenForAccount(final String accountId) {
+        final TokensBO tokens = Optional.of(accountId)
                 .map(this::getAccount)
-                .map(accessTokenProvider::generateToken);
+                .map(accessTokenProvider::generateToken)
+                .orElseThrow(IllegalStateException::new);
 
-        tokens.map(TokensBO::getRefreshToken)
+        Optional.ofNullable(tokens.getRefreshToken())
                 .map(refreshToken -> AccountTokenDO.builder()
                         .token(refreshToken)
                         .associatedAccountId(accountId)

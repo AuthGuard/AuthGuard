@@ -16,6 +16,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,7 +47,7 @@ class ApplicationsServiceImplTest {
                 .thenReturn(Optional.of(random.nextObject(AccountBO.class)));
 
         Mockito.when(applicationsRepository.save(any()))
-                .thenAnswer(invocation -> invocation.getArgument(0, AppDO.class));
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AppDO.class)));
 
         final AppBO created = applicationsService.create(app);
 
@@ -58,7 +59,7 @@ class ApplicationsServiceImplTest {
         final AppDO app = random.nextObject(AppDO.class)
                 .withDeleted(false);
 
-        Mockito.when(applicationsRepository.getById(any())).thenReturn(Optional.of(app));
+        Mockito.when(applicationsRepository.getById(any())).thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
         final Optional<AppBO> retrieved = applicationsService.getById("");
 

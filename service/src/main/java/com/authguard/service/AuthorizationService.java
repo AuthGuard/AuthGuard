@@ -10,12 +10,12 @@ public interface AuthorizationService {
      * @param header Authorization header (must be Bearer)
      * @return
      */
-    Optional<TokensBO> authorize(String header);
+    TokensBO authorize(String header);
 
     /**
      * Refresh an access token using the refresh token
      * @param refreshToken
      * @return
      */
-    Optional<TokensBO> refresh(String refreshToken);
+    TokensBO refresh(String refreshToken);
 }
