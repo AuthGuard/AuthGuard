@@ -33,7 +33,7 @@ public class AuthRoute implements EndpointGroup {
     }
 
     private void authenticate(final Context context) {
-        final AuthRequestDTO authenticationRequest = context.bodyAsClass(AuthRequestDTO.class);
+        final AuthRequestDTO authenticationRequest = RestJsonMapper.asClass(context.body(), AuthRequestDTO.class);
 
         final Optional<TokensDTO> tokens = authenticationService.authenticate(authenticationRequest.getAuthorization())
                 .map(restMapper::toDTO);
@@ -46,7 +46,7 @@ public class AuthRoute implements EndpointGroup {
     }
 
     private void authorize(final Context context) {
-        final AuthRequestDTO authenticationRequest = context.bodyAsClass(AuthRequestDTO.class);
+        final AuthRequestDTO authenticationRequest = RestJsonMapper.asClass(context.body(), AuthRequestDTO.class);
 
         final TokensDTO tokens = restMapper.toDTO(authorizationService.authorize(authenticationRequest.getAuthorization()));
 
@@ -54,7 +54,7 @@ public class AuthRoute implements EndpointGroup {
     }
 
     private void refresh(final Context context) {
-        final AuthRequestDTO authenticationRequest = context.bodyAsClass(AuthRequestDTO.class);
+        final AuthRequestDTO authenticationRequest = RestJsonMapper.asClass(context.body(), AuthRequestDTO.class);
 
         final TokensDTO tokens = restMapper.toDTO(authorizationService.refresh(authenticationRequest.getAuthorization()));
 

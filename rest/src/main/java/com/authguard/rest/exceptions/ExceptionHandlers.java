@@ -31,9 +31,9 @@ public class ExceptionHandlers {
         };
     }
 
-    public static ExceptionHandler<JsonMappingException> jsonMappingException() {
+    public static ExceptionHandler<RuntimeJsonException> jsonMappingException() {
         return (e, context) -> {
-            final Error error = new Error("", "Failed to parse JSON at " + e.getPath());
+            final Error error = new Error("", "Failed to parse JSON at " + e.getCause().getLocation());
             context.status(422)
                     .json(error);
         };

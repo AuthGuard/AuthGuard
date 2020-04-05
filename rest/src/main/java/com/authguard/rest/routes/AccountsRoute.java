@@ -41,7 +41,7 @@ public class AccountsRoute implements EndpointGroup {
     }
 
     private void create(final Context context) {
-        final AccountDTO account = context.bodyAsClass(AccountDTO.class);
+        final AccountDTO account = RestJsonMapper.asClass(context.body(), AccountDTO.class);
 
         final Optional<AccountDTO> createdAccount = Optional.of(restMapper.toBO(account))
                 .map(accountsService::create)
@@ -69,7 +69,7 @@ public class AccountsRoute implements EndpointGroup {
 
     private void grantPermissions(final Context context) {
         final String accountId = context.pathParam("id");
-        final PermissionsRequestDTO permissionsRequest = context.bodyAsClass(PermissionsRequestDTO.class);
+        final PermissionsRequestDTO permissionsRequest = RestJsonMapper.asClass(context.body(), PermissionsRequestDTO.class);
         final List<PermissionBO> permissions = permissionsRequest.getPermissions().stream()
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
@@ -80,7 +80,7 @@ public class AccountsRoute implements EndpointGroup {
 
     private void revokePermissions(final Context context) {
         final String accountId = context.pathParam("id");
-        final PermissionsRequestDTO permissionsRequest = context.bodyAsClass(PermissionsRequestDTO.class);
+        final PermissionsRequestDTO permissionsRequest = RestJsonMapper.asClass(context.body(), PermissionsRequestDTO.class);
         final List<PermissionBO> permissions = permissionsRequest.getPermissions().stream()
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
