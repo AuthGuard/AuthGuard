@@ -29,7 +29,7 @@ public class ApplicationsRoute implements EndpointGroup {
     }
 
     private void create(final Context context) {
-        final AppDTO app = context.bodyAsClass(AppDTO.class);
+        final AppDTO app = RestJsonMapper.asClass(context.body(), AppDTO.class);
 
         final Optional<Object> created = Optional.of(app)
                 .map(restMapper::toBO)
@@ -57,7 +57,7 @@ public class ApplicationsRoute implements EndpointGroup {
     }
 
     private void update(final Context context) {
-        final AppDTO app = context.bodyAsClass(AppDTO.class);
+        final AppDTO app = RestJsonMapper.asClass(context.body(), AppDTO.class);
 
         final Optional<AppDTO> application = Optional.of(app)
                 .map(restMapper::toBO)

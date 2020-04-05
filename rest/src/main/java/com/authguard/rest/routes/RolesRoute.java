@@ -37,7 +37,7 @@ public class RolesRoute implements EndpointGroup {
     }
 
     private void create(final Context context) {
-        final RoleDTO role = context.bodyAsClass(RoleDTO.class);
+        final RoleDTO role = RestJsonMapper.asClass(context.body(), RoleDTO.class);
 
         if (role.getPermissions() != null) {
             context.status(400).result("Permissions cannot be added when a role is created");
@@ -68,7 +68,7 @@ public class RolesRoute implements EndpointGroup {
 
     private void grantPermissions(final Context context) {
         final String roleName = context.pathParam("name");
-        final PermissionsRequestDTO permissionsRequest = context.bodyAsClass(PermissionsRequestDTO.class);
+        final PermissionsRequestDTO permissionsRequest = RestJsonMapper.asClass(context.body(), PermissionsRequestDTO.class);
         final List<PermissionBO> permissions = permissionsRequest.getPermissions().stream()
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
@@ -84,7 +84,7 @@ public class RolesRoute implements EndpointGroup {
 
     private void revokePermissions(final Context context) {
         final String roleName = context.pathParam("name");
-        final PermissionsRequestDTO permissionsRequest = context.bodyAsClass(PermissionsRequestDTO.class);
+        final PermissionsRequestDTO permissionsRequest = RestJsonMapper.asClass(context.body(), PermissionsRequestDTO.class);
         final List<PermissionBO> permissions = permissionsRequest.getPermissions().stream()
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());

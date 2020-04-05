@@ -25,7 +25,7 @@ public class OtpRoute implements EndpointGroup {
     }
 
     private void verify(final Context context) {
-        final OtpRequestDTO body = context.bodyAsClass(OtpRequestDTO.class);
+        final OtpRequestDTO body = RestJsonMapper.asClass(context.body(), OtpRequestDTO.class);
 
         final TokensDTO tokens = restMapper.toDTO(otpService.authenticate(body.getPasswordId(), body.getPassword()));
 
