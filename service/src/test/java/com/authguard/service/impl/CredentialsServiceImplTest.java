@@ -50,6 +50,7 @@ class CredentialsServiceImplTest {
         Mockito.reset(credentialsRepository);
         Mockito.reset(credentialsAuditRepository);
 
+        Mockito.when(credentialsRepository.findByUsername(any())).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
         Mockito.when(accountsService.getById(any())).thenReturn(Optional.of(RANDOM.nextObject(AccountBO.class)));
     }
 
@@ -59,7 +60,8 @@ class CredentialsServiceImplTest {
         final HashedPasswordBO hashedPassword = RANDOM.nextObject(HashedPasswordBO.class);
 
         Mockito.when(securePassword.hash(any())).thenReturn(hashedPassword);
-        Mockito.when(credentialsRepository.save(any())).thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CredentialsDO.class)));
+        Mockito.when(credentialsRepository.save(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CredentialsDO.class)));
 
         final CredentialsBO persisted = credentialsService.create(credentials);
 
@@ -72,7 +74,8 @@ class CredentialsServiceImplTest {
     void createDuplicateUsername() {
         final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class);
 
-        Mockito.when(credentialsRepository.findByUsername(credentials.getUsername())).thenReturn(Optional.of(CredentialsDO.builder().build()));
+        Mockito.when(credentialsRepository.findByUsername(credentials.getUsername()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(CredentialsDO.builder().build())));
 
         assertThatThrownBy(() -> credentialsService.create(credentials)).isInstanceOf(ServiceConflictException.class);
     }
@@ -213,7 +216,8 @@ class CredentialsServiceImplTest {
     void updateDuplicateUsername() {
         final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class);
 
-        Mockito.when(credentialsRepository.findByUsername(credentials.getUsername())).thenReturn(Optional.of(CredentialsDO.builder().build()));
+        Mockito.when(credentialsRepository.findByUsername(credentials.getUsername()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(CredentialsDO.builder().build())));
 
         assertThatThrownBy(() -> credentialsService.update(credentials)).isInstanceOf(ServiceConflictException.class);
     }

@@ -147,6 +147,7 @@ public class CredentialsServiceImpl implements CredentialsService {
 
     private void ensureNoDuplicate(final CredentialsBO credentials) {
         credentialsRepository.findByUsername(credentials.getUsername())
+                .join()
                 .ifPresent(ignored -> { throw new ServiceConflictException("Username already exists"); });
     }
 
