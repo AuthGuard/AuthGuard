@@ -32,7 +32,7 @@ public class PermissionsRoute implements EndpointGroup {
     }
 
     private void createPermission(final Context context) {
-        final PermissionDTO permissionGroup = context.bodyAsClass(PermissionDTO.class);
+        final PermissionDTO permissionGroup = RestJsonMapper.asClass(context.body(), PermissionDTO.class);
 
         Optional.of(permissionGroup)
                 .map(restMapper::toBO)

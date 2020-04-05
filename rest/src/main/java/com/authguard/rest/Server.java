@@ -1,11 +1,13 @@
 package com.authguard.rest;
 
 import com.authguard.rest.access.AuthorizationHandler;
+import com.authguard.rest.exceptions.Error;
+import com.authguard.rest.exceptions.ExceptionHandlers;
 import com.authguard.rest.routes.*;
+import com.authguard.service.exceptions.ServiceConflictException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.inject.Injector;
 import io.javalin.Javalin;
-import com.authguard.rest.routes.*;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.ServiceException;
 import org.slf4j.Logger;
@@ -49,14 +51,19 @@ class Server {
         });
 
         // if we failed to process a request body
-        app.exception(JsonMappingException.class, (e, context) -> context.status(422).result("Unprocessable entity"));
+        app.exception(JsonMappingException.class, ExceptionHandlers.jsonMappingException());
 
-        app.exception(ServiceException.class, (e, context) -> context.status(400).result(e.toString()));
-        app.exception(ServiceAuthorizationException.class, (e, context) -> context.status(401));
+        app.exception(ServiceException.class, ExceptionHandlers.serviceException());
+        app.exception(ServiceAuthorizationException.class, ExceptionHandlers.serviceAuthorizationException());
+        app.exception(ServiceConflictException.class, ExceptionHandlers.serviceConflictException());
 
         app.exception(Exception.class, (e, context) -> {
             log.error("An exception was thrown", e);
-            context.status(500).result("Internal server error");
+
+            final String message = "An error occurred while processing request " + context.method() + " " + context.path();
+
+            context.status(500)
+                    .json(new Error("", message));
         });
 
         // run

@@ -30,7 +30,7 @@ public class CredentialsRoute implements EndpointGroup {
     }
 
     private void create(final Context context) {
-        final CredentialsDTO credentials = context.bodyAsClass(CredentialsDTO.class);
+        final CredentialsDTO credentials = RestJsonMapper.asClass(context.body(), CredentialsDTO.class);
 
         final Optional<CredentialsDTO> created = Optional.of(credentials)
                 .map(restMapper::toBO)
@@ -46,7 +46,7 @@ public class CredentialsRoute implements EndpointGroup {
     }
 
     private void update(final Context context) {
-        final CredentialsDTO credentials = context.bodyAsClass(CredentialsDTO.class);
+        final CredentialsDTO credentials = RestJsonMapper.asClass(context.body(), CredentialsDTO.class);
 
         if (credentials.getPlainPassword() != null) {
             context.status(400).result("Password cannot be updated using regular update");
@@ -68,7 +68,7 @@ public class CredentialsRoute implements EndpointGroup {
     }
 
     private void updatePassword(final Context context) {
-        final CredentialsDTO credentials = context.bodyAsClass(CredentialsDTO.class);
+        final CredentialsDTO credentials = RestJsonMapper.asClass(context.body(), CredentialsDTO.class);
         final String credentialsId = context.pathParam("id");
 
         final Optional<CredentialsDTO> updated = Optional.of(credentials.withId(credentialsId))
