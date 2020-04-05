@@ -1,5 +1,7 @@
 package com.authguard.service.impl;
 
+import com.authguard.service.exceptions.ServiceConflictException;
+import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.impl.mappers.ServiceMapper;
 import com.authguard.service.model.CredentialsAudit;
@@ -32,6 +34,8 @@ public class CredentialsServiceImpl implements CredentialsService {
 
     @Override
     public CredentialsBO create(final CredentialsBO credentials) {
+        ensureNoDuplicate(credentials);
+
         final HashedPasswordBO hashedPassword = securePassword.hash(credentials.getPlainPassword());
 
         return Optional.of(credentials.withHashedPassword(hashedPassword).withId(UUID.randomUUID().toString()))
@@ -76,6 +80,8 @@ public class CredentialsServiceImpl implements CredentialsService {
     }
 
     private Optional<CredentialsBO> doUpdate(final CredentialsBO credentials, boolean storePasswordAudit) {
+        ensureNoDuplicate(credentials);
+
         final CredentialsBO existing = credentialsRepository.getById(credentials.getId())
                 .map(serviceMapper::toBO)
                 .orElseThrow(ServiceNotFoundException::new);
@@ -111,7 +117,7 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .withHashedPassword(null);
     }
 
-    private CredentialsBO storeAuditRecord(final CredentialsBO credentials, final CredentialsAudit.Action action) {
+    private void storeAuditRecord(final CredentialsBO credentials, final CredentialsAudit.Action action) {
         final CredentialsAuditBO audit = CredentialsAuditBO.builder()
                 .id("")
                 .credentialId(credentials.getId())
@@ -121,7 +127,10 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .build();
 
         credentialsAuditRepository.save(serviceMapper.toDO(audit));
+    }
 
-        return credentials;
+    private void ensureNoDuplicate(final CredentialsBO credentials) {
+        credentialsRepository.findByUsername(credentials.getUsername())
+                .ifPresent(ignored -> { throw new ServiceConflictException("Username already exists"); });
     }
 }

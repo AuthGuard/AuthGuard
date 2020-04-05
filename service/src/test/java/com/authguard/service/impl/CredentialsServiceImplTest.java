@@ -5,6 +5,7 @@ import com.authguard.dal.CredentialsRepository;
 import com.authguard.service.SecurePassword;
 import com.authguard.dal.model.CredentialsAuditDO;
 import com.authguard.dal.model.CredentialsDO;
+import com.authguard.service.exceptions.ServiceConflictException;
 import com.authguard.service.impl.mappers.ServiceMapperImpl;
 import com.authguard.service.model.CredentialsBO;
 import com.authguard.service.model.HashedPasswordBO;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -58,6 +60,15 @@ class CredentialsServiceImplTest {
         assertThat(persisted).isNotNull();
         assertThat(persisted).isEqualToIgnoringGivenFields(credentials, "id", "plainPassword", "hashedPassword");
         assertThat(persisted.getHashedPassword()).isNull();
+    }
+
+    @Test
+    void createDuplicateUsername() {
+        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class);
+
+        Mockito.when(credentialsRepository.findByUsername(credentials.getUsername())).thenReturn(Optional.of(CredentialsDO.builder().build()));
+
+        assertThatThrownBy(() -> credentialsService.create(credentials)).isInstanceOf(ServiceConflictException.class);
     }
 
     @Test
@@ -176,5 +187,14 @@ class CredentialsServiceImplTest {
         assertThat(auditArgs.get(1).getAction()).isEqualTo(CredentialsAuditDO.Action.UPDATED);
         assertThat(auditArgs.get(1).getUsername()).isEqualTo(credentials.getUsername());
         assertThat(auditArgs.get(1).getPassword()).isNotNull();
+    }
+
+    @Test
+    void updateDuplicateUsername() {
+        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class);
+
+        Mockito.when(credentialsRepository.findByUsername(credentials.getUsername())).thenReturn(Optional.of(CredentialsDO.builder().build()));
+
+        assertThatThrownBy(() -> credentialsService.update(credentials)).isInstanceOf(ServiceConflictException.class);
     }
 }
