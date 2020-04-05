@@ -1,6 +1,9 @@
 package com.authguard.service.impl;
 
 import com.authguard.dal.model.CredentialsDO;
+import com.authguard.service.AccountsService;
+import com.authguard.service.exceptions.ServiceConflictException;
+import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.impl.mappers.ServiceMapper;
 import com.authguard.service.model.CredentialsAudit;
@@ -17,14 +20,19 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class CredentialsServiceImpl implements CredentialsService {
+    private final AccountsService accountsService;
     private final CredentialsRepository credentialsRepository;
     private final CredentialsAuditRepository credentialsAuditRepository;
     private final SecurePassword securePassword;
     private final ServiceMapper serviceMapper;
 
     @Inject
-    public CredentialsServiceImpl(final CredentialsRepository credentialsRepository, final CredentialsAuditRepository credentialsAuditRepository,
-                                  final SecurePassword securePassword, final ServiceMapper serviceMapper) {
+    public CredentialsServiceImpl(final AccountsService accountsService,
+                                  final CredentialsRepository credentialsRepository,
+                                  final CredentialsAuditRepository credentialsAuditRepository,
+                                  final SecurePassword securePassword,
+                                  final ServiceMapper serviceMapper) {
+        this.accountsService = accountsService;
         this.credentialsRepository = credentialsRepository;
         this.credentialsAuditRepository = credentialsAuditRepository;
         this.securePassword = securePassword;
@@ -33,6 +41,9 @@ public class CredentialsServiceImpl implements CredentialsService {
 
     @Override
     public CredentialsBO create(final CredentialsBO credentials) {
+        ensureAccountExists(credentials.getAccountId());
+        ensureNoDuplicate(credentials);
+
         final HashedPasswordBO hashedPassword = securePassword.hash(credentials.getPlainPassword());
         final CredentialsBO credentialsHashedPassword = CredentialsBO.builder()
                 .from(credentials)
@@ -83,6 +94,8 @@ public class CredentialsServiceImpl implements CredentialsService {
     }
 
     private Optional<CredentialsBO> doUpdate(final CredentialsBO credentials, boolean storePasswordAudit) {
+        ensureNoDuplicate(credentials);
+
         final CredentialsBO existing = credentialsRepository.getById(credentials.getId())
                 .thenApply(optional -> optional.map(serviceMapper::toBO))
                 .join()
@@ -120,7 +133,7 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .withHashedPassword(null);
     }
 
-    private CredentialsBO storeAuditRecord(final CredentialsBO credentials, final CredentialsAudit.Action action) {
+    private void storeAuditRecord(final CredentialsBO credentials, final CredentialsAudit.Action action) {
         final CredentialsAuditBO audit = CredentialsAuditBO.builder()
                 .id("")
                 .credentialId(credentials.getId())
@@ -130,7 +143,16 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .build();
 
         credentialsAuditRepository.save(serviceMapper.toDO(audit));
+    }
 
-        return credentials;
+    private void ensureNoDuplicate(final CredentialsBO credentials) {
+        credentialsRepository.findByUsername(credentials.getUsername())
+                .ifPresent(ignored -> { throw new ServiceConflictException("Username already exists"); });
+    }
+
+    private void ensureAccountExists(final String accountId) {
+        if (accountsService.getById(accountId).isEmpty()) {
+            throw new ServiceException("No account with ID " + accountId + " exists");
+        }
     }
 }
