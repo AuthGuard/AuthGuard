@@ -1,5 +1,6 @@
 package com.authguard.service.impl;
 
+import com.authguard.service.AccountsService;
 import com.authguard.service.exceptions.ServiceConflictException;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
@@ -18,14 +19,19 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class CredentialsServiceImpl implements CredentialsService {
+    private final AccountsService accountsService;
     private final CredentialsRepository credentialsRepository;
     private final CredentialsAuditRepository credentialsAuditRepository;
     private final SecurePassword securePassword;
     private final ServiceMapper serviceMapper;
 
     @Inject
-    public CredentialsServiceImpl(final CredentialsRepository credentialsRepository, final CredentialsAuditRepository credentialsAuditRepository,
-                                  final SecurePassword securePassword, final ServiceMapper serviceMapper) {
+    public CredentialsServiceImpl(final AccountsService accountsService,
+                                  final CredentialsRepository credentialsRepository,
+                                  final CredentialsAuditRepository credentialsAuditRepository,
+                                  final SecurePassword securePassword,
+                                  final ServiceMapper serviceMapper) {
+        this.accountsService = accountsService;
         this.credentialsRepository = credentialsRepository;
         this.credentialsAuditRepository = credentialsAuditRepository;
         this.securePassword = securePassword;
@@ -34,6 +40,7 @@ public class CredentialsServiceImpl implements CredentialsService {
 
     @Override
     public CredentialsBO create(final CredentialsBO credentials) {
+        ensureAccountExists(credentials.getAccountId());
         ensureNoDuplicate(credentials);
 
         final HashedPasswordBO hashedPassword = securePassword.hash(credentials.getPlainPassword());
@@ -132,5 +139,11 @@ public class CredentialsServiceImpl implements CredentialsService {
     private void ensureNoDuplicate(final CredentialsBO credentials) {
         credentialsRepository.findByUsername(credentials.getUsername())
                 .ifPresent(ignored -> { throw new ServiceConflictException("Username already exists"); });
+    }
+
+    private void ensureAccountExists(final String accountId) {
+        if (accountsService.getById(accountId).isEmpty()) {
+            throw new ServiceException("No account with ID " + accountId + " exists");
+        }
     }
 }
