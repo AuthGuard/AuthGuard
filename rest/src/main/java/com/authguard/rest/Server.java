@@ -3,6 +3,7 @@ package com.authguard.rest;
 import com.authguard.rest.access.AuthorizationHandler;
 import com.authguard.rest.exceptions.Error;
 import com.authguard.rest.exceptions.ExceptionHandlers;
+import com.authguard.rest.exceptions.RuntimeJsonException;
 import com.authguard.rest.routes.*;
 import com.authguard.service.exceptions.ServiceConflictException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -51,7 +52,7 @@ class Server {
         });
 
         // if we failed to process a request body
-        app.exception(JsonMappingException.class, ExceptionHandlers.jsonMappingException());
+        app.exception(RuntimeJsonException.class, ExceptionHandlers.jsonMappingException());
 
         app.exception(ServiceException.class, ExceptionHandlers.serviceException());
         app.exception(ServiceAuthorizationException.class, ExceptionHandlers.serviceAuthorizationException());
