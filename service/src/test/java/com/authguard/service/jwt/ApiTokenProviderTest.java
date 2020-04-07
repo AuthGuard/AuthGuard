@@ -62,58 +62,6 @@ class ApiTokenProviderTest {
         verifyToken(tokens.getToken(), app.getId(), jti);
     }
 
-    @Test
-    void validateToken() {
-        final JtiProvider jtiProvider = Mockito.mock(JtiProvider.class);
-        final ApiTokenProvider tokenProvider = newProviderInstance(jtiProvider);
-
-        final String jti = UUID.randomUUID().toString();
-
-        Mockito.when(jtiProvider.next()).thenReturn(jti);
-        Mockito.when(jtiProvider.validate(jti)).thenReturn(true);
-
-        final AppBO app = RANDOM.nextObject(AppBO.class);
-        final TokensBO tokens = tokenProvider.generateToken(app);
-        final Optional<DecodedJWT> validatedToken = tokenProvider.validateToken(tokens.getToken());
-
-        assertThat(validatedToken).isNotEmpty();
-        verifyToken(validatedToken.get(), app.getId(), jti);
-    }
-
-    @Test
-    void validateWithJtiBlacklisted() {
-        final JtiProvider jtiProvider = Mockito.mock(JtiProvider.class);
-        final ApiTokenProvider tokenProvider = newProviderInstance(jtiProvider);
-
-        final String jti = "tokenId";
-
-        Mockito.when(jtiProvider.next()).thenReturn(jti);
-        Mockito.when(jtiProvider.validate(jti)).thenReturn(false);
-
-        final AppBO app = RANDOM.nextObject(AppBO.class);
-        final TokensBO tokens = tokenProvider.generateToken(app);
-        final Optional<DecodedJWT> validatedToken = tokenProvider.validateToken(tokens.getToken());
-
-        assertThat(validatedToken).isEmpty();
-    }
-
-    @Test
-    void validateWithAlgNone() {
-        final JtiProvider jtiProvider = Mockito.mock(JtiProvider.class);
-        final ApiTokenProvider tokenProvider = newProviderInstance(jtiProvider);
-
-        final String jti = "tokenId";
-
-        Mockito.when(jtiProvider.next()).thenReturn(jti);
-
-        final AppBO app = RANDOM.nextObject(AppBO.class);
-        final TokensBO tokens = tokenProvider.generateToken(app);
-        final String payload = tokens.getToken().split("\\.")[1];
-        final String maliciousToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." + payload + ".signature";
-
-        assertThat(tokenProvider.validateToken(maliciousToken)).isEmpty();
-    }
-
     private void verifyToken(final String token, final String subject, final String jti) {
         final JWTVerifier verifier = JWT.require(Algorithm.HMAC256(KEY))
                 .withSubject(subject)

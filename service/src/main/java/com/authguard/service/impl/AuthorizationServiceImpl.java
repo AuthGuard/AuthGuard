@@ -1,7 +1,7 @@
 package com.authguard.service.impl;
 
-import com.auth0.jwt.interfaces.DecodedJWT;
 import com.authguard.service.AccountsService;
+import com.authguard.service.AuthTokenVerfier;
 import com.authguard.service.AuthorizationService;
 import com.authguard.service.AuthProvider;
 import com.authguard.service.config.ConfigParser;
@@ -20,19 +20,19 @@ import java.util.Optional;
 
 public class AuthorizationServiceImpl implements AuthorizationService {
     private final AccountsService accountsService;
-    private final AuthProvider idTokenProvider;
+    private final AuthTokenVerfier authenticationTokenVerifier;
     private final AuthProvider accessTokenProvider;
     private final AccountTokensRepository accountTokensRepository;
     private final ImmutableStrategyConfig accessTokenStrategy;
 
     @Inject
     public AuthorizationServiceImpl(final AccountsService accountsService,
-                                    @Named("authenticationTokenProvider") final AuthProvider authenticationProvider,
+                                    @Named("authenticationTokenVerifier") AuthTokenVerfier authenticationTokenVerifier,
                                     @Named("authorizationTokenProvider") final AuthProvider authorizationProvider,
                                     final AccountTokensRepository accountTokensRepository,
                                     @Named("accessToken") final ImmutableStrategyConfig accessTokenStrategy) {
         this.accountsService = accountsService;
-        this.idTokenProvider = authenticationProvider;
+        this.authenticationTokenVerifier = authenticationTokenVerifier;
         this.accessTokenProvider = authorizationProvider;
         this.accountTokensRepository = accountTokensRepository;
         this.accessTokenStrategy = accessTokenStrategy;
@@ -61,7 +61,7 @@ public class AuthorizationServiceImpl implements AuthorizationService {
     }
 
     private TokensBO handleIdTokenAuthorization(final String token) {
-        final String associatedAccountId = getAssociatedAccountId(validateToken(token));
+        final String associatedAccountId = validateToken(token);
 
         return generateTokenForAccount(associatedAccountId);
     }
@@ -87,13 +87,9 @@ public class AuthorizationServiceImpl implements AuthorizationService {
         return tokens;
     }
 
-    private DecodedJWT validateToken(final String token) {
-        return idTokenProvider.validateToken(token)
+    private String validateToken(final String token) {
+        return authenticationTokenVerifier.verifyAccountToken(token)
                 .orElseThrow(() -> new ServiceAuthorizationException("Failed to authenticate token " + token));
-    }
-
-    private String getAssociatedAccountId(final DecodedJWT token) {
-        return token.getSubject();
     }
 
     private AccountBO getAccount(final String accountId) {

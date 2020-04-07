@@ -3,6 +3,7 @@ package com.authguard.service.impl;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.service.AccountsService;
+import com.authguard.service.AuthTokenVerfier;
 import com.authguard.service.AuthorizationService;
 import com.authguard.service.AuthProvider;
 import com.authguard.dal.model.AccountTokenDO;
@@ -31,14 +32,14 @@ class AuthorizationServiceImplTest {
 
     private AuthorizationService authorizationService;
     private AccountsService accountsService;
-    private AuthProvider idTokenProvider;
+    private AuthTokenVerfier authenticationTokenVerifier;
     private AuthProvider accessTokenProvider;
     private AccountTokensRepository accountTokensRepository;
 
     @BeforeEach
     void setup() {
+        authenticationTokenVerifier = Mockito.mock(AuthTokenVerfier.class);
         accountsService = Mockito.mock(AccountsService.class);
-        idTokenProvider = Mockito.mock(AuthProvider.class);
         accessTokenProvider = Mockito.mock(AuthProvider.class);
         accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
 
@@ -46,7 +47,7 @@ class AuthorizationServiceImplTest {
                         .refreshTokenLife("5m")
                         .build();
 
-        authorizationService = new AuthorizationServiceImpl(accountsService, idTokenProvider,
+        authorizationService = new AuthorizationServiceImpl(accountsService, authenticationTokenVerifier,
                 accessTokenProvider, accountTokensRepository, accessTokenStrategy);
     }
 
@@ -57,15 +58,12 @@ class AuthorizationServiceImplTest {
         final String mockIdToken = "mock-jwt";
         final String authorizationHeader = "Bearer " + mockIdToken;
 
-        final DecodedJWT mockJwt = Mockito.mock(DecodedJWT.class);
-
         final AccountBO account = random.nextObject(AccountBO.class);
         final TokensBO tokens = random.nextObject(TokensBO.class);
 
         // prepare mocks
-        Mockito.when(mockJwt.getSubject()).thenReturn(accountId);
-        Mockito.when(idTokenProvider.validateToken(mockIdToken))
-                .thenReturn(Optional.of(mockJwt));
+        Mockito.when(authenticationTokenVerifier.verifyAccountToken(mockIdToken))
+                .thenReturn(Optional.of(accountId));
         Mockito.when(accountsService.getById(accountId)).thenReturn(Optional.of(account));
         Mockito.when(accessTokenProvider.generateToken(account)).thenReturn(tokens);
 

@@ -68,34 +68,6 @@ class IdTokenProviderTest {
         verifyToken(tokens.getToken(), account.getId(), null, null, null);
     }
 
-    @Test
-    void validate() {
-        final ImmutableStrategyConfig strategyConfig = strategyConfig();
-
-        final IdTokenProvider idTokenProvider = newProviderInstance(strategyConfig);
-
-        final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final TokensBO tokens = idTokenProvider.generateToken(account);
-        final Optional<DecodedJWT> validatedToken = idTokenProvider.validateToken(tokens.getToken());
-
-        assertThat(validatedToken).isNotEmpty();
-        verifyToken(validatedToken.get(), account.getId());
-    }
-
-    @Test
-    void validateWithAlgNone() {
-        final ImmutableStrategyConfig strategyConfig = strategyConfig();
-
-        final IdTokenProvider idTokenProvider = newProviderInstance(strategyConfig);
-
-        final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final TokensBO tokens = idTokenProvider.generateToken(account);
-        final String payload = tokens.getToken().split("\\.")[1];
-        final String maliciousToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." + payload + ".signature";
-
-        assertThat(idTokenProvider.validateToken(maliciousToken)).isEmpty();
-    }
-
     private void verifyToken(final String token, final String subject, final String jti,
                              final List<PermissionBO> permissions, final List<String> scopes) {
         final Verification verifier = JWT.require(Algorithm.HMAC256(KEY))

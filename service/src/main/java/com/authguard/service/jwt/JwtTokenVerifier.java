@@ -5,24 +5,26 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.auth0.jwt.interfaces.Payload;
+import com.authguard.service.AuthTokenVerfier;
 import com.authguard.service.config.ImmutableStrategyConfig;
 
 import java.util.Optional;
 
-class TokenVerifier {
+public class JwtTokenVerifier implements AuthTokenVerfier {
     private final ImmutableStrategyConfig strategy;
     private final JtiProvider jti;
     private final JWTVerifier verifier;
 
-    TokenVerifier(final ImmutableStrategyConfig strategy, final JtiProvider jti,
-                  final Algorithm algorithm) {
+    public JwtTokenVerifier(final ImmutableStrategyConfig strategy, final JtiProvider jti,
+                            final Algorithm algorithm) {
         this.strategy = strategy;
         this.jti = jti;
 
         this.verifier = JWT.require(algorithm).build();
     }
 
-    TokenVerifier(final ImmutableStrategyConfig strategy, final Algorithm algorithm) {
+    public JwtTokenVerifier(final ImmutableStrategyConfig strategy, final Algorithm algorithm) {
         this.strategy = strategy;
         this.jti = null;
 
@@ -40,6 +42,12 @@ class TokenVerifier {
     }
 
     private boolean verifyJti(final DecodedJWT decoded) {
-        return strategy.getUseJti() ? jti.validate(decoded.getId()) : true;
+        return !strategy.getUseJti() || jti.validate(decoded.getId());
+    }
+
+    @Override
+    public Optional<String> verifyAccountToken(String token) {
+        return verify(token)
+                .map(Payload::getSubject);
     }
 }

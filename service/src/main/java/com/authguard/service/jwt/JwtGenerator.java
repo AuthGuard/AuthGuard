@@ -12,14 +12,14 @@ import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Date;
 
-public class TokenGenerator {
+public class JwtGenerator {
     private static final int RANDOM_SIZE = 128;
 
     private final ImmutableJwtConfig jwtConfig;
 
     private final SecureRandom secureRandom;
 
-    TokenGenerator(final ImmutableJwtConfig jwtConfig) {
+    JwtGenerator(final ImmutableJwtConfig jwtConfig) {
         this.jwtConfig = jwtConfig;
 
         secureRandom = new SecureRandom();
