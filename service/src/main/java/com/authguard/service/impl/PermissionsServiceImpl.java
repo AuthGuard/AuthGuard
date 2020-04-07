@@ -1,7 +1,7 @@
 package com.authguard.service.impl;
 
 import com.authguard.dal.model.PermissionDO;
-import com.authguard.service.impl.mappers.ServiceMapper;
+import com.authguard.service.mappers.ServiceMapper;
 import com.google.inject.Inject;
 import com.authguard.dal.PermissionsRepository;
 import com.authguard.service.PermissionsService;

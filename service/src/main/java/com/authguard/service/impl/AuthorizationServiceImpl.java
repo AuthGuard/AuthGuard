@@ -3,7 +3,7 @@ package com.authguard.service.impl;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.authguard.service.AccountsService;
 import com.authguard.service.AuthorizationService;
-import com.authguard.service.JwtProvider;
+import com.authguard.service.AuthProvider;
 import com.authguard.service.config.ConfigParser;
 import com.authguard.service.exceptions.ServiceException;
 import com.google.inject.Inject;
@@ -20,20 +20,20 @@ import java.util.Optional;
 
 public class AuthorizationServiceImpl implements AuthorizationService {
     private final AccountsService accountsService;
-    private final JwtProvider idTokenProvider;
-    private final JwtProvider accessTokenProvider;
+    private final AuthProvider idTokenProvider;
+    private final AuthProvider accessTokenProvider;
     private final AccountTokensRepository accountTokensRepository;
     private final ImmutableStrategyConfig accessTokenStrategy;
 
     @Inject
     public AuthorizationServiceImpl(final AccountsService accountsService,
-                                    @Named("authenticationTokenProvider") final JwtProvider idTokenProvider,
-                                    @Named("authorizationTokenProvider") final JwtProvider accessTokenProvider,
+                                    @Named("authenticationTokenProvider") final AuthProvider authenticationProvider,
+                                    @Named("authorizationTokenProvider") final AuthProvider authorizationProvider,
                                     final AccountTokensRepository accountTokensRepository,
                                     @Named("accessToken") final ImmutableStrategyConfig accessTokenStrategy) {
         this.accountsService = accountsService;
-        this.idTokenProvider = idTokenProvider;
-        this.accessTokenProvider = accessTokenProvider;
+        this.idTokenProvider = authenticationProvider;
+        this.accessTokenProvider = authorizationProvider;
         this.accountTokensRepository = accountTokensRepository;
         this.accessTokenStrategy = accessTokenStrategy;
     }

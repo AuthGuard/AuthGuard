@@ -2,7 +2,7 @@ package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.service.config.ConfigParser;
-import com.authguard.service.impl.mappers.ServiceMapper;
+import com.authguard.service.mappers.ServiceMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -11,7 +11,7 @@ import com.authguard.emb.MessagePublisher;
 import com.authguard.emb.model.EventType;
 import com.authguard.emb.model.MessageMO;
 import com.authguard.service.AccountsService;
-import com.authguard.service.JwtProvider;
+import com.authguard.service.AuthProvider;
 import com.authguard.service.OtpService;
 import com.authguard.service.config.ImmutableOtpConfig;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
@@ -28,20 +28,20 @@ public class OtpServiceImpl implements OtpService {
     private final MessagePublisher emb;
     private final AccountsService accountsService;
     private final ServiceMapper serviceMapper;
-    private final JwtProvider jwtProvider;
+    private final AuthProvider authProvider;
     private final ImmutableOtpConfig otpConfig;
 
     @Inject
     public OtpServiceImpl(final OtpRepository otpRepository, final MessagePublisher emb,
                           final AccountsService accountsService,
-                          @Named("authenticationTokenProvider") final JwtProvider jwtProvider,
+                          @Named("authenticationTokenProvider") final AuthProvider authProvider,
                           final ServiceMapper serviceMapper,
                           @Named("otp") final ConfigContext configContext) {
         this.otpRepository = otpRepository;
         this.emb = emb;
         this.accountsService = accountsService;
         this.serviceMapper = serviceMapper;
-        this.jwtProvider = jwtProvider;
+        this.authProvider = authProvider;
         this.otpConfig = configContext.asConfigBean(ImmutableOtpConfig.class);
     }
 
@@ -84,7 +84,7 @@ public class OtpServiceImpl implements OtpService {
 
         if (generated.getPassword().equals(otp)) {
             return accountsService.getById(generated.getAccountId())
-                    .map(jwtProvider::generateToken)
+                    .map(authProvider::generateToken)
                     .orElseThrow(() -> new ServiceAuthorizationException("Account " + generated.getAccountId()
                             + " doesn't exist"));
         } else {

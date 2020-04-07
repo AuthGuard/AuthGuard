@@ -5,7 +5,7 @@ import com.authguard.service.AccountsService;
 import com.authguard.service.exceptions.ServiceConflictException;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
-import com.authguard.service.impl.mappers.ServiceMapper;
+import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.CredentialsAudit;
 import com.google.inject.Inject;
 import com.authguard.dal.CredentialsAuditRepository;

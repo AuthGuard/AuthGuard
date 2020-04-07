@@ -7,10 +7,7 @@ import com.authguard.service.model.TokensBO;
 
 import java.util.Optional;
 
-/**
- * JWT interface.
- */
-public interface JwtProvider {
+public interface AuthProvider {
     /**
      * Generate a token and (optionally) a refresh token.
      * @param account The account for which the tokens

@@ -1,7 +1,6 @@
-package com.authguard.service.impl.jwt;
+package com.authguard.service.jwt;
 
 import com.google.inject.Singleton;
-import com.authguard.service.JtiProvider;
 
 import java.util.Set;
 import java.util.UUID;

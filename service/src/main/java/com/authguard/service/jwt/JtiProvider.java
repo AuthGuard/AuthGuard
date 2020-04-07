@@ -1,4 +1,4 @@
-package com.authguard.service;
+package com.authguard.service.jwt;
 
 /**
  * JTI interface.

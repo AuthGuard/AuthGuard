@@ -1,4 +1,4 @@
-package com.authguard.service.impl.mappers;
+package com.authguard.service.mappers;
 
 import com.authguard.dal.model.*;
 import com.authguard.service.model.*;

@@ -4,13 +4,12 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.service.AccountsService;
 import com.authguard.service.AuthorizationService;
-import com.authguard.service.JwtProvider;
+import com.authguard.service.AuthProvider;
 import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.service.config.ImmutableStrategyConfig;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.TokensBO;
-import org.assertj.core.api.Condition;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.*;
@@ -32,15 +31,15 @@ class AuthorizationServiceImplTest {
 
     private AuthorizationService authorizationService;
     private AccountsService accountsService;
-    private JwtProvider idTokenProvider;
-    private JwtProvider accessTokenProvider;
+    private AuthProvider idTokenProvider;
+    private AuthProvider accessTokenProvider;
     private AccountTokensRepository accountTokensRepository;
 
     @BeforeEach
     void setup() {
         accountsService = Mockito.mock(AccountsService.class);
-        idTokenProvider = Mockito.mock(JwtProvider.class);
-        accessTokenProvider = Mockito.mock(JwtProvider.class);
+        idTokenProvider = Mockito.mock(AuthProvider.class);
+        accessTokenProvider = Mockito.mock(AuthProvider.class);
         accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
 
         final ImmutableStrategyConfig accessTokenStrategy = ImmutableStrategyConfig.builder()

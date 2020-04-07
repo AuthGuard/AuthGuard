@@ -1,8 +1,8 @@
 package com.authguard.service.impl;
 
 import com.authguard.service.exceptions.ServiceNotFoundException;
-import com.authguard.service.impl.jwt.ApiTokenProvider;
-import com.authguard.service.impl.mappers.ServiceMapper;
+import com.authguard.service.jwt.ApiTokenProvider;
+import com.authguard.service.mappers.ServiceMapper;
 import com.google.inject.Inject;
 import com.authguard.dal.ApiKeysRepository;
 import com.authguard.service.ApiKeysService;

@@ -1,19 +1,18 @@
-package com.authguard.service.impl.jwt;
+package com.authguard.service.jwt;
 
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.authguard.service.config.ConfigParser;
 import com.google.inject.Inject;
-import com.authguard.service.JtiProvider;
-import com.authguard.service.JwtProvider;
+import com.authguard.service.AuthProvider;
 import com.authguard.service.config.ImmutableJwtConfig;
 import com.authguard.service.config.ImmutableStrategyConfig;
 import com.authguard.service.model.*;
 
 import java.util.Optional;
 
-public class AccessTokenProvider implements JwtProvider {
+public class AccessTokenProvider implements AuthProvider {
     private final JtiProvider jti;
     private final Algorithm algorithm;
     private final TokenGenerator tokenGenerator;

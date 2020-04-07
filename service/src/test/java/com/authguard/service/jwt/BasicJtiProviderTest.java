@@ -1,4 +1,4 @@
-package com.authguard.service.impl.jwt;
+package com.authguard.service.jwt;
 
 import org.junit.jupiter.api.Test;
 

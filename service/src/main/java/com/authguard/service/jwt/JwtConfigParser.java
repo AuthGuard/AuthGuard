@@ -1,4 +1,4 @@
-package com.authguard.service.impl.jwt;
+package com.authguard.service.jwt;
 
 import com.auth0.jwt.algorithms.Algorithm;
 import com.authguard.service.exceptions.ServiceException;

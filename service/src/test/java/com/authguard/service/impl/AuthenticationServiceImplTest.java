@@ -4,8 +4,6 @@ import com.authguard.config.ConfigContext;
 import com.authguard.service.*;
 import com.authguard.service.exceptions.ServiceException;
 import org.apache.commons.lang3.RandomStringUtils;
-import com.authguard.dal.model.AccountDO;
-import com.authguard.service.*;
 import com.authguard.service.config.ImmutableAuthenticationConfig;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.model.AccountBO;
@@ -33,7 +31,7 @@ class AuthenticationServiceImplTest {
     private OtpService otpService;
     private CredentialsService credentialsService;
     private SecurePassword securePassword;
-    private JwtProvider jwtProvider;
+    private AuthProvider authProvider;
     private ConfigContext configContext;
     private AuthenticationService authenticationService;
 
@@ -45,7 +43,7 @@ class AuthenticationServiceImplTest {
         otpService = Mockito.mock(OtpService.class);
         credentialsService = Mockito.mock(CredentialsService.class);
         securePassword = Mockito.mock(SecurePassword.class);
-        jwtProvider = Mockito.mock(JwtProvider.class);
+        authProvider = Mockito.mock(AuthProvider.class);
         configContext = Mockito.mock(ConfigContext.class);
 
         final ImmutableAuthenticationConfig config = ImmutableAuthenticationConfig.builder()
@@ -55,7 +53,7 @@ class AuthenticationServiceImplTest {
         Mockito.when(configContext.asConfigBean(ImmutableAuthenticationConfig.class)).thenReturn(config);
 
         authenticationService = new AuthenticationServiceImpl(credentialsService, otpService, accountsService,
-                securePassword, jwtProvider, configContext);
+                securePassword, authProvider, configContext);
     }
 
     @AfterEach
@@ -81,7 +79,7 @@ class AuthenticationServiceImplTest {
         Mockito.when(credentialsService.getByUsernameUnsafe(username)).thenReturn(Optional.of(credentials));
         Mockito.when(accountsService.getById(credentials.getAccountId())).thenReturn(Optional.of(account));
         Mockito.when(securePassword.verify(eq(password), eq(hashedPasswordBO))).thenReturn(true);
-        Mockito.when(jwtProvider.generateToken(any(AccountBO.class))).thenReturn(tokens);
+        Mockito.when(authProvider.generateToken(any(AccountBO.class))).thenReturn(tokens);
 
         final Optional<TokensBO> result = authenticationService.authenticate(authorization);
 

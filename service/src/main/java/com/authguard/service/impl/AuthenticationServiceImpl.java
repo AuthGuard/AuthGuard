@@ -5,7 +5,6 @@ import com.authguard.service.*;
 import com.authguard.service.exceptions.ServiceException;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.authguard.service.*;
 import com.authguard.service.config.ImmutableAuthenticationConfig;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.model.AccountBO;
@@ -20,7 +19,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final OtpService otpService;
     private final AccountsService accountsService;
     private final SecurePassword securePassword;
-    private final JwtProvider jwtProvider;
+    private final AuthProvider authProvider;
     private final ImmutableAuthenticationConfig authenticationConfig;
 
     @Inject
@@ -28,13 +27,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                                      final OtpService otpService,
                                      final AccountsService accountsService,
                                      final SecurePassword securePassword,
-                                     @Named("authenticationTokenProvider") final JwtProvider jwtProvider,
+                                     @Named("authenticationTokenProvider") final AuthProvider authenticationProvider,
                                      @Named("authentication") final ConfigContext authenticationConfig) {
         this.credentialsService = credentialsService;
         this.otpService = otpService;
         this.accountsService = accountsService;
         this.securePassword = securePassword;
-        this.jwtProvider = jwtProvider;
+        this.authProvider = authenticationProvider;
         this.authenticationConfig = authenticationConfig.asConfigBean(ImmutableAuthenticationConfig.class);
     }
 
@@ -48,7 +47,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if (authenticationConfig.getUseOtp()) {
                 return account.map(otpService::generate);
             } else {
-                return account.map(jwtProvider::generateToken);
+                return account.map(authProvider::generateToken);
             }
         } else {
             throw new ServiceException("Unsupported authorization scheme");

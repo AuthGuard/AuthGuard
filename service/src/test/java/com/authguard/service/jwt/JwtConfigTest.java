@@ -1,4 +1,4 @@
-package com.authguard.service.impl.jwt;
+package com.authguard.service.jwt;
 
 import com.authguard.config.ConfigContext;
 import org.jeasy.random.EasyRandom;

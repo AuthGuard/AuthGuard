@@ -6,7 +6,7 @@ import com.authguard.service.VerificationMessageService;
 import com.authguard.service.config.ImmutableAccountConfig;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
-import com.authguard.service.impl.mappers.ServiceMapper;
+import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.AccountEmailBO;
 import com.google.inject.Inject;
 import com.authguard.dal.AccountsRepository;
