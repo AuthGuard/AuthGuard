@@ -1,4 +1,4 @@
-package com.authguard.service.impl.passwords;
+package com.authguard.service.passwords;
 
 import org.bouncycastle.crypto.generators.BCrypt;
 

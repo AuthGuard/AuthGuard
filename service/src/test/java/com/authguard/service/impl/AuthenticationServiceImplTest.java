@@ -3,6 +3,7 @@ package com.authguard.service.impl;
 import com.authguard.config.ConfigContext;
 import com.authguard.service.*;
 import com.authguard.service.exceptions.ServiceException;
+import com.authguard.service.passwords.SecurePassword;
 import org.apache.commons.lang3.RandomStringUtils;
 import com.authguard.service.config.ImmutableAuthenticationConfig;
 import com.authguard.service.exceptions.ServiceAuthorizationException;

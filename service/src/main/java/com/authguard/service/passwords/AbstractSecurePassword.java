@@ -1,6 +1,5 @@
-package com.authguard.service.impl.passwords;
+package com.authguard.service.passwords;
 
-import com.authguard.service.SecurePassword;
 import com.authguard.service.model.HashedPasswordBO;
 
 import java.security.SecureRandom;

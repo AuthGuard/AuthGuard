@@ -7,6 +7,7 @@ import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.CredentialsBO;
 import com.authguard.service.model.HashedPasswordBO;
+import com.authguard.service.passwords.SecurePassword;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.AfterEach;

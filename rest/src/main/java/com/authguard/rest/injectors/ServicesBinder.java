@@ -2,8 +2,9 @@ package com.authguard.rest.injectors;
 
 import com.authguard.service.*;
 import com.authguard.service.impl.*;
+import com.authguard.service.passwords.SecurePassword;
 import com.google.inject.AbstractModule;
-import com.authguard.service.impl.passwords.SCryptPassword;
+import com.authguard.service.passwords.SCryptPassword;
 
 public class ServicesBinder extends AbstractModule {
 

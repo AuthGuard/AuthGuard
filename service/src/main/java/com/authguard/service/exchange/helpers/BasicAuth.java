@@ -2,7 +2,7 @@ package com.authguard.service.exchange.helpers;
 
 import com.authguard.service.AccountsService;
 import com.authguard.service.CredentialsService;
-import com.authguard.service.SecurePassword;
+import com.authguard.service.passwords.SecurePassword;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.model.AccountBO;

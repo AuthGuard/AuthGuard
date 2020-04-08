@@ -3,7 +3,7 @@ package com.authguard.service.impl;
 import com.authguard.dal.CredentialsAuditRepository;
 import com.authguard.dal.CredentialsRepository;
 import com.authguard.service.AccountsService;
-import com.authguard.service.SecurePassword;
+import com.authguard.service.passwords.SecurePassword;
 import com.authguard.dal.model.CredentialsAuditDO;
 import com.authguard.dal.model.CredentialsDO;
 import com.authguard.service.exceptions.ServiceConflictException;

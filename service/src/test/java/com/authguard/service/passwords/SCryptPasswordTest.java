@@ -1,6 +1,6 @@
-package com.authguard.service.impl;
+package com.authguard.service.passwords;
 
-import com.authguard.service.impl.passwords.SCryptPassword;
+import com.authguard.service.passwords.SCryptPassword;
 import org.apache.commons.lang3.RandomStringUtils;
 import com.authguard.service.model.HashedPasswordBO;
 import org.junit.jupiter.api.Test;

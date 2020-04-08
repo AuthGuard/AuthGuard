@@ -1,7 +1,5 @@
-package com.authguard.service;
+package com.authguard.service.passwords;
 
-import com.authguard.service.impl.passwords.BCryptPassword;
-import com.authguard.service.impl.passwords.SCryptPassword;
 import com.authguard.service.model.HashedPasswordBO;
 
 /**

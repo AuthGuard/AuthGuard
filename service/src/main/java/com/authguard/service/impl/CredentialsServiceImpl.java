@@ -11,7 +11,7 @@ import com.google.inject.Inject;
 import com.authguard.dal.CredentialsAuditRepository;
 import com.authguard.dal.CredentialsRepository;
 import com.authguard.service.CredentialsService;
-import com.authguard.service.SecurePassword;
+import com.authguard.service.passwords.SecurePassword;
 import com.authguard.service.model.CredentialsAuditBO;
 import com.authguard.service.model.CredentialsBO;
 import com.authguard.service.model.HashedPasswordBO;
