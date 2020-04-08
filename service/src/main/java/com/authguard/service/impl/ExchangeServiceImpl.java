@@ -22,7 +22,7 @@ public class ExchangeServiceImpl implements ExchangeService {
 
     @Override
     public TokensBO exchange(final String token, final String fromTokenType, final String toTokenType) {
-        final String key = fromTokenType + "-" + toTokenType;
+        final String key = exchangeKey(fromTokenType, toTokenType);
         final Exchange exchange = exchanges.get(key);
 
         if (exchange == null) {
@@ -31,6 +31,11 @@ public class ExchangeServiceImpl implements ExchangeService {
 
         return exchange.exchangeToken(token)
                 .orElseThrow(() -> new ServiceException("Failed to generate token"));
+    }
+
+    @Override
+    public boolean supportsExchange(final String fromTokenType, final String toTokenType) {
+        return exchanges.containsKey(exchangeKey(fromTokenType, toTokenType));
     }
 
     private Map<String, Exchange> mapExchanges(final List<Exchange> exchanges) {
@@ -44,6 +49,10 @@ public class ExchangeServiceImpl implements ExchangeService {
 
     private String tokenExchangeToString(final Exchange exchange) {
         final TokenExchange tokenExchange = exchange.getClass().getAnnotation(TokenExchange.class);
-        return tokenExchange.from() + "-" + tokenExchange.to();
+        return exchangeKey(tokenExchange.from(), tokenExchange.to());
+    }
+
+    private String exchangeKey(final String fromTokenType, final String toTokenType) {
+        return fromTokenType + "-" + toTokenType;
     }
 }

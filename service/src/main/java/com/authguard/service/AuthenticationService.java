@@ -2,7 +2,6 @@ package com.authguard.service;
 
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.impl.AuthenticationServiceImpl;
-import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.TokensBO;
 
 import java.util.Optional;
@@ -23,6 +22,4 @@ public interface AuthenticationService {
      *         if anything was wrong in the header.
      */
     Optional<TokensBO> authenticate(String header);
-
-    Optional<AccountBO> authenticate(String username, String password);
 }

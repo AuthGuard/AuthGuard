@@ -1,5 +1,6 @@
 package com.authguard.rest.access;
 
+import com.authguard.service.exchange.helpers.BasicAuth;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -12,10 +13,12 @@ import java.util.Base64;
 import java.util.Optional;
 
 public class AuthorizationHandler implements Handler {
+    private final BasicAuth basicAuth;
     private final AuthenticationService authenticationService;
 
     @Inject
-    public AuthorizationHandler(final AuthenticationService authenticationService) {
+    public AuthorizationHandler(final BasicAuth basicAuth, final AuthenticationService authenticationService) {
+        this.basicAuth = basicAuth;
         this.authenticationService = authenticationService;
     }
 
@@ -53,9 +56,7 @@ public class AuthorizationHandler implements Handler {
     }
 
     private void populateBasicActor(final Context context, final String base64Credentials) {
-        final String[] decoded = new String(Base64.getDecoder().decode(base64Credentials)).split(":");
-
-        final Optional<AccountBO> actorAccount = authenticationService.authenticate(decoded[0], decoded[1]);
+        final Optional<AccountBO> actorAccount = basicAuth.authenticateAndGetAccount("Basic " + base64Credentials);
 
         actorAccount.ifPresentOrElse(account -> context.attribute("actor", account),
                 () -> context.status(401).result(""));

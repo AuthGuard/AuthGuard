@@ -7,5 +7,6 @@ import org.immutables.value.Value;
 @ConfigStyle
 @JsonDeserialize(as = ImmutableAuthenticationConfig.class)
 public interface AuthenticationConfig {
+    String getGenerateToken();
     boolean getUseOtp();
 }
