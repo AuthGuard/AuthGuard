@@ -1,25 +1,25 @@
 package com.authguard.service.jwt;
 
 import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTCreator;
-import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Verification;
+import com.authguard.dal.AccountTokensRepository;
+import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.service.config.*;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.PermissionBO;
-import com.authguard.service.model.TokenBuilderBO;
 import com.authguard.service.model.TokensBO;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.*;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -30,6 +30,7 @@ class AccessTokenProviderTest {
     private static final String KEY = "this secret is only for testing purposes";
     private static final String ISSUER = "test";
 
+    private AccountTokensRepository accountTokensRepository;
     private JtiProvider jtiProvider;
 
     private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
@@ -48,6 +49,7 @@ class AccessTokenProviderTest {
     private ImmutableStrategyConfig strategyConfig(final boolean useJti) {
         return ImmutableStrategyConfig.builder()
                 .tokenLife("5m")
+                .refreshTokenLife("20m")
                 .useJti(useJti)
                 .includePermissions(true)
                 .build();
@@ -55,8 +57,14 @@ class AccessTokenProviderTest {
 
     private AccessTokenProvider newProviderInstance(final ImmutableStrategyConfig strategyConfig) {
         jtiProvider = Mockito.mock(JtiProvider.class);
+        accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
 
-        return new AccessTokenProvider(jwtConfig(strategyConfig), jtiProvider);
+        Mockito.when(accountTokensRepository.save(Mockito.any())).thenAnswer(invocation -> {
+            final AccountTokenDO arg = invocation.getArgument(0);
+            return CompletableFuture.completedFuture(arg);
+        });
+
+        return new AccessTokenProvider(accountTokensRepository, jwtConfig(strategyConfig), jtiProvider);
     }
 
     @Test
@@ -72,6 +80,15 @@ class AccessTokenProviderTest {
         assertThat(tokens.getToken()).isNotNull();
         assertThat(tokens.getRefreshToken()).isNotNull();
         assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
+
+        final ArgumentCaptor<AccountTokenDO> accountTokenCaptor = ArgumentCaptor.forClass(AccountTokenDO.class);
+
+        Mockito.verify(accountTokensRepository).save(accountTokenCaptor.capture());
+
+        assertThat(accountTokenCaptor.getValue().getAssociatedAccountId()).isEqualTo(account.getId());
+        assertThat(accountTokenCaptor.getValue().getToken()).isEqualTo(tokens.getRefreshToken());
+        assertThat(accountTokenCaptor.getValue().expiresAt()).isNotNull()
+                .isAfter(ZonedDateTime.now());
 
         verifyToken(tokens.getToken(), account.getId(), null, null, null);
     }

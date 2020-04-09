@@ -12,7 +12,6 @@ public class ServicesBinder extends AbstractModule {
     public void configure() {
         bind(CredentialsService.class).to(CredentialsServiceImpl.class);
         bind(AuthenticationService.class).to(AuthenticationServiceImpl.class);
-        bind(AuthorizationService.class).to(AuthorizationServiceImpl.class);
         bind(AccountsService.class).to(AccountsServiceImpl.class);
         bind(ApplicationsService.class).to(ApplicationsServiceImpl.class);
         bind(ApiKeysService.class).to(ApiKeysServiceImpl.class);
