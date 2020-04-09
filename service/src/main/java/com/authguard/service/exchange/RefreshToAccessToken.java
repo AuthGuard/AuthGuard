@@ -7,6 +7,7 @@ import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.jwt.AccessTokenProvider;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.TokensBO;
+import com.google.inject.Inject;
 
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -17,6 +18,7 @@ public class RefreshToAccessToken implements Exchange {
     private final AccountsService accountsService;
     private final AccessTokenProvider accessTokenProvider;
 
+    @Inject
     public RefreshToAccessToken(final AccountTokensRepository accountTokensRepository,
                                 final AccountsService accountsService,
                                 final AccessTokenProvider accessTokenProvider) {

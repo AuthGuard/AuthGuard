@@ -3,7 +3,6 @@ package com.authguard.rest;
 import com.authguard.service.*;
 import com.authguard.service.exchange.helpers.BasicAuth;
 import com.google.inject.AbstractModule;
-import com.authguard.service.*;
 import org.mockito.Mockito;
 
 public class MocksBinder extends AbstractModule {

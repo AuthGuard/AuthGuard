@@ -4,22 +4,18 @@ import com.authguard.service.exchange.helpers.BasicAuth;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import com.authguard.service.AuthenticationService;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.model.AccountBO;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Base64;
 import java.util.Optional;
 
 public class AuthorizationHandler implements Handler {
     private final BasicAuth basicAuth;
-    private final AuthenticationService authenticationService;
 
     @Inject
-    public AuthorizationHandler(final BasicAuth basicAuth, final AuthenticationService authenticationService) {
+    public AuthorizationHandler(final BasicAuth basicAuth) {
         this.basicAuth = basicAuth;
-        this.authenticationService = authenticationService;
     }
 
     @Override

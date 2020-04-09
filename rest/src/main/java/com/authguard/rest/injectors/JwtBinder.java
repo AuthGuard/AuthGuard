@@ -16,7 +16,6 @@ public class JwtBinder extends AbstractModule {
     private final ImmutableJwtConfig jwtConfig;
     private final ImmutableStrategiesConfig strategiesConfig;
     private final String authenticationStrategy;
-    private final String authorizationStrategy;
 
     public JwtBinder(final ConfigContext configContext) {
         this.jwtConfig = configContext.getAsConfigBean("jwt", ImmutableJwtConfig.class);
@@ -24,7 +23,6 @@ public class JwtBinder extends AbstractModule {
                 .getAsConfigBean("strategies", ImmutableStrategiesConfig.class);
 
         this.authenticationStrategy = configContext.getSubContext("authentication").getAsString("strategy");
-        this.authorizationStrategy = configContext.getSubContext("authorization").getAsString("strategy");
     }
 
     @Override
@@ -50,14 +48,6 @@ public class JwtBinder extends AbstractModule {
             case "accessToken":
                 bind(AuthProvider.class)
                         .annotatedWith(Names.named("authenticationTokenProvider"))
-                        .to(AccessTokenProvider.class);
-                break;
-        }
-
-        switch (authorizationStrategy) {
-            case "accessToken":
-                bind(AuthProvider.class)
-                        .annotatedWith(Names.named("authorizationTokenProvider"))
                         .to(AccessTokenProvider.class);
                 break;
         }

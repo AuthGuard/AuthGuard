@@ -1,5 +1,7 @@
 package com.authguard.rest.routes;
 
+import com.authguard.service.ExchangeService;
+import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
@@ -13,17 +15,21 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 public class AuthRoute implements EndpointGroup {
     private final AuthenticationService authenticationService;
+    private final ExchangeService exchangeService;
     private final RestMapper restMapper;
 
     @Inject
-    AuthRoute(final AuthenticationService authenticationService, final RestMapper restMapper) {
+    AuthRoute(final AuthenticationService authenticationService, final ExchangeService exchangeService,
+              final RestMapper restMapper) {
         this.authenticationService = authenticationService;
+        this.exchangeService = exchangeService;
         this.restMapper = restMapper;
     }
 
     @Override
     public void addEndpoints() {
         post("/authenticate", this::authenticate);
+        post("/exchange", this::exchange);
     }
 
     private void authenticate(final Context context) {
@@ -37,5 +43,15 @@ public class AuthRoute implements EndpointGroup {
         } else {
             context.status(400).result("Failed to authenticate user");
         }
+    }
+
+    private void exchange(final Context context) {
+        final AuthRequestDTO authenticationRequest = RestJsonMapper.asClass(context.body(), AuthRequestDTO.class);
+        final String from = context.queryParam("from");
+        final String to = context.queryParam("to");
+
+        final TokensBO tokens = exchangeService.exchange(authenticationRequest.getAuthorization(), from, to);
+
+        context.json(restMapper.toDTO(tokens));
     }
 }

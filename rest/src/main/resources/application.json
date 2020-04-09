@@ -30,11 +30,9 @@
       "trustedIssuers": ["self"]
     },
     "authentication": {
-      "strategy": "idToken",
+      "strategy": "accessToken",
+      "generateToken": "accessToken",
       "useOtp": true
-    },
-    "authorization": {
-      "strategy": "accessToken"
     },
 
     "oneTimeAdmin": {
