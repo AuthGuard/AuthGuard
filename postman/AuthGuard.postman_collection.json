@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "655b0d60-d544-434b-90f0-31ebd5293bc2",
+		"_postman_id": "2f021339-d3d7-47c6-b529-a0d6388cefbb",
 		"name": "AuthGuard",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -18,10 +18,12 @@
 								"exec": [
 									"pm.test(\"Status code is 201\", function () {",
 									"    pm.response.to.have.status(201);",
+									"    ",
+									"    ",
+									"    let response = pm.response.json();",
+									"    pm.environment.set(\"accountId\", response.id);",
 									"});",
-									"",
-									"let response = pm.response.json();",
-									"pm.environment.set(\"accountId\", response.id);"
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -104,6 +106,105 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "create credentials same username",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e48d3061-04e9-44bc-87ee-607e3a970303",
+								"exec": [
+									"pm.test(\"Status code is 409\", function () {",
+									"    pm.response.to.have.status(409);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"accountId\": \"{{accountId}}\",\n\t\"username\": \"username\",\n\t\"plainPassword\": \"password\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authguard}}/credentials",
+							"host": [
+								"{{authguard}}"
+							],
+							"path": [
+								"credentials"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "create credentials no account ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e48d3061-04e9-44bc-87ee-607e3a970303",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"    ",
+									"    const error = pm.response.json();",
+									"    ",
+									"    pm.expect(error.message).to.have.length.greaterThan(0);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"accountId\": \"this-should-not-exist\",\n\t\"username\": \"not-to-be-used\",\n\t\"plainPassword\": \"password\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authguard}}/credentials",
+							"host": [
+								"{{authguard}}"
+							],
+							"path": [
+								"credentials"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"event": [
@@ -143,10 +244,12 @@
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
+									"    ",
+									"    let response = pm.response.json();",
+									"    pm.environment.set(\"accessToken\", response.token);",
+									"    pm.environment.set(\"refreshToken\", response.refreshToken);",
 									"});",
-									"",
-									"let response = pm.response.json();",
-									"pm.environment.set(\"idToken\", response.token);"
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -174,52 +277,6 @@
 							"path": [
 								"auth",
 								"authenticate"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "authorize",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "a562f372-ee7d-4fd8-a3a3-4b892dcb9490",
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"let response = pm.response.json();",
-									"pm.environment.set(\"refreshToken\", response.refreshToken);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\t\"authorization\": \"Bearer {{idToken}}\"\n}"
-						},
-						"url": {
-							"raw": "{{authguard}}/auth/authorize",
-							"host": [
-								"{{authguard}}"
-							],
-							"path": [
-								"auth",
-								"authorize"
 							]
 						}
 					},
@@ -257,14 +314,23 @@
 							"raw": "{\n\t\"authorization\": \"{{refreshToken}}\"\n}"
 						},
 						"url": {
-							"raw": "{{authguard}}/auth/authorize/refresh",
+							"raw": "{{authguard}}/auth/exchange?from=refresh&to=accessToken",
 							"host": [
 								"{{authguard}}"
 							],
 							"path": [
 								"auth",
-								"authorize",
-								"refresh"
+								"exchange"
+							],
+							"query": [
+								{
+									"key": "from",
+									"value": "refresh"
+								},
+								{
+									"key": "to",
+									"value": "accessToken"
+								}
 							]
 						}
 					},

@@ -9,7 +9,7 @@ import com.authguard.service.VerificationMessageService;
 import com.authguard.service.config.ImmutableAccountConfig;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.dal.model.AccountDO;
-import com.authguard.service.impl.mappers.ServiceMapperImpl;
+import com.authguard.service.mappers.ServiceMapperImpl;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AccountEmailBO;
 import com.authguard.service.model.PermissionBO;

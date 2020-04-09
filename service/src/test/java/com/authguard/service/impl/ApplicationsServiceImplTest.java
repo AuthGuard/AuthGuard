@@ -4,7 +4,7 @@ import com.authguard.dal.ApplicationsRepository;
 import com.authguard.service.AccountsService;
 import com.authguard.service.ApplicationsService;
 import com.authguard.dal.model.AppDO;
-import com.authguard.service.impl.mappers.ServiceMapperImpl;
+import com.authguard.service.mappers.ServiceMapperImpl;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AppBO;
 import com.authguard.service.model.PermissionBO;

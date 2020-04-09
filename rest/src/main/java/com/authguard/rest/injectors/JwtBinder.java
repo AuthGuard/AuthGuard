@@ -4,19 +4,18 @@ import com.authguard.config.ConfigContext;
 import com.authguard.service.config.ImmutableJwtConfig;
 import com.authguard.service.config.ImmutableStrategiesConfig;
 import com.authguard.service.config.ImmutableStrategyConfig;
-import com.authguard.service.impl.jwt.AccessTokenProvider;
-import com.authguard.service.impl.jwt.BasicJtiProvider;
-import com.authguard.service.impl.jwt.IdTokenProvider;
+import com.authguard.service.jwt.AccessTokenProvider;
+import com.authguard.service.jwt.BasicJtiProvider;
+import com.authguard.service.jwt.IdTokenProvider;
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
-import com.authguard.service.JtiProvider;
-import com.authguard.service.JwtProvider;
+import com.authguard.service.jwt.JtiProvider;
+import com.authguard.service.AuthProvider;
 
 public class JwtBinder extends AbstractModule {
     private final ImmutableJwtConfig jwtConfig;
     private final ImmutableStrategiesConfig strategiesConfig;
     private final String authenticationStrategy;
-    private final String authorizationStrategy;
 
     public JwtBinder(final ConfigContext configContext) {
         this.jwtConfig = configContext.getAsConfigBean("jwt", ImmutableJwtConfig.class);
@@ -24,7 +23,6 @@ public class JwtBinder extends AbstractModule {
                 .getAsConfigBean("strategies", ImmutableStrategiesConfig.class);
 
         this.authenticationStrategy = configContext.getSubContext("authentication").getAsString("strategy");
-        this.authorizationStrategy = configContext.getSubContext("authorization").getAsString("strategy");
     }
 
     @Override
@@ -42,22 +40,14 @@ public class JwtBinder extends AbstractModule {
 
         switch (authenticationStrategy) {
             case "idToken":
-                bind(JwtProvider.class)
+                bind(AuthProvider.class)
                         .annotatedWith(Names.named("authenticationTokenProvider"))
                         .to(IdTokenProvider.class);
                 break;
 
             case "accessToken":
-                bind(JwtProvider.class)
+                bind(AuthProvider.class)
                         .annotatedWith(Names.named("authenticationTokenProvider"))
-                        .to(AccessTokenProvider.class);
-                break;
-        }
-
-        switch (authorizationStrategy) {
-            case "accessToken":
-                bind(JwtProvider.class)
-                        .annotatedWith(Names.named("authorizationTokenProvider"))
                         .to(AccessTokenProvider.class);
                 break;
         }

@@ -1,12 +1,13 @@
 package com.authguard.rest.routes;
 
+import com.authguard.service.ExchangeService;
+import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import com.authguard.rest.dto.AuthRequestDTO;
 import com.authguard.rest.dto.TokensDTO;
 import com.authguard.service.AuthenticationService;
-import com.authguard.service.AuthorizationService;
 
 import java.util.Optional;
 
@@ -14,22 +15,21 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 public class AuthRoute implements EndpointGroup {
     private final AuthenticationService authenticationService;
-    private final AuthorizationService authorizationService;
+    private final ExchangeService exchangeService;
     private final RestMapper restMapper;
 
     @Inject
-    AuthRoute(final AuthenticationService authenticationService, final AuthorizationService authorizationService,
+    AuthRoute(final AuthenticationService authenticationService, final ExchangeService exchangeService,
               final RestMapper restMapper) {
         this.authenticationService = authenticationService;
-        this.authorizationService = authorizationService;
+        this.exchangeService = exchangeService;
         this.restMapper = restMapper;
     }
 
     @Override
     public void addEndpoints() {
         post("/authenticate", this::authenticate);
-        post("/authorize", this::authorize);
-        post("/authorize/refresh", this::refresh);
+        post("/exchange", this::exchange);
     }
 
     private void authenticate(final Context context) {
@@ -45,19 +45,13 @@ public class AuthRoute implements EndpointGroup {
         }
     }
 
-    private void authorize(final Context context) {
+    private void exchange(final Context context) {
         final AuthRequestDTO authenticationRequest = RestJsonMapper.asClass(context.body(), AuthRequestDTO.class);
+        final String from = context.queryParam("from");
+        final String to = context.queryParam("to");
 
-        final TokensDTO tokens = restMapper.toDTO(authorizationService.authorize(authenticationRequest.getAuthorization()));
+        final TokensBO tokens = exchangeService.exchange(authenticationRequest.getAuthorization(), from, to);
 
-        context.json(tokens);
-    }
-
-    private void refresh(final Context context) {
-        final AuthRequestDTO authenticationRequest = RestJsonMapper.asClass(context.body(), AuthRequestDTO.class);
-
-        final TokensDTO tokens = restMapper.toDTO(authorizationService.refresh(authenticationRequest.getAuthorization()));
-
-        context.json(tokens);
+        context.json(restMapper.toDTO(tokens));
     }
 }
