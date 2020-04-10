@@ -4,6 +4,7 @@ import com.authguard.config.ConfigContext;
 import com.authguard.dal.OtpRepository;
 import com.authguard.service.AccountsService;
 import com.authguard.service.AuthProvider;
+import com.authguard.service.ExchangeService;
 import com.authguard.service.config.OtpMode;
 import com.authguard.dal.model.OneTimePasswordDO;
 import com.authguard.emb.MessagePublisher;
@@ -32,7 +33,7 @@ class OtpServiceImplTest {
 
     private OtpRepository mockOtpRepository;
     private AccountsService mockAccountsService;
-    private AuthProvider mockAuthProvider;
+    private ExchangeService mockExchangeService;
     private MessagePublisher mockMessagePublisher;
 
     private OtpServiceImpl otpService;
@@ -40,7 +41,7 @@ class OtpServiceImplTest {
     void setup(final ImmutableOtpConfig otpConfig) {
         mockOtpRepository = Mockito.mock(OtpRepository.class);
         mockAccountsService = Mockito.mock(AccountsService.class);
-        mockAuthProvider = Mockito.mock(AuthProvider.class);
+        mockExchangeService = Mockito.mock(ExchangeService.class);
         mockMessagePublisher = Mockito.mock(MessagePublisher.class);
 
         final ConfigContext configContext = Mockito.mock(ConfigContext.class);
@@ -48,7 +49,7 @@ class OtpServiceImplTest {
         Mockito.when(configContext.asConfigBean(ImmutableOtpConfig.class)).thenReturn(otpConfig);
 
         otpService = new OtpServiceImpl(mockOtpRepository, mockMessagePublisher,
-                mockAccountsService, mockAuthProvider, new ServiceMapperImpl(), configContext);
+                mockAccountsService, mockExchangeService, new ServiceMapperImpl(), configContext);
     }
 
     @Test
@@ -178,7 +179,7 @@ class OtpServiceImplTest {
 
         Mockito.when(mockOtpRepository.getById(otp.getId())).thenReturn(CompletableFuture.completedFuture(Optional.of(otp)));
         Mockito.when(mockAccountsService.getById(account.getId())).thenReturn(Optional.of(account));
-        Mockito.when(mockAuthProvider.generateToken(account)).thenReturn(tokens);
+        Mockito.when(mockExchangeService.exchange(any(), any(), any())).thenReturn(tokens);
 
         final TokensBO generated = otpService.authenticate(otp.getId(), otp.getPassword());
 
@@ -202,7 +203,7 @@ class OtpServiceImplTest {
 
         Mockito.when(mockOtpRepository.getById(otp.getId())).thenReturn(CompletableFuture.completedFuture(Optional.of(otp)));
         Mockito.when(mockAccountsService.getById(account.getId())).thenReturn(Optional.of(account));
-        Mockito.when(mockAuthProvider.generateToken(account)).thenReturn(tokens);
+        Mockito.when(mockExchangeService.exchange(any(), any(), any())).thenReturn(tokens);
 
         assertThatThrownBy(() -> otpService.authenticate(otp.getId(), "wrong"))
                 .isInstanceOf(ServiceAuthorizationException.class);

@@ -2,14 +2,16 @@ package com.authguard.service.jwt;
 
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.authguard.config.ConfigContext;
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.service.config.ConfigParser;
+import com.authguard.service.config.ImmutableJwtConfig;
 import com.google.inject.Inject;
 import com.authguard.service.AuthProvider;
-import com.authguard.service.config.ImmutableJwtConfig;
 import com.authguard.service.config.ImmutableStrategyConfig;
 import com.authguard.service.model.*;
+import com.google.inject.name.Named;
 
 import java.time.ZonedDateTime;
 
@@ -21,14 +23,19 @@ public class AccessTokenProvider implements AuthProvider {
     private final ImmutableStrategyConfig strategy;
 
     @Inject
-    public AccessTokenProvider(final AccountTokensRepository accountTokensRepository, final ImmutableJwtConfig jwtConfig,
+    public AccessTokenProvider(final AccountTokensRepository accountTokensRepository,
+                               final @Named("jwt") ConfigContext jwtConfigContext,
+                               final @Named("accessToken") ConfigContext accessTokenConfigContext,
                                final JtiProvider jti) {
         this.accountTokensRepository = accountTokensRepository;
         this.jti = jti;
 
+        final ImmutableJwtConfig jwtConfig = jwtConfigContext.asConfigBean(ImmutableJwtConfig.class);
+
         this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getKey());
         this.jwtGenerator = new JwtGenerator(jwtConfig);
-        this.strategy = jwtConfig.getStrategies().getAccessToken();
+
+        this.strategy = accessTokenConfigContext.asConfigBean(ImmutableStrategyConfig.class);
     }
 
     @Override

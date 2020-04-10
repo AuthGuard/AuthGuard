@@ -6,7 +6,6 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.authguard.service.config.ImmutableJwtConfig;
-import com.authguard.service.config.ImmutableStrategiesConfig;
 import com.authguard.service.config.ImmutableStrategyConfig;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.PermissionBO;
@@ -32,14 +31,11 @@ class JwtTokenVerifierTest {
 
     private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
 
-    private ImmutableJwtConfig jwtConfig(final ImmutableStrategyConfig strategyConfig) {
+    private ImmutableJwtConfig jwtConfig() {
         return ImmutableJwtConfig.builder()
                 .algorithm(ALGORITHM)
                 .key(KEY)
                 .issuer(ISSUER)
-                .strategies(ImmutableStrategiesConfig.builder()
-                        .accessToken(strategyConfig)
-                        .build())
                 .build();
     }
 
@@ -54,7 +50,7 @@ class JwtTokenVerifierTest {
     private JwtTokenVerifier newVerifierInstance(final ImmutableStrategyConfig strategyConfig) {
         jtiProvider = Mockito.mock(JtiProvider.class);
 
-        final ImmutableJwtConfig jwtConfig = jwtConfig((strategyConfig));
+        final ImmutableJwtConfig jwtConfig = jwtConfig();
         final Algorithm algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getKey());
 
         return new JwtTokenVerifier(strategyConfig, jtiProvider, algorithm);
@@ -82,7 +78,7 @@ class JwtTokenVerifierTest {
     @Test
     void validate() {
         final ImmutableStrategyConfig strategyConfig = strategyConfig(false);
-        final ImmutableJwtConfig jwtConfig = jwtConfig(strategyConfig);
+        final ImmutableJwtConfig jwtConfig = jwtConfig();
 
         final JwtTokenVerifier jwtTokenVerifier = newVerifierInstance(strategyConfig);
 
@@ -97,7 +93,7 @@ class JwtTokenVerifierTest {
     @Test
     void validateWithJti() {
         final ImmutableStrategyConfig strategyConfig = strategyConfig(true);
-        final ImmutableJwtConfig jwtConfig = jwtConfig(strategyConfig);
+        final ImmutableJwtConfig jwtConfig = jwtConfig();
 
         final JwtTokenVerifier jwtTokenVerifier = newVerifierInstance(strategyConfig);
 
@@ -117,7 +113,7 @@ class JwtTokenVerifierTest {
     @Test
     void validateWithJtiBlacklisted() {
         final ImmutableStrategyConfig strategyConfig = strategyConfig(true);
-        final ImmutableJwtConfig jwtConfig = jwtConfig(strategyConfig);
+        final ImmutableJwtConfig jwtConfig = jwtConfig();
 
         final JwtTokenVerifier jwtTokenVerifier = newVerifierInstance(strategyConfig);
 
@@ -136,7 +132,7 @@ class JwtTokenVerifierTest {
     @Test
     void validateWithAlgNone() {
         final ImmutableStrategyConfig strategyConfig = strategyConfig(false);
-        final ImmutableJwtConfig jwtConfig = jwtConfig(strategyConfig);
+        final ImmutableJwtConfig jwtConfig = jwtConfig();
 
         final JwtTokenVerifier jwtTokenVerifier = newVerifierInstance(strategyConfig);
 

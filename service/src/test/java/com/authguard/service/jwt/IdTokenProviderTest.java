@@ -5,19 +5,19 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Verification;
-import com.authguard.service.config.ImmutableJwtConfig;
-import com.authguard.service.config.ImmutableStrategiesConfig;
-import com.authguard.service.config.ImmutableStrategyConfig;
+import com.authguard.config.ConfigContext;
+import com.authguard.config.JacksonConfigContext;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.PermissionBO;
 import com.authguard.service.model.TokensBO;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,33 +29,33 @@ class IdTokenProviderTest {
 
     private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
 
-    private ImmutableJwtConfig jwtConfig(final ImmutableStrategyConfig strategyConfig) {
-        return ImmutableJwtConfig.builder()
-                .algorithm(ALGORITHM)
-                .key(KEY)
-                .issuer(ISSUER)
-                .strategies(ImmutableStrategiesConfig.builder()
-                        .idToken(strategyConfig)
-                        .build())
-                .build();
+    private ConfigContext jwtConfig() {
+        final ObjectNode configNode = new ObjectNode(JsonNodeFactory.instance);
+
+        configNode.put("algorithm", ALGORITHM)
+                .put("key", KEY)
+                .put("issuer", ISSUER);
+
+        return new JacksonConfigContext(configNode);
     }
 
-    private ImmutableStrategyConfig strategyConfig() {
-        return ImmutableStrategyConfig.builder()
-                .tokenLife("5m")
-                .includePermissions(true)
-                .build();
+    private ConfigContext strategyConfig() {
+        final ObjectNode configNode = new ObjectNode(JsonNodeFactory.instance);
+
+        configNode.put("tokenLife", "5m")
+                .put("refreshTokenLife", "20m")
+                .put("includePermissions", true);
+
+        return new JacksonConfigContext(configNode);
     }
 
-    private IdTokenProvider newProviderInstance(final ImmutableStrategyConfig strategyConfig) {
-        return new IdTokenProvider(jwtConfig(strategyConfig));
+    private IdTokenProvider newProviderInstance() {
+        return new IdTokenProvider(jwtConfig(), strategyConfig());
     }
 
     @Test
     void generate() {
-        final ImmutableStrategyConfig strategyConfig = strategyConfig();
-
-        final IdTokenProvider idTokenProvider = newProviderInstance(strategyConfig);
+        final IdTokenProvider idTokenProvider = newProviderInstance();
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
         final TokensBO tokens = idTokenProvider.generateToken(account);
