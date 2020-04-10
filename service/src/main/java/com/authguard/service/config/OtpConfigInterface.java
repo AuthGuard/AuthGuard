@@ -10,4 +10,5 @@ public interface OtpConfigInterface {
     OtpMode getMode();
     int getLength();
     String getLifeTime();
+    String getGenerateToken();
 }

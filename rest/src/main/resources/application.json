@@ -45,7 +45,6 @@
     },
 
     "authentication": {
-      "strategy": "accessToken",
       "generateToken": "accessToken",
       "useOtp": true
     },
@@ -58,7 +57,8 @@
     "otp": {
       "lifeTime": "5m",
       "mode": "NUMERIC",
-      "length": 6
+      "length": 6,
+      "generateToken": "accessToken"
     },
 
     "account": {

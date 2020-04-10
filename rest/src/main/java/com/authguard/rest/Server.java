@@ -1,12 +1,12 @@
 package com.authguard.rest;
 
+import com.authguard.config.ConfigContext;
 import com.authguard.rest.access.AuthorizationHandler;
 import com.authguard.rest.exceptions.Error;
 import com.authguard.rest.exceptions.ExceptionHandlers;
 import com.authguard.rest.exceptions.RuntimeJsonException;
 import com.authguard.rest.routes.*;
 import com.authguard.service.exceptions.ServiceConflictException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.inject.Injector;
 import io.javalin.Javalin;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
@@ -20,9 +20,11 @@ class Server {
     private final static Logger log = LoggerFactory.getLogger(Server.class.getSimpleName());
 
     private final Injector injector;
+    private final ConfigContext configContext;
 
-    Server(final Injector injector) {
+    Server(final Injector injector, final ConfigContext configContext) {
         this.injector = injector;
+        this.configContext = configContext;
     }
 
     void start(final Javalin app, final int port) {
@@ -43,12 +45,18 @@ class Server {
         app.routes(() -> {
             path("/credentials", injector.getInstance(CredentialsRoute.class));
             path("/auth", injector.getInstance(AuthRoute.class));
-            path("/otp", injector.getInstance(OtpRoute.class));
             path("/keys", injector.getInstance(ApiKeysRoute.class));
             path("/accounts", injector.getInstance(AccountsRoute.class));
             path("/apps", injector.getInstance(ApplicationsRoute.class));
             path("/admin", injector.getInstance(AdminRoute.class));
-            path("/verification", injector.getInstance(VerificationRoute.class));
+
+            if (configContext.get("otp") != null) {
+                path("/otp", injector.getInstance(OtpRoute.class));
+            }
+
+            if (configContext.get("verification") != null) {
+                path("/verification", injector.getInstance(VerificationRoute.class));
+            }
         });
 
         // if we failed to process a request body
