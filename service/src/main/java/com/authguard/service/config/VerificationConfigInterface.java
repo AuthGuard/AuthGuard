@@ -5,8 +5,8 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @ConfigStyle
-@JsonDeserialize(as = ImmutableVerificationConfig.class)
-public interface VerificationConfig {
+@JsonDeserialize(as = VerificationConfig.class)
+public interface VerificationConfigInterface {
     String getVerifyEmailUrlTemplate();
     String getEmailVerificationLife();
 }

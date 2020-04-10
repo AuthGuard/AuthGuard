@@ -4,33 +4,47 @@
       "packages": [
       "com.authguard"
     ]},
+
     "jwt": {
       "algorithm": "HMAC256",
       "key": "FKvL11DI5rwgt51QgB3CVob3oWYrFNBzF0ROvu9Yaj8",
       "issuer": "Authguard",
-      "strategies": {
-        "accessToken": {
-          "tokenLife": "20m",
-          "refreshTokenLife": "1d",
-          "useJti": true,
-          "includePermissions": true,
-          "includeRoles": true,
-          "includeScopes": true
-        },
-        "idToken": {
-          "tokenLife": "1d",
-          "refreshTokenLife": "1d",
-          "useJti": false,
-          "includePermissions": false,
-          "includeRoles": false,
-          "includeScopes": false
-        }
-      },
       "allowedAlgorithms": ["HMAC256"],
       "trustedIssuers": ["self"]
     },
+
+    "exchange": {
+      "allowed": [
+        {
+          "from": "basic",
+          "to": "accessToken"
+        },
+        {
+          "from": "refresh",
+          "to": "accessToken"
+        }
+      ]
+    },
+
+    "accessToken": {
+      "tokenLife": "20m",
+      "refreshTokenLife": "1d",
+      "useJti": true,
+      "includePermissions": true,
+      "includeRoles": true,
+      "includeScopes": true
+    },
+
+    "idToken": {
+      "tokenLife": "1d",
+      "refreshTokenLife": "1d",
+      "useJti": false,
+      "includePermissions": false,
+      "includeRoles": false,
+      "includeScopes": false
+    },
+
     "authentication": {
-      "strategy": "accessToken",
       "generateToken": "accessToken",
       "useOtp": true
     },
@@ -43,7 +57,8 @@
     "otp": {
       "lifeTime": "5m",
       "mode": "NUMERIC",
-      "length": 6
+      "length": 6,
+      "generateToken": "accessToken"
     },
 
     "account": {

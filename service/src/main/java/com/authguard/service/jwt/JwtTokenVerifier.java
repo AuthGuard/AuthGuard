@@ -7,16 +7,16 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Payload;
 import com.authguard.service.AuthTokenVerfier;
-import com.authguard.service.config.ImmutableStrategyConfig;
+import com.authguard.service.config.StrategyConfig;
 
 import java.util.Optional;
 
 public class JwtTokenVerifier implements AuthTokenVerfier {
-    private final ImmutableStrategyConfig strategy;
+    private final StrategyConfig strategy;
     private final JtiProvider jti;
     private final JWTVerifier verifier;
 
-    public JwtTokenVerifier(final ImmutableStrategyConfig strategy, final JtiProvider jti,
+    public JwtTokenVerifier(final StrategyConfig strategy, final JtiProvider jti,
                             final Algorithm algorithm) {
         this.strategy = strategy;
         this.jti = jti;
@@ -24,7 +24,7 @@ public class JwtTokenVerifier implements AuthTokenVerfier {
         this.verifier = JWT.require(algorithm).build();
     }
 
-    public JwtTokenVerifier(final ImmutableStrategyConfig strategy, final Algorithm algorithm) {
+    public JwtTokenVerifier(final StrategyConfig strategy, final Algorithm algorithm) {
         this.strategy = strategy;
         this.jti = null;
 

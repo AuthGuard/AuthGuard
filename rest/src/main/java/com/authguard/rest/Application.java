@@ -35,9 +35,10 @@ public class Application {
         // injectors
         final Injector injector = Guice.createInjector(new MappersBinder(),
                 new ConfigBinder(configContext),
-                new ServicesBinder(),
+                new ExchangesBinder(configContext, searchPackages),
+                new ServicesBinder(configContext),
                 new JwtBinder(configContext),
-                new DalBinder(searchPackages),
+                new DalBinder(configContext, searchPackages),
                 new EmbBinder(searchPackages),
                 new ExternalProvidersBinder(searchPackages));
 
@@ -49,7 +50,7 @@ public class Application {
         log.info("Completed bootstrap");
 
         // run the server
-        new Server(injector).start(Javalin.create(config -> {
+        new Server(injector, configContext).start(Javalin.create(config -> {
             config.accessManager(new RolesAccessManager());
         }), 3000);
     }

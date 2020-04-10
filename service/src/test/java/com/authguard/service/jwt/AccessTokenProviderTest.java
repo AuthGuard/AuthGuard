@@ -4,12 +4,15 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Verification;
+import com.authguard.config.ConfigContext;
+import com.authguard.config.JacksonConfigContext;
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
-import com.authguard.service.config.*;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.PermissionBO;
 import com.authguard.service.model.TokensBO;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.*;
@@ -35,27 +38,28 @@ class AccessTokenProviderTest {
 
     private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
 
-    private ImmutableJwtConfig jwtConfig(final ImmutableStrategyConfig strategyConfig) {
-        return ImmutableJwtConfig.builder()
-                .algorithm(ALGORITHM)
-                .key(KEY)
-                .issuer(ISSUER)
-                .strategies(ImmutableStrategiesConfig.builder()
-                        .accessToken(strategyConfig)
-                        .build())
-                .build();
+    private ConfigContext jwtConfig() {
+        final ObjectNode configNode = new ObjectNode(JsonNodeFactory.instance);
+        
+        configNode.put("algorithm", ALGORITHM)
+                .put("key", KEY)
+                .put("issuer", ISSUER);
+        
+        return new JacksonConfigContext(configNode);
     }
 
-    private ImmutableStrategyConfig strategyConfig(final boolean useJti) {
-        return ImmutableStrategyConfig.builder()
-                .tokenLife("5m")
-                .refreshTokenLife("20m")
-                .useJti(useJti)
-                .includePermissions(true)
-                .build();
+    private ConfigContext strategyConfig(final boolean useJti) {
+        final ObjectNode configNode = new ObjectNode(JsonNodeFactory.instance);
+
+        configNode.put("tokenLife", "5m")
+                .put("refreshTokenLife", "20m")
+                .put("useJti", useJti)
+                .put("includePermissions", true);
+
+        return new JacksonConfigContext(configNode);
     }
 
-    private AccessTokenProvider newProviderInstance(final ImmutableStrategyConfig strategyConfig) {
+    private AccessTokenProvider newProviderInstance(final ConfigContext strategyConfig) {
         jtiProvider = Mockito.mock(JtiProvider.class);
         accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
 
@@ -64,12 +68,12 @@ class AccessTokenProviderTest {
             return CompletableFuture.completedFuture(arg);
         });
 
-        return new AccessTokenProvider(accountTokensRepository, jwtConfig(strategyConfig), jtiProvider);
+        return new AccessTokenProvider(accountTokensRepository, jwtConfig(), strategyConfig, jtiProvider);
     }
 
     @Test
     void generate() {
-        final ImmutableStrategyConfig strategyConfig = strategyConfig(false);
+        final ConfigContext strategyConfig = strategyConfig(false);
 
         final AccessTokenProvider accessTokenProvider = newProviderInstance(strategyConfig);
 
@@ -95,7 +99,7 @@ class AccessTokenProviderTest {
 
     @Test
     void generateWithJti() {
-        final ImmutableStrategyConfig strategyConfig = strategyConfig(true);
+        final ConfigContext strategyConfig = strategyConfig(true);
 
         final AccessTokenProvider accessTokenProvider = newProviderInstance(strategyConfig);
 

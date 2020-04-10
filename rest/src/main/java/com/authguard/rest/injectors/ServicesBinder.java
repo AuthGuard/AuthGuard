@@ -1,20 +1,22 @@
 package com.authguard.rest.injectors;
 
+import com.authguard.config.ConfigContext;
 import com.authguard.service.*;
-import com.authguard.service.exchange.*;
 import com.authguard.service.impl.*;
 import com.authguard.service.passwords.SecurePassword;
 import com.google.inject.AbstractModule;
 import com.authguard.service.passwords.SCryptPassword;
-import com.google.inject.Provides;
-
-import java.util.Arrays;
-import java.util.List;
 
 public class ServicesBinder extends AbstractModule {
+    private final ConfigContext configContext;
+
+    public ServicesBinder(final ConfigContext configContext) {
+        this.configContext = configContext;
+    }
 
     @Override
     public void configure() {
+        // essential bindings
         bind(CredentialsService.class).to(CredentialsServiceImpl.class);
         bind(AuthenticationService.class).to(AuthenticationServiceImpl.class);
         bind(ExchangeService.class).to(ExchangeServiceImpl.class);
@@ -23,19 +25,18 @@ public class ServicesBinder extends AbstractModule {
         bind(ApiKeysService.class).to(ApiKeysServiceImpl.class);
         bind(PermissionsService.class).to(PermissionsServiceImpl.class);
         bind(RolesService.class).to(RolesServiceImpl.class);
-        bind(VerificationMessageService.class).to(VerificationMessageServiceImpl.class);
-        bind(VerificationService.class).to(VerificationServiceImpl.class);
-        bind(OtpService.class).to(OtpServiceImpl.class);
 
+        // should be conditional on property value
         bind(SecurePassword.class).to(SCryptPassword.class);
-    }
 
-    @Provides
-    List<Exchange> exchanges(final BasicToAccessToken basicToAccessToken,
-                             final BasicToIdToken basicToIdToken,
-                             final BasicToOtp basicToOtp,
-                             final RefreshToAccessToken refreshToAccessToken) {
-        return Arrays.asList(basicToAccessToken, basicToIdToken, basicToOtp, refreshToAccessToken);
-    }
+        // optional bindings
+        if (configContext.get("verification") != null) {
+            bind(VerificationMessageService.class).to(VerificationMessageServiceImpl.class);
+            bind(VerificationService.class).to(VerificationServiceImpl.class);
+        }
 
+        if (configContext.get("otp") != null) {
+            bind(OtpService.class).to(OtpServiceImpl.class);
+        }
+    }
 }

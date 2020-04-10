@@ -7,16 +7,12 @@ import org.immutables.value.Value;
 import java.util.List;
 
 @Value.Immutable
-@Value.Style(
-        validationMethod = Value.Style.ValidationMethod.NONE,
-        jdkOnly = true
-)
-@JsonDeserialize(as = ImmutableJwtConfig.class)
-public interface JwtConfig {
+@ConfigStyle
+@JsonDeserialize(as = JwtConfig.class)
+public interface JwtConfigInterface {
     String getAlgorithm();
     String getKey();
     String getIssuer();
     List<String> getAllowedAlgorithms();
     List<String> getTrustedIssuers();
-    ImmutableStrategiesConfig getStrategies();
 }

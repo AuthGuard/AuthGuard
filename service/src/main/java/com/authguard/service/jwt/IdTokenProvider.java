@@ -2,26 +2,31 @@ package com.authguard.service.jwt;
 
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.authguard.config.ConfigContext;
 import com.authguard.service.config.ConfigParser;
+import com.authguard.service.config.StrategyConfig;
 import com.google.inject.Inject;
 import com.authguard.service.AuthProvider;
-import com.authguard.service.config.ImmutableJwtConfig;
-import com.authguard.service.config.ImmutableStrategyConfig;
+import com.authguard.service.config.JwtConfig;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AppBO;
 import com.authguard.service.model.TokenBuilderBO;
 import com.authguard.service.model.TokensBO;
+import com.google.inject.name.Named;
 
 public class IdTokenProvider implements AuthProvider {
     private final Algorithm algorithm;
     private final JwtGenerator jwtGenerator;
-    private final ImmutableStrategyConfig strategy;
+    private final StrategyConfig strategy;
 
     @Inject
-    public IdTokenProvider(final ImmutableJwtConfig jwtConfig) {
+    public IdTokenProvider(final @Named("jwt") ConfigContext jwtConfigContext,
+                           final @Named("idToken") ConfigContext idTokenConfigContext) {
+        final JwtConfig jwtConfig = jwtConfigContext.asConfigBean(JwtConfig.class);
+
         this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getKey());
         this.jwtGenerator = new JwtGenerator(jwtConfig);
-        this.strategy = jwtConfig.getStrategies().getIdToken();
+        this.strategy = idTokenConfigContext.asConfigBean(StrategyConfig.class);
     }
 
     @Override

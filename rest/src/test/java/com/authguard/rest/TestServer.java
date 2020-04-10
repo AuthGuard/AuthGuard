@@ -13,13 +13,14 @@ import java.io.File;
 class TestServer {
     private int port;
 
+    private final ConfigContext configContext;
     private final Injector injector;
     private final Javalin app;
 
     private Server server;
 
     TestServer() {
-        final ConfigContext configContext = new JacksonConfigContext(
+        this.configContext = new JacksonConfigContext(
                 new File(Application.class.getClassLoader().getResource("application.json").getFile())
         ).getSubContext(ConfigContext.ROOT_CONFIG_PROPERTY);
 
@@ -28,7 +29,7 @@ class TestServer {
     }
 
     void start() {
-        server = new Server(injector);
+        server = new Server(injector, configContext);
 
         this.port = app.port();
 

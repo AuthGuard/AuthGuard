@@ -2,7 +2,7 @@ package com.authguard.service.jwt;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
-import com.authguard.service.config.ImmutableJwtConfig;
+import com.authguard.service.config.JwtConfig;
 import com.authguard.service.model.AccountBO;
 
 import java.security.SecureRandom;
@@ -15,11 +15,11 @@ import java.util.Date;
 public class JwtGenerator {
     private static final int RANDOM_SIZE = 128;
 
-    private final ImmutableJwtConfig jwtConfig;
+    private final JwtConfig jwtConfig;
 
     private final SecureRandom secureRandom;
 
-    JwtGenerator(final ImmutableJwtConfig jwtConfig) {
+    JwtGenerator(final JwtConfig jwtConfig) {
         this.jwtConfig = jwtConfig;
 
         secureRandom = new SecureRandom();

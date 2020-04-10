@@ -1,7 +1,9 @@
 package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
+import com.authguard.service.ExchangeService;
 import com.authguard.service.config.ConfigParser;
+import com.authguard.service.config.OtpConfig;
 import com.authguard.service.mappers.ServiceMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -11,9 +13,7 @@ import com.authguard.emb.MessagePublisher;
 import com.authguard.emb.model.EventType;
 import com.authguard.emb.model.MessageMO;
 import com.authguard.service.AccountsService;
-import com.authguard.service.AuthProvider;
 import com.authguard.service.OtpService;
-import com.authguard.service.config.ImmutableOtpConfig;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.OneTimePasswordBO;
@@ -28,21 +28,21 @@ public class OtpServiceImpl implements OtpService {
     private final MessagePublisher emb;
     private final AccountsService accountsService;
     private final ServiceMapper serviceMapper;
-    private final AuthProvider authProvider;
-    private final ImmutableOtpConfig otpConfig;
+    private final ExchangeService exchangeService;
+    private final OtpConfig otpConfig;
 
     @Inject
     public OtpServiceImpl(final OtpRepository otpRepository, final MessagePublisher emb,
                           final AccountsService accountsService,
-                          @Named("authenticationTokenProvider") final AuthProvider authProvider,
+                          final ExchangeService exchangeService,
                           final ServiceMapper serviceMapper,
                           @Named("otp") final ConfigContext configContext) {
         this.otpRepository = otpRepository;
         this.emb = emb;
         this.accountsService = accountsService;
         this.serviceMapper = serviceMapper;
-        this.authProvider = authProvider;
-        this.otpConfig = configContext.asConfigBean(ImmutableOtpConfig.class);
+        this.exchangeService = exchangeService;
+        this.otpConfig = configContext.asConfigBean(OtpConfig.class);
     }
 
     @Override
@@ -84,7 +84,8 @@ public class OtpServiceImpl implements OtpService {
 
         if (generated.getPassword().equals(otp)) {
             return accountsService.getById(generated.getAccountId())
-                    .map(authProvider::generateToken)
+                    // TODO temporary until we have a proper exchange for OTPs
+                    .map(account -> exchangeService.exchange(passwordId + ":" + otp, "otp", "accessToken"))
                     .orElseThrow(() -> new ServiceAuthorizationException("Account " + generated.getAccountId()
                             + " doesn't exist"));
         } else {

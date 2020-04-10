@@ -3,7 +3,7 @@ package com.authguard.service.impl;
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.model.AccountDO;
 import com.authguard.service.VerificationMessageService;
-import com.authguard.service.config.ImmutableAccountConfig;
+import com.authguard.service.config.AccountConfig;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.mappers.ServiceMapper;
@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 public class AccountsServiceImpl implements AccountsService {
     private final AccountsRepository accountsRepository;
     private final PermissionsService permissionsService;
-    private final ImmutableAccountConfig accountConfig;
+    private final AccountConfig accountConfig;
     private final VerificationMessageService verificationMessageService;
     private final ServiceMapper serviceMapper;
 
@@ -43,7 +43,7 @@ public class AccountsServiceImpl implements AccountsService {
         this.permissionsService = permissionsService;
         this.verificationMessageService = verificationMessageService;
         this.serviceMapper = serviceMapper;
-        this.accountConfig = accountConfigContext.asConfigBean(ImmutableAccountConfig.class);
+        this.accountConfig = accountConfigContext.asConfigBean(AccountConfig.class);
 
         this.permissionsAggregator = new PermissionsAggregator(rolesService, permissionsService);
     }
