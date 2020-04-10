@@ -17,10 +17,18 @@
       "allowed": [
         {
           "from": "basic",
+          "to": "otp"
+        },
+        {
+          "from": "basic",
           "to": "accessToken"
         },
         {
           "from": "refresh",
+          "to": "accessToken"
+        },
+        {
+          "from": "otp",
           "to": "accessToken"
         }
       ]
