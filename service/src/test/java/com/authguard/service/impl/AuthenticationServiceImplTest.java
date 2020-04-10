@@ -2,7 +2,7 @@ package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.service.*;
-import com.authguard.service.config.ImmutableAuthenticationConfig;
+import com.authguard.service.config.AuthenticationConfig;
 import com.authguard.service.model.TokensBO;
 import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.AfterEach;
@@ -28,13 +28,13 @@ class AuthenticationServiceImplTest {
         exchangeService = Mockito.mock(ExchangeService.class);
         final ConfigContext configContext = Mockito.mock(ConfigContext.class);
 
-        final ImmutableAuthenticationConfig config = ImmutableAuthenticationConfig.builder()
+        final AuthenticationConfig config = AuthenticationConfig.builder()
                 .useOtp(false)
                 .generateToken("accessToken")
                 .build();
 
         Mockito.when(exchangeService.supportsExchange("basic", "accessToken")).thenReturn(true);
-        Mockito.when(configContext.asConfigBean(ImmutableAuthenticationConfig.class)).thenReturn(config);
+        Mockito.when(configContext.asConfigBean(AuthenticationConfig.class)).thenReturn(config);
 
         authenticationService = new AuthenticationServiceImpl(exchangeService, configContext);
     }

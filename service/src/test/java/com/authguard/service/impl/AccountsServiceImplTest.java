@@ -6,7 +6,7 @@ import com.authguard.dal.model.AccountEmailDO;
 import com.authguard.service.PermissionsService;
 import com.authguard.service.RolesService;
 import com.authguard.service.VerificationMessageService;
-import com.authguard.service.config.ImmutableAccountConfig;
+import com.authguard.service.config.AccountConfig;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.dal.model.AccountDO;
 import com.authguard.service.mappers.ServiceMapperImpl;
@@ -52,11 +52,11 @@ class AccountsServiceImplTest {
 
         final ConfigContext configContext = Mockito.mock(ConfigContext.class);
 
-        final ImmutableAccountConfig accountConfig = ImmutableAccountConfig.builder()
+        final AccountConfig accountConfig = AccountConfig.builder()
                 .verifyEmail(true)
                 .build();
 
-        Mockito.when(configContext.asConfigBean(ImmutableAccountConfig.class))
+        Mockito.when(configContext.asConfigBean(AccountConfig.class))
                 .thenReturn(accountConfig);
 
         accountService = new AccountsServiceImpl(accountsRepository, permissionsService,

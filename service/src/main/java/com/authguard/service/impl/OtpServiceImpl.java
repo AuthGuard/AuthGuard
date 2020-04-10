@@ -3,6 +3,7 @@ package com.authguard.service.impl;
 import com.authguard.config.ConfigContext;
 import com.authguard.service.ExchangeService;
 import com.authguard.service.config.ConfigParser;
+import com.authguard.service.config.OtpConfig;
 import com.authguard.service.mappers.ServiceMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -13,7 +14,6 @@ import com.authguard.emb.model.EventType;
 import com.authguard.emb.model.MessageMO;
 import com.authguard.service.AccountsService;
 import com.authguard.service.OtpService;
-import com.authguard.service.config.ImmutableOtpConfig;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.OneTimePasswordBO;
@@ -29,7 +29,7 @@ public class OtpServiceImpl implements OtpService {
     private final AccountsService accountsService;
     private final ServiceMapper serviceMapper;
     private final ExchangeService exchangeService;
-    private final ImmutableOtpConfig otpConfig;
+    private final OtpConfig otpConfig;
 
     @Inject
     public OtpServiceImpl(final OtpRepository otpRepository, final MessagePublisher emb,
@@ -42,7 +42,7 @@ public class OtpServiceImpl implements OtpService {
         this.accountsService = accountsService;
         this.serviceMapper = serviceMapper;
         this.exchangeService = exchangeService;
-        this.otpConfig = configContext.asConfigBean(ImmutableOtpConfig.class);
+        this.otpConfig = configContext.asConfigBean(OtpConfig.class);
     }
 
     @Override

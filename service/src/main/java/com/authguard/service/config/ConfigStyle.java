@@ -12,7 +12,9 @@ import java.lang.annotation.Target;
 @Value.Style(
         get = {"get*", "use*", "include*"},
         jdkOnly = true,
-        validationMethod = Value.Style.ValidationMethod.NONE
+        validationMethod = Value.Style.ValidationMethod.NONE,
+        typeAbstract = "*Interface",
+        typeImmutable = "*"
 )
 public @interface ConfigStyle {
 }

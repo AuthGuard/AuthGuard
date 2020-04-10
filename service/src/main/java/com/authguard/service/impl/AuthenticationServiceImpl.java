@@ -2,9 +2,9 @@ package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.service.*;
+import com.authguard.service.config.AuthenticationConfig;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.authguard.service.config.ImmutableAuthenticationConfig;
 import com.authguard.service.model.TokensBO;
 
 import java.util.Optional;
@@ -18,7 +18,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Inject
     public AuthenticationServiceImpl(final ExchangeService exchangeService,
                                      @Named("authentication") final ConfigContext authenticationConfig) {
-        final ImmutableAuthenticationConfig authenticationConfig1 = authenticationConfig.asConfigBean(ImmutableAuthenticationConfig.class);
+        final AuthenticationConfig authenticationConfig1 = authenticationConfig.asConfigBean(AuthenticationConfig.class);
         this.generateTokenType = authenticationConfig1.getGenerateToken();
 
         if (!exchangeService.supportsExchange(FROM_TOKEN_TYPE, this.generateTokenType)) {

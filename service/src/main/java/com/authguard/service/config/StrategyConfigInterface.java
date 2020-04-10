@@ -4,13 +4,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@Value.Style(
-        validationMethod = Value.Style.ValidationMethod.NONE,
-        jdkOnly = true,
-        get = {"get*", "use*", "include*"}
-)
-@JsonDeserialize(as = ImmutableStrategyConfig.class)
-public interface StrategyConfig {
+@ConfigStyle
+@JsonDeserialize(as = StrategyConfig.class)
+public interface StrategyConfigInterface {
     String getTokenLife();
     String getRefreshTokenLife();
 

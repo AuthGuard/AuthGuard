@@ -34,7 +34,7 @@ class JwtConfigTest {
 
 //    @Test
 //    void algorithm() {
-//        final JwtConfig jwtConfig = new JwtConfig(configContext);
+//        final JwtConfigInterface jwtConfig = new JwtConfigInterface(configContext);
 //
 //        final String algorithm = "HMAC256";
 //        final String key = "This is a test key";
@@ -50,7 +50,7 @@ class JwtConfigTest {
 //
 //    @Test
 //    void verifier() {
-//        final JwtConfig jwtConfig = new JwtConfig(configContext);
+//        final JwtConfigInterface jwtConfig = new JwtConfigInterface(configContext);
 //
 //        final String algorithm = "HMAC256";
 //        final String key = "This is a test key";
@@ -65,7 +65,7 @@ class JwtConfigTest {
 //
 //    @Test
 //    void issuer() {
-//        final JwtConfig jwtConfig = new JwtConfig(configContext);
+//        final JwtConfigInterface jwtConfig = new JwtConfigInterface(configContext);
 //
 //        final String issuer = easyRandom.nextObject(String.class);
 //
@@ -76,7 +76,7 @@ class JwtConfigTest {
 //
 //    @Test
 //    void useJti() {
-//        final JwtConfig jwtConfig = new JwtConfig(configContext);
+//        final JwtConfigInterface jwtConfig = new JwtConfigInterface(configContext);
 //
 //        final boolean useJti = easyRandom.nextBoolean();
 //
@@ -87,7 +87,7 @@ class JwtConfigTest {
 //
 //    @Test
 //    void tokenLife() {
-//        final JwtConfig jwtConfig = new JwtConfig(configContext);
+//        final JwtConfigInterface jwtConfig = new JwtConfigInterface(configContext);
 //
 //        final int amount = easyRandom.nextInt();
 //        final String tokenLife = amount + "m";
@@ -101,7 +101,7 @@ class JwtConfigTest {
 //
 //    @Test
 //    void refreshTokenLife() {
-//        final JwtConfig jwtConfig = new JwtConfig(configContext);
+//        final JwtConfigInterface jwtConfig = new JwtConfigInterface(configContext);
 //
 //        final int amount = easyRandom.nextInt();
 //        final String tokenLife = amount + "m";

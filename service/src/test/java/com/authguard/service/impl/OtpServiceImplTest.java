@@ -3,12 +3,11 @@ package com.authguard.service.impl;
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.OtpRepository;
 import com.authguard.service.AccountsService;
-import com.authguard.service.AuthProvider;
 import com.authguard.service.ExchangeService;
+import com.authguard.service.config.OtpConfig;
 import com.authguard.service.config.OtpMode;
 import com.authguard.dal.model.OneTimePasswordDO;
 import com.authguard.emb.MessagePublisher;
-import com.authguard.service.config.ImmutableOtpConfig;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.mappers.ServiceMapperImpl;
 import com.authguard.service.model.AccountBO;
@@ -38,7 +37,7 @@ class OtpServiceImplTest {
 
     private OtpServiceImpl otpService;
 
-    void setup(final ImmutableOtpConfig otpConfig) {
+    void setup(final OtpConfig otpConfig) {
         mockOtpRepository = Mockito.mock(OtpRepository.class);
         mockAccountsService = Mockito.mock(AccountsService.class);
         mockExchangeService = Mockito.mock(ExchangeService.class);
@@ -46,7 +45,7 @@ class OtpServiceImplTest {
 
         final ConfigContext configContext = Mockito.mock(ConfigContext.class);
 
-        Mockito.when(configContext.asConfigBean(ImmutableOtpConfig.class)).thenReturn(otpConfig);
+        Mockito.when(configContext.asConfigBean(OtpConfig.class)).thenReturn(otpConfig);
 
         otpService = new OtpServiceImpl(mockOtpRepository, mockMessagePublisher,
                 mockAccountsService, mockExchangeService, new ServiceMapperImpl(), configContext);
@@ -54,7 +53,7 @@ class OtpServiceImplTest {
 
     @Test
     void generateAlphanumeric() {
-        final ImmutableOtpConfig otpConfig = ImmutableOtpConfig.builder()
+        final OtpConfig otpConfig = OtpConfig.builder()
                 .mode(OtpMode.ALPHANUMERIC)
                 .length(6)
                 .lifeTime("5m")
@@ -88,7 +87,7 @@ class OtpServiceImplTest {
 
     @Test
     void generateAlphabetic() {
-        final ImmutableOtpConfig otpConfig = ImmutableOtpConfig.builder()
+        final OtpConfig otpConfig = OtpConfig.builder()
                 .mode(OtpMode.ALPHABETIC)
                 .length(6)
                 .lifeTime("5m")
@@ -126,7 +125,7 @@ class OtpServiceImplTest {
 
     @Test
     void generateNumeric() {
-        final ImmutableOtpConfig otpConfig = ImmutableOtpConfig.builder()
+        final OtpConfig otpConfig = OtpConfig.builder()
                 .mode(OtpMode.NUMERIC)
                 .length(6)
                 .lifeTime("5m")
@@ -164,7 +163,7 @@ class OtpServiceImplTest {
 
     @Test
     void authenticate() {
-        final ImmutableOtpConfig otpConfig = ImmutableOtpConfig.builder()
+        final OtpConfig otpConfig = OtpConfig.builder()
                 .mode(OtpMode.ALPHANUMERIC)
                 .length(6)
                 .lifeTime("5m")
@@ -188,7 +187,7 @@ class OtpServiceImplTest {
 
     @Test
     void authenticateWrongPassword() {
-        final ImmutableOtpConfig otpConfig = ImmutableOtpConfig.builder()
+        final OtpConfig otpConfig = OtpConfig.builder()
                 .mode(OtpMode.ALPHANUMERIC)
                 .length(6)
                 .lifeTime("5m")
@@ -211,7 +210,7 @@ class OtpServiceImplTest {
 
     @Test
     void authenticateAccountNotFound() {
-        final ImmutableOtpConfig otpConfig = ImmutableOtpConfig.builder()
+        final OtpConfig otpConfig = OtpConfig.builder()
                 .mode(OtpMode.ALPHANUMERIC)
                 .length(6)
                 .lifeTime("5m")
@@ -230,7 +229,7 @@ class OtpServiceImplTest {
 
     @Test
     void authenticatePasswordNotFound() {
-        final ImmutableOtpConfig otpConfig = ImmutableOtpConfig.builder()
+        final OtpConfig otpConfig = OtpConfig.builder()
                 .mode(OtpMode.ALPHANUMERIC)
                 .length(6)
                 .lifeTime("5m")

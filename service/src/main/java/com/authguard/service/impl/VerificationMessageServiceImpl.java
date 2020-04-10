@@ -7,7 +7,7 @@ import com.authguard.external.email.EmailProvider;
 import com.authguard.external.email.ImmutableEmail;
 import com.authguard.service.VerificationMessageService;
 import com.authguard.service.config.ConfigParser;
-import com.authguard.service.config.ImmutableVerificationConfig;
+import com.authguard.service.config.VerificationConfig;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AccountEmailBO;
 import com.google.inject.Inject;
@@ -24,7 +24,7 @@ public class VerificationMessageServiceImpl implements VerificationMessageServic
 
     private final EmailProvider emailProvider;
     private final AccountTokensRepository accountTokensRepository;
-    private final ImmutableVerificationConfig verificationConfig;
+    private final VerificationConfig verificationConfig;
 
     @Inject
     public VerificationMessageServiceImpl(final EmailProvider emailProvider,
@@ -32,7 +32,7 @@ public class VerificationMessageServiceImpl implements VerificationMessageServic
                                           final @Named("verification") ConfigContext configContext) {
         this.emailProvider = emailProvider;
         this.accountTokensRepository = accountTokensRepository;
-        this.verificationConfig = configContext.asConfigBean(ImmutableVerificationConfig.class);
+        this.verificationConfig = configContext.asConfigBean(VerificationConfig.class);
     }
 
     @Override

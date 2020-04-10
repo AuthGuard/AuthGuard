@@ -5,8 +5,9 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @ConfigStyle
-@JsonDeserialize(as = ImmutableAuthenticationConfig.class)
-public interface AuthenticationConfig {
-    String getGenerateToken();
-    boolean getUseOtp();
+@JsonDeserialize(as = OtpConfig.class)
+public interface OtpConfigInterface {
+    OtpMode getMode();
+    int getLength();
+    String getLifeTime();
 }

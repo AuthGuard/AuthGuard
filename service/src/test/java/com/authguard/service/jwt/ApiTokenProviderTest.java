@@ -4,7 +4,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.authguard.service.config.ImmutableJwtConfig;
+import com.authguard.service.config.JwtConfig;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AppBO;
 import com.authguard.service.model.TokensBO;
@@ -12,9 +12,6 @@ import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-
-import java.util.Optional;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -25,8 +22,8 @@ class ApiTokenProviderTest {
 
     private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
 
-    private ImmutableJwtConfig jwtConfig() {
-        return ImmutableJwtConfig.builder()
+    private JwtConfig jwtConfig() {
+        return JwtConfig.builder()
                 .algorithm(ALGORITHM)
                 .key(KEY)
                 .build();

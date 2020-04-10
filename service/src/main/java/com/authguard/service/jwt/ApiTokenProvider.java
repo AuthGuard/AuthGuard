@@ -5,7 +5,7 @@ import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.google.inject.Inject;
 import com.authguard.service.AuthProvider;
-import com.authguard.service.config.ImmutableJwtConfig;
+import com.authguard.service.config.JwtConfig;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AppBO;
 import com.authguard.service.model.TokenBuilderBO;
@@ -17,7 +17,7 @@ public class ApiTokenProvider implements AuthProvider {
     private final JtiProvider jti;
 
     @Inject
-    public ApiTokenProvider(final ImmutableJwtConfig jwtConfig, final JtiProvider jti) {
+    public ApiTokenProvider(final JwtConfig jwtConfig, final JtiProvider jti) {
         this.jti = jti;
 
         this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getKey());

@@ -5,8 +5,8 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @ConfigStyle
-@JsonDeserialize(as = ImmutableAccountConfig.class)
-public interface AccountConfig {
+@JsonDeserialize(as = AccountConfig.class)
+public interface AccountConfigInterface {
     boolean requireEmail();
     boolean requirePhoneNumber();
     boolean verifyEmail();

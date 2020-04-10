@@ -6,7 +6,7 @@ import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.external.email.EmailProvider;
 import com.authguard.external.email.ImmutableEmail;
 import com.authguard.service.VerificationMessageService;
-import com.authguard.service.config.ImmutableVerificationConfig;
+import com.authguard.service.config.VerificationConfig;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AccountEmailBO;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,12 +33,12 @@ class VerificationMessageServiceImplTest {
         mockAccountTokensRepository = Mockito.mock(AccountTokensRepository.class);
 
         final ConfigContext configContext = Mockito.mock(ConfigContext.class);
-        final ImmutableVerificationConfig verificationConfig = ImmutableVerificationConfig.builder()
+        final VerificationConfig verificationConfig = VerificationConfig.builder()
                 .verifyEmailUrlTemplate("http://link/${token}")
                 .emailVerificationLife("1d")
                 .build();
 
-        Mockito.when(configContext.asConfigBean(ImmutableVerificationConfig.class))
+        Mockito.when(configContext.asConfigBean(VerificationConfig.class))
                 .thenReturn(verificationConfig);
 
         verificationMessageService = new VerificationMessageServiceImpl(mockEmailProvider, mockAccountTokensRepository, configContext);
