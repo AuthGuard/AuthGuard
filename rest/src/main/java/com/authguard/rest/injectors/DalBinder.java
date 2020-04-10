@@ -1,20 +1,24 @@
 package com.authguard.rest.injectors;
 
+import com.authguard.config.ConfigContext;
 import com.authguard.dal.*;
-import com.google.inject.AbstractModule;
+
 import java.util.Collection;
 import com.authguard.injection.ClassSearch;
+import com.google.inject.AbstractModule;
 
 public class DalBinder extends AbstractModule {
-
+    private final ConfigContext configContext;
     private final DynamicBinder dynamicBinder;
 
-    public DalBinder(final Collection<String> searchPackages) {
-        dynamicBinder = new DynamicBinder(new ClassSearch(searchPackages));
+    public DalBinder(final ConfigContext configContext, final Collection<String> searchPackages) {
+        this.configContext = configContext;
+        this.dynamicBinder = new DynamicBinder(new ClassSearch(searchPackages));
     }
 
     @Override
     public void configure() {
+        // essential bindings
         bind(CredentialsRepository.class).to(dynamicBinder.findBindingsFor(CredentialsRepository.class));
         bind(CredentialsAuditRepository.class).to(dynamicBinder.findBindingsFor(CredentialsAuditRepository.class));
         bind(AccountsRepository.class).to(dynamicBinder.findBindingsFor(AccountsRepository.class));
@@ -23,6 +27,10 @@ public class DalBinder extends AbstractModule {
         bind(PermissionsRepository.class).to(dynamicBinder.findBindingsFor(PermissionsRepository.class));
         bind(RolesRepository.class).to(dynamicBinder.findBindingsFor(RolesRepository.class));
         bind(AccountTokensRepository.class).to(dynamicBinder.findBindingsFor(AccountTokensRepository.class));
-        bind(OtpRepository.class).to(dynamicBinder.findBindingsFor(OtpRepository.class));
+
+        // optional bindings
+        if (configContext.get("otp") != null) {
+            bind(OtpRepository.class).to(dynamicBinder.findBindingsFor(OtpRepository.class));
+        }
     }
 }

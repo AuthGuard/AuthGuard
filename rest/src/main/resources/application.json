@@ -4,6 +4,7 @@
       "packages": [
       "com.authguard"
     ]},
+
     "jwt": {
       "algorithm": "HMAC256",
       "key": "FKvL11DI5rwgt51QgB3CVob3oWYrFNBzF0ROvu9Yaj8",
@@ -29,6 +30,20 @@
       "allowedAlgorithms": ["HMAC256"],
       "trustedIssuers": ["self"]
     },
+
+    "exchange": {
+      "allowed": [
+        {
+          "from": "basic",
+          "to": "accessToken"
+        },
+        {
+          "from": "refresh",
+          "to": "accessToken"
+        }
+      ]
+    },
+
     "authentication": {
       "strategy": "accessToken",
       "generateToken": "accessToken",

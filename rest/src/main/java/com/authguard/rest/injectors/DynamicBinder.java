@@ -6,6 +6,8 @@ import com.authguard.injection.InjectionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Set;
+
 class DynamicBinder {
     private final Logger log = LoggerFactory.getLogger(DynamicBinder.class);
 
@@ -27,5 +29,13 @@ class DynamicBinder {
             System.exit(-1);
             return null;
         }
+    }
+
+    <T> Set<Class<? extends T>> findAllBindingsFor(final Class<T> clazz) {
+        final Set<Class<? extends T>> impl = classSearch.findAllImplementationClass(clazz);
+
+        log.debug("Found bindings for {} -> {}", clazz, impl);
+
+        return impl;
     }
 }
