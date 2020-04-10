@@ -19,7 +19,7 @@ public class BasicToAccessToken implements Exchange {
     }
 
     @Override
-    public Optional<TokensBO> exchangeToken(String basicToken) {
+    public Optional<TokensBO> exchangeToken(final String basicToken) {
         return basicAuth.authenticateAndGetAccount(basicToken)
                 .map(accessTokenProvider::generateToken);
     }
