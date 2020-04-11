@@ -84,12 +84,12 @@ public class AccountsServiceImpl implements AccountsService {
                 .map(serviceMapper::toBO)
                 .orElseThrow(ServiceNotFoundException::new);
 
-        final List<AccountEmailBO> newEmails = existing.getAccountEmails().stream()
+        final List<AccountEmailBO> newEmails = existing.getEmails().stream()
                 .filter(email -> !emails.contains(email.getEmail()))
                 .collect(Collectors.toList());
 
         final AccountBO updated = AccountBO.builder().from(existing)
-                .accountEmails(newEmails)
+                .emails(newEmails)
                 .build();
 
         return update(updated);
@@ -102,7 +102,7 @@ public class AccountsServiceImpl implements AccountsService {
                 .map(serviceMapper::toBO)
                 .orElseThrow(ServiceNotFoundException::new);
 
-        final List<String> currentEmails = existing.getAccountEmails().stream()
+        final List<String> currentEmails = existing.getEmails().stream()
                 .map(AccountEmailBO::getEmail)
                 .collect(Collectors.toList());
 
@@ -111,7 +111,7 @@ public class AccountsServiceImpl implements AccountsService {
                 .collect(Collectors.toList());
 
         final AccountBO updated = AccountBO.builder().from(existing)
-                .addAllAccountEmails(newEmails)
+                .addAllEmails(newEmails)
                 .build();
 
         return update(updated);

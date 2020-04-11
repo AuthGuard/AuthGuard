@@ -6,16 +6,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import java.time.OffsetDateTime;
-
 @Data
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public abstract class AbstractDO {
-    private String id;
-    private boolean deleted;
-    private OffsetDateTime createdAt;
-    private OffsetDateTime lastModified;
+public class ApiKeyDO extends AbstractDO {
+    private String jti;
+    private String key;
+    private String appId;
 }

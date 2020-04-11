@@ -2,7 +2,7 @@ package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.AccountsRepository;
-import com.authguard.dal.model.AccountEmailDO;
+import com.authguard.dal.model.EmailDO;
 import com.authguard.service.PermissionsService;
 import com.authguard.service.RolesService;
 import com.authguard.service.VerificationMessageService;
@@ -86,15 +86,15 @@ class AccountsServiceImplTest {
 
     @Test
     void getById() {
-        final AccountDO account = RANDOM.nextObject(AccountDO.class)
-                .withDeleted(false);
+        final AccountDO account = RANDOM.nextObject(AccountDO.class);
+        account.setDeleted(false);
 
         Mockito.when(accountsRepository.getById(any())).thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         final Optional<AccountBO> retrieved = accountService.getById("");
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(account, "permissions", "accountEmails");
+        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(account, "permissions", "emails");
         assertThat(retrieved.get().getPermissions()).containsExactly(account.getPermissions().stream()
                 .map(permissionDO -> PermissionBO.builder()
                         .group(permissionDO.getGroup())
@@ -222,14 +222,14 @@ class AccountsServiceImplTest {
 
         assertThat(updated).isPresent();
         assertThat(updated.get()).isNotEqualTo(account);
-        assertThat(updated.get().getAccountEmails()).contains(emails.toArray(new AccountEmailBO[0]));
+        assertThat(updated.get().getEmails()).contains(emails.toArray(new AccountEmailBO[0]));
     }
 
     @Test
     void removeEmails() {
         final AccountDO account = RANDOM.nextObject(AccountDO.class);
-        final List<String> currentEmails = account.getAccountEmails().stream()
-                .map(AccountEmailDO::getEmail)
+        final List<String> currentEmails = account.getEmails().stream()
+                .map(EmailDO::getEmail)
                 .collect(Collectors.toList());
 
         Mockito.when(accountsRepository.getById(account.getId()))
@@ -246,7 +246,7 @@ class AccountsServiceImplTest {
 
         assertThat(updated).isPresent();
         assertThat(updated.get()).isNotEqualTo(account);
-        assertThat(updated.get().getAccountEmails().stream().map(AccountEmailBO::getEmail).collect(Collectors.toList()))
+        assertThat(updated.get().getEmails().stream().map(AccountEmailBO::getEmail).collect(Collectors.toList()))
                 .doesNotContain(emailsToRemove.toArray(new String[0]));
     }
 }

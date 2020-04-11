@@ -54,8 +54,8 @@ public class RefreshToAccessToken implements Exchange {
     private boolean validateExpirationDateTime(final AccountTokenDO accountToken) {
         final ZonedDateTime now = ZonedDateTime.now();
 
-        if (now.isAfter(accountToken.expiresAt())) {
-            throw new ServiceAuthorizationException("Refresh token " + accountToken.expiresAt()
+        if (now.isAfter(accountToken.getExpiresAt())) {
+            throw new ServiceAuthorizationException("Refresh token " + accountToken.getExpiresAt()
                     + " for account " + accountToken.getAssociatedAccountId() + " has expired");
         }
 

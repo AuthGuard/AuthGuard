@@ -48,7 +48,7 @@ class VerificationMessageServiceImplTest {
     void sendVerificationEmailAllUnverified() {
         final AccountBO account = AccountBO.builder()
                 .id("account-id")
-                .accountEmails(Arrays.asList(
+                .emails(Arrays.asList(
                         AccountEmailBO.builder()
                                 .email("verified")
                                 .verified(true)
@@ -75,7 +75,7 @@ class VerificationMessageServiceImplTest {
         assertThat(accountToken.getAssociatedAccountId()).isEqualTo(account.getId());
         assertThat(accountToken.getAdditionalInformation()).isEqualTo("unverified");
         assertThat(accountToken.getToken()).isNotNull();
-        assertThat(accountToken.expiresAt()).isNotNull();
+        assertThat(accountToken.getExpiresAt()).isNotNull();
 
         assertThat(email.getTo()).isEqualTo("unverified");
         assertThat(email.getBody()).isNull();

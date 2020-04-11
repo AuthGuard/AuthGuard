@@ -160,13 +160,13 @@ class CredentialsServiceImplTest {
         assertThat(auditArgs.size()).isEqualTo(2);
 
         assertThat(auditArgs.get(0)).isNotNull();
-        assertThat(auditArgs.get(0).getCredentialId()).isEqualTo(credentials.getId());
+        assertThat(auditArgs.get(0).getCredentialsId()).isEqualTo(credentials.getId());
         assertThat(auditArgs.get(0).getAction()).isEqualTo(CredentialsAuditDO.Action.ATTEMPT);
         assertThat(auditArgs.get(0).getUsername()).isEqualTo(credentials.getUsername());
         assertThat(auditArgs.get(0).getPassword()).isNull();
 
         assertThat(auditArgs.get(0)).isNotNull();
-        assertThat(auditArgs.get(1).getCredentialId()).isEqualTo(credentials.getId());
+        assertThat(auditArgs.get(1).getCredentialsId()).isEqualTo(credentials.getId());
         assertThat(auditArgs.get(1).getAction()).isEqualTo(CredentialsAuditDO.Action.UPDATED);
         assertThat(auditArgs.get(1).getUsername()).isEqualTo(credentials.getUsername());
         assertThat(auditArgs.get(1).getPassword()).isNull();
@@ -200,13 +200,13 @@ class CredentialsServiceImplTest {
         assertThat(auditArgs.size()).isEqualTo(2);
 
         assertThat(auditArgs.get(0)).isNotNull();
-        assertThat(auditArgs.get(0).getCredentialId()).isEqualTo(credentials.getId());
+        assertThat(auditArgs.get(0).getCredentialsId()).isEqualTo(credentials.getId());
         assertThat(auditArgs.get(0).getAction()).isEqualTo(CredentialsAuditDO.Action.ATTEMPT);
         assertThat(auditArgs.get(0).getUsername()).isEqualTo(credentials.getUsername());
         assertThat(auditArgs.get(0).getPassword()).isNull();
 
         assertThat(auditArgs.get(0)).isNotNull();
-        assertThat(auditArgs.get(1).getCredentialId()).isEqualTo(credentials.getId());
+        assertThat(auditArgs.get(1).getCredentialsId()).isEqualTo(credentials.getId());
         assertThat(auditArgs.get(1).getAction()).isEqualTo(CredentialsAuditDO.Action.UPDATED);
         assertThat(auditArgs.get(1).getUsername()).isEqualTo(credentials.getUsername());
         assertThat(auditArgs.get(1).getPassword()).isNotNull();

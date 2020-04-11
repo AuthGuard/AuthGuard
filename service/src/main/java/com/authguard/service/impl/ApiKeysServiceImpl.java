@@ -1,5 +1,6 @@
 package com.authguard.service.impl;
 
+import com.authguard.dal.model.ApiKeyDO;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.jwt.ApiTokenProvider;
 import com.authguard.service.mappers.ServiceMapper;
@@ -39,9 +40,11 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     @Override
     public String generateApiKey(final AppBO app) {
         final TokensBO token = tokenProvider.generateToken(app);
+        final ApiKeyDO keyDO = serviceMapper.toDO(token, app);
 
-        keysRepository.save(serviceMapper.toDO(token, app)
-                .withId(UUID.randomUUID().toString()));
+        keyDO.setId(UUID.randomUUID().toString());
+
+        keysRepository.save(serviceMapper.toDO(token, app));
 
         return token.getToken();
     }

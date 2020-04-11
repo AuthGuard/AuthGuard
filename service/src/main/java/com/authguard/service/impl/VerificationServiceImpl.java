@@ -30,25 +30,25 @@ public class VerificationServiceImpl implements VerificationService {
     public void verifyEmail(final String verificationToken) {
         final AccountTokenDO accountToken = accountTokensRepository.getByToken(verificationToken)
                 .join()
-                .orElseThrow(() -> new ServiceNotFoundException("Account token " + verificationToken + " does not exist"));
+                .orElseThrow(() -> new ServiceNotFoundException("AccountDO token " + verificationToken + " does not exist"));
 
         if (accountToken.getAdditionalInformation() == null
                 || !(accountToken.getAdditionalInformation() instanceof String)) {
             throw new ServiceException("Invalid account token: no valid additional information");
         }
 
-        if (accountToken.expiresAt().isBefore(ZonedDateTime.now())) {
+        if (accountToken.getExpiresAt().isBefore(ZonedDateTime.now())) {
             throw new ServiceException("Token " + verificationToken + " has expired");
         }
 
         final String verifiedEmail = (String) accountToken.getAdditionalInformation();
         final AccountBO account = accountsService.getById(accountToken.getAssociatedAccountId())
-                .orElseThrow(() -> new ServiceNotFoundException("Account " + accountToken.getAssociatedAccountId() + " does not exist"));
+                .orElseThrow(() -> new ServiceNotFoundException("AccountDO " + accountToken.getAssociatedAccountId() + " does not exist"));
 
         final List<AccountEmailBO> updatedEmails = new ArrayList<>();
         boolean emailFound = false;
 
-        for (final AccountEmailBO email : account.getAccountEmails()) {
+        for (final AccountEmailBO email : account.getEmails()) {
             if (email.getEmail().equals(verifiedEmail)) {
                 updatedEmails.add(AccountEmailBO.builder().from(email).verified(true).build());
                 emailFound = true;
@@ -58,11 +58,11 @@ public class VerificationServiceImpl implements VerificationService {
         }
 
         if (!emailFound) {
-            throw new ServiceException("Account " + account.getId() + " does not contain email " + verifiedEmail);
+            throw new ServiceException("AccountDO " + account.getId() + " does not contain email " + verifiedEmail);
         }
 
         final AccountBO updated = AccountBO.builder().from(account)
-                .accountEmails(updatedEmails)
+                .emails(updatedEmails)
                 .build();
 
         accountsService.update(updated);
