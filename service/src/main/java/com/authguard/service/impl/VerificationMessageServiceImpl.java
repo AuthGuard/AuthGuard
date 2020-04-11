@@ -37,7 +37,7 @@ public class VerificationMessageServiceImpl implements VerificationMessageServic
 
     @Override
     public void sendVerificationEmail(final AccountBO account) {
-        final List<String> unverifiedEmails = account.getAccountEmails().stream()
+        final List<String> unverifiedEmails = account.getEmails().stream()
                 .filter(accountEmailBO -> !accountEmailBO.isVerified())
                 .map(AccountEmailBO::getEmail)
                 .collect(Collectors.toList());

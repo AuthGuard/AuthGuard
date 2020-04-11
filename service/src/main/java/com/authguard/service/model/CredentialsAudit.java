@@ -6,7 +6,7 @@ import org.immutables.value.Value;
 @BOStyle
 public interface CredentialsAudit {
     String getId();
-    String getCredentialId();
+    String getCredentialsId();
     Action getAction();
     String getUsername();
     HashedPasswordBO getPassword();

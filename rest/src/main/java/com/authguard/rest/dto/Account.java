@@ -15,7 +15,7 @@ public interface Account {
     List<PermissionDTO> getPermissions();
     List<String> getScopes();
     List<String> getRoles();
-    List<AccountEmailDTO> getAccountEmails();
+    List<AccountEmailDTO> getEmails();
     boolean isActive();
     boolean isDeleted();
 }

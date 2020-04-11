@@ -136,7 +136,7 @@ public class CredentialsServiceImpl implements CredentialsService {
     private void storeAuditRecord(final CredentialsBO credentials, final CredentialsAudit.Action action) {
         final CredentialsAuditBO audit = CredentialsAuditBO.builder()
                 .id("")
-                .credentialId(credentials.getId())
+                .credentialsId(credentials.getId())
                 .action(action)
                 .username(credentials.getUsername())
                 .password(credentials.getHashedPassword())

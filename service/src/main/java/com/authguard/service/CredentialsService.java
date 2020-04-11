@@ -6,7 +6,7 @@ import com.authguard.service.model.CredentialsBO;
 import java.util.Optional;
 
 /**
- * Credentials service interface.
+ * CredentialsDO service interface.
  *
  * @see CredentialsServiceImpl
  */

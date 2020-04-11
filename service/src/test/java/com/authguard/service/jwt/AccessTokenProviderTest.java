@@ -91,7 +91,7 @@ class AccessTokenProviderTest {
 
         assertThat(accountTokenCaptor.getValue().getAssociatedAccountId()).isEqualTo(account.getId());
         assertThat(accountTokenCaptor.getValue().getToken()).isEqualTo(tokens.getRefreshToken());
-        assertThat(accountTokenCaptor.getValue().expiresAt()).isNotNull()
+        assertThat(accountTokenCaptor.getValue().getExpiresAt()).isNotNull()
                 .isAfter(ZonedDateTime.now());
 
         verifyToken(tokens.getToken(), account.getId(), null, null, null);

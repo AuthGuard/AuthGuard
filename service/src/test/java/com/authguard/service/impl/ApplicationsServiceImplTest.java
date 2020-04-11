@@ -56,8 +56,9 @@ class ApplicationsServiceImplTest {
 
     @Test
     void getById() {
-        final AppDO app = random.nextObject(AppDO.class)
-                .withDeleted(false);
+        final AppDO app = random.nextObject(AppDO.class);
+
+        app.setDeleted(false);
 
         Mockito.when(applicationsRepository.getById(any())).thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
