@@ -4,9 +4,7 @@ package com.authguard.service.exchange.helpers;
 import com.authguard.service.*;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.ServiceException;
-import com.authguard.service.model.AccountBO;
-import com.authguard.service.model.CredentialsBO;
-import com.authguard.service.model.HashedPasswordBO;
+import com.authguard.service.model.*;
 import com.authguard.service.passwords.SecurePassword;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jeasy.random.EasyRandom;
@@ -55,7 +53,11 @@ class BasicAuthTest {
         final String authorization = "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class).withUsername(username);
+        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class)
+                .withIdentifiers(UserIdentifierBO.builder()
+                        .identifier(username)
+                        .type(UserIdentifier.Type.USERNAME)
+                        .build());
         final HashedPasswordBO hashedPasswordBO = HashedPasswordBO.builder()
                 .password(credentials.getHashedPassword().getPassword())
                 .salt(credentials.getHashedPassword().getSalt())
@@ -87,7 +89,11 @@ class BasicAuthTest {
         final String password = "password";
         final String authorization = "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class).withUsername(username);
+        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class)
+                .withIdentifiers(UserIdentifierBO.builder()
+                        .identifier(username)
+                        .type(UserIdentifier.Type.USERNAME)
+                        .build());
         final HashedPasswordBO hashedPasswordBO = HashedPasswordBO.builder()
                 .password(credentials.getHashedPassword().getPassword())
                 .salt(credentials.getHashedPassword().getSalt())

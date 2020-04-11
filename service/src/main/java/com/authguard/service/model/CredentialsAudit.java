@@ -8,11 +8,14 @@ public interface CredentialsAudit {
     String getId();
     String getCredentialsId();
     Action getAction();
-    String getUsername();
+    CredentialsBO getBefore();
+    CredentialsBO getAfter();
+    UserIdentifierBO getIdentifier();
     HashedPasswordBO getPassword();
 
     enum Action {
         ATTEMPT,
-        UPDATED
+        UPDATED,
+        DELETED
     }
 }

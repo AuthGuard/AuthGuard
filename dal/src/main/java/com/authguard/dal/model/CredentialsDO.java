@@ -5,12 +5,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
 public class CredentialsDO extends AbstractDO {
     private String accountId;
-    private String username;
+    private List<UserIdentifierDO> identifiers;
     private PasswordDO hashedPassword;
 }

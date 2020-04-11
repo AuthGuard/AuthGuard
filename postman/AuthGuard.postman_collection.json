@@ -88,7 +88,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"accountId\": \"{{accountId}}\",\n\t\"username\": \"username\",\n\t\"plainPassword\": \"password\"\n}",
+							"raw": "{\n\t\"accountId\": \"{{accountId}}\",\n\t\"identifiers\": [\n\t\t{\n\t\t\t\"identifier\": \"username\",\n\t\t\t\"type\": \"USERNAME\"\n\t\t}\n\t],\n\t\"plainPassword\": \"password\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -441,7 +441,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"passwordId\": \"{{otp-id}}\",\n\t\"password\": \"271609\"\n}"
+							"raw": "{\n\t\"passwordId\": \"{{otp-id}}\",\n\t\"password\": \"768033\"\n}"
 						},
 						"url": {
 							"raw": "{{authguard}}/otp/verify",
