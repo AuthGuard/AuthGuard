@@ -14,6 +14,5 @@ import java.util.List;
 public class CredentialsDO extends AbstractDO {
     private String accountId;
     private List<UserIdentifierDO> identifiers;
-    private String username;
     private PasswordDO hashedPassword;
 }

@@ -10,7 +10,6 @@ public interface Credentials {
     String getId();
     String getAccountId();
     List<UserIdentifierBO> getIdentifiers();
-    String getUsername();
     String getPlainPassword();
     HashedPasswordBO getHashedPassword();
 }

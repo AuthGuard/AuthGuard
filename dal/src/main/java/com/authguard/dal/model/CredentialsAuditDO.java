@@ -12,7 +12,6 @@ import lombok.experimental.SuperBuilder;
 public class CredentialsAuditDO extends AbstractDO {
     private Action action;
     private String credentialsId;
-    private String username;
     private UserIdentifierDO identifier;
     private PasswordDO password;
 

@@ -75,7 +75,7 @@ class CredentialsServiceImplTest {
     void createDuplicateUsername() {
         final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class);
 
-        Mockito.when(credentialsRepository.findByIdentifier(credentials.getUsername()))
+        Mockito.when(credentialsRepository.findByIdentifier(any()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(CredentialsDO.builder().build())));
 
         assertThatThrownBy(() -> credentialsService.create(credentials)).isInstanceOf(ServiceConflictException.class);
@@ -148,7 +148,6 @@ class CredentialsServiceImplTest {
         final Optional<CredentialsBO> result = credentialsService.update(update);
 
         assertThat(result).isPresent();
-        assertThat(result.get().getUsername()).isEqualTo(update.getUsername());
         assertThat(result.get().getHashedPassword()).isNull();
         assertThat(result.get().getPlainPassword()).isNull();
 
@@ -163,13 +162,11 @@ class CredentialsServiceImplTest {
         assertThat(auditArgs.get(0)).isNotNull();
         assertThat(auditArgs.get(0).getCredentialsId()).isEqualTo(credentials.getId());
         assertThat(auditArgs.get(0).getAction()).isEqualTo(CredentialsAuditDO.Action.ATTEMPT);
-        assertThat(auditArgs.get(0).getUsername()).isEqualTo(credentials.getUsername());
         assertThat(auditArgs.get(0).getPassword()).isNull();
 
         assertThat(auditArgs.get(0)).isNotNull();
         assertThat(auditArgs.get(1).getCredentialsId()).isEqualTo(credentials.getId());
         assertThat(auditArgs.get(1).getAction()).isEqualTo(CredentialsAuditDO.Action.UPDATED);
-        assertThat(auditArgs.get(1).getUsername()).isEqualTo(credentials.getUsername());
         assertThat(auditArgs.get(1).getPassword()).isNull();
     }
 
@@ -188,7 +185,6 @@ class CredentialsServiceImplTest {
         final Optional<CredentialsBO> result = credentialsService.updatePassword(update);
 
         assertThat(result).isPresent();
-        assertThat(result.get().getUsername()).isEqualTo(update.getUsername());
         assertThat(result.get().getHashedPassword()).isNull();
         assertThat(result.get().getPlainPassword()).isNull();
 
@@ -203,13 +199,11 @@ class CredentialsServiceImplTest {
         assertThat(auditArgs.get(0)).isNotNull();
         assertThat(auditArgs.get(0).getCredentialsId()).isEqualTo(credentials.getId());
         assertThat(auditArgs.get(0).getAction()).isEqualTo(CredentialsAuditDO.Action.ATTEMPT);
-        assertThat(auditArgs.get(0).getUsername()).isEqualTo(credentials.getUsername());
         assertThat(auditArgs.get(0).getPassword()).isNull();
 
         assertThat(auditArgs.get(0)).isNotNull();
         assertThat(auditArgs.get(1).getCredentialsId()).isEqualTo(credentials.getId());
         assertThat(auditArgs.get(1).getAction()).isEqualTo(CredentialsAuditDO.Action.UPDATED);
-        assertThat(auditArgs.get(1).getUsername()).isEqualTo(credentials.getUsername());
         assertThat(auditArgs.get(1).getPassword()).isNotNull();
     }
 
@@ -217,8 +211,10 @@ class CredentialsServiceImplTest {
     void updateDuplicateUsername() {
         final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class);
 
-        Mockito.when(credentialsRepository.findByIdentifier(credentials.getUsername()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(CredentialsDO.builder().build())));
+        Mockito.when(credentialsRepository.findByIdentifier(any()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(CredentialsDO.builder()
+                        .accountId("")
+                        .build())));
 
         assertThatThrownBy(() -> credentialsService.update(credentials)).isInstanceOf(ServiceConflictException.class);
     }

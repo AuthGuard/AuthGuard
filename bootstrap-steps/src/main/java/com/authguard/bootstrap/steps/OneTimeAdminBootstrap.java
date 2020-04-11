@@ -6,6 +6,8 @@ import com.authguard.service.AccountsService;
 import com.authguard.service.CredentialsService;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.CredentialsBO;
+import com.authguard.service.model.UserIdentifier;
+import com.authguard.service.model.UserIdentifierBO;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.slf4j.Logger;
@@ -41,7 +43,7 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
             final CredentialsBO createdCredentials = credentialsService
                     .create(oneTimeAdminCredentials(createdAccount.getId()));
 
-            log.info("A one-time admin account was created with username {}", createdCredentials.getUsername());
+            log.info("A one-time admin account was created with {}", createdCredentials.getIdentifiers());
         }
     }
 
@@ -58,7 +60,10 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
 
         return CredentialsBO.builder()
                 .accountId(accountId)
-                .username(username)
+                .addIdentifiers(UserIdentifierBO.builder()
+                        .identifier(username)
+                        .type(UserIdentifier.Type.USERNAME)
+                        .build())
                 .plainPassword(password)
                 .build();
     }
