@@ -68,14 +68,14 @@ public class CredentialsServiceImpl implements CredentialsService {
 
     @Override
     public Optional<CredentialsBO> getByUsername(final String username) {
-        return credentialsRepository.findByUsername(username)
+        return credentialsRepository.findByIdentifier(username)
                 .thenApply(optional -> optional.map(serviceMapper::toBO).map(this::removeSensitiveInformation))
                 .join();
     }
 
     @Override
     public Optional<CredentialsBO> getByUsernameUnsafe(final String username) {
-        return credentialsRepository.findByUsername(username)
+        return credentialsRepository.findByIdentifier(username)
                 .thenApply(optional -> optional.map(serviceMapper::toBO))
                 .join();
     }
@@ -146,7 +146,7 @@ public class CredentialsServiceImpl implements CredentialsService {
     }
 
     private void ensureNoDuplicate(final CredentialsBO credentials) {
-        credentialsRepository.findByUsername(credentials.getUsername())
+        credentialsRepository.findByIdentifier(credentials.getUsername())
                 .join()
                 .ifPresent(ignored -> { throw new ServiceConflictException("Username already exists"); });
     }
