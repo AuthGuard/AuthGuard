@@ -30,6 +30,18 @@
         {
           "from": "otp",
           "to": "accessToken"
+        },
+        {
+          "from": "basic",
+          "to": "session"
+        },
+        {
+          "from": "otp",
+          "to": "session"
+        },
+        {
+          "from": "session",
+          "to": "accountId"
         }
       ]
     },
@@ -53,7 +65,7 @@
     },
 
     "authentication": {
-      "generateToken": "accessToken",
+      "generateToken": "session",
       "useOtp": true
     },
 
@@ -76,6 +88,11 @@
     "verification": {
       "verifyEmailUrlTemplate": "http://gateway/authguard/verify/email?token=${token}",
       "emailVerificationLife": "1d"
+    },
+
+    "sessions": {
+      "randomSize": 128,
+      "lifeTime": "20m"
     }
   }
 }

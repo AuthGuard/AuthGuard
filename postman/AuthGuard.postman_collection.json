@@ -457,52 +457,6 @@
 					"response": []
 				},
 				{
-					"name": "authorize",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "a562f372-ee7d-4fd8-a3a3-4b892dcb9490",
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"let response = pm.response.json();",
-									"pm.environment.set(\"refreshToken\", response.refreshToken);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\t\"authorization\": \"Bearer {{idToken}}\"\n}"
-						},
-						"url": {
-							"raw": "{{authguard}}/auth/authorize",
-							"host": [
-								"{{authguard}}"
-							],
-							"path": [
-								"auth",
-								"authorize"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "refresh",
 					"event": [
 						{
@@ -568,6 +522,122 @@
 							""
 						]
 					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "account auth sessions",
+			"item": [
+				{
+					"name": "login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "33e436a4-babd-49e2-afca-ff7f95166f15",
+								"exec": [
+									"pm.test(\"Status code is 200\", () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has correct type\", () => {",
+									"    const response = pm.response.json();",
+									"    ",
+									"    pm.expect(response.type).to.equal(\"session\");",
+									"    pm.environment.set(\"session-id\", response.token);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"authorization\": \"Basic dXNlcm5hbWU6cGFzc3dvcmQ=\"\n}"
+						},
+						"url": {
+							"raw": "{{authguard}}/auth/authenticate",
+							"host": [
+								"{{authguard}}"
+							],
+							"path": [
+								"auth",
+								"authenticate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "verify session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a562f372-ee7d-4fd8-a3a3-4b892dcb9490",
+								"exec": [
+									"pm.test(\"Status code is 200\", () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has correct type\", () => {",
+									"    const response = pm.response.json();",
+									"    ",
+									"    pm.expect(response.type).to.equal(\"accountId\");",
+									"    pm.expect(response.token).to.equal(pm.environment.get(\"accountId\"));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"authorization\": \"{{session-id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{authguard}}/auth/exchange?from=session&to=accountId",
+							"host": [
+								"{{authguard}}"
+							],
+							"path": [
+								"auth",
+								"exchange"
+							],
+							"query": [
+								{
+									"key": "from",
+									"value": "session"
+								},
+								{
+									"key": "to",
+									"value": "accountId"
+								}
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
