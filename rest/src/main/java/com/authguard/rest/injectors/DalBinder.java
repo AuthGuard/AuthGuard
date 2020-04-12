@@ -32,5 +32,9 @@ public class DalBinder extends AbstractModule {
         if (configContext.get("otp") != null) {
             bind(OtpRepository.class).to(dynamicBinder.findBindingsFor(OtpRepository.class));
         }
+
+        if (configContext.get("sessions") != null) {
+            bind(SessionsRepository.class).to(dynamicBinder.findBindingsFor(SessionsRepository.class));
+        }
     }
 }

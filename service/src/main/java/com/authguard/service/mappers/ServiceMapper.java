@@ -33,4 +33,7 @@ public interface ServiceMapper {
 
     OneTimePasswordDO toDO(OneTimePasswordBO oneTimePasswordBO);
     OneTimePasswordBO toBO(OneTimePasswordDO oneTimePasswordDO);
+
+    SessionDO toDO(SessionBO sessionBO);
+    SessionBO toBO(SessionDO sessionDO);
 }
