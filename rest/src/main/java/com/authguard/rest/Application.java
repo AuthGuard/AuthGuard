@@ -20,11 +20,10 @@ public class Application {
 
     public static void main(final String[] args) {
         // config
-        final ConfigContext configContext = new JacksonConfigContext(
-                new File(Application.class.getClassLoader().getResource("application.json").getFile())
-        ).getSubContext(ConfigContext.ROOT_CONFIG_PROPERTY);
+        final ConfigContext configContext = new ConfigurationLoader().load();
 
         log.info("Initialized configuration context");
+        log.debug("Loaded configuration: {}", configContext);
 
         // class search
         final Collection<String> searchPackages = configContext.getSubContext("injection")
