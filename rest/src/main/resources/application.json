@@ -42,6 +42,14 @@
         {
           "from": "session",
           "to": "accountId"
+        },
+        {
+          "from": "basic",
+          "to": "passwordless"
+        },
+        {
+          "from": "passwordless",
+          "to": "accessToken"
         }
       ]
     },
@@ -65,7 +73,7 @@
     },
 
     "authentication": {
-      "generateToken": "session",
+      "generateToken": "passwordless",
       "useOtp": true
     },
 
@@ -78,6 +86,11 @@
       "lifeTime": "5m",
       "mode": "NUMERIC",
       "length": 6,
+      "generateToken": "accessToken"
+    },
+    "passwordless": {
+      "tokenLife": "1h",
+      "randomSize": 128,
       "generateToken": "accessToken"
     },
 

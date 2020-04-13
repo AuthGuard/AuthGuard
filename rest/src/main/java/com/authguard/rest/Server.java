@@ -57,6 +57,10 @@ class Server {
             if (configContext.get("verification") != null) {
                 path("/verification", injector.getInstance(VerificationRoute.class));
             }
+
+            if (configContext.get("passwordless") != null) {
+                path("/passwordless", injector.getInstance(PasswordlessRoute.class));
+            }
         });
 
         // if we failed to process a request body
