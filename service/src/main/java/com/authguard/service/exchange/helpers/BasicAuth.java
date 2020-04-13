@@ -35,6 +35,16 @@ public class BasicAuth {
         }
     }
 
+    public Optional<AccountBO> getAccount(final String basicToken) {
+        final String[] parts = TokensUtils.parseAuthorization(basicToken);
+
+        if (parts[0].equals("Basic")) {
+            return handleBasicAuthenticationNoPassword(parts[1]);
+        } else {
+            throw new ServiceException("Unsupported authorization scheme");
+        }
+    }
+
     private Optional<AccountBO> handleBasicAuthentication(final String base64Credentials) {
         final String[] decoded = new String(Base64.getDecoder().decode(base64Credentials)).split(":");
 
@@ -46,6 +56,18 @@ public class BasicAuth {
         final String password = decoded[1];
 
         return verifyCredentials(username, password);
+    }
+
+    private Optional<AccountBO> handleBasicAuthenticationNoPassword(final String base64Credentials) {
+        final String[] decoded = new String(Base64.getDecoder().decode(base64Credentials)).split(":");
+
+        if (decoded.length != 1) {
+            throw new ServiceException("Invalid format for basic authentication");
+        }
+
+        final String username =  decoded[0];
+
+        return verifyCredentials(username);
     }
 
     private Optional<AccountBO> verifyCredentials(final String username, final String password) {
@@ -61,4 +83,11 @@ public class BasicAuth {
             return Optional.empty();
         }
     }
+
+    private Optional<AccountBO> verifyCredentials(final String username) {
+        return credentialsService.getByUsernameUnsafe(username)
+                .map(CredentialsBO::getAccountId)
+                .flatMap(accountsService::getById);
+    }
+
 }

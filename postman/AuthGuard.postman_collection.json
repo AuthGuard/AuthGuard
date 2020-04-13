@@ -643,6 +643,160 @@
 			"protocolProfileBehavior": {}
 		},
 		{
+			"name": "account auth passwordless",
+			"item": [
+				{
+					"name": "login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "33e436a4-babd-49e2-afca-ff7f95166f15",
+								"exec": [
+									"pm.test(\"Status code is 200\", () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has correct type\", () => {",
+									"    const response = pm.response.json();",
+									"    ",
+									"    pm.expect(response.type).to.equal(\"passwordless\");",
+									"    pm.expect(response.token).to.not.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"authorization\": \"Basic dXNlcm5hbWU6\"\n}"
+						},
+						"url": {
+							"raw": "{{authguard}}/auth/authenticate",
+							"host": [
+								"{{authguard}}"
+							],
+							"path": [
+								"auth",
+								"authenticate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "verify passwordless token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a562f372-ee7d-4fd8-a3a3-4b892dcb9490",
+								"exec": [
+									"pm.test(\"Status code is 200\", () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has correct type\", () => {",
+									"    const response = pm.response.json();",
+									"    ",
+									"    pm.expect(response.type).to.equal(\"accessToken\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"token\": \"PakLQ8YJKvx3Ye+N5N0MPI/LM5f08y8vMHUow9w4ZgZgBuVD4DkCohXL2SKj65HdjJBFjYsVPrNNc3ciRFvYlafbmFtsgJHKI417vbs3o5p9OnwP35B1bEhkWqEgmpr4YZ/kuGT7eWeT2K8WtyjcszR88PQEEob4lRkstDjA2Ns=\"\n}"
+						},
+						"url": {
+							"raw": "{{authguard}}/passwordless/verify",
+							"host": [
+								"{{authguard}}"
+							],
+							"path": [
+								"passwordless",
+								"verify"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "verify invalid passwordless token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a562f372-ee7d-4fd8-a3a3-4b892dcb9490",
+								"exec": [
+									"pm.test(\"Status code is 200\", () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has correct type\", () => {",
+									"    const response = pm.response.json();",
+									"    ",
+									"    pm.expect(response.message).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"token\": \"no chance this will be generated\"\n}"
+						},
+						"url": {
+							"raw": "{{authguard}}/passwordless/verify",
+							"host": [
+								"{{authguard}}"
+							],
+							"path": [
+								"passwordless",
+								"verify"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
 			"name": "application",
 			"item": [
 				{

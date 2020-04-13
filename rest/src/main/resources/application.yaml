@@ -33,6 +33,11 @@ authguard:
     length: 6
     generateToken: "accessToken"
 
+  passwordless:
+    tokenLife: "1h"
+    randomSize: 128
+    generateToken: "accessToken"
+
   authentication:
     generateToken: "otp"
 
@@ -42,3 +47,4 @@ authguard:
   verification:
     verifyEmailUrlTemplate: "http://gateway/authguard/verify/email?token=${token}"
     emailVerificationLife: "1d"
+
