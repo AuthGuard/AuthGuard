@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.File;
@@ -20,14 +19,12 @@ public class JacksonConfigContext implements ConfigContext {
         this.objectMapper = new ObjectMapper();
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        try {
-            rootNode = Optional.ofNullable(objectMapper.readTree(configFile))
-                    .filter(JsonNode::isObject)
-                    .map(node -> (ObjectNode) node)
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid JSON configuration"));
-        } catch (final IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        this.rootNode = readRootNode(configFile);
+    }
+
+    public JacksonConfigContext(final File configFile, final ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+        this.rootNode = readRootNode(configFile);
     }
 
     public JacksonConfigContext(final JsonNode rootNode) {
@@ -38,6 +35,17 @@ public class JacksonConfigContext implements ConfigContext {
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         this.rootNode = (ObjectNode) rootNode;
+    }
+
+    private ObjectNode readRootNode(final File configFile) {
+        try {
+            return Optional.ofNullable(objectMapper.readTree(configFile))
+                    .filter(JsonNode::isObject)
+                    .map(node -> (ObjectNode) node)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid configuration"));
+        } catch (final IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
@@ -93,5 +101,10 @@ public class JacksonConfigContext implements ConfigContext {
     @Override
     public Iterable<String> subContexts() {
         return rootNode::fieldNames;
+    }
+
+    @Override
+    public String toString() {
+        return rootNode.toString();
     }
 }

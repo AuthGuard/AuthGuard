@@ -1,0 +1,44 @@
+authguard:
+  injection:
+    packages: [ "com.authguard" ]
+
+  jwt:
+    algorithm: "HMAC256"
+    key: "FKvL11DI5rwgt51QgB3CVob3oWYrFNBzF0ROvu9Yaj8"
+    issuer: "AuthGuard"
+    allowedAlgorithms: ["HMAC256"]
+    trustedIssuers: ["self"]
+
+  exchange:
+    allowed:
+      - from: "basic"
+        to: "otp"
+      - from: "basic"
+        to: "accessToken"
+      - from: "refresh"
+        to: "accessToken"
+      - from: "otp"
+        to: "accessToken"
+
+  accessToken:
+    tokenLife: "5m"
+    refreshTokenLife: "1h"
+    useJti: true
+    includePermissions: true
+    includeRoles: true
+
+  otp:
+    lifeTime: "2m"
+    mode: "NUMERIC"
+    length: 6
+    generateToken: "accessToken"
+
+  authentication:
+    generateToken: "otp"
+
+  account:
+    verifyEmail: true
+
+  verification:
+    verifyEmailUrlTemplate: "http://gateway/authguard/verify/email?token=${token}"
+    emailVerificationLife: "1d"
