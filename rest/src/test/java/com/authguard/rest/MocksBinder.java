@@ -1,5 +1,6 @@
 package com.authguard.rest;
 
+import com.authguard.emb.AutoSubscribers;
 import com.authguard.service.*;
 import com.authguard.service.exchange.helpers.BasicAuth;
 import com.google.inject.AbstractModule;
@@ -21,5 +22,6 @@ public class MocksBinder extends AbstractModule {
         bind(VerificationMessageService.class).toInstance(Mockito.mock(VerificationMessageService.class));
         bind(ExchangeService.class).toInstance(Mockito.mock(ExchangeService.class));
         bind(BasicAuth.class).toInstance(Mockito.mock(BasicAuth.class));
+        bind(AutoSubscribers.class).toInstance(Mockito.mock(AutoSubscribers.class));
     }
 }

@@ -1,6 +1,7 @@
 package com.authguard.rest;
 
 import com.authguard.config.ConfigContext;
+import com.authguard.emb.AutoSubscribers;
 import com.authguard.rest.access.AuthorizationHandler;
 import com.authguard.rest.exceptions.Error;
 import com.authguard.rest.exceptions.ExceptionHandlers;
@@ -78,6 +79,9 @@ class Server {
             context.status(500)
                     .json(new Error("", message));
         });
+
+        // initialize subscribers
+        injector.getInstance(AutoSubscribers.class).subscribe();
 
         // run
         app.start(port);
