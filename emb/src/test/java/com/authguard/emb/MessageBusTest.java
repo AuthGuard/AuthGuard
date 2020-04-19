@@ -22,6 +22,7 @@ class MessageBusTest {
 
     private List<Message> receivedFromAccounts = new ArrayList<>();
     private List<Message> receivedFromAuth = new ArrayList<>();
+    private List<Message> receivedFromAll = new ArrayList<>();
 
     @BeforeAll
     void setup()  {
@@ -41,6 +42,7 @@ class MessageBusTest {
     void pubSub() throws InterruptedException {
         messageBus.subscribe("accounts", message -> receivedFromAccounts.add(message));
         messageBus.subscribe("auth", message -> receivedFromAuth.add(message));
+        messageBus.subscribe("*", message -> receivedFromAll.add(message));
 
         messageBus.publish("accounts", Message.builder()
                 .messageBody("Accounts Message")
@@ -65,5 +67,15 @@ class MessageBusTest {
                 .messageBody("Auth Message")
                 .bodyType(String.class)
                 .build());
+
+        assertThat(receivedFromAll).containsExactly(
+                Message.builder()
+                        .messageBody("Accounts Message")
+                        .bodyType(String.class)
+                        .build(),
+                Message.builder()
+                        .messageBody("Auth Message")
+                        .bodyType(String.class)
+                        .build());
     }
 }

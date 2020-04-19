@@ -7,10 +7,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -19,6 +16,8 @@ public class MessageBus {
     private final Map<String, MessagePublisher> channels;
     private final MessagePublisherFactory factory;
     private final boolean createIfMissing;
+
+    private final List<MessageSubscriber> globalSubscribers;
 
     @Inject
     public MessageBus(final MessagePublisherFactory factory,
@@ -40,6 +39,8 @@ public class MessageBus {
             this.createIfMissing = true;
             this.factory = factory;
         }
+
+        this.globalSubscribers = new ArrayList<>();
     }
 
     public void publish(final String channel, final Message message) {
@@ -50,13 +51,11 @@ public class MessageBus {
     }
 
     public void subscribe(final String channel, final MessageSubscriber subscriber) {
-        final MessagePublisher publisher = getNullable(channel);
-
-        if (publisher == null) {
-            throw new IllegalArgumentException("Cannot subscribe to non-existing channel " + channel);
+        if (isGlobal(channel)) {
+            subscribeToAll(subscriber);
+        } else {
+            subscribeToChannel(channel, subscriber);
         }
-
-        publisher.acceptSubscriber(subscriber);
     }
 
     public MessagePublisher get(final String channel) {
@@ -75,9 +74,34 @@ public class MessageBus {
 
             channels.put(channel, factory.create());
 
+            updateGlobalSubscribers(createdPublisher);
+
             return createdPublisher;
         } else {
             return publisher;
         }
+    }
+
+    private boolean isGlobal(final String channel) {
+        return channel.equals("*");
+    }
+
+    private void subscribeToChannel(final String channel, final MessageSubscriber subscriber) {
+        final MessagePublisher publisher = getNullable(channel);
+
+        if (publisher == null) {
+            throw new IllegalArgumentException("Cannot subscribe to non-existing channel " + channel);
+        }
+
+        publisher.acceptSubscriber(subscriber);
+    }
+
+    private void subscribeToAll(final MessageSubscriber subscriber) {
+        channels.values().forEach(publisher -> publisher.acceptSubscriber(subscriber));
+        globalSubscribers.add(subscriber); // so that we can add new channels if new channels were to be created
+    }
+
+    private void updateGlobalSubscribers(final MessagePublisher publisher) {
+        globalSubscribers.forEach(publisher::acceptSubscriber);
     }
 }
