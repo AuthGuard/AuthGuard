@@ -10,18 +10,18 @@ import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AppBO;
 import com.authguard.service.model.SessionBO;
 import com.authguard.service.model.TokensBO;
+import com.authguard.service.random.CryptographicRandom;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-import java.security.SecureRandom;
 import java.time.ZonedDateTime;
-import java.util.Base64;
 
 public class SessionProvider implements AuthProvider {
     private final SessionsRepository sessionsRepository;
-    private final SecureRandom secureRandom;
     private final SessionsConfig sessionsConfig;
     private final ServiceMapper serviceMapper;
+
+    private final CryptographicRandom random;
 
     @Inject
     public SessionProvider(final SessionsRepository sessionsRepository,
@@ -31,13 +31,13 @@ public class SessionProvider implements AuthProvider {
         this.sessionsConfig = sessionsConfig.asConfigBean(SessionsConfig.class);
         this.serviceMapper = serviceMapper;
 
-        this.secureRandom = new SecureRandom();
+        this.random = new CryptographicRandom();
     }
 
     @Override
     public TokensBO generateToken(final AccountBO account) {
         final SessionBO session = SessionBO.builder()
-                .id(randomSessionId())
+                .id(random.base64(sessionsConfig.getRandomSize()))
                 .accountId(account.getId())
                 .expiresAt(ZonedDateTime.now().plus(ConfigParser.parseDuration(sessionsConfig.getLifeTime())))
                 .build();
@@ -53,13 +53,5 @@ public class SessionProvider implements AuthProvider {
     @Override
     public TokensBO generateToken(final AppBO app) {
         throw new UnsupportedOperationException("Sessions cannot be generated for applications");
-    }
-
-    private String randomSessionId() {
-        final byte[] bytes = new byte[sessionsConfig.getRandomSize()];
-
-        secureRandom.nextBytes(bytes);
-
-        return Base64.getEncoder().encodeToString(bytes);
     }
 }

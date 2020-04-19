@@ -1,8 +1,8 @@
 package com.authguard.service.passwords;
 
 import com.authguard.service.model.HashedPasswordBO;
+import com.authguard.service.random.CryptographicRandom;
 
-import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
@@ -41,11 +41,8 @@ public abstract class AbstractSecurePassword implements SecurePassword {
     }
 
     private byte[] generateSalt() {
-        final byte[] saltBytes = new byte[saltSize];
-        final SecureRandom secureRandom = new SecureRandom();
+        final CryptographicRandom random = new CryptographicRandom();
 
-        secureRandom.nextBytes(saltBytes);
-
-        return saltBytes;
+        return random.bytes(saltSize);
     }
 }

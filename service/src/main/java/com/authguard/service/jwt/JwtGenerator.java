@@ -4,12 +4,11 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
 import com.authguard.service.config.JwtConfig;
 import com.authguard.service.model.AccountBO;
+import com.authguard.service.random.CryptographicRandom;
 
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Base64;
 import java.util.Date;
 
 public class JwtGenerator {
@@ -17,12 +16,12 @@ public class JwtGenerator {
 
     private final JwtConfig jwtConfig;
 
-    private final SecureRandom secureRandom;
+    private final CryptographicRandom random;
 
     JwtGenerator(final JwtConfig jwtConfig) {
         this.jwtConfig = jwtConfig;
 
-        secureRandom = new SecureRandom();
+        this.random = new CryptographicRandom();
     }
 
     JWTCreator.Builder generateUnsignedToken(final AccountBO account, final Duration tokenLife) {
@@ -40,10 +39,6 @@ public class JwtGenerator {
     }
 
     String generateRandomRefreshToken() {
-        final byte[] bytes = new byte[RANDOM_SIZE];
-
-        secureRandom.nextBytes(bytes);
-
-        return Base64.getEncoder().encodeToString(bytes);
+        return random.base64(RANDOM_SIZE);
     }
 }
