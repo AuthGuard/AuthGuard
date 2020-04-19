@@ -20,9 +20,7 @@ class TestServer {
     private Server server;
 
     TestServer() {
-        this.configContext = new JacksonConfigContext(
-                new File(Application.class.getClassLoader().getResource("application.json").getFile())
-        ).getSubContext(ConfigContext.ROOT_CONFIG_PROPERTY);
+        this.configContext = new ConfigurationLoader().load();
 
         injector = Guice.createInjector(new MocksBinder(), new MappersBinder(), new ConfigBinder(configContext));
         app = Javalin.create();
