@@ -19,6 +19,14 @@ authguard:
         to: "accessToken"
       - from: "otp"
         to: "accessToken"
+      - from: "basic"
+        to: "authorizationCode"
+      - from: "authorizationCode"
+        to: "accessToken"
+      - from: "basic"
+        to: "passwordless"
+      - from: "passwordless"
+        to: "accessToken"
 
   accessToken:
     tokenLife: "5m"
@@ -38,8 +46,12 @@ authguard:
     randomSize: 128
     generateToken: "accessToken"
 
+  authorizationCode:
+    lifeTime: "5m"
+    randomSize: 128
+
   authentication:
-    generateToken: "otp"
+    generateToken: "authorizationCode"
 
   account:
     verifyEmail: true
@@ -48,3 +60,6 @@ authguard:
     verifyEmailUrlTemplate: "http://gateway/authguard/verify/email?token=${token}"
     emailVerificationLife: "1d"
 
+  oneTimeAdmin:
+    usernameVariable: "AUTHGUARD_OTA_USERNAME"
+    passwordVariable: "AUTHGUARD_OTA_PASSWORD"
