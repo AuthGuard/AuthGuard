@@ -11,7 +11,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.CLASS)
 @Value.Style(
         get = {"is*", "get*"},
-        typeImmutable = "*MO",
+        typeAbstract = "*Interface",
+        typeImmutable = "*",
         validationMethod = Value.Style.ValidationMethod.NONE,
         jdkOnly = true
 )

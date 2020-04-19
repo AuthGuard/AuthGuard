@@ -1,12 +1,12 @@
 package com.authguard.injection;
 
+import com.authguard.emb.model.Message;
 import com.google.inject.AbstractModule;
 import com.authguard.dal.AccountsRepository;
 import com.authguard.dal.PermissionsRepository;
 import com.authguard.dal.model.AccountDO;
 import com.authguard.dal.model.PermissionDO;
 import com.authguard.emb.MessagePublisher;
-import com.authguard.emb.model.MessageMO;
 import org.junit.jupiter.api.Test;
 import org.reflections.Reflections;
 import org.reflections.util.ClasspathHelper;
@@ -136,13 +136,4 @@ class ClassSearchTest {
     @InjectorModule(target = PermissionsRepository.class)
     private static class PermissionsRepositoryInjector extends AbstractModule {}
 
-    // --- EMB
-    private static class MessagePublisherImpl implements MessagePublisher {
-        @Override
-        public void publish(final MessageMO message) {
-
-        }
-    }
-
-    interface MessagePublisherNotImpl extends MessagePublisher {}
 }
