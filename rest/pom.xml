@@ -13,24 +13,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.authguard</groupId>
-            <artifactId>log-emb</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.authguard</groupId>
-            <artifactId>memory-dal</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.authguard</groupId>
-            <artifactId>log-external</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>io.javalin</groupId>
             <artifactId>javalin</artifactId>
             <version>${javalin.version}</version>
