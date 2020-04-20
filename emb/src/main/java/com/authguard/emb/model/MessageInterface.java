@@ -8,10 +8,11 @@ import java.time.OffsetDateTime;
 
 @Value.Immutable
 @MOStyle
-@JsonSerialize(as = MessageMO.class)
-@JsonDeserialize(as = MessageMO.class)
-public interface Message<T> {
+@JsonSerialize(as = Message.class)
+@JsonDeserialize(as = Message.class)
+public interface MessageInterface<T> {
     OffsetDateTime getTimestamp();
     EventType getEventType();
+    Class<?> getBodyType();
     T getMessageBody();
 }
