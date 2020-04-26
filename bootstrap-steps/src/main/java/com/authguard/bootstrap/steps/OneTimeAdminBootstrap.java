@@ -49,7 +49,7 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
 
     private AccountBO oneTimeAccount() {
         return AccountBO.builder()
-                .roles(Collections.singletonList("one-time-admin"))
+                .roles(Collections.singletonList("one_time_admin"))
                 .active(true)
                 .build();
     }
