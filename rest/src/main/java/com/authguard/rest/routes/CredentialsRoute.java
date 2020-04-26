@@ -1,10 +1,11 @@
 package com.authguard.rest.routes;
 
+import com.authguard.rest.access.ActorRoles;
+import com.authguard.rest.dto.CredentialsDTO;
+import com.authguard.service.CredentialsService;
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
-import com.authguard.rest.dto.CredentialsDTO;
-import com.authguard.service.CredentialsService;
 
 import java.util.Optional;
 
@@ -22,11 +23,11 @@ public class CredentialsRoute implements EndpointGroup {
 
     @Override
     public void addEndpoints() {
-        post("/", this::create);
-        put("/:id", this::update);
-        put("/:id/password", this::updatePassword);
-        get("/:id", this::getById);
-        delete("/:id", this::removeById);
+        post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin"));
+        put("/:id", this::update, ActorRoles.adminClient());
+        put("/:id/password", this::updatePassword, ActorRoles.adminClient());
+        get("/:id", this::getById, ActorRoles.adminClient());
+        delete("/:id", this::removeById, ActorRoles.adminClient());
     }
 
     private void create(final Context context) {

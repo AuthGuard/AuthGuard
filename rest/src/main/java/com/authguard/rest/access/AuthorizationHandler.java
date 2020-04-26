@@ -1,6 +1,8 @@
 package com.authguard.rest.access;
 
+import com.authguard.service.ApiKeysService;
 import com.authguard.service.exchange.helpers.BasicAuth;
+import com.authguard.service.model.AppBO;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -12,10 +14,12 @@ import java.util.Optional;
 
 public class AuthorizationHandler implements Handler {
     private final BasicAuth basicAuth;
+    private final ApiKeysService apiKeysService;
 
     @Inject
-    public AuthorizationHandler(final BasicAuth basicAuth) {
+    public AuthorizationHandler(final BasicAuth basicAuth, final ApiKeysService apiKeysService) {
         this.basicAuth = basicAuth;
+        this.apiKeysService = apiKeysService;
     }
 
     @Override
@@ -43,7 +47,7 @@ public class AuthorizationHandler implements Handler {
                 break;
 
             case "Bearer":
-                context.status(401).result("Bearer actors are currently not supported");
+                populateBearerActor(context, authorization[1]);
                 return;
 
             default:
@@ -55,6 +59,13 @@ public class AuthorizationHandler implements Handler {
         final Optional<AccountBO> actorAccount = basicAuth.authenticateAndGetAccount("Basic " + base64Credentials);
 
         actorAccount.ifPresentOrElse(account -> context.attribute("actor", account),
+                () -> context.status(401).result(""));
+    }
+
+    private void populateBearerActor(final Context context, final String apiKey) {
+        final Optional<AppBO> actorApp = apiKeysService.validateApiKey(apiKey);
+
+        actorApp.ifPresentOrElse(app -> context.attribute("actor", app),
                 () -> context.status(401).result(""));
     }
 }

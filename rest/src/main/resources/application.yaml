@@ -63,3 +63,8 @@ authguard:
   oneTimeAdmin:
     usernameVariable: "AUTHGUARD_OTA_USERNAME"
     passwordVariable: "AUTHGUARD_OTA_PASSWORD"
+
+  emb:
+    channels:
+      - accounts
+      - auth

@@ -1,19 +1,19 @@
 package com.authguard.rest.routes;
 
+import com.authguard.rest.access.ActorRoles;
+import com.authguard.rest.dto.PermissionDTO;
+import com.authguard.service.PermissionsService;
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
-import com.authguard.rest.access.ActorRole;
-import com.authguard.rest.dto.PermissionDTO;
-import com.authguard.service.PermissionsService;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static io.javalin.apibuilder.ApiBuilder.*;
-import static io.javalin.core.security.SecurityUtil.roles;
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.post;
 
 public class PermissionsRoute implements EndpointGroup {
     private final PermissionsService permissionsService;
@@ -27,8 +27,8 @@ public class PermissionsRoute implements EndpointGroup {
 
     @Override
     public void addEndpoints() {
-        post("/permissions", this::createPermission, roles(ActorRole.of("admin")));
-        get("/permissions", this::getPermissions, roles(ActorRole.of("admin")));
+        post("/permissions", this::createPermission, ActorRoles.adminClient());
+        get("/permissions", this::getPermissions, ActorRoles.adminClient());
     }
 
     private void createPermission(final Context context) {
