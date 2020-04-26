@@ -30,15 +30,15 @@ public class ApplicationsServiceImpl implements ApplicationsService {
 
     @Override
     public AppBO create(final AppBO app) {
-        if (accountsService.getById(app.getParentAccountId()).isEmpty()) {
+        /*
+         * It's undecided whether an app should be under an
+         * account or not. So for now, we only check that the
+         * account exists if it's set.
+         */
+        if (app.getParentAccountId() != null && accountsService.getById(app.getParentAccountId()).isEmpty()) {
             throw new ServiceNotFoundException("No account with ID " + app.getParentAccountId() + " exists");
         }
 
-        /*
-         * It's undecided whether an app should be under an
-         * account or not. So for now, no check is done on
-         * the accountId.
-         */
         final AppDO appDO = serviceMapper.toDO(app.withId(UUID.randomUUID().toString()));
 
         return applicationsRepository.save(appDO)

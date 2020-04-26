@@ -3,6 +3,7 @@ package com.authguard.service.impl;
 import com.authguard.dal.model.ApiKeyDO;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.jwt.ApiTokenProvider;
+import com.authguard.service.jwt.ApiTokenVerifier;
 import com.authguard.service.mappers.ServiceMapper;
 import com.google.inject.Inject;
 import com.authguard.dal.ApiKeysRepository;
@@ -17,14 +18,17 @@ import java.util.UUID;
 public class ApiKeysServiceImpl implements ApiKeysService {
     private final ApplicationsService applicationsService;
     private final ApiTokenProvider tokenProvider;
+    private final ApiTokenVerifier tokenVerifier;
     private final ApiKeysRepository keysRepository;
     private final ServiceMapper serviceMapper;
 
     @Inject
     public ApiKeysServiceImpl(final ApplicationsService applicationsService, final ApiTokenProvider tokenProvider,
-                              final ApiKeysRepository keysRepository, final ServiceMapper serviceMapper) {
+                              final ApiTokenVerifier tokenVerifier, final ApiKeysRepository keysRepository,
+                              final ServiceMapper serviceMapper) {
         this.applicationsService = applicationsService;
         this.tokenProvider = tokenProvider;
+        this.tokenVerifier = tokenVerifier;
         this.keysRepository = keysRepository;
         this.serviceMapper = serviceMapper;
     }
@@ -50,7 +54,8 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     }
 
     @Override
-    public Optional<AppBO> validateApiKey() {
-        return Optional.empty();
+    public Optional<AppBO> validateApiKey(final String key) {
+        return tokenVerifier.verifyAccountToken(key)
+                .flatMap(applicationsService::getById);
     }
 }
