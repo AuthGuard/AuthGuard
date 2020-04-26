@@ -1,5 +1,6 @@
 package com.authguard.rest.routes;
 
+import com.authguard.rest.access.ActorRoles;
 import com.authguard.rest.dto.PasswordlessRequestDTO;
 import com.authguard.service.PasswordlessService;
 import com.authguard.service.model.TokensBO;
@@ -19,7 +20,7 @@ public class PasswordlessRoute implements EndpointGroup {
 
     @Override
     public void addEndpoints() {
-        post("/verify", this::verify);
+        post("/verify", this::verify, ActorRoles.adminClient());
     }
 
     private void verify(final Context context) {

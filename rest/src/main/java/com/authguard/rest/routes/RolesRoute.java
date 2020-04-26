@@ -1,22 +1,21 @@
 package com.authguard.rest.routes;
 
-import com.google.inject.Inject;
-import io.javalin.apibuilder.EndpointGroup;
-import io.javalin.http.Context;
-import com.authguard.rest.access.ActorRole;
+import com.authguard.rest.access.ActorRoles;
 import com.authguard.rest.dto.PermissionsRequestDTO;
 import com.authguard.rest.dto.RoleDTO;
 import com.authguard.service.RolesService;
 import com.authguard.service.model.PermissionBO;
 import com.authguard.service.model.RoleBO;
+import com.google.inject.Inject;
+import io.javalin.apibuilder.EndpointGroup;
+import io.javalin.http.Context;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.core.security.SecurityUtil.roles;
+import static io.javalin.apibuilder.ApiBuilder.post;
 
 public class RolesRoute implements EndpointGroup {
     private final RolesService rolesService;
@@ -30,10 +29,10 @@ public class RolesRoute implements EndpointGroup {
 
     @Override
     public void addEndpoints() {
-        post("/", this::create, roles(ActorRole.of("admin")));
-        get("/:name", this::getByName, roles(ActorRole.of("admin")));
-        post("/:name/permissions/grant", this::grantPermissions, roles(ActorRole.of("admin")));
-        post("/:name/permissions/revoke", this::revokePermissions, roles(ActorRole.of("admin")));
+        post("/", this::create, ActorRoles.adminClient());
+        get("/:name", this::getByName, ActorRoles.adminClient());
+        post("/:name/permissions/grant", this::grantPermissions, ActorRoles.adminClient());
+        post("/:name/permissions/revoke", this::revokePermissions, ActorRoles.adminClient());
     }
 
     private void create(final Context context) {

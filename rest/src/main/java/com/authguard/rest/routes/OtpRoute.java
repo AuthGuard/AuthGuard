@@ -1,5 +1,6 @@
 package com.authguard.rest.routes;
 
+import com.authguard.rest.access.ActorRoles;
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
@@ -21,7 +22,7 @@ public class OtpRoute implements EndpointGroup {
 
     @Override
     public void addEndpoints() {
-        post("/verify", this::verify);
+        post("/verify", this::verify, ActorRoles.adminClient());
     }
 
     private void verify(final Context context) {

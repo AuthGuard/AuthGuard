@@ -1,10 +1,11 @@
 package com.authguard.rest.routes;
 
+import com.authguard.rest.access.ActorRoles;
+import com.authguard.rest.dto.AppDTO;
+import com.authguard.service.ApplicationsService;
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
-import com.authguard.rest.dto.AppDTO;
-import com.authguard.service.ApplicationsService;
 
 import java.util.Optional;
 
@@ -22,10 +23,10 @@ public class ApplicationsRoute implements EndpointGroup {
 
     @Override
     public void addEndpoints() {
-        post("/", this::create);
-        get("/:id", this::getById);
-        put("/:id", this::update);
-        delete("/:id", this::deleteById);
+        post("/", this::create, ActorRoles.anyAdmin());
+        get("/:id", this::getById, ActorRoles.adminClient());
+        put("/:id", this::update, ActorRoles.adminClient());
+        delete("/:id", this::deleteById, ActorRoles.adminClient());
     }
 
     private void create(final Context context) {

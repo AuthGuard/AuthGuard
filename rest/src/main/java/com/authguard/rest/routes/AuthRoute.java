@@ -1,5 +1,6 @@
 package com.authguard.rest.routes;
 
+import com.authguard.rest.access.ActorRoles;
 import com.authguard.service.ExchangeService;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
@@ -28,8 +29,8 @@ public class AuthRoute implements EndpointGroup {
 
     @Override
     public void addEndpoints() {
-        post("/authenticate", this::authenticate);
-        post("/exchange", this::exchange);
+        post("/authenticate", this::authenticate, ActorRoles.adminClient());
+        post("/exchange", this::exchange, ActorRoles.adminClient());
     }
 
     private void authenticate(final Context context) {

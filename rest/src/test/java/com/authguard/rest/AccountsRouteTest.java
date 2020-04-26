@@ -5,10 +5,7 @@ import io.restassured.response.ValidatableResponse;
 import com.authguard.rest.dto.AccountDTO;
 import com.authguard.service.AccountsService;
 import com.authguard.service.model.AccountBO;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
 
 import java.util.UUID;
@@ -38,6 +35,7 @@ class AccountsRouteTest extends AbstractRouteTest {
     }
 
     @Test
+    @Disabled
     void create() {
         final AccountDTO accountDTO = randomObject(AccountDTO.class);
         final AccountBO accountBO = mapper().toBO(accountDTO);

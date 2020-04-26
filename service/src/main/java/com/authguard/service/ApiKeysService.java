@@ -9,5 +9,5 @@ public interface ApiKeysService {
 
     String generateApiKey(AppBO app);
 
-    Optional<AppBO> validateApiKey();
+    Optional<AppBO> validateApiKey(String key);
 }
