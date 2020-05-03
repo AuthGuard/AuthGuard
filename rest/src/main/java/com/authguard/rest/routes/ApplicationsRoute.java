@@ -25,6 +25,7 @@ public class ApplicationsRoute implements EndpointGroup {
     public void addEndpoints() {
         post("/", this::create, ActorRoles.anyAdmin());
         get("/:id", this::getById, ActorRoles.adminClient());
+        get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
         put("/:id", this::update, ActorRoles.adminClient());
         delete("/:id", this::deleteById, ActorRoles.adminClient());
     }
@@ -45,6 +46,19 @@ public class ApplicationsRoute implements EndpointGroup {
     }
 
     private void getById(final Context context) {
+        final String applicationId = context.pathParam("id");
+
+        final Optional<AppDTO> application = applicationsService.getById(applicationId)
+                .map(restMapper::toDTO);
+
+        if (application.isPresent()) {
+            context.status(200).json(application.get());
+        } else {
+            context.status(404);
+        }
+    }
+
+    private void getByExternalId(final Context context) {
         final String applicationId = context.pathParam("id");
 
         final Optional<AppDTO> application = applicationsService.getById(applicationId)

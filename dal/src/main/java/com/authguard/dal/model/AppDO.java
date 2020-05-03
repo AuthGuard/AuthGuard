@@ -12,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @SuperBuilder
 public class AppDO extends AbstractDO {
+    private String externalId;
     private String name;
     private String parentAccountId;
     private List<String> roles;

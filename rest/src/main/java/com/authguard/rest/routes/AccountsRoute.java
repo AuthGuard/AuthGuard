@@ -34,6 +34,7 @@ public class AccountsRoute implements EndpointGroup {
     public void addEndpoints() {
         post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin"));
         get("/:id", this::getById, ActorRoles.adminClient());
+        get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
         post("/:id/permission/grant", this::grantPermissions, ActorRoles.adminClient());
         post("/:id/permission/revoke", this::revokePermissions, ActorRoles.adminClient());
         get("/:id/apps", this::getApps, ActorRoles.adminClient());
@@ -57,6 +58,19 @@ public class AccountsRoute implements EndpointGroup {
         final String accountId = context.pathParam("id");
 
         final Optional<AccountDTO> account = accountsService.getById(accountId)
+                .map(restMapper::toDTO);
+
+        if (account.isPresent()) {
+            context.status(200).json(account.get());
+        } else {
+            context.status(404);
+        }
+    }
+
+    private void getByExternalId(final Context context) {
+        final String accountId = context.pathParam("id");
+
+        final Optional<AccountDTO> account = accountsService.getByExternalId(accountId)
                 .map(restMapper::toDTO);
 
         if (account.isPresent()) {

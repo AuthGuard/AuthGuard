@@ -89,6 +89,10 @@ public class AccessTokenProvider implements AuthProvider {
             jwtBuilder.withArrayClaim("scopes", account.getScopes().toArray(new String[0]));
         }
 
+        if (strategy.getIncludeExternalId()) {
+            jwtBuilder.withClaim("eid", account.getExternalId());
+        }
+
         return tokenBuilder.builder(jwtBuilder).build();
     }
 
