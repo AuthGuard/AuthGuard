@@ -50,6 +50,10 @@ public class IdTokenProvider implements AuthProvider {
         final JWTCreator.Builder jwtBuilder = jwtGenerator
                 .generateUnsignedToken(account, ConfigParser.parseDuration(strategy.getTokenLife()));
 
+        if (account.getExternalId() != null) {
+            jwtBuilder.withClaim("eid", account.getExternalId());
+        }
+
         return TokenBuilderBO.builder()
                 .builder(jwtBuilder)
                 .build();

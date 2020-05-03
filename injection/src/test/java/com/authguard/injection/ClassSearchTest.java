@@ -1,12 +1,10 @@
 package com.authguard.injection;
 
-import com.authguard.emb.model.Message;
 import com.google.inject.AbstractModule;
 import com.authguard.dal.AccountsRepository;
 import com.authguard.dal.PermissionsRepository;
 import com.authguard.dal.model.AccountDO;
 import com.authguard.dal.model.PermissionDO;
-import com.authguard.emb.MessagePublisher;
 import org.junit.jupiter.api.Test;
 import org.reflections.Reflections;
 import org.reflections.util.ClasspathHelper;
@@ -78,6 +76,11 @@ class ClassSearchTest {
 
         @Override
         public CompletableFuture<Optional<AccountDO>> getById(final String accountId) {
+            return null;
+        }
+
+        @Override
+        public CompletableFuture<Optional<AccountDO>> getByExternalId(final String externalId) {
             return null;
         }
 
