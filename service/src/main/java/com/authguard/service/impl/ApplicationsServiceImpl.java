@@ -54,6 +54,13 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
+    public Optional<AppBO> getByExternalId(final String externalId) {
+        return applicationsRepository.getById(externalId)
+                .thenApply(optional -> optional.map(serviceMapper::toBO))
+                .join();
+    }
+
+    @Override
     public Optional<AppBO> update(final AppBO app) {
         final AppDO appDO = serviceMapper.toDO(app);
 

@@ -71,6 +71,13 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
+    public Optional<AccountBO> getByExternalId(final String externalId) {
+        return accountsRepository.getByExternalId(externalId)
+                .join()
+                .map(serviceMapper::toBO);
+    }
+
+    @Override
     public Optional<AccountBO> update(final AccountBO account) {
         return accountsRepository.update(serviceMapper.toDO(account))
                 .join()

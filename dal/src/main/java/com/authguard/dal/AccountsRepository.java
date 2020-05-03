@@ -9,6 +9,7 @@ import java.util.concurrent.CompletableFuture;
 public interface AccountsRepository {
     CompletableFuture<AccountDO> save(AccountDO account);
     CompletableFuture<Optional<AccountDO>> getById(String accountId);
+    CompletableFuture<Optional<AccountDO>> getByExternalId(String externalId);
     CompletableFuture<Optional<AccountDO>> update(AccountDO account);
     CompletableFuture<List<AccountDO>> getAdmins();
 }

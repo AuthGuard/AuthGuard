@@ -34,6 +34,8 @@ public interface AccountsService {
      */
     Optional<AccountBO> getById(String accountId);
 
+    Optional<AccountBO> getByExternalId(String externalId);
+
     Optional<AccountBO> update(AccountBO account);
 
     /**
