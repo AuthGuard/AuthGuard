@@ -15,4 +15,5 @@ public interface StrategyConfigInterface {
     boolean getIncludePermissions();
     boolean getIncludeRoles();
     boolean getIncludeScopes();
+    boolean getIncludeExternalId();
 }

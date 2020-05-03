@@ -8,6 +8,7 @@ import java.util.List;
 @BOStyle
 public interface App {
     String getId();
+    String getExternalId();
     String getName();
     String getParentAccountId();
     List<PermissionBO> getPermissions();

@@ -12,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @SuperBuilder
 public class AccountDO extends AbstractDO {
+    private String externalId;
     private List<String> roles;
     private List<PermissionDO> permissions;
     private List<String> scopes;

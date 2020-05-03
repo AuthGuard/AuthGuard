@@ -12,6 +12,7 @@ import java.util.List;
 @JsonDeserialize(as = AppDTO.class)
 public interface App {
     String getId();
+    String getExternalId();
     String getName();
     String getAccountId();
     List<PermissionDTO> getPermissions();
