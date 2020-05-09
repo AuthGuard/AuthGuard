@@ -1,6 +1,8 @@
 package com.authguard.service.impl;
 
 import com.authguard.dal.model.AppDO;
+import com.authguard.emb.MessageBus;
+import com.authguard.emb.Messages;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.mappers.ServiceMapper;
 import com.google.inject.Inject;
@@ -15,17 +17,22 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class ApplicationsServiceImpl implements ApplicationsService {
+    private static final String APPS_CHANNEL = "apps";
+
     private final ApplicationsRepository applicationsRepository;
     private final AccountsService accountsService;
     private final ServiceMapper serviceMapper;
+    private final MessageBus messageBus;
 
     @Inject
     public ApplicationsServiceImpl(final ApplicationsRepository applicationsRepository,
                                    final AccountsService accountsService,
-                                   final ServiceMapper serviceMapper) {
+                                   final ServiceMapper serviceMapper,
+                                   final MessageBus messageBus) {
         this.applicationsRepository = applicationsRepository;
         this.accountsService = accountsService;
         this.serviceMapper = serviceMapper;
+        this.messageBus = messageBus;
     }
 
     @Override
@@ -43,6 +50,10 @@ public class ApplicationsServiceImpl implements ApplicationsService {
 
         return applicationsRepository.save(appDO)
                 .thenApply(serviceMapper::toBO)
+                .thenApply(created -> {
+                    messageBus.publish(APPS_CHANNEL, Messages.created(created));
+                    return created;
+                })
                 .join();
     }
 
@@ -58,14 +69,26 @@ public class ApplicationsServiceImpl implements ApplicationsService {
         final AppDO appDO = serviceMapper.toDO(app);
 
         return applicationsRepository.update(appDO)
-                .thenApply(optional -> optional.map(serviceMapper::toBO))
+                .thenApply(optional -> optional
+                        .map(serviceMapper::toBO)
+                        .map(updated -> {
+                            messageBus.publish(APPS_CHANNEL, Messages.updated(updated));
+                            return updated;
+                        })
+                )
                 .join();
     }
 
     @Override
     public Optional<AppBO> delete(final String id) {
         return applicationsRepository.delete(id)
-                .thenApply(optional -> optional.map(serviceMapper::toBO))
+                .thenApply(optional -> optional
+                        .map(serviceMapper::toBO)
+                        .map(deleted -> {
+                            messageBus.publish(APPS_CHANNEL, Messages.deleted(deleted));
+                            return deleted;
+                        })
+                )
                 .join();
     }
 

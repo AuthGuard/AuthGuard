@@ -2,6 +2,7 @@ package com.authguard.service.impl;
 
 import com.authguard.dal.CredentialsAuditRepository;
 import com.authguard.dal.CredentialsRepository;
+import com.authguard.emb.MessageBus;
 import com.authguard.service.AccountsService;
 import com.authguard.service.passwords.SecurePassword;
 import com.authguard.dal.model.CredentialsAuditDO;
@@ -25,6 +26,7 @@ import java.util.concurrent.CompletableFuture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class CredentialsServiceImplTest {
@@ -33,6 +35,7 @@ class CredentialsServiceImplTest {
     private CredentialsAuditRepository credentialsAuditRepository;
     private SecurePassword securePassword;
     private CredentialsServiceImpl credentialsService;
+    private MessageBus messageBus;
 
     private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(2, 4));
 
@@ -42,7 +45,10 @@ class CredentialsServiceImplTest {
         credentialsRepository = Mockito.mock(CredentialsRepository.class);
         credentialsAuditRepository = Mockito.mock(CredentialsAuditRepository.class);
         securePassword = Mockito.mock(SecurePassword.class);
-        credentialsService = new CredentialsServiceImpl(accountsService, credentialsRepository, credentialsAuditRepository, securePassword, new ServiceMapperImpl());
+        messageBus = Mockito.mock(MessageBus.class);
+
+        credentialsService = new CredentialsServiceImpl(accountsService, credentialsRepository,
+                credentialsAuditRepository, securePassword, messageBus, new ServiceMapperImpl());
     }
 
     @BeforeEach
@@ -50,6 +56,7 @@ class CredentialsServiceImplTest {
         Mockito.reset(accountsService);
         Mockito.reset(credentialsRepository);
         Mockito.reset(credentialsAuditRepository);
+        Mockito.reset(messageBus);
 
         Mockito.when(credentialsRepository.findByIdentifier(any())).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
         Mockito.when(accountsService.getById(any())).thenReturn(Optional.of(RANDOM.nextObject(AccountBO.class)));
@@ -69,6 +76,10 @@ class CredentialsServiceImplTest {
         assertThat(persisted).isNotNull();
         assertThat(persisted).isEqualToIgnoringGivenFields(credentials, "id", "plainPassword", "hashedPassword");
         assertThat(persisted.getHashedPassword()).isNull();
+
+        // need better assertion
+        Mockito.verify(messageBus, Mockito.times(1))
+                .publish(eq("credentials"), any());
     }
 
     @Test
@@ -168,6 +179,9 @@ class CredentialsServiceImplTest {
         assertThat(auditArgs.get(1).getCredentialsId()).isEqualTo(credentials.getId());
         assertThat(auditArgs.get(1).getAction()).isEqualTo(CredentialsAuditDO.Action.UPDATED);
         assertThat(auditArgs.get(1).getPassword()).isNull();
+
+        Mockito.verify(messageBus, Mockito.times(1))
+                .publish(eq("credentials"), any());
     }
 
     @Test
@@ -205,6 +219,9 @@ class CredentialsServiceImplTest {
         assertThat(auditArgs.get(1).getCredentialsId()).isEqualTo(credentials.getId());
         assertThat(auditArgs.get(1).getAction()).isEqualTo(CredentialsAuditDO.Action.UPDATED);
         assertThat(auditArgs.get(1).getPassword()).isNotNull();
+
+        Mockito.verify(messageBus, Mockito.times(1))
+                .publish(eq("credentials"), any());
     }
 
     @Test

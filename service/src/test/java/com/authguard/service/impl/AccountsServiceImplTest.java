@@ -3,6 +3,7 @@ package com.authguard.service.impl;
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.AccountsRepository;
 import com.authguard.dal.model.EmailDO;
+import com.authguard.emb.MessageBus;
 import com.authguard.service.PermissionsService;
 import com.authguard.service.RolesService;
 import com.authguard.service.VerificationMessageService;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AccountsServiceImplTest {
@@ -37,6 +39,7 @@ class AccountsServiceImplTest {
     private PermissionsService permissionsService;
     private RolesService rolesService;
     private VerificationMessageService verificationMessageService;
+    private MessageBus messageBus;
     private AccountsServiceImpl accountService;
 
     private final static EasyRandom RANDOM = new EasyRandom(
@@ -49,6 +52,7 @@ class AccountsServiceImplTest {
         permissionsService = Mockito.mock(PermissionsService.class);
         rolesService = Mockito.mock(RolesService.class);
         verificationMessageService = Mockito.mock(VerificationMessageService.class);
+        messageBus = Mockito.mock(MessageBus.class);
 
         final ConfigContext configContext = Mockito.mock(ConfigContext.class);
 
@@ -60,13 +64,14 @@ class AccountsServiceImplTest {
                 .thenReturn(accountConfig);
 
         accountService = new AccountsServiceImpl(accountsRepository, permissionsService,
-                verificationMessageService, rolesService, new ServiceMapperImpl(), configContext);
+                verificationMessageService, rolesService, new ServiceMapperImpl(), messageBus, configContext);
     }
 
     @AfterEach
     void resetMocks() {
         Mockito.reset(accountsRepository);
         Mockito.reset(permissionsService);
+        Mockito.reset(messageBus);
     }
 
     @Test
@@ -82,6 +87,10 @@ class AccountsServiceImplTest {
 
         assertThat(persisted).isNotNull();
         assertThat(persisted).isEqualToIgnoringGivenFields(account, "id");
+
+        // need better assertion
+        Mockito.verify(messageBus, Mockito.times(1))
+                .publish(eq("accounts"), any());
     }
 
     @Test
@@ -223,6 +232,10 @@ class AccountsServiceImplTest {
         assertThat(updated).isPresent();
         assertThat(updated.get()).isNotEqualTo(account);
         assertThat(updated.get().getEmails()).contains(emails.toArray(new AccountEmailBO[0]));
+
+        // need better assertion
+        Mockito.verify(messageBus, Mockito.times(1))
+                .publish(eq("accounts"), any());
     }
 
     @Test
@@ -248,5 +261,9 @@ class AccountsServiceImplTest {
         assertThat(updated.get()).isNotEqualTo(account);
         assertThat(updated.get().getEmails().stream().map(AccountEmailBO::getEmail).collect(Collectors.toList()))
                 .doesNotContain(emailsToRemove.toArray(new String[0]));
+
+        // need better assertion
+        Mockito.verify(messageBus, Mockito.times(1))
+                .publish(eq("accounts"), any());
     }
 }

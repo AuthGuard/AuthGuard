@@ -2,6 +2,8 @@ package com.authguard.service.otp;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.OtpRepository;
+import com.authguard.emb.MessageBus;
+import com.authguard.emb.Messages;
 import com.authguard.service.AuthProvider;
 import com.authguard.service.config.ConfigParser;
 import com.authguard.service.config.OtpConfig;
@@ -18,15 +20,19 @@ import java.time.ZonedDateTime;
 import java.util.UUID;
 
 public class OtpProvider implements AuthProvider {
+    private static final String OTP_CHANNEL = "otp";
+
     private final OtpRepository otpRepository;
     private final ServiceMapper serviceMapper;
+    private final MessageBus messageBus;
     private final OtpConfig otpConfig;
 
     @Inject
     public OtpProvider(final OtpRepository otpRepository, final ServiceMapper serviceMapper,
-                       final @Named("otp") ConfigContext otpConfig) {
+                       final MessageBus messageBus, final @Named("otp") ConfigContext otpConfig) {
         this.otpRepository = otpRepository;
         this.serviceMapper = serviceMapper;
+        this.messageBus = messageBus;
         this.otpConfig = otpConfig.asConfigBean(OtpConfig.class);
     }
 
@@ -45,6 +51,8 @@ public class OtpProvider implements AuthProvider {
                 .build();
 
         otpRepository.save(serviceMapper.toDO(oneTimePassword));
+
+        messageBus.publish(OTP_CHANNEL, Messages.otpGenerated(oneTimePassword));
 
         return token;
     }

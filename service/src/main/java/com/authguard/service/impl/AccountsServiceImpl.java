@@ -2,6 +2,8 @@ package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.model.AccountDO;
+import com.authguard.emb.MessageBus;
+import com.authguard.emb.Messages;
 import com.authguard.service.VerificationMessageService;
 import com.authguard.service.config.AccountConfig;
 import com.authguard.service.exceptions.ServiceException;
@@ -24,11 +26,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class AccountsServiceImpl implements AccountsService {
+    private static final String ACCOUNTS_CHANNEL = "accounts";
+
     private final AccountsRepository accountsRepository;
     private final PermissionsService permissionsService;
     private final AccountConfig accountConfig;
     private final VerificationMessageService verificationMessageService;
     private final ServiceMapper serviceMapper;
+    private final MessageBus messageBus;
 
     private final PermissionsAggregator permissionsAggregator;
 
@@ -38,11 +43,13 @@ public class AccountsServiceImpl implements AccountsService {
                                final VerificationMessageService verificationMessageService,
                                final RolesService rolesService,
                                final ServiceMapper serviceMapper,
+                               final MessageBus messageBus,
                                final @Named("account") ConfigContext accountConfigContext) {
         this.accountsRepository = accountsRepository;
         this.permissionsService = permissionsService;
         this.verificationMessageService = verificationMessageService;
         this.serviceMapper = serviceMapper;
+        this.messageBus = messageBus;
         this.accountConfig = accountConfigContext.asConfigBean(AccountConfig.class);
 
         this.permissionsAggregator = new PermissionsAggregator(rolesService, permissionsService);
@@ -55,6 +62,8 @@ public class AccountsServiceImpl implements AccountsService {
         return accountsRepository.save(accountDO)
                 .thenApply(serviceMapper::toBO)
                 .thenApply(created -> {
+                    messageBus.publish(ACCOUNTS_CHANNEL, Messages.created(created));
+
                     if (accountConfig.verifyEmail()) {
                         verificationMessageService.sendVerificationEmail(created);
                     }
@@ -74,7 +83,11 @@ public class AccountsServiceImpl implements AccountsService {
     public Optional<AccountBO> update(final AccountBO account) {
         return accountsRepository.update(serviceMapper.toDO(account))
                 .join()
-                .map(serviceMapper::toBO);
+                .map(serviceMapper::toBO)
+                .map(updated -> {
+                    messageBus.publish(ACCOUNTS_CHANNEL, Messages.updated(updated));
+                    return updated;
+                });
     }
 
     @Override

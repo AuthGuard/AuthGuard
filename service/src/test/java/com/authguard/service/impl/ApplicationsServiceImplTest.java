@@ -1,6 +1,7 @@
 package com.authguard.service.impl;
 
 import com.authguard.dal.ApplicationsRepository;
+import com.authguard.emb.MessageBus;
 import com.authguard.service.AccountsService;
 import com.authguard.service.ApplicationsService;
 import com.authguard.dal.model.AppDO;
@@ -20,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ApplicationsServiceImplTest {
@@ -29,14 +31,16 @@ class ApplicationsServiceImplTest {
     private ApplicationsRepository applicationsRepository;
     private ApplicationsService applicationsService;
     private AccountsService accountsService;
+    private MessageBus messageBus;
 
     @BeforeAll
     void setup() {
         applicationsRepository = Mockito.mock(ApplicationsRepository.class);
         accountsService = Mockito.mock(AccountsService.class);
+        messageBus = Mockito.mock(MessageBus.class);
 
         applicationsService = new ApplicationsServiceImpl(applicationsRepository, accountsService,
-                new ServiceMapperImpl());
+                new ServiceMapperImpl(), messageBus);
     }
 
     @Test
@@ -52,6 +56,9 @@ class ApplicationsServiceImplTest {
         final AppBO created = applicationsService.create(app);
 
         assertThat(created).isEqualToIgnoringGivenFields(app, "id");
+
+        Mockito.verify(messageBus, Mockito.times(1))
+                .publish(eq("apps"), any());
     }
 
     @Test

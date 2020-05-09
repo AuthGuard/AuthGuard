@@ -1,6 +1,8 @@
 package com.authguard.service.impl;
 
 import com.authguard.dal.model.CredentialsDO;
+import com.authguard.emb.MessageBus;
+import com.authguard.emb.Messages;
 import com.authguard.service.AccountsService;
 import com.authguard.service.exceptions.ServiceConflictException;
 import com.authguard.service.exceptions.ServiceException;
@@ -17,10 +19,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class CredentialsServiceImpl implements CredentialsService {
+    private static final String CREDENTIALS_CHANNEL = "credentials";
+
     private final AccountsService accountsService;
     private final CredentialsRepository credentialsRepository;
     private final CredentialsAuditRepository credentialsAuditRepository;
     private final SecurePassword securePassword;
+    private final MessageBus messageBus;
     private final ServiceMapper serviceMapper;
 
     @Inject
@@ -28,11 +33,13 @@ public class CredentialsServiceImpl implements CredentialsService {
                                   final CredentialsRepository credentialsRepository,
                                   final CredentialsAuditRepository credentialsAuditRepository,
                                   final SecurePassword securePassword,
+                                  final MessageBus messageBus,
                                   final ServiceMapper serviceMapper) {
         this.accountsService = accountsService;
         this.credentialsRepository = credentialsRepository;
         this.credentialsAuditRepository = credentialsAuditRepository;
         this.securePassword = securePassword;
+        this.messageBus = messageBus;
         this.serviceMapper = serviceMapper;
     }
 
@@ -54,6 +61,10 @@ public class CredentialsServiceImpl implements CredentialsService {
         return credentialsRepository.save(credentialsDO)
                 .thenApply(serviceMapper::toBO)
                 .thenApply(this::removeSensitiveInformation)
+                .thenApply(created -> {
+                    messageBus.publish(CREDENTIALS_CHANNEL, Messages.created(created));
+                    return created;
+                })
                 .join();
     }
 
@@ -119,13 +130,24 @@ public class CredentialsServiceImpl implements CredentialsService {
                     }
                     return c;
                 })
-                .map(this::removeSensitiveInformation);
+                .map(this::removeSensitiveInformation)
+                .map(updated -> {
+                    messageBus.publish(CREDENTIALS_CHANNEL, Messages.updated(updated));
+                    return updated;
+                });
     }
 
     @Override
     public Optional<CredentialsBO> delete(final String id) {
         return credentialsRepository.delete(id)
-                .thenApply(optional -> optional.map(serviceMapper::toBO).map(this::removeSensitiveInformation))
+                .thenApply(optional -> optional
+                        .map(serviceMapper::toBO)
+                        .map(this::removeSensitiveInformation)
+                        .map(deleted -> {
+                            messageBus.publish(CREDENTIALS_CHANNEL, Messages.deleted(deleted));
+                            return deleted;
+                        })
+                )
                 .join();
     }
 

@@ -1,8 +1,17 @@
 package com.authguard.emb.model;
 
 public enum EventType {
-    ENTITY,
+    ENTITY_CREATED,
+    ENTITY_UPDATED,
+    ENTITY_DELETED,
+
     ADMIN,
+
     AUTHENTICATION,
-    OTP
+
+    OTP_GENERATED,
+    OTP_VERIFIED,
+
+    PASSWORDLESS_GENERATED,
+    PASSWORDLESS_VERIFIED
 }

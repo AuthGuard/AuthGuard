@@ -3,6 +3,7 @@ package com.authguard.service.otp;
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.OtpRepository;
 import com.authguard.dal.model.OneTimePasswordDO;
+import com.authguard.emb.MessageBus;
 import com.authguard.service.config.OtpConfig;
 import com.authguard.service.config.OtpMode;
 import com.authguard.service.mappers.ServiceMapperImpl;
@@ -18,22 +19,26 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 class OtpProviderTest {
     private final EasyRandom random = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
 
     private OtpRepository mockOtpRepository;
+    private MessageBus messageBus;
 
     private OtpProvider otpProvider;
 
     void setup(final OtpConfig otpConfig) {
         mockOtpRepository = Mockito.mock(OtpRepository.class);
+        messageBus = Mockito.mock(MessageBus.class);
 
         final ConfigContext configContext = Mockito.mock(ConfigContext.class);
 
         Mockito.when(configContext.asConfigBean(OtpConfig.class)).thenReturn(otpConfig);
 
-        otpProvider = new OtpProvider(mockOtpRepository, new ServiceMapperImpl(), configContext);
+        otpProvider = new OtpProvider(mockOtpRepository, new ServiceMapperImpl(), messageBus, configContext);
     }
 
     @Test
@@ -67,6 +72,9 @@ class OtpProviderTest {
         assertThat(persisted.getId()).isNotNull();
         assertThat(persisted.getPassword()).isNotNull();
         assertThat(persisted.getPassword()).hasSize(6);
+
+        Mockito.verify(messageBus, Mockito.times(1))
+                .publish(eq("otp"), any());
     }
 
     @Test
@@ -104,6 +112,9 @@ class OtpProviderTest {
         for (final char ch : persisted.getPassword().toCharArray()) {
             assertThat(Character.isDigit(ch)).isFalse();
         }
+
+        Mockito.verify(messageBus, Mockito.times(1))
+                .publish(eq("otp"), any());
     }
 
     @Test
@@ -141,5 +152,8 @@ class OtpProviderTest {
         for (final char ch : persisted.getPassword().toCharArray()) {
             assertThat(Character.isAlphabetic(ch)).isFalse();
         }
+
+        Mockito.verify(messageBus, Mockito.times(1))
+                .publish(eq("otp"), any());
     }
 }
