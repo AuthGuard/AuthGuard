@@ -3,6 +3,8 @@ package com.authguard.service.passwordless;
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
+import com.authguard.emb.MessageBus;
+import com.authguard.emb.Messages;
 import com.authguard.service.AuthProvider;
 import com.authguard.service.config.ConfigParser;
 import com.authguard.service.config.PasswordlessConfig;
@@ -17,14 +19,19 @@ import java.time.ZonedDateTime;
 import java.util.Base64;
 
 public class PasswordlessProvider implements AuthProvider {
+    private static final String PASSWORDLESS_CHANNEL = "passwordless";
+
     private final AccountTokensRepository accountTokensRepository;
+    private final MessageBus messageBus;
     private final PasswordlessConfig passwordlessConfig;
     private final SecureRandom secureRandom;
 
     @Inject
     public PasswordlessProvider(final AccountTokensRepository accountTokensRepository,
-                                @Named("passwordless") final ConfigContext configContext) {
+                                final MessageBus messageBus,
+                                final @Named("passwordless") ConfigContext configContext) {
         this.accountTokensRepository = accountTokensRepository;
+        this.messageBus = messageBus;
         this.passwordlessConfig = configContext.asConfigBean(PasswordlessConfig.class);
 
         this.secureRandom = new SecureRandom();
@@ -34,14 +41,19 @@ public class PasswordlessProvider implements AuthProvider {
     public TokensBO generateToken(final AccountBO account) {
         final String token = randomToken();
 
-        accountTokensRepository.save(AccountTokenDO.builder()
+        final AccountTokenDO accountToken = AccountTokenDO.builder()
                 .associatedAccountId(account.getId())
                 .token(token)
                 .expiresAt(ZonedDateTime.now().plus(ConfigParser.parseDuration(passwordlessConfig.getTokenLife())))
-                .build());
+                .build();
+
+        accountTokensRepository.save(accountToken);
+
+        messageBus.publish(PASSWORDLESS_CHANNEL, Messages.passwordlessGenerated(accountToken));
 
         return TokensBO.builder()
                 .type("passwordless")
+                .token(accountToken.getId())
                 .build();
     }
 

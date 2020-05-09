@@ -38,7 +38,7 @@ class RxPublisherTest {
             String event = "event_" + i;
 
             publisher.publish(Message.builder()
-                    .eventType(EventType.ENTITY)
+                    .eventType(EventType.ENTITY_CREATED)
                     .timestamp(OffsetDateTime.now())
                     .bodyType(String.class)
                     .messageBody(event)

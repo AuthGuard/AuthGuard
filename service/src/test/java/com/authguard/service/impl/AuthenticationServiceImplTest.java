@@ -1,6 +1,7 @@
 package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
+import com.authguard.emb.MessageBus;
 import com.authguard.service.*;
 import com.authguard.service.config.AuthenticationConfig;
 import com.authguard.service.model.TokensBO;
@@ -15,10 +16,13 @@ import java.util.Base64;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AuthenticationServiceImplTest {
     private ExchangeService exchangeService;
+    private MessageBus messageBus;
     private AuthenticationService authenticationService;
 
     private final static EasyRandom RANDOM = new EasyRandom();
@@ -26,6 +30,8 @@ class AuthenticationServiceImplTest {
     @BeforeAll
     void setup() {
         exchangeService = Mockito.mock(ExchangeService.class);
+        messageBus = Mockito.mock(MessageBus.class);
+
         final ConfigContext configContext = Mockito.mock(ConfigContext.class);
 
         final AuthenticationConfig config = AuthenticationConfig.builder()
@@ -36,7 +42,7 @@ class AuthenticationServiceImplTest {
         Mockito.when(exchangeService.supportsExchange("basic", "accessToken")).thenReturn(true);
         Mockito.when(configContext.asConfigBean(AuthenticationConfig.class)).thenReturn(config);
 
-        authenticationService = new AuthenticationServiceImpl(exchangeService, configContext);
+        authenticationService = new AuthenticationServiceImpl(exchangeService, messageBus, configContext);
     }
 
     @AfterEach
@@ -57,5 +63,8 @@ class AuthenticationServiceImplTest {
         final Optional<TokensBO> result = authenticationService.authenticate(authorization);
 
         assertThat(result).isPresent().contains(tokens);
+
+        Mockito.verify(messageBus, Mockito.times(1))
+                .publish(eq("auth"), any());
     }
 }
