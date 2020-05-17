@@ -20,8 +20,14 @@ public interface RestMapper {
     PermissionBO toBO(PermissionDTO permissionDTO);
     PermissionDTO toDTO(PermissionBO permissionBO);
 
-    RoleBO toBO(RoleDTO permissionDTO);
-    RoleDTO toDTO(RoleBO permissionBO);
+    RoleBO toBO(RoleDTO roleDTO);
+    RoleDTO toDTO(RoleBO roleBO);
+
+    AccountEmailBO toBO(AccountEmailDTO accountEmailDTO);
+    AccountEmailDTO toDTO(AccountEmailBO accountEmailBO);
+
+    UserIdentifierBO toBO(UserIdentifierDTO userIdentifierDTO);
+    UserIdentifierDTO toDTO(UserIdentifierBO userIdentifierBO);
 
     @Mapping(target = "parentAccountId", source = "accountId")
     AppBO toBO(AppDTO appDTO);
