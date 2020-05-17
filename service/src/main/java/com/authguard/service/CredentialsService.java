@@ -2,7 +2,9 @@ package com.authguard.service;
 
 import com.authguard.service.impl.CredentialsServiceImpl;
 import com.authguard.service.model.CredentialsBO;
+import com.authguard.service.model.UserIdentifierBO;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -59,6 +61,10 @@ public interface CredentialsService {
      *         empty if none was found to update.
      */
     Optional<CredentialsBO> updatePassword(CredentialsBO credentials);
+
+    Optional<CredentialsBO> addIdentifiers(String id, List<UserIdentifierBO> identifiers);
+
+    Optional<CredentialsBO> removeIdentifiers(String id, List<String> identifiers);
 
     /**
      * Delete credentials. Whether it is a soft or a hard

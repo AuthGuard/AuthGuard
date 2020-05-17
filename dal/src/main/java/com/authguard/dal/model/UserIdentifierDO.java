@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class UserIdentifierDO {
     private Type type;
     private String identifier;
+    private boolean active;
 
     public enum Type {
         USERNAME,
