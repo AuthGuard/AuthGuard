@@ -1,13 +1,16 @@
 package com.authguard.rest.routes;
 
 import com.authguard.rest.access.ActorRoles;
-import com.authguard.rest.dto.CredentialsDTO;
+import com.authguard.rest.dto.*;
 import com.authguard.service.CredentialsService;
+import com.authguard.service.model.UserIdentifierBO;
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
 
@@ -23,10 +26,16 @@ public class CredentialsRoute implements EndpointGroup {
 
     @Override
     public void addEndpoints() {
-        post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin"));
-        put("/:id", this::update, ActorRoles.adminClient());
-        put("/:id/password", this::updatePassword, ActorRoles.adminClient());
         get("/:id", this::getById, ActorRoles.adminClient());
+
+        post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin"));
+
+        put("/:id", this::update, ActorRoles.adminClient());
+        patch("/:id/password", this::updatePassword, ActorRoles.adminClient());
+
+        patch("/:id/identifiers", this::addIdentifiers, ActorRoles.adminClient());
+        delete("/:id/identifiers", this::removeIdentifiers, ActorRoles.adminClient());
+
         delete("/:id", this::removeById, ActorRoles.adminClient());
     }
 
@@ -82,6 +91,30 @@ public class CredentialsRoute implements EndpointGroup {
         } else {
             context.status(404);
         }
+    }
+
+    private void addIdentifiers(final Context context) {
+        final String credentialsId = context.pathParam("id");
+        final UserIdentifiersRequestDTO request = RestJsonMapper.asClass(context.body(), UserIdentifiersRequestDTO.class);
+        final List<UserIdentifierBO> identifiers = request.getIdentifiers().stream()
+                .map(restMapper::toBO)
+                .collect(Collectors.toList());
+
+        credentialsService.addIdentifiers(credentialsId, identifiers)
+                .map(restMapper::toDTO)
+                .ifPresentOrElse(context::json, () -> context.status(404));
+    }
+
+    private void removeIdentifiers(final Context context) {
+        final String credentialsId = context.pathParam("id");
+        final UserIdentifiersRequestDTO request = RestJsonMapper.asClass(context.body(), UserIdentifiersRequestDTO.class);
+        final List<String> identifiers = request.getIdentifiers().stream()
+                .map(UserIdentifierDTO::getIdentifier)
+                .collect(Collectors.toList());
+
+        credentialsService.removeIdentifiers(credentialsId, identifiers)
+                .map(restMapper::toDTO)
+                .ifPresentOrElse(context::json, () -> context.status(404));
     }
 
     private void getById(final Context context) {

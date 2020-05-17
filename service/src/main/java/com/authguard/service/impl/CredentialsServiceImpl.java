@@ -15,8 +15,8 @@ import com.authguard.dal.CredentialsRepository;
 import com.authguard.service.CredentialsService;
 import com.authguard.service.passwords.SecurePassword;
 
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class CredentialsServiceImpl implements CredentialsService {
     private static final String CREDENTIALS_CHANNEL = "credentials";
@@ -100,6 +100,54 @@ public class CredentialsServiceImpl implements CredentialsService {
         final CredentialsBO update = credentials.withHashedPassword(newPassword);
 
         return doUpdate(update, true);
+    }
+
+    @Override
+    public Optional<CredentialsBO> addIdentifiers(final String id, final List<UserIdentifierBO> identifiers) {
+        final CredentialsBO existing = getById(id)
+                .orElseThrow(() -> new ServiceNotFoundException("No credentials with ID " + id));
+
+        final Set<String> existingIdentifiers = existing.getIdentifiers().stream()
+                .map(UserIdentifierBO::getIdentifier)
+                .collect(Collectors.toSet());
+
+        final List<UserIdentifierBO> combined = new ArrayList<>(existing.getIdentifiers());
+
+        for (final UserIdentifierBO identifier : identifiers) {
+            if (existingIdentifiers.contains(identifier.getIdentifier())) {
+                throw new ServiceConflictException("Duplicate identifier for " + id);
+            }
+
+            combined.add(identifier.withActive(true));
+        }
+
+        final CredentialsBO updated = CredentialsBO.builder().from(existing)
+                .identifiers(combined)
+                .build();
+
+        return update(updated);
+    }
+
+    @Override
+    public Optional<CredentialsBO> removeIdentifiers(final String id, final List<String> identifiers) {
+        final CredentialsBO existing = getById(id)
+                .orElseThrow(() -> new ServiceNotFoundException("No credentials with ID " + id));
+
+        final List<UserIdentifierBO> updatedIdentifiers = existing.getIdentifiers().stream()
+                .map(identifier -> {
+                    if (identifiers.contains(identifier.getIdentifier())) {
+                        return identifier.withActive(false);
+                    }
+
+                    return identifier;
+                })
+                .collect(Collectors.toList());
+
+        final CredentialsBO updated = CredentialsBO.builder().from(existing)
+                .identifiers(updatedIdentifiers)
+                .build();
+
+        return update(updated);
     }
 
     private Optional<CredentialsBO> doUpdate(final CredentialsBO credentials, boolean storePasswordAudit) {

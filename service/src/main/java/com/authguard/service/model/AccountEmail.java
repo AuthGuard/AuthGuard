@@ -9,4 +9,5 @@ public interface AccountEmail {
     boolean isVerified();
     boolean isPrimary();
     boolean isBackup();
+    boolean isActive();
 }

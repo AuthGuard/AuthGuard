@@ -14,4 +14,5 @@ public class EmailDO {
     private boolean verified;
     private boolean primary;
     private boolean backup;
+    private boolean active;
 }

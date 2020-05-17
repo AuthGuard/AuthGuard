@@ -231,7 +231,10 @@ class AccountsServiceImplTest {
 
         assertThat(updated).isPresent();
         assertThat(updated.get()).isNotEqualTo(account);
-        assertThat(updated.get().getEmails()).contains(emails.toArray(new AccountEmailBO[0]));
+        assertThat(updated.get().getEmails())
+                .contains(emails.stream()
+                        .map(email -> email.withActive(true))
+                        .toArray(AccountEmailBO[]::new));
 
         // need better assertion
         Mockito.verify(messageBus, Mockito.times(1))
@@ -259,8 +262,13 @@ class AccountsServiceImplTest {
 
         assertThat(updated).isPresent();
         assertThat(updated.get()).isNotEqualTo(account);
-        assertThat(updated.get().getEmails().stream().map(AccountEmailBO::getEmail).collect(Collectors.toList()))
-                .doesNotContain(emailsToRemove.toArray(new String[0]));
+
+        for (final String emailToRemove : emailsToRemove) {
+            Optional<AccountEmailBO> foundEmail = updated.get().getEmails().stream().filter(email -> email.getEmail().equals(emailToRemove)).findFirst();
+
+            assertThat(foundEmail).isPresent();
+            assertThat(foundEmail.get()).extracting("isActive").isEqualTo(false);
+        }
 
         // need better assertion
         Mockito.verify(messageBus, Mockito.times(1))

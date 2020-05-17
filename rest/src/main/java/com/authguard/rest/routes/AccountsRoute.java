@@ -1,11 +1,10 @@
 package com.authguard.rest.routes;
 
 import com.authguard.rest.access.ActorRoles;
-import com.authguard.rest.dto.AccountDTO;
-import com.authguard.rest.dto.AppDTO;
-import com.authguard.rest.dto.PermissionsRequestDTO;
+import com.authguard.rest.dto.*;
 import com.authguard.service.AccountsService;
 import com.authguard.service.ApplicationsService;
+import com.authguard.service.model.AccountEmailBO;
 import com.authguard.service.model.PermissionBO;
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
@@ -15,8 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.post;
+import static io.javalin.apibuilder.ApiBuilder.*;
 
 public class AccountsRoute implements EndpointGroup {
     private final AccountsService accountsService;
@@ -33,10 +31,16 @@ public class AccountsRoute implements EndpointGroup {
 
     public void addEndpoints() {
         post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin"));
+
         get("/:id", this::getById, ActorRoles.adminClient());
         get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
-        post("/:id/permission/grant", this::grantPermissions, ActorRoles.adminClient());
-        post("/:id/permission/revoke", this::revokePermissions, ActorRoles.adminClient());
+
+        patch("/:id/permissions", this::grantPermissions, ActorRoles.adminClient());
+        delete("/:id/permissions", this::revokePermissions, ActorRoles.adminClient());
+
+        patch("/:id/emails", this::addEmails, ActorRoles.adminClient());
+        delete("/:id/emails", this::removeEmails, ActorRoles.adminClient());
+
         get("/:id/apps", this::getApps, ActorRoles.adminClient());
     }
 
@@ -100,6 +104,30 @@ public class AccountsRoute implements EndpointGroup {
 
         final AccountDTO updatedAccount = restMapper.toDTO(accountsService.revokePermissions(accountId, permissions));
         context.json(updatedAccount);
+    }
+
+    private void addEmails(final Context context) {
+        final String accountId = context.pathParam("id");
+        final AccountEmailsRequestDTO emailsRequest = RestJsonMapper.asClass(context.body(), AccountEmailsRequestDTO.class);
+        final List<AccountEmailBO> emails = emailsRequest.getEmails().stream()
+                .map(restMapper::toBO)
+                .collect(Collectors.toList());
+
+        accountsService.addEmails(accountId, emails)
+                .map(restMapper::toDTO)
+                .ifPresentOrElse(context::json, () -> context.status(404));
+    }
+
+    private void removeEmails(final Context context) {
+        final String accountId = context.pathParam("id");
+        final AccountEmailsRequestDTO emailsRequest = RestJsonMapper.asClass(context.body(), AccountEmailsRequestDTO.class);
+        final List<String> emails = emailsRequest.getEmails().stream()
+                .map(AccountEmailDTO::getEmail)
+                .collect(Collectors.toList());
+
+        accountsService.removeEmails(accountId, emails)
+                .map(restMapper::toDTO)
+                .ifPresentOrElse(context::json, () -> context.status(404));
     }
 
     private void getApps(final Context context) {
