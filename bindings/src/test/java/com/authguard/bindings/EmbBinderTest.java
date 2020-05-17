@@ -1,4 +1,4 @@
-package com.authguard.rest.injectors;
+package com.authguard.bindings;
 
 import com.authguard.emb.MessageSubscriber;
 import com.authguard.emb.model.Message;
@@ -44,7 +44,7 @@ class EmbBinderTest {
 
     @Test
     void subscribersInjected() {
-        final EmbBinder embBinder = new EmbBinder(Collections.singletonList("com.authguard.rest.injectors"));
+        final EmbBinder embBinder = new EmbBinder(Collections.singletonList("com.authguard.bindings"));
         final NeedsSubscribers instance = Guice.createInjector(embBinder)
                 .getInstance(NeedsSubscribers.class);
 

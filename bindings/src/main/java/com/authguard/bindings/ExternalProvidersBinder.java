@@ -1,4 +1,4 @@
-package com.authguard.rest.injectors;
+package com.authguard.bindings;
 
 import com.authguard.external.email.EmailProvider;
 import com.authguard.external.sms.SmsProvider;

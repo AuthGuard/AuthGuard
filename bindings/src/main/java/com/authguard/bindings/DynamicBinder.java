@@ -1,4 +1,4 @@
-package com.authguard.rest.injectors;
+package com.authguard.bindings;
 
 
 import com.authguard.injection.ClassSearch;

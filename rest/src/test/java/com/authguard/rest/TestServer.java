@@ -1,14 +1,11 @@
 package com.authguard.rest;
 
 import com.authguard.config.ConfigContext;
-import com.authguard.config.JacksonConfigContext;
-import com.authguard.rest.injectors.ConfigBinder;
+import com.authguard.bindings.ConfigBinder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.javalin.Javalin;
-import com.authguard.rest.injectors.MappersBinder;
-
-import java.io.File;
+import com.authguard.rest.bindings.MappersBinder;
 
 class TestServer {
     private int port;

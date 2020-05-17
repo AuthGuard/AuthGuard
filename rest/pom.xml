@@ -63,25 +63,13 @@
 
         <dependency>
             <groupId>com.authguard</groupId>
-            <artifactId>sms</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.authguard</groupId>
-            <artifactId>email</artifactId>
+            <artifactId>bindings</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.authguard</groupId>
             <artifactId>bootstrap</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.authguard</groupId>
-            <artifactId>bootstrap-steps</artifactId>
             <version>${project.version}</version>
         </dependency>
 

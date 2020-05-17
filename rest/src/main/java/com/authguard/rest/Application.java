@@ -1,18 +1,17 @@
 package com.authguard.rest;
 
+import com.authguard.bindings.*;
 import com.authguard.bootstrap.BootstrapRunner;
 import com.authguard.config.ConfigContext;
-import com.authguard.config.JacksonConfigContext;
 import com.authguard.injection.ClassSearch;
 import com.authguard.rest.access.RolesAccessManager;
-import com.authguard.rest.injectors.*;
+import com.authguard.rest.bindings.*;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.javalin.Javalin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.Collection;
 
 public class Application {

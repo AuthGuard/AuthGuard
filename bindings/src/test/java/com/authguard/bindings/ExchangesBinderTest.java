@@ -1,5 +1,6 @@
-package com.authguard.rest.injectors;
+package com.authguard.bindings;
 
+import com.authguard.bindings.ExchangesBinder;
 import com.authguard.config.ConfigContext;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
@@ -56,7 +57,7 @@ class ExchangesBinderTest {
         Mockito.when(exchangeContext.getAsCollection("allowed", ExchangesBinder.ExchangeConfig.class))
                 .thenReturn(Collections.singletonList(allowedExchange));
 
-        final Collection<String> searchPackages = Collections.singletonList("com.authguard.rest.injectors");
+        final Collection<String> searchPackages = Collections.singletonList("com.authguard.bindings");
 
         final Injector injector = Guice.createInjector(new ExchangesBinder(rootContext, searchPackages));
 
@@ -80,7 +81,7 @@ class ExchangesBinderTest {
         Mockito.when(exchangeContext.getAsCollection("allowed", ExchangesBinder.ExchangeConfig.class))
                 .thenReturn(Collections.singletonList(allowedExchange));
 
-        final Collection<String> searchPackages = Collections.singletonList("com.authguard.rest.injectors");
+        final Collection<String> searchPackages = Collections.singletonList("com.authguard.bindings");
 
         assertThatThrownBy(() -> Guice.createInjector(new ExchangesBinder(rootContext, searchPackages)))
                 .isInstanceOf(CreationException.class)

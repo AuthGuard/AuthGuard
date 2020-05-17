@@ -1,4 +1,4 @@
-package com.authguard.rest.injectors;
+package com.authguard.rest.bindings;
 
 import com.authguard.rest.routes.RestMapper;
 import com.google.inject.AbstractModule;
