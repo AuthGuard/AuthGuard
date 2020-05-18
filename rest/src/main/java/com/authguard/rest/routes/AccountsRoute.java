@@ -1,7 +1,7 @@
 package com.authguard.rest.routes;
 
 import com.authguard.rest.access.ActorRoles;
-import com.authguard.rest.dto.*;
+import com.authguard.api.dto.*;
 import com.authguard.service.AccountsService;
 import com.authguard.service.ApplicationsService;
 import com.authguard.service.model.AccountEmailBO;

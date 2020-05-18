@@ -1,4 +1,4 @@
-package com.authguard.rest.dto;
+package com.authguard.api.dto;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -8,16 +8,15 @@ import java.util.List;
 
 @Value.Immutable
 @DTOStyle
-@JsonSerialize(as = AppDTO.class)
-@JsonDeserialize(as = AppDTO.class)
-public interface App {
+@JsonSerialize(as = AccountDTO.class)
+@JsonDeserialize(as = AccountDTO.class)
+public interface Account {
     String getId();
     String getExternalId();
-    String getName();
-    String getAccountId();
     List<PermissionDTO> getPermissions();
     List<String> getScopes();
     List<String> getRoles();
+    List<AccountEmailDTO> getEmails();
     boolean isActive();
     boolean isDeleted();
 }

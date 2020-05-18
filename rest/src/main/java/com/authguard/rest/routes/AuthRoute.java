@@ -1,13 +1,13 @@
 package com.authguard.rest.routes;
 
+import com.authguard.api.dto.AuthRequestDTO;
+import com.authguard.api.dto.TokensDTO;
 import com.authguard.rest.access.ActorRoles;
 import com.authguard.service.ExchangeService;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
-import com.authguard.rest.dto.AuthRequestDTO;
-import com.authguard.rest.dto.TokensDTO;
 import com.authguard.service.AuthenticationService;
 
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package com.authguard.rest.dto;
+package com.authguard.api.dto;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -8,8 +8,9 @@ import java.util.List;
 
 @Value.Immutable
 @DTOStyle
-@JsonDeserialize(as = AccountEmailsRequestDTO.class)
-@JsonSerialize(as = AccountEmailsRequestDTO.class)
-public interface AccountEmailsRequest {
-    List<AccountEmailDTO> getEmails();
+@JsonDeserialize(as = RoleDTO.class)
+@JsonSerialize(as = RoleDTO.class)
+public interface Role {
+    String getName();
+    List<PermissionDTO> getPermissions();
 }

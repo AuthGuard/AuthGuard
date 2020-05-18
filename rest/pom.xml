@@ -13,6 +13,12 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.authguard</groupId>
+            <artifactId>api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.javalin</groupId>
             <artifactId>javalin</artifactId>
             <version>${javalin.version}</version>

@@ -1,11 +1,11 @@
 package com.authguard.rest.routes;
 
+import com.authguard.api.dto.OtpRequestDTO;
+import com.authguard.api.dto.TokensDTO;
 import com.authguard.rest.access.ActorRoles;
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
-import com.authguard.rest.dto.OtpRequestDTO;
-import com.authguard.rest.dto.TokensDTO;
 import com.authguard.service.OtpService;
 
 import static io.javalin.apibuilder.ApiBuilder.post;
