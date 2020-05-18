@@ -1,8 +1,8 @@
 package com.authguard.rest;
 
+import com.authguard.api.dto.AccountDTO;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
-import com.authguard.rest.dto.AccountDTO;
 import com.authguard.service.AccountsService;
 import com.authguard.service.model.AccountBO;
 import org.junit.jupiter.api.*;

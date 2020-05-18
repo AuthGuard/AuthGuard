@@ -1,7 +1,7 @@
 package com.authguard.rest.routes;
 
+import com.authguard.api.dto.PasswordlessRequestDTO;
 import com.authguard.rest.access.ActorRoles;
-import com.authguard.rest.dto.PasswordlessRequestDTO;
 import com.authguard.service.PasswordlessService;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;

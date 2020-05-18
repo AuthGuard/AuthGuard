@@ -1,6 +1,6 @@
 package com.authguard.rest.routes;
 
-import com.authguard.rest.dto.*;
+import com.authguard.api.dto.*;
 import com.authguard.service.model.*;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;

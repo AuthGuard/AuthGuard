@@ -19,6 +19,8 @@
         <module>bootstrap</module>
         <module>bootstrap-steps</module>
         <module>external</module>
+        <module>bindings</module>
+        <module>api</module>
     </modules>
 
     <properties>

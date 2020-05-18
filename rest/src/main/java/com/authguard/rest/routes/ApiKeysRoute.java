@@ -1,7 +1,7 @@
 package com.authguard.rest.routes;
 
+import com.authguard.api.dto.TokensDTO;
 import com.authguard.rest.access.ActorRoles;
-import com.authguard.rest.dto.TokensDTO;
 import com.authguard.service.ApiKeysService;
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
