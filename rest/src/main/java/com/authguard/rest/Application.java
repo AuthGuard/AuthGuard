@@ -6,6 +6,7 @@ import com.authguard.config.ConfigContext;
 import com.authguard.injection.ClassSearch;
 import com.authguard.rest.access.RolesAccessManager;
 import com.authguard.rest.bindings.*;
+import com.authguard.rest.server.Server;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.javalin.Javalin;

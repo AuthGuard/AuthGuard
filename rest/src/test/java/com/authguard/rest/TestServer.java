@@ -2,6 +2,7 @@ package com.authguard.rest;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.bindings.ConfigBinder;
+import com.authguard.rest.server.Server;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.javalin.Javalin;
