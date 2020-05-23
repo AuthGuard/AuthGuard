@@ -2,6 +2,7 @@ package com.authguard.service.exchange;
 
 import com.authguard.service.AccountsService;
 import com.authguard.service.jwt.AccessTokenProvider;
+import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
 import com.authguard.service.oauth.AuthorizationCodeVerifier;
 import com.google.inject.Inject;
@@ -28,5 +29,12 @@ public class AuthorizationCodeToAccessToken implements Exchange {
         return authorizationCodeVerifier.verifyAccountToken(authorizationCode)
                 .flatMap(accountsService::getById)
                 .map(accessTokenProvider::generateToken);
+    }
+
+    @Override
+    public Optional<TokensBO> exchangeToken(final String authorizationCode, final TokenRestrictionsBO restrictions) {
+        return authorizationCodeVerifier.verifyAccountToken(authorizationCode)
+                .flatMap(accountsService::getById)
+                .map(account -> accessTokenProvider.generateToken(account, restrictions));
     }
 }

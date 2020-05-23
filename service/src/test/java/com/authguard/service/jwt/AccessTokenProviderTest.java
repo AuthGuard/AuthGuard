@@ -10,6 +10,7 @@ import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.PermissionBO;
+import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -20,6 +21,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -54,7 +57,8 @@ class AccessTokenProviderTest {
         configNode.put("tokenLife", "5m")
                 .put("refreshTokenLife", "20m")
                 .put("useJti", useJti)
-                .put("includePermissions", true);
+                .put("includePermissions", true)
+                .put("includeScopes", true);
 
         return new JacksonConfigContext(configNode);
     }
@@ -98,6 +102,46 @@ class AccessTokenProviderTest {
     }
 
     @Test
+    void generateWithRestrictions() {
+        final ConfigContext strategyConfig = strategyConfig(false);
+
+        final AccessTokenProvider accessTokenProvider = newProviderInstance(strategyConfig);
+
+        final AccountBO account = RANDOM.nextObject(AccountBO.class)
+                .withPermissions(Arrays.asList(
+                        PermissionBO.builder().group("super").name("permission-1").build(),
+                        PermissionBO.builder().group("super").name("permission-2").build())
+                )
+                .withScopes(Arrays.asList("scope-1", "scope-2"));
+
+        final TokenRestrictionsBO restrictions = TokenRestrictionsBO.builder()
+                .addPermissions("super.permission-1")
+                .addScopes("scope-2")
+                .build();
+
+        final TokensBO tokens = accessTokenProvider.generateToken(account, restrictions);
+
+        System.out.println(tokens);
+
+        assertThat(tokens).isNotNull();
+        assertThat(tokens.getToken()).isNotNull();
+        assertThat(tokens.getRefreshToken()).isNotNull();
+        assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
+
+        final ArgumentCaptor<AccountTokenDO> accountTokenCaptor = ArgumentCaptor.forClass(AccountTokenDO.class);
+
+        Mockito.verify(accountTokensRepository).save(accountTokenCaptor.capture());
+
+        assertThat(accountTokenCaptor.getValue().getAssociatedAccountId()).isEqualTo(account.getId());
+        assertThat(accountTokenCaptor.getValue().getToken()).isEqualTo(tokens.getRefreshToken());
+        assertThat(accountTokenCaptor.getValue().getExpiresAt()).isNotNull()
+                .isAfter(ZonedDateTime.now());
+
+        verifyToken(tokens.getToken(), account.getId(), null,
+                Collections.singletonList("permission-1"), Collections.singletonList("scope-2"));
+    }
+
+    @Test
     void generateWithJti() {
         final ConfigContext strategyConfig = strategyConfig(true);
 
@@ -119,7 +163,7 @@ class AccessTokenProviderTest {
     }
 
     private void verifyToken(final String token, final String subject, final String jti,
-                             final List<PermissionBO> permissions, final List<String> scopes) {
+                             final List<String> permissions, final List<String> scopes) {
         final Verification verifier = JWT.require(Algorithm.HMAC256(KEY))
                 .withIssuer(ISSUER)
                 .withSubject(subject);

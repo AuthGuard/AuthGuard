@@ -2,6 +2,7 @@ package com.authguard.service.exchange;
 
 import com.authguard.service.exchange.helpers.BasicAuth;
 import com.authguard.service.jwt.AccessTokenProvider;
+import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
 
@@ -22,5 +23,11 @@ public class BasicToAccessToken implements Exchange {
     public Optional<TokensBO> exchangeToken(final String basicToken) {
         return basicAuth.authenticateAndGetAccount(basicToken)
                 .map(accessTokenProvider::generateToken);
+    }
+
+    @Override
+    public Optional<TokensBO> exchangeToken(final String basicToken, final TokenRestrictionsBO restrictions) {
+        return basicAuth.authenticateAndGetAccount(basicToken)
+                .map(account -> accessTokenProvider.generateToken(account, restrictions));
     }
 }
