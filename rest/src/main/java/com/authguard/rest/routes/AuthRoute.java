@@ -51,7 +51,14 @@ public class AuthRoute implements EndpointGroup {
         final String from = context.queryParam("from");
         final String to = context.queryParam("to");
 
-        final TokensBO tokens = exchangeService.exchange(authenticationRequest.getAuthorization(), from, to);
+        final TokensBO tokens;
+
+        if (authenticationRequest.getRestrictions() == null) {
+            tokens = exchangeService.exchange(authenticationRequest.getAuthorization(), from, to);
+        } else {
+            tokens = exchangeService.exchange(authenticationRequest.getAuthorization(),
+                    restMapper.toBO(authenticationRequest.getRestrictions()), from, to);
+        }
 
         context.json(restMapper.toDTO(tokens));
     }

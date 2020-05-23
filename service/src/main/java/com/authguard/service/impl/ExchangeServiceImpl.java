@@ -4,6 +4,7 @@ import com.authguard.service.ExchangeService;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
+import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
 
@@ -22,6 +23,12 @@ public class ExchangeServiceImpl implements ExchangeService {
 
     @Override
     public TokensBO exchange(final String token, final String fromTokenType, final String toTokenType) {
+        return exchange(token, null, fromTokenType, toTokenType);
+    }
+
+    @Override
+    public TokensBO exchange(final String token, final TokenRestrictionsBO restrictions,
+                             final String fromTokenType, final String toTokenType) {
         final String key = exchangeKey(fromTokenType, toTokenType);
         final Exchange exchange = exchanges.get(key);
 
@@ -29,7 +36,7 @@ public class ExchangeServiceImpl implements ExchangeService {
             throw new ServiceException("Unknown token exchange " + fromTokenType + " to " + toTokenType);
         }
 
-        return exchange.exchangeToken(token)
+        return (restrictions == null ? exchange.exchangeToken(token) : exchange.exchangeToken(token, restrictions))
                 .orElseThrow(() -> new ServiceException("Failed to generate token"));
     }
 

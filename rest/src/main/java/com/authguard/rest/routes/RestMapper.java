@@ -17,6 +17,9 @@ public interface RestMapper {
     TokensBO toBO(TokensDTO tokensDTO);
     TokensDTO toDTO(TokensBO tokensBO);
 
+    TokenRestrictionsBO toBO(TokenRestrictionsDTO tokenRestrictionsDTO);
+    TokenRestrictionsDTO toDTO(TokenRestrictionsBO tokenRestrictionsBO);
+
     PermissionBO toBO(PermissionDTO permissionDTO);
     PermissionDTO toDTO(PermissionBO permissionBO);
 
