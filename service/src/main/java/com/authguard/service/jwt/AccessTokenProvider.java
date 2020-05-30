@@ -14,6 +14,7 @@ import com.authguard.service.model.*;
 import com.google.inject.name.Named;
 
 import java.time.ZonedDateTime;
+import java.util.stream.Stream;
 
 public class AccessTokenProvider implements AuthProvider {
     private final AccountTokensRepository accountTokensRepository;
@@ -40,7 +41,12 @@ public class AccessTokenProvider implements AuthProvider {
 
     @Override
     public TokensBO generateToken(final AccountBO account) {
-        final TokenBuilderBO tokenBuilder = generateAccessToken(account);
+        return generateToken(account, null);
+    }
+
+    @Override
+    public TokensBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
+        final TokenBuilderBO tokenBuilder = generateAccessToken(account, restrictions);
         final String token = tokenBuilder.getBuilder().sign(algorithm);
         final String refreshToken = jwtGenerator.generateRandomRefreshToken();
 
@@ -69,7 +75,7 @@ public class AccessTokenProvider implements AuthProvider {
                 .join();
     }
 
-    private TokenBuilderBO generateAccessToken(final AccountBO account) {
+    private TokenBuilderBO generateAccessToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
         final TokenBuilderBO.Builder tokenBuilder = TokenBuilderBO.builder();
         final JWTCreator.Builder jwtBuilder = jwtGenerator.generateUnsignedToken(account,
                 ConfigParser.parseDuration(strategy.getTokenLife()));
@@ -81,12 +87,11 @@ public class AccessTokenProvider implements AuthProvider {
         }
 
         if (strategy.getIncludePermissions()) {
-            jwtBuilder.withArrayClaim("permissions", account.getPermissions().stream()
-                    .map(this::permissionToString).toArray(String[]::new));
+            jwtBuilder.withArrayClaim("permissions", jwtPermissions(account, restrictions));
         }
 
         if (strategy.getIncludeScopes()) {
-            jwtBuilder.withArrayClaim("scopes", account.getScopes().toArray(new String[0]));
+            jwtBuilder.withArrayClaim("scopes", jwtScopes(account, restrictions));
         }
 
         if (strategy.getIncludeExternalId()) {
@@ -103,5 +108,26 @@ public class AccessTokenProvider implements AuthProvider {
     private ZonedDateTime refreshTokenExpiry() {
         return ZonedDateTime.now()
                 .plus(ConfigParser.parseDuration(strategy.getRefreshTokenLife()));
+    }
+
+    private String[] jwtPermissions(final AccountBO account, final TokenRestrictionsBO restrictions) {
+        Stream<String> mappedPermissions =  account.getPermissions().stream()
+                .map(this::permissionToString);
+
+        if (restrictions != null && !restrictions.getPermissions().isEmpty()) {
+            mappedPermissions = mappedPermissions.filter(restrictions.getPermissions()::contains);
+        }
+
+        return mappedPermissions.toArray(String[]::new);
+    }
+
+    private String[] jwtScopes(final AccountBO account, final TokenRestrictionsBO restrictions) {
+        if (restrictions == null || restrictions.getScopes().isEmpty()) {
+            return account.getScopes().toArray(new String[0]);
+        }
+
+        return account.getScopes().stream()
+                .filter(restrictions.getScopes()::contains)
+                .toArray(String[]::new);
     }
 }

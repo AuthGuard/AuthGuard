@@ -4,11 +4,13 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
+import java.util.List;
+
 @Value.Immutable
 @DTOStyle
-@JsonSerialize(as = AuthRequestDTO.class)
-@JsonDeserialize(as = AuthRequestDTO.class)
-public interface AuthRequest {
-    String getAuthorization();
-    TokenRestrictionsDTO getRestrictions();
+@JsonDeserialize(as = TokenRestrictionsDTO.class)
+@JsonSerialize(as = TokenRestrictionsDTO.class)
+public interface TokenRestrictions {
+    List<String> getPermissions();
+    List<String> getScopes();
 }
