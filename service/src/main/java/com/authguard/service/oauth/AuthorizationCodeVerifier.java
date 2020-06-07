@@ -19,6 +19,12 @@ public class AuthorizationCodeVerifier implements AuthTokenVerfier {
 
     @Override
     public Optional<String> verifyAccountToken(final String token) {
+        return verifyAndGetAccountToken(token)
+                .map(AccountTokenDO::getAssociatedAccountId);
+    }
+
+    @Override
+    public Optional<AccountTokenDO> verifyAndGetAccountToken(final String token) {
         final AccountTokenDO accountToken = accountTokensRepository.getByToken(token)
                 .join()
                 .orElseThrow(() -> new ServiceAuthorizationException("Invalid authorization code " + token));
@@ -27,6 +33,6 @@ public class AuthorizationCodeVerifier implements AuthTokenVerfier {
             throw new ServiceAuthorizationException("The authorization code has expired");
         }
 
-        return Optional.of(accountToken.getAssociatedAccountId());
+        return Optional.of(accountToken);
     }
 }
