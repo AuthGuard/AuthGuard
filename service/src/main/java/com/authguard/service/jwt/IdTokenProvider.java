@@ -24,7 +24,7 @@ public class IdTokenProvider implements AuthProvider {
                            final @Named("idToken") ConfigContext idTokenConfigContext) {
         final JwtConfig jwtConfig = jwtConfigContext.asConfigBean(JwtConfig.class);
 
-        this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getKey());
+        this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getPublicKey(), jwtConfig.getPrivateKey());
         this.jwtGenerator = new JwtGenerator(jwtConfig);
         this.strategy = idTokenConfigContext.asConfigBean(StrategyConfig.class);
     }

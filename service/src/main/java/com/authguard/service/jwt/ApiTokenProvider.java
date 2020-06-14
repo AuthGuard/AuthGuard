@@ -20,7 +20,8 @@ public class ApiTokenProvider implements AuthProvider {
     public ApiTokenProvider(final JwtConfig jwtConfig, final JtiProvider jti) {
         this.jti = jti;
 
-        this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getKey());
+        this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getPublicKey(),
+                jwtConfig.getPrivateKey());
     }
 
     @Override

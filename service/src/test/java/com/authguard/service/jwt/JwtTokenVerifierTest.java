@@ -34,7 +34,7 @@ class JwtTokenVerifierTest {
     private JwtConfig jwtConfig() {
         return JwtConfig.builder()
                 .algorithm(ALGORITHM)
-                .key(KEY)
+                .privateKey(KEY)
                 .issuer(ISSUER)
                 .build();
     }
@@ -51,13 +51,15 @@ class JwtTokenVerifierTest {
         jtiProvider = Mockito.mock(JtiProvider.class);
 
         final JwtConfig jwtConfig = jwtConfig();
-        final Algorithm algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getKey());
+        final Algorithm algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getPublicKey(),
+                jwtConfig.getPrivateKey());
 
         return new JwtTokenVerifier(strategyConfig, jtiProvider, algorithm);
     }
 
     private TokensBO generateToken(final JwtConfig jwtConfig, final AccountBO account, final String jti) {
-        final Algorithm algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getKey());
+        final Algorithm algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getPublicKey(),
+                jwtConfig.getPrivateKey());
         final JwtGenerator jwtGenerator = new JwtGenerator(jwtConfig);
 
         final JWTCreator.Builder tokenBuilder = jwtGenerator.generateUnsignedToken(account, Duration.ofMinutes(5));

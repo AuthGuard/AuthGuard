@@ -45,7 +45,7 @@ class AccessTokenProviderTest {
         final ObjectNode configNode = new ObjectNode(JsonNodeFactory.instance);
         
         configNode.put("algorithm", ALGORITHM)
-                .put("key", KEY)
+                .put("privateKey", KEY)
                 .put("issuer", ISSUER);
         
         return new JacksonConfigContext(configNode);

@@ -33,7 +33,8 @@ public class AccessTokenProvider implements AuthProvider {
 
         final JwtConfig jwtConfig = jwtConfigContext.asConfigBean(JwtConfig.class);
 
-        this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getKey());
+        this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getPublicKey(),
+                jwtConfig.getPrivateKey());
         this.jwtGenerator = new JwtGenerator(jwtConfig);
 
         this.strategy = accessTokenConfigContext.asConfigBean(StrategyConfig.class);
