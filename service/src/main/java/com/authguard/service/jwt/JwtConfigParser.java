@@ -5,6 +5,8 @@ import com.authguard.service.exceptions.ServiceException;
 
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -17,6 +19,8 @@ public class JwtConfigParser {
             return parseHmac(algorithmName, privateKey);
         } else if (algorithmName.startsWith("RSA")) {
             return parseRsa(algorithmName, publicKey, privateKey);
+        } else if (algorithmName.startsWith("ECDSA")) {
+            return parseEc(algorithmName, publicKey, privateKey);
         } else {
             throw new ServiceException("Unsupported algorithm " + algorithmName);
         }
@@ -51,9 +55,33 @@ public class JwtConfigParser {
         }
     }
 
+    private static Algorithm parseEc(final String algorithmName, final String publicKey,
+                                     final String privateKey) {
+        final KeyPair keyPair = readEcKeys(publicKey, privateKey);
+
+        switch (algorithmName) {
+            case "RSA256":
+                return Algorithm.ECDSA256((ECPublicKey) keyPair.getPublic(), (ECPrivateKey) keyPair.getPrivate());
+
+            case "RSA512":
+                return Algorithm.ECDSA512((ECPublicKey) keyPair.getPublic(), (ECPrivateKey) keyPair.getPrivate());
+
+            default:
+                throw new ServiceException("Unsupported algorithm " + algorithmName);
+        }
+    }
+
     private static KeyPair readRsaKeys(final String publicKey, final String privateKey) {
         try {
-            return RsaKeys.fromBase64Keys(publicKey, privateKey);
+            return AsymmetricKeys.rsaFromBase64Keys(publicKey, privateKey);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static KeyPair readEcKeys(final String publicKey, final String privateKey) {
+        try {
+            return AsymmetricKeys.ecdsaFromBase64Keys(publicKey, privateKey);
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new RuntimeException(e);
         }
