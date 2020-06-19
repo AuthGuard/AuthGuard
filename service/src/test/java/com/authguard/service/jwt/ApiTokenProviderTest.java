@@ -25,7 +25,7 @@ class ApiTokenProviderTest {
     private JwtConfig jwtConfig() {
         return JwtConfig.builder()
                 .algorithm(ALGORITHM)
-                .key(KEY)
+                .privateKey(KEY)
                 .build();
     }
 

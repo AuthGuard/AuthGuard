@@ -4,7 +4,7 @@ authguard:
 
   jwt:
     algorithm: "HMAC256"
-    key: "FKvL11DI5rwgt51QgB3CVob3oWYrFNBzF0ROvu9Yaj8"
+    privateKey: "FKvL11DI5rwgt51QgB3CVob3oWYrFNBzF0ROvu9Yaj8"
     issuer: "AuthGuard"
     allowedAlgorithms: ["HMAC256"]
     trustedIssuers: ["self"]

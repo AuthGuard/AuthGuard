@@ -11,7 +11,8 @@ import java.util.List;
 @JsonDeserialize(as = JwtConfig.class)
 public interface JwtConfigInterface {
     String getAlgorithm();
-    String getKey();
+    String getPrivateKey();
+    String getPublicKey();
     String getIssuer();
     List<String> getAllowedAlgorithms();
     List<String> getTrustedIssuers();

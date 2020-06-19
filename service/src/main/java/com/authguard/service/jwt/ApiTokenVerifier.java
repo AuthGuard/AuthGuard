@@ -17,7 +17,8 @@ public class ApiTokenVerifier implements AuthTokenVerfier {
     public ApiTokenVerifier(final JtiProvider jtiProvider, final @Named("jwt") ConfigContext configContext) {
         final JwtConfig jwtConfig = configContext.asConfigBean(JwtConfig.class);
         final StrategyConfig strategy = StrategyConfig.builder().useJti(true).build();
-        final Algorithm algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getKey());
+        final Algorithm algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getPublicKey(),
+                jwtConfig.getPrivateKey());
 
         this.jwtVerifier = new JwtTokenVerifier(strategy, jtiProvider, algorithm);
     }
