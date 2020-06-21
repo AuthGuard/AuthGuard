@@ -6,6 +6,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.Function;
@@ -13,6 +15,8 @@ import java.util.stream.Collectors;
 
 @Singleton
 public class MessageBus {
+    private static final Logger LOG = LoggerFactory.getLogger(MessageBus.class);
+
     private final Map<String, MessagePublisher> channels;
     private final MessagePublisherFactory factory;
     private final boolean createIfMissing;
@@ -44,10 +48,13 @@ public class MessageBus {
     }
 
     public void publish(final String channel, final Message message) {
-        final MessagePublisher publisher = Optional.ofNullable(get(channel))
-                .orElseThrow(() -> new IllegalArgumentException("Cannot publish to non-existing channel " + channel));
+        final MessagePublisher publisher = get(channel);
 
-        publisher.publish(message);
+        if (publisher == null) {
+            LOG.warn("Attempt to publish to non-existing channel " + channel);
+        } else {
+            publisher.publish(message);
+        }
     }
 
     public void subscribe(final String channel, final MessageSubscriber subscriber) {
