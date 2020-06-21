@@ -80,6 +80,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.authguard</groupId>
+            <artifactId>bootstrap-steps</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <version>${rest-assured.version}</version>

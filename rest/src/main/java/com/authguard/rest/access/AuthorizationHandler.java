@@ -9,10 +9,14 @@ import io.javalin.http.Handler;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.model.AccountBO;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
 public class AuthorizationHandler implements Handler {
+    private static final Logger LOG = LoggerFactory.getLogger(AuthorizationHandler.class);
+
     private final BasicAuth basicAuth;
     private final ApiKeysService apiKeysService;
 
@@ -58,14 +62,24 @@ public class AuthorizationHandler implements Handler {
     private void populateBasicActor(final Context context, final String base64Credentials) {
         final Optional<AccountBO> actorAccount = basicAuth.authenticateAndGetAccount("Basic " + base64Credentials);
 
-        actorAccount.ifPresentOrElse(account -> context.attribute("actor", account),
-                () -> context.status(401).result(""));
+        if (actorAccount.isPresent()) {
+            LOG.info("Authenticated actor {} with basic credentials", actorAccount.get().getId());
+            context.attribute("actor", actorAccount.get());
+        } else {
+            LOG.info("Failed to authenticate actor with basic credentials");
+            context.status(401).result("");
+        }
     }
 
     private void populateBearerActor(final Context context, final String apiKey) {
         final Optional<AppBO> actorApp = apiKeysService.validateApiKey(apiKey);
 
-        actorApp.ifPresentOrElse(app -> context.attribute("actor", app),
-                () -> context.status(401).result(""));
+        if (actorApp.isPresent()) {
+            LOG.info("Authenticated actor {} with bearer token", actorApp.get().getId());
+            context.attribute("actor", actorApp.get());
+        } else {
+            LOG.info("Failed to authenticate actor with basic credentials");
+            context.status(401).result("");
+        }
     }
 }
