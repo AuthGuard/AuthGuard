@@ -1,6 +1,11 @@
 package com.authguard.rest.server;
 
 import com.authguard.rest.exceptions.Error;
+import com.authguard.rest.exceptions.ExceptionHandlers;
+import com.authguard.rest.exceptions.RuntimeJsonException;
+import com.authguard.service.exceptions.ServiceAuthorizationException;
+import com.authguard.service.exceptions.ServiceConflictException;
+import com.authguard.service.exceptions.ServiceException;
 import io.javalin.Javalin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,5 +23,13 @@ public class ServerExceptionHandlers implements ServerConfigurer {
             context.status(500)
                     .json(new Error("", message));
         });
+
+        app.exception(ServiceException.class, ExceptionHandlers.serviceException());
+
+        app.exception(ServiceAuthorizationException.class, ExceptionHandlers.serviceAuthorizationException());
+
+        app.exception(ServiceConflictException.class, ExceptionHandlers.serviceConflictException());
+
+        app.exception(RuntimeJsonException.class, ExceptionHandlers.jsonMappingException());
     }
 }

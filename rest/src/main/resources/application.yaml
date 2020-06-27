@@ -14,9 +14,7 @@ authguard:
       - from: "basic"
         to: "otp"
       - from: "basic"
-        to: "accessToken"
-      - from: "refresh"
-        to: "accessToken"
+        to: "idToken"
       - from: "otp"
         to: "accessToken"
       - from: "basic"
@@ -35,6 +33,11 @@ authguard:
     includePermissions: true
     includeRoles: true
 
+  idToken:
+    tokenLife: "1d"
+    refreshTokenLife: "5d"
+    useJti: true
+
   otp:
     lifeTime: "2m"
     mode: "NUMERIC"
@@ -51,7 +54,7 @@ authguard:
     randomSize: 128
 
   authentication:
-    generateToken: "authorizationCode"
+    generateToken: "idToken"
 
   account:
     verifyEmail: true

@@ -78,7 +78,7 @@ public class AuthorizationHandler implements Handler {
             LOG.info("Authenticated actor {} with bearer token", actorApp.get().getId());
             context.attribute("actor", actorApp.get());
         } else {
-            LOG.info("Failed to authenticate actor with basic credentials");
+            LOG.info("Failed to authenticate actor with bearer token");
             context.status(401).result("");
         }
     }
