@@ -1,8 +1,10 @@
 package com.authguard.service.jwt;
 
+import com.authguard.dal.AccountTokensRepository;
+import com.authguard.dal.model.AccountTokenDO;
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -11,21 +13,26 @@ import java.util.concurrent.ConcurrentSkipListSet;
  */
 @Singleton
 public class BasicJtiProvider implements JtiProvider {
-    private final Set<String> generatedIds;
+    private final AccountTokensRepository accountTokensRepository;
 
-    public BasicJtiProvider() {
-        generatedIds = new ConcurrentSkipListSet<>();
+    @Inject
+    public BasicJtiProvider(final AccountTokensRepository accountTokensRepository) {
+        this.accountTokensRepository = accountTokensRepository;
     }
 
     @Override
     public String next() {
         final String id = UUID.randomUUID().toString();
-        generatedIds.add(id);
+
+        accountTokensRepository.save(AccountTokenDO.builder()
+                .token(id)
+                .build()).join();
+
         return id;
     }
 
     @Override
     public boolean validate(final String jti) {
-        return generatedIds.contains(jti);
+        return accountTokensRepository.getByToken(jti).join().isPresent();
     }
 }
