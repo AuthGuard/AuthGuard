@@ -11,5 +11,5 @@ public interface AccountsRepository {
     CompletableFuture<Optional<AccountDO>> getById(String accountId);
     CompletableFuture<Optional<AccountDO>> getByExternalId(String externalId);
     CompletableFuture<Optional<AccountDO>> update(AccountDO account);
-    CompletableFuture<List<AccountDO>> getAdmins();
+    CompletableFuture<List<AccountDO>> getByRole(String role);
 }

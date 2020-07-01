@@ -7,6 +7,7 @@ import org.immutables.value.Value;
 @ConfigStyle
 @JsonDeserialize(as = AccountConfig.class)
 public interface AccountConfigInterface {
+    String getAuthguardAdminRole();
     boolean requireEmail();
     boolean requirePhoneNumber();
     boolean verifyEmail();
