@@ -90,7 +90,7 @@ class ClassSearchTest {
         }
 
         @Override
-        public CompletableFuture<List<AccountDO>> getAdmins() {
+        public CompletableFuture<List<AccountDO>> getByRole(final String role) {
             return null;
         }
     }

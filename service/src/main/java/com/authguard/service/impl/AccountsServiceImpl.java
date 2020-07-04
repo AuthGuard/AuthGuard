@@ -44,7 +44,7 @@ public class AccountsServiceImpl implements AccountsService {
                                final RolesService rolesService,
                                final ServiceMapper serviceMapper,
                                final MessageBus messageBus,
-                               final @Named("account") ConfigContext accountConfigContext) {
+                               final @Named("accounts") ConfigContext accountConfigContext) {
         this.accountsRepository = accountsRepository;
         this.permissionsService = permissionsService;
         this.verificationMessageService = verificationMessageService;
@@ -242,7 +242,7 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public List<AccountBO> getAdmins() {
-        return accountsRepository.getAdmins()
+        return accountsRepository.getByRole(accountConfig.getAuthguardAdminRole())
                 .join()
                 .stream()
                 .map(serviceMapper::toBO)
