@@ -98,6 +98,27 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
+    public Optional<AccountBO> delete(final String accountId) {
+        return accountsRepository.delete(accountId)
+                .join()
+                .map(serviceMapper::toBO);
+    }
+
+    @Override
+    public Optional<AccountBO> activate(final String accountId) {
+        return getById(accountId)
+                .map(account -> account.withActive(true))
+                .flatMap(this::update);
+    }
+
+    @Override
+    public Optional<AccountBO> deactivate(final String accountId) {
+        return getById(accountId)
+                .map(account -> account.withActive(false))
+                .flatMap(this::update);
+    }
+
+    @Override
     public Optional<AccountBO> removeEmails(final String accountId, final List<String> emails) {
         final AccountBO existing = accountsRepository.getById(accountId)
                 .join()

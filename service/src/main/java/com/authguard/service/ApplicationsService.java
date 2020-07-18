@@ -11,5 +11,7 @@ public interface ApplicationsService {
     Optional<AppBO> getByExternalId(String externalId);
     Optional<AppBO> update(AppBO app);
     Optional<AppBO> delete(String id);
+    Optional<AppBO> activate(String id);
+    Optional<AppBO> deactivate(String id);
     List<AppBO> getByAccountId(String accountId);
 }

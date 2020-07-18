@@ -2,6 +2,7 @@ package com.authguard.rest.routes;
 
 import com.authguard.rest.access.ActorRoles;
 import com.authguard.api.dto.*;
+import com.authguard.rest.exceptions.Error;
 import com.authguard.service.AccountsService;
 import com.authguard.service.ApplicationsService;
 import com.authguard.service.model.AccountEmailBO;
@@ -33,6 +34,7 @@ public class AccountsRoute implements EndpointGroup {
         post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin"));
 
         get("/:id", this::getById, ActorRoles.adminClient());
+        delete("/:id", this::deleteAccount, ActorRoles.adminClient());
         get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
 
         patch("/:id/permissions", this::grantPermissions, ActorRoles.adminClient());
@@ -42,6 +44,9 @@ public class AccountsRoute implements EndpointGroup {
         delete("/:id/emails", this::removeEmails, ActorRoles.adminClient());
 
         get("/:id/apps", this::getApps, ActorRoles.adminClient());
+
+        patch("/:id/activate", this::activate, ActorRoles.adminClient());
+        patch("/:id/deactivate", this::deactivate, ActorRoles.adminClient());
     }
 
     private void create(final Context context) {
@@ -62,6 +67,19 @@ public class AccountsRoute implements EndpointGroup {
         final String accountId = context.pathParam("id");
 
         final Optional<AccountDTO> account = accountsService.getById(accountId)
+                .map(restMapper::toDTO);
+
+        if (account.isPresent()) {
+            context.status(200).json(account.get());
+        } else {
+            context.status(404);
+        }
+    }
+
+    private void deleteAccount(final Context context) {
+        final String accountId = context.pathParam("id");
+
+        final Optional<AccountDTO> account = accountsService.delete(accountId)
                 .map(restMapper::toDTO);
 
         if (account.isPresent()) {
@@ -139,5 +157,31 @@ public class AccountsRoute implements EndpointGroup {
                 .collect(Collectors.toList());
 
         context.status(200).json(apps);
+    }
+
+    private void activate(final Context context) {
+        final String accountId = context.pathParam("id");
+
+        final Optional<AccountDTO> account = accountsService.activate(accountId)
+                .map(restMapper::toDTO);
+
+        if (account.isPresent()) {
+            context.status(200).json(account.get());
+        } else {
+            context.status(404).json(new Error("404", "No account with ID " + accountId + " exists"));
+        }
+    }
+
+    private void deactivate(final Context context) {
+        final String accountId = context.pathParam("id");
+
+        final Optional<AccountDTO> account = accountsService.deactivate(accountId)
+                .map(restMapper::toDTO);
+
+        if (account.isPresent()) {
+            context.status(200).json(account.get());
+        } else {
+            context.status(404).json(new Error("404", "No account with ID " + accountId + " exists"));
+        }
     }
 }

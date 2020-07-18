@@ -12,6 +12,7 @@ import com.authguard.service.model.PermissionBO;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
@@ -23,7 +24,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ApplicationsServiceImplTest {
     private final EasyRandom random = new EasyRandom(new EasyRandomParameters()
             .collectionSizeRange(1, 4));
@@ -33,7 +33,7 @@ class ApplicationsServiceImplTest {
     private AccountsService accountsService;
     private MessageBus messageBus;
 
-    @BeforeAll
+    @BeforeEach
     void setup() {
         applicationsRepository = Mockito.mock(ApplicationsRepository.class);
         accountsService = Mockito.mock(AccountsService.class);
@@ -79,5 +79,53 @@ class ApplicationsServiceImplTest {
                         .name(permissionDO.getName())
                         .build()
                 ).toArray(PermissionBO[]::new));
+    }
+
+    @Test
+    void delete() {
+        final AppDO app = random.nextObject(AppDO.class);
+
+        app.setDeleted(false);
+
+        Mockito.when(applicationsRepository.delete(app.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
+
+        applicationsService.delete(app.getId());
+
+        Mockito.verify(applicationsRepository).delete(app.getId());
+    }
+
+    @Test
+    void activate() {
+        final AppDO app = random.nextObject(AppDO.class);
+
+        app.setActive(false);
+
+        Mockito.when(applicationsRepository.getById(app.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
+        Mockito.when(applicationsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
+
+        final AppBO updated = applicationsService.activate(app.getId()).orElse(null);
+
+        assertThat(updated).isNotNull();
+        assertThat(updated.isActive()).isTrue();
+    }
+
+    @Test
+    void deactivate() {
+        final AppDO app = random.nextObject(AppDO.class);
+
+        app.setActive(true);
+
+        Mockito.when(applicationsRepository.getById(app.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
+        Mockito.when(applicationsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
+
+        final AppBO updated = applicationsService.deactivate(app.getId()).orElse(null);
+
+        assertThat(updated).isNotNull();
+        assertThat(updated.isActive()).isFalse();
     }
 }

@@ -20,17 +20,11 @@ public interface AccountsService {
      * is not necessarily the same as the argument. Fields
      * like 'id' and 'deleted' will be overwritten by any
      * implementation.
-     * @param account An account to be created.
-     * @return The stored account in the repository.
      */
     AccountBO create(AccountBO account);
 
     /**
      * Find an account by ID.
-     * @param accountId The ID of the account. This is different
-     *                  from credentials ID
-     * @return An optional of containing the account object, or
-     *         empty if none was found.
      */
     Optional<AccountBO> getById(String accountId);
 
@@ -38,14 +32,17 @@ public interface AccountsService {
 
     Optional<AccountBO> update(AccountBO account);
 
+    Optional<AccountBO> delete(String accountId);
+
+    Optional<AccountBO> activate(String accountId);
+
+    Optional<AccountBO> deactivate(String accountId);
+
     /**
      * Get all permissions of an account. Implementations of
      * this method should aggregate permissions granted to the
      * account directly and permissions granted by roles and
      * scopes.
-     * @param accountId The ID of the account. This is different
-     *                  from credentials ID
-     * @return A list of all permissions the account has
      * @throws ServiceNotFoundException
      *         if no account was found.
      */
@@ -58,10 +55,6 @@ public interface AccountsService {
     /**
      * Grant permissions to an account. This should only updatePatch
      * the permissions field.
-     * @param accountId The ID of the account. This is different
-     *                  from credentials ID
-     * @param permissions A list of permissions to grant.
-     * @return The updated account
      * @throws ServiceNotFoundException
      *         if no account was found.
      */
@@ -70,10 +63,6 @@ public interface AccountsService {
     /**
      * Revoke permissions of an account. This should only updatePatch
      * the permissions field.
-     * @param accountId The ID of the account. This is different
-     *                  from credentials ID
-     * @param permissions A list of permissions to revoke.
-     * @return The updated account
      * @throws ServiceNotFoundException
      *         if no account was found.
      */
@@ -82,10 +71,6 @@ public interface AccountsService {
     /**
      * Grant roles to an account. This should only updatePatch the roles
      * field.
-     * @param accountId The ID of the account. This is different
-     *                  from credentials ID
-     * @param roles A list of roles to grant.
-     * @return The updated account
      * @throws ServiceNotFoundException
      *         if no account was found.
      */
@@ -94,10 +79,6 @@ public interface AccountsService {
     /**
      * Revoke roles of an account. This should only updatePatch the roles
      * field.
-     * @param accountId The ID of the account. This is different
-     *                  from credentials ID
-     * @param roles A list of roles to revoke.
-     * @return The updated account
      * @throws ServiceNotFoundException
      *         if no account was found.
      */
@@ -106,7 +87,6 @@ public interface AccountsService {
     /**
      * Finds a list of all admins. This is useful only when deciding
      * if a one-time admin account should be created or not.
-     * @return
      */
     List<AccountBO> getAdmins();
 }
