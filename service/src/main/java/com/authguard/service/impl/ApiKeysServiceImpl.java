@@ -58,4 +58,9 @@ public class ApiKeysServiceImpl implements ApiKeysService {
         return tokenVerifier.verifyAccountToken(key)
                 .flatMap(applicationsService::getById);
     }
+
+//    @Override
+//    public Optional<AppBO> deleteKey(final String key) {
+//        return Optional.empty();
+//    }
 }

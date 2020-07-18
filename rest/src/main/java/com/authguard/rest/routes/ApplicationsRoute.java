@@ -28,6 +28,8 @@ public class ApplicationsRoute implements EndpointGroup {
         get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
         put("/:id", this::update, ActorRoles.adminClient());
         delete("/:id", this::deleteById, ActorRoles.adminClient());
+        patch("/:id/activate", this::activate, ActorRoles.adminClient());
+        patch("/:id/deactivate", this::deactivate, ActorRoles.adminClient());
     }
 
     private void create(final Context context) {
@@ -90,6 +92,32 @@ public class ApplicationsRoute implements EndpointGroup {
         final String applicationId = context.pathParam("id");
 
         final Optional<AppDTO> application = applicationsService.delete(applicationId)
+                .map(restMapper::toDTO);
+
+        if (application.isPresent()) {
+            context.status(200).json(application.get());
+        } else {
+            context.status(404);
+        }
+    }
+
+    private void activate(final Context context) {
+        final String applicationId = context.pathParam("id");
+
+        final Optional<AppDTO> application = applicationsService.activate(applicationId)
+                .map(restMapper::toDTO);
+
+        if (application.isPresent()) {
+            context.status(200).json(application.get());
+        } else {
+            context.status(404);
+        }
+    }
+
+    private void deactivate(final Context context) {
+        final String applicationId = context.pathParam("id");
+
+        final Optional<AppDTO> application = applicationsService.deactivate(applicationId)
                 .map(restMapper::toDTO);
 
         if (application.isPresent()) {

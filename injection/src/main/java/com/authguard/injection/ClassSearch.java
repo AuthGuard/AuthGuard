@@ -1,8 +1,6 @@
 package com.authguard.injection;
 
 import com.google.inject.AbstractModule;
-import com.authguard.dal.AccountsRepository;
-import com.authguard.dal.PermissionsRepository;
 import org.reflections.Reflections;
 
 import java.util.Collection;
@@ -20,26 +18,6 @@ public class ClassSearch {
 
     public ClassSearch(final Reflections reflections) {
         this.reflections = reflections;
-    }
-
-    public Implementation<AccountsRepository> findAccountsRepositoryImplementation() throws InjectionException {
-        final Class<? extends AccountsRepository> implementationClass = findImplementationClass(AccountsRepository.class);
-        final Class<? extends AbstractModule> injectorModule = getInjectorModules().stream()
-                .filter(clazz -> clazz.getAnnotation(InjectorModule.class).target().equals(AccountsRepository.class))
-                .findFirst()
-                .orElse(null);
-
-        return new Implementation<>(implementationClass, injectorModule);
-    }
-
-    public Implementation<PermissionsRepository> findPermissionsRepositoryImplementation() throws InjectionException {
-        final Class<? extends PermissionsRepository> implementationClass = findImplementationClass(PermissionsRepository.class);
-        final Class<? extends AbstractModule> injectorModule = getInjectorModules().stream()
-                .filter(clazz -> clazz.getAnnotation(InjectorModule.class).target().equals(PermissionsRepository.class))
-                .findFirst()
-                .orElse(null);
-
-        return new Implementation<>(implementationClass, injectorModule);
     }
 
     @SuppressWarnings("unchecked")

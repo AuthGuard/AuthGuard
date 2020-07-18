@@ -274,4 +274,50 @@ class AccountsServiceImplTest {
         Mockito.verify(messageBus, Mockito.times(1))
                 .publish(eq("accounts"), any());
     }
+
+    @Test
+    void deleteAccount() {
+        final AccountDO account = RANDOM.nextObject(AccountDO.class);
+
+        Mockito.when(accountsRepository.delete(account.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+
+        accountService.delete(account.getId());
+
+        Mockito.verify(accountsRepository).delete(account.getId());
+    }
+
+    @Test
+    void activateAccount() {
+        final AccountDO account = RANDOM.nextObject(AccountDO.class);
+        account.setActive(false);
+
+        Mockito.when(accountsRepository.getById(account.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+        Mockito.when(accountsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
+
+        final AccountBO updated = accountService.activate(account.getId()).orElse(null);
+
+        assertThat(updated).isNotNull();
+        assertThat(updated).isEqualToIgnoringGivenFields(account, "permissions", "emails", "active");
+        assertThat(updated.isActive()).isTrue();
+    }
+
+    @Test
+    void deactivateAccount() {
+        final AccountDO account = RANDOM.nextObject(AccountDO.class);
+        account.setActive(true);
+
+        Mockito.when(accountsRepository.getById(account.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+        Mockito.when(accountsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
+
+        final AccountBO updated = accountService.deactivate(account.getId()).orElse(null);
+
+        assertThat(updated).isNotNull();
+        assertThat(updated).isEqualToIgnoringGivenFields(account, "permissions", "emails", "active");
+        assertThat(updated.isActive()).isFalse();
+    }
 }

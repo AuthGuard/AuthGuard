@@ -13,18 +13,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.authguard</groupId>
-            <artifactId>dal</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.authguard</groupId>
-            <artifactId>emb</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
             <version>${reflections.version}</version>

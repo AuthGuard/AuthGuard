@@ -100,6 +100,20 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
+    public Optional<AppBO> activate(final String id) {
+        return getById(id)
+                .map(app -> app.withActive(true))
+                .flatMap(this::update);
+    }
+
+    @Override
+    public Optional<AppBO> deactivate(final String id) {
+        return getById(id)
+                .map(app -> app.withActive(false))
+                .flatMap(this::update);
+    }
+
+    @Override
     public List<AppBO> getByAccountId(final String accountId) {
         return applicationsRepository.getAllForAccount(accountId)
                 .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()))
