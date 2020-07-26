@@ -4,6 +4,10 @@ import com.authguard.dal.CredentialsAuditRepository;
 import com.authguard.dal.CredentialsRepository;
 import com.authguard.emb.MessageBus;
 import com.authguard.service.AccountsService;
+import com.authguard.service.config.PasswordConditions;
+import com.authguard.service.config.PasswordsConfig;
+import com.authguard.service.exceptions.ServiceInvalidPasswordException;
+import com.authguard.service.passwords.PasswordValidator;
 import com.authguard.service.passwords.SecurePassword;
 import com.authguard.dal.model.CredentialsAuditDO;
 import com.authguard.dal.model.CredentialsDO;
@@ -47,8 +51,11 @@ class CredentialsServiceImplTest {
         securePassword = Mockito.mock(SecurePassword.class);
         messageBus = Mockito.mock(MessageBus.class);
 
+        final PasswordValidator passwordValidator = new PasswordValidator(PasswordsConfig.builder()
+                .conditions(PasswordConditions.builder().build()).build());
+
         credentialsService = new CredentialsServiceImpl(accountsService, credentialsRepository,
-                credentialsAuditRepository, securePassword, messageBus, new ServiceMapperImpl());
+                credentialsAuditRepository, securePassword, passwordValidator, messageBus, new ServiceMapperImpl());
     }
 
     @BeforeEach
@@ -64,7 +71,8 @@ class CredentialsServiceImplTest {
 
     @Test
     void create() {
-        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class);
+        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class)
+                .withPlainPassword("SecurePassword77$3");
         final HashedPasswordBO hashedPassword = RANDOM.nextObject(HashedPasswordBO.class);
 
         Mockito.when(securePassword.hash(any())).thenReturn(hashedPassword);
@@ -99,6 +107,14 @@ class CredentialsServiceImplTest {
         Mockito.when(accountsService.getById(credentials.getAccountId())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> credentialsService.create(credentials)).isInstanceOf(ServiceException.class);
+    }
+
+    @Test
+    void createWithInvalidPassword() {
+        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class)
+                .withPlainPassword("bad");
+
+        assertThatThrownBy(() -> credentialsService.create(credentials)).isInstanceOf(ServiceInvalidPasswordException.class);
     }
 
     @Test
