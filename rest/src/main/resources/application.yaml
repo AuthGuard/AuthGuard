@@ -9,6 +9,12 @@ authguard:
     allowedAlgorithms: ["HMAC256"]
     trustedIssuers: ["self"]
 
+  passwords:
+    algorithm: scrypt
+    conditions:
+      includeCaps: true
+      minLength: 6
+
   exchange:
     allowed:
       - from: "basic"

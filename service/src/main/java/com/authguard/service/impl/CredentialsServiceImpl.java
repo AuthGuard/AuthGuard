@@ -6,9 +6,12 @@ import com.authguard.emb.Messages;
 import com.authguard.service.AccountsService;
 import com.authguard.service.exceptions.ServiceConflictException;
 import com.authguard.service.exceptions.ServiceException;
+import com.authguard.service.exceptions.ServiceInvalidPasswordException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.*;
+import com.authguard.service.passwords.PasswordValidator;
+import com.authguard.service.passwords.Violation;
 import com.google.inject.Inject;
 import com.authguard.dal.CredentialsAuditRepository;
 import com.authguard.dal.CredentialsRepository;
@@ -25,6 +28,7 @@ public class CredentialsServiceImpl implements CredentialsService {
     private final CredentialsRepository credentialsRepository;
     private final CredentialsAuditRepository credentialsAuditRepository;
     private final SecurePassword securePassword;
+    private final PasswordValidator passwordValidator;
     private final MessageBus messageBus;
     private final ServiceMapper serviceMapper;
 
@@ -33,18 +37,26 @@ public class CredentialsServiceImpl implements CredentialsService {
                                   final CredentialsRepository credentialsRepository,
                                   final CredentialsAuditRepository credentialsAuditRepository,
                                   final SecurePassword securePassword,
+                                  final PasswordValidator passwordValidator,
                                   final MessageBus messageBus,
                                   final ServiceMapper serviceMapper) {
         this.accountsService = accountsService;
         this.credentialsRepository = credentialsRepository;
         this.credentialsAuditRepository = credentialsAuditRepository;
         this.securePassword = securePassword;
+        this.passwordValidator = passwordValidator;
         this.messageBus = messageBus;
         this.serviceMapper = serviceMapper;
     }
 
     @Override
     public CredentialsBO create(final CredentialsBO credentials) {
+        final List<Violation> passwordViolations = passwordValidator.findViolations(credentials.getPlainPassword());
+
+        if (!passwordViolations.isEmpty()) {
+            throw new ServiceInvalidPasswordException(passwordViolations);
+        }
+
         ensureAccountExists(credentials.getAccountId());
         credentials.getIdentifiers()
                 .forEach(identifier -> ensureNoDuplicate(identifier.getIdentifier()));
