@@ -81,21 +81,21 @@ public class AccessTokenProvider implements AuthProvider {
         final JWTCreator.Builder jwtBuilder = jwtGenerator.generateUnsignedToken(account,
                 ConfigParser.parseDuration(strategy.getTokenLife()));
 
-        if (strategy.getUseJti()) {
+        if (strategy.useJti()) {
             final String id = jti.next();
             jwtBuilder.withJWTId(id);
             tokenBuilder.id(id);
         }
 
-        if (strategy.getIncludePermissions()) {
+        if (strategy.includePermissions()) {
             jwtBuilder.withArrayClaim("permissions", jwtPermissions(account, restrictions));
         }
 
-        if (strategy.getIncludeScopes()) {
+        if (strategy.includeScopes()) {
             jwtBuilder.withArrayClaim("scopes", jwtScopes(account, restrictions));
         }
 
-        if (strategy.getIncludeExternalId()) {
+        if (strategy.includeExternalId()) {
             jwtBuilder.withClaim("eid", account.getExternalId());
         }
 

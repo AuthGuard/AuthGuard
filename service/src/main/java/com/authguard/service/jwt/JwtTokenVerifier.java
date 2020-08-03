@@ -42,7 +42,7 @@ public class JwtTokenVerifier implements AuthTokenVerfier {
     }
 
     private boolean verifyJti(final DecodedJWT decoded) {
-        return !strategy.getUseJti() || jti.validate(decoded.getId());
+        return !strategy.useJti() || jti.validate(decoded.getId());
     }
 
     @Override

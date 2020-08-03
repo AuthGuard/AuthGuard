@@ -15,11 +15,11 @@ class PasswordValidatorTest {
     @Test
     void allConditionsSet() {
         final PasswordConditions conditions = PasswordConditions.builder()
-                .caps(true)
+                .includeCaps(true)
                 .minLength(6)
                 .maxLength(12)
-                .specialCharacters(true)
-                .digits(true)
+                .includeSpecialCharacters(true)
+                .includeDigits(true)
                 .build();
         final PasswordValidator validator = new PasswordValidator(PasswordsConfig.builder()
                 .conditions(conditions)
@@ -47,7 +47,7 @@ class PasswordValidatorTest {
     void noConditionsSet() {
         final PasswordConditions conditions = PasswordConditions.builder()
                 .minLength(0)
-                .smallLetters(false)
+                .includeSmallLetters(false)
                 .build();
 
         final PasswordValidator validator = new PasswordValidator(PasswordsConfig.builder()
