@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.PACKAGE, ElementType.TYPE})
 @Retention(RetentionPolicy.CLASS)
 @Value.Style(
-        get = {"get*", "use*", "include*"},
+        get = {"get*", "*"},
         jdkOnly = true,
         validationMethod = Value.Style.ValidationMethod.NONE,
         typeAbstract = "*Interface",

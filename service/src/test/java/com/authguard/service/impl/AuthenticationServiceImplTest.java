@@ -35,7 +35,6 @@ class AuthenticationServiceImplTest {
         final ConfigContext configContext = Mockito.mock(ConfigContext.class);
 
         final AuthenticationConfig config = AuthenticationConfig.builder()
-                .useOtp(false)
                 .generateToken("accessToken")
                 .build();
 

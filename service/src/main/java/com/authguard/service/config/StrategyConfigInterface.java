@@ -9,11 +9,9 @@ import org.immutables.value.Value;
 public interface StrategyConfigInterface {
     String getTokenLife();
     String getRefreshTokenLife();
-
-    // this stupid way to name getters is there only because of the way Lightbend config works
-    boolean getUseJti();
-    boolean getIncludePermissions();
-    boolean getIncludeRoles();
-    boolean getIncludeScopes();
-    boolean getIncludeExternalId();
+    boolean useJti();
+    boolean includePermissions();
+    boolean includeRoles();
+    boolean includeScopes();
+    boolean includeExternalId();
 }

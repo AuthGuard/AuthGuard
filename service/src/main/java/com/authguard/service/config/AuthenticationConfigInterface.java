@@ -8,5 +8,4 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = AuthenticationConfig.class)
 public interface AuthenticationConfigInterface {
     String getGenerateToken();
-    boolean getUseOtp();
 }
