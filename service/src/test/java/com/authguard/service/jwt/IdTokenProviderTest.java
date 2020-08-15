@@ -65,7 +65,7 @@ class IdTokenProviderTest {
         assertThat(tokens.getRefreshToken()).isNotNull();
         assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
 
-        verifyToken(tokens.getToken(), account.getId(), null, null, null);
+        verifyToken(tokens.getToken().toString(), account.getId(), null, null, null);
     }
 
     private void verifyToken(final String token, final String subject, final String jti,

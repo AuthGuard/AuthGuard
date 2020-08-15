@@ -86,7 +86,7 @@ class JwtTokenVerifierTest {
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
         final TokensBO tokens = generateToken(jwtConfig, account, null);
-        final Optional<DecodedJWT> validatedToken = jwtTokenVerifier.verify(tokens.getToken());
+        final Optional<DecodedJWT> validatedToken = jwtTokenVerifier.verify(tokens.getToken().toString());
 
         assertThat(validatedToken).isNotEmpty();
         verifyToken(validatedToken.get(), account.getId(), null, null, null);
@@ -106,7 +106,7 @@ class JwtTokenVerifierTest {
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
         final TokensBO tokens = generateToken(jwtConfig, account, jti);
-        final Optional<DecodedJWT> validatedToken = jwtTokenVerifier.verify(tokens.getToken());
+        final Optional<DecodedJWT> validatedToken = jwtTokenVerifier.verify(tokens.getToken().toString());
 
         assertThat(validatedToken).isNotEmpty();
         verifyToken(validatedToken.get(), account.getId(), jti, null, null);
@@ -126,7 +126,7 @@ class JwtTokenVerifierTest {
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
         final TokensBO tokens = generateToken(jwtConfig, account, jti);
-        final Optional<DecodedJWT> validatedToken = jwtTokenVerifier.verify(tokens.getToken());
+        final Optional<DecodedJWT> validatedToken = jwtTokenVerifier.verify(tokens.getToken().toString());
 
         assertThat(validatedToken).isEmpty();
     }
@@ -140,7 +140,7 @@ class JwtTokenVerifierTest {
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
         final TokensBO tokens = generateToken(jwtConfig, account, null);
-        final String payload = tokens.getToken().split("\\.")[1];
+        final String payload = tokens.getToken().toString().split("\\.")[1];
         final String maliciousToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." + payload + ".signature";
 
         assertThat(jwtTokenVerifier.verify(maliciousToken)).isEmpty();
