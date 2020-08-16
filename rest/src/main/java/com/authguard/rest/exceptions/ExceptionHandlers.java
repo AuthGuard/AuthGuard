@@ -12,7 +12,7 @@ public class ExceptionHandlers {
 
     public static ExceptionHandler<ServiceException> serviceException() {
         return (e, context) -> {
-            LOG.info("Service exception was thrown", e);
+            LOG.info("Service exception was thrown");
 
             final Error error = new Error(e.getErrorCode(), e.getMessage());
             context.status(400)
@@ -22,7 +22,7 @@ public class ExceptionHandlers {
 
     public static ExceptionHandler<ServiceConflictException> serviceConflictException() {
         return (e, context) -> {
-            LOG.info("Service conflict exception was thrown", e);
+            LOG.info("Service conflict exception was thrown");
 
             final Error error = new Error(e.getErrorCode(), e.getMessage());
             context.status(409)
@@ -32,7 +32,7 @@ public class ExceptionHandlers {
 
     public static ExceptionHandler<ServiceAuthorizationException> serviceAuthorizationException() {
         return (e, context) -> {
-            LOG.info("Service authorization exception was thrown", e);
+            LOG.info("Service authorization exception was thrown");
 
             final Error error = new Error(e.getErrorCode(), e.getMessage());
             /*
