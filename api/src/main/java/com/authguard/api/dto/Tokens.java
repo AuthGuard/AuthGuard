@@ -10,6 +10,6 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = TokensDTO.class)
 public interface Tokens {
     String getType();
-    String getToken();
-    String getRefreshToken();
+    Object getToken();
+    Object getRefreshToken();
 }

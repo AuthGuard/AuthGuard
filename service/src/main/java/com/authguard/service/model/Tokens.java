@@ -7,6 +7,6 @@ import org.immutables.value.Value;
 public interface Tokens {
     String getType();
     String getId();
-    String getToken();
-    String getRefreshToken();
+    Object getToken();
+    Object getRefreshToken();
 }

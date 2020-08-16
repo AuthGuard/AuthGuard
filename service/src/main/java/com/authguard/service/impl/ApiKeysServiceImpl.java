@@ -50,7 +50,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
 
         keysRepository.save(serviceMapper.toDO(token, app));
 
-        return token.getToken();
+        return token.getToken().toString();
     }
 
     @Override

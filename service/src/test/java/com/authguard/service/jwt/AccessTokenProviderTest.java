@@ -98,7 +98,7 @@ class AccessTokenProviderTest {
         assertThat(accountTokenCaptor.getValue().getExpiresAt()).isNotNull()
                 .isAfter(ZonedDateTime.now());
 
-        verifyToken(tokens.getToken(), account.getId(), null, null, null);
+        verifyToken(tokens.getToken().toString(), account.getId(), null, null, null);
     }
 
     @Test
@@ -137,7 +137,7 @@ class AccessTokenProviderTest {
         assertThat(accountTokenCaptor.getValue().getExpiresAt()).isNotNull()
                 .isAfter(ZonedDateTime.now());
 
-        verifyToken(tokens.getToken(), account.getId(), null,
+        verifyToken(tokens.getToken().toString(), account.getId(), null,
                 Collections.singletonList("permission-1"), Collections.singletonList("scope-2"));
     }
 
@@ -159,7 +159,7 @@ class AccessTokenProviderTest {
         assertThat(tokens.getRefreshToken()).isNotNull();
         assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
 
-        verifyToken(tokens.getToken(), account.getId(), jti, null, null);
+        verifyToken(tokens.getToken().toString(), account.getId(), jti, null, null);
     }
 
     private void verifyToken(final String token, final String subject, final String jti,

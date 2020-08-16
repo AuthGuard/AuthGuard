@@ -56,7 +56,7 @@ class ApiTokenProviderTest {
         assertThat(tokens.getToken()).isNotNull();
         assertThat(tokens.getRefreshToken()).isNull();
 
-        verifyToken(tokens.getToken(), app.getId(), jti);
+        verifyToken(tokens.getToken().toString(), app.getId(), jti);
     }
 
     private void verifyToken(final String token, final String subject, final String jti) {
