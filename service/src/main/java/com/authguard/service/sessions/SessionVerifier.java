@@ -3,6 +3,7 @@ package com.authguard.service.sessions;
 import com.authguard.dal.SessionsRepository;
 import com.authguard.service.AuthTokenVerfier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
+import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.SessionBO;
 import com.google.inject.Inject;
@@ -25,10 +26,10 @@ public class SessionVerifier implements AuthTokenVerfier {
         final SessionBO session = sessionsRepository.getById(sessionId)
                 .thenApply(optional -> optional.map(serviceMapper::toBO))
                 .join()
-                .orElseThrow(() -> new ServiceAuthorizationException("Invalid session ID " + sessionId));
+                .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid session ID " + sessionId));
 
         if (session.getExpiresAt().isBefore(ZonedDateTime.now())) {
-            throw new ServiceAuthorizationException("Session " + sessionId + " has expired");
+            throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Session " + sessionId + " has expired");
         }
 
         return Optional.of(session.getAccountId());

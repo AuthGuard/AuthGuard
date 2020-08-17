@@ -1,11 +1,9 @@
 package com.authguard.service.exceptions;
 
-public class ServiceConflictException extends ServiceException {
-    public ServiceConflictException(String errorCode, String message) {
-        super(errorCode, message);
-    }
+import com.authguard.service.exceptions.codes.ErrorCode;
 
-    public ServiceConflictException(String message) {
-        super(message);
+public class ServiceConflictException extends ServiceException {
+    public ServiceConflictException(ErrorCode errorCode, String message) {
+        super(errorCode, message);
     }
 }

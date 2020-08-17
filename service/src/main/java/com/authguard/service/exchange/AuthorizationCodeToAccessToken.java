@@ -3,6 +3,7 @@ package com.authguard.service.exchange;
 import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.service.AccountsService;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
+import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.jwt.AccessTokenProvider;
 import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
@@ -52,8 +53,8 @@ public class AuthorizationCodeToAccessToken implements Exchange {
                         .map(account -> accessTokenProvider.generateToken(account,
                                 (TokenRestrictionsBO) accountToken.getAdditionalInformation()));
             } else {
-                throw new ServiceAuthorizationException("Found additional information of wrong type " +
-                        accountToken.getAdditionalInformation().getClass());
+                throw new ServiceAuthorizationException(ErrorCode.INVALID_ADDITIONAL_INFORMATION_TYPE,
+                        "Found additional information of wrong type " + accountToken.getAdditionalInformation().getClass());
             }
         }
     }

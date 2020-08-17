@@ -2,6 +2,7 @@ package com.authguard.service.impl;
 
 import com.authguard.dal.model.RoleDO;
 import com.authguard.service.exceptions.ServiceNotFoundException;
+import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.google.inject.Inject;
 import com.authguard.dal.RolesRepository;
@@ -53,7 +54,7 @@ public class RolesServiceImpl implements RolesService {
     public List<PermissionBO> getPermissionsByName(final String name) {
         return getRoleByName(name)
                 .map(RoleBO::getPermissions)
-                .orElseThrow(ServiceNotFoundException::new);
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ROLE_DOES_NOT_EXIST, "Role " + name + " doesn't exist"));
     }
 
     @Override
@@ -81,7 +82,7 @@ public class RolesServiceImpl implements RolesService {
         final RoleBO role = rolesRepository.getByName(name)
                 .join()
                 .map(serviceMapper::toBO)
-                .orElseThrow(ServiceNotFoundException::new);
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ROLE_DOES_NOT_EXIST, "Role " + name + " doesn't exist"));
 
         final List<PermissionBO> updatedPermissions = role.getPermissions().stream()
                 .filter(permission -> !permissions.contains(permission))

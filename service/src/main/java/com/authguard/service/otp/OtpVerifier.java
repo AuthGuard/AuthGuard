@@ -3,6 +3,7 @@ package com.authguard.service.otp;
 import com.authguard.dal.OtpRepository;
 import com.authguard.service.AuthTokenVerfier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
+import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.OneTimePasswordBO;
 import com.google.inject.Inject;
@@ -25,7 +26,7 @@ public class OtpVerifier implements AuthTokenVerfier {
         final String[] parts = token.split(":");
 
         if (parts.length != 2) {
-            throw new ServiceAuthorizationException("Invalid OTP token format");
+            throw new ServiceAuthorizationException(ErrorCode.INVALID_AUTHORIZATION_FORMAT, "Invalid OTP token format");
         }
 
         final String passwordId = parts[0];
@@ -34,10 +35,10 @@ public class OtpVerifier implements AuthTokenVerfier {
         final OneTimePasswordBO generated = otpRepository.getById(passwordId)
                 .thenApply(optional -> optional.map(serviceMapper::toBO))
                 .join()
-                .orElseThrow(() -> new ServiceAuthorizationException("Invalid OTP ID"));
+                .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid OTP ID"));
 
         if (generated.getExpiresAt().isBefore(ZonedDateTime.now())) {
-            throw new ServiceAuthorizationException("OTP " + passwordId + " has expired");
+            throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "OTP " + passwordId + " has expired");
         }
 
         if (generated.getPassword().equals(otp)) {

@@ -1,11 +1,9 @@
 package com.authguard.service.exceptions;
 
-public class ServiceAuthorizationException extends ServiceException {
-    public ServiceAuthorizationException(final String errorCode, final String message) {
-        super(errorCode, message);
-    }
+import com.authguard.service.exceptions.codes.ErrorCode;
 
-    public ServiceAuthorizationException(final String message) {
-        super(message);
+public class ServiceAuthorizationException extends ServiceException {
+    public ServiceAuthorizationException(final ErrorCode errorCode, final String message) {
+        super(errorCode, message);
     }
 }

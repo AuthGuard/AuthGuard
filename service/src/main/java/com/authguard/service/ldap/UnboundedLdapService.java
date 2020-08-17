@@ -3,6 +3,7 @@ package com.authguard.service.ldap;
 import com.authguard.config.ConfigContext;
 import com.authguard.service.config.LdapConfig;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
+import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AccountEmailBO;
 import com.authguard.service.model.HashedPasswordBO;
@@ -64,13 +65,14 @@ public class UnboundedLdapService implements LdapService {
         final Map<String, String[]> attributes = findUserAttributes(username);
 
         if (attributes.isEmpty()) {
-            throw new ServiceAuthorizationException("Username not found");
+            throw new ServiceAuthorizationException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "Username not found");
         }
 
         final String[] storedPassword = attributes.get(config.getPasswordAttribute());
 
         if (storedPassword.length > 1) {
-            throw new ServiceAuthorizationException("Found multiple values for " + config.getPasswordAttribute());
+            throw new ServiceAuthorizationException(ErrorCode.LDAP_MULTIPLE_PASSWORD_ENTRIES,
+                    "Found multiple values for " + config.getPasswordAttribute());
         }
 
         final HashedPasswordBO hashedPassword = HashedPasswordBO.builder()
@@ -78,7 +80,7 @@ public class UnboundedLdapService implements LdapService {
                 .build(); // the salt should be stored as part of the password
 
         if (!securePassword.verify(password, hashedPassword)) {
-            throw new ServiceAuthorizationException("Failed to authenticate user");
+            throw new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH, "Failed to authenticate user");
         }
 
         return mapAttributes(attributes, config.getFieldMapping()).build();
@@ -109,7 +111,7 @@ public class UnboundedLdapService implements LdapService {
                         ));
             }
         } catch (LDAPException e) {
-            throw new ServiceAuthorizationException("Failed to authenticate user");
+            throw new ServiceAuthorizationException(ErrorCode.LDAP_ERROR, "Failed to authenticate user");
         }
     }
 

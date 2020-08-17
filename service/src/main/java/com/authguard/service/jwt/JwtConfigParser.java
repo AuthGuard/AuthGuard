@@ -2,6 +2,7 @@ package com.authguard.service.jwt;
 
 import com.auth0.jwt.algorithms.Algorithm;
 import com.authguard.service.exceptions.ServiceException;
+import com.authguard.service.exceptions.codes.ErrorCode;
 
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
@@ -22,7 +23,7 @@ public class JwtConfigParser {
         } else if (algorithmName.startsWith("ECDSA")) {
             return parseEc(algorithmName, publicKey, privateKey);
         } else {
-            throw new ServiceException("Unsupported algorithm " + algorithmName);
+            throw new ServiceException(ErrorCode.UNSUPPORTED_JWT_ALGORITHM, "Unsupported algorithm " + algorithmName);
         }
     }
 
@@ -35,7 +36,7 @@ public class JwtConfigParser {
                 return Algorithm.HMAC512(key);
 
             default:
-                throw new ServiceException("Unsupported algorithm " + algorithmName);
+                throw new ServiceException(ErrorCode.UNSUPPORTED_JWT_ALGORITHM, "Unsupported algorithm " + algorithmName);
         }
     }
 
@@ -51,7 +52,7 @@ public class JwtConfigParser {
                 return Algorithm.RSA512((RSAPublicKey) keyPair.getPublic(), (RSAPrivateKey) keyPair.getPrivate());
 
             default:
-                throw new ServiceException("Unsupported algorithm " + algorithmName);
+                throw new ServiceException(ErrorCode.UNSUPPORTED_JWT_ALGORITHM, "Unsupported algorithm " + algorithmName);
         }
     }
 
@@ -67,7 +68,7 @@ public class JwtConfigParser {
                 return Algorithm.ECDSA512((ECPublicKey) keyPair.getPublic(), (ECPrivateKey) keyPair.getPrivate());
 
             default:
-                throw new ServiceException("Unsupported algorithm " + algorithmName);
+                throw new ServiceException(ErrorCode.UNSUPPORTED_JWT_ALGORITHM, "Unsupported algorithm " + algorithmName);
         }
     }
 

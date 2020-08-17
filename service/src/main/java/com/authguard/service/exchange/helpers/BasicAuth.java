@@ -2,6 +2,7 @@ package com.authguard.service.exchange.helpers;
 
 import com.authguard.service.AccountsService;
 import com.authguard.service.CredentialsService;
+import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.passwords.SecurePassword;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.ServiceException;
@@ -31,7 +32,7 @@ public class BasicAuth {
         if (parts[0].equals("Basic")) {
             return handleBasicAuthentication(parts[1]);
         } else {
-            throw new ServiceException("Unsupported authorization scheme");
+            throw new ServiceException(ErrorCode.UNSUPPORTED_SCHEME, "Unsupported authorization scheme");
         }
     }
 
@@ -41,7 +42,7 @@ public class BasicAuth {
         if (parts[0].equals("Basic")) {
             return handleBasicAuthenticationNoPassword(parts[1]);
         } else {
-            throw new ServiceException("Unsupported authorization scheme");
+            throw new ServiceException(ErrorCode.UNSUPPORTED_SCHEME, "Unsupported authorization scheme");
         }
     }
 
@@ -49,7 +50,7 @@ public class BasicAuth {
         final String[] decoded = new String(Base64.getDecoder().decode(base64Credentials)).split(":");
 
         if (decoded.length != 2) {
-            throw new ServiceException("Invalid format for basic authentication");
+            throw new ServiceException(ErrorCode.INVALID_AUTHORIZATION_FORMAT, "Invalid format for basic authentication");
         }
 
         final String username =  decoded[0];
@@ -62,7 +63,7 @@ public class BasicAuth {
         final String[] decoded = new String(Base64.getDecoder().decode(base64Credentials)).split(":");
 
         if (decoded.length != 1) {
-            throw new ServiceException("Invalid format for basic authentication");
+            throw new ServiceException(ErrorCode.INVALID_AUTHORIZATION_FORMAT, "Invalid format for basic authentication");
         }
 
         final String username =  decoded[0];
@@ -77,7 +78,7 @@ public class BasicAuth {
             if (securePassword.verify(password, credentials.get().getHashedPassword())) {
                 return accountsService.getById(credentials.get().getAccountId());
             } else {
-                throw new ServiceAuthorizationException("Passwords don't match");
+                throw new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH, "Passwords don't match");
             }
         } else {
             return Optional.empty();

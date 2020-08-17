@@ -4,6 +4,7 @@ import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.service.AuthTokenVerfier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
+import com.authguard.service.exceptions.codes.ErrorCode;
 import com.google.inject.Inject;
 
 import java.time.ZonedDateTime;
@@ -21,10 +22,11 @@ public class PasswordlessVerifier implements AuthTokenVerfier {
     public Optional<String> verifyAccountToken(final String passwordlessToken) {
         final AccountTokenDO storedToken = accountTokensRepository.getByToken(passwordlessToken)
                 .join()
-                .orElseThrow(() -> new ServiceAuthorizationException("No passwordless token found for " + passwordlessToken));
+                .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN,
+                        "No passwordless token found for " + passwordlessToken));
 
         if (storedToken.getExpiresAt().isBefore(ZonedDateTime.now())) {
-            throw new ServiceAuthorizationException("Expired passwordless token");
+            throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Expired passwordless token");
         }
 
         return Optional.of(storedToken.getAssociatedAccountId());
