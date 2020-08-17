@@ -4,6 +4,7 @@ import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.service.AuthTokenVerfier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
+import com.authguard.service.exceptions.codes.ErrorCode;
 import com.google.inject.Inject;
 
 import java.time.ZonedDateTime;
@@ -27,10 +28,10 @@ public class AuthorizationCodeVerifier implements AuthTokenVerfier {
     public Optional<AccountTokenDO> verifyAndGetAccountToken(final String token) {
         final AccountTokenDO accountToken = accountTokensRepository.getByToken(token)
                 .join()
-                .orElseThrow(() -> new ServiceAuthorizationException("Invalid authorization code " + token));
+                .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid authorization code " + token));
 
         if (accountToken.getExpiresAt().isBefore(ZonedDateTime.now())) {
-            throw new ServiceAuthorizationException("The authorization code has expired");
+            throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "The authorization code has expired");
         }
 
         return Optional.of(accountToken);

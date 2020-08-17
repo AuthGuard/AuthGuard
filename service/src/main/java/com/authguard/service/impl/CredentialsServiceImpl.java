@@ -8,6 +8,7 @@ import com.authguard.service.exceptions.ServiceConflictException;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceInvalidPasswordException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
+import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.*;
 import com.authguard.service.passwords.PasswordValidator;
@@ -117,7 +118,7 @@ public class CredentialsServiceImpl implements CredentialsService {
     @Override
     public Optional<CredentialsBO> addIdentifiers(final String id, final List<UserIdentifierBO> identifiers) {
         final CredentialsBO existing = getById(id)
-                .orElseThrow(() -> new ServiceNotFoundException("No credentials with ID " + id));
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
 
         final Set<String> existingIdentifiers = existing.getIdentifiers().stream()
                 .map(UserIdentifierBO::getIdentifier)
@@ -127,7 +128,7 @@ public class CredentialsServiceImpl implements CredentialsService {
 
         for (final UserIdentifierBO identifier : identifiers) {
             if (existingIdentifiers.contains(identifier.getIdentifier())) {
-                throw new ServiceConflictException("Duplicate identifier for " + id);
+                throw new ServiceConflictException(ErrorCode.IDENTIFIER_ALREADY_EXISTS, "Duplicate identifier for " + id);
             }
 
             combined.add(identifier.withActive(true));
@@ -143,7 +144,7 @@ public class CredentialsServiceImpl implements CredentialsService {
     @Override
     public Optional<CredentialsBO> removeIdentifiers(final String id, final List<String> identifiers) {
         final CredentialsBO existing = getById(id)
-                .orElseThrow(() -> new ServiceNotFoundException("No credentials with ID " + id));
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
 
         final List<UserIdentifierBO> updatedIdentifiers = existing.getIdentifiers().stream()
                 .map(identifier -> {
@@ -169,7 +170,8 @@ public class CredentialsServiceImpl implements CredentialsService {
         final CredentialsBO existing = credentialsRepository.getById(credentials.getId())
                 .thenApply(optional -> optional.map(serviceMapper::toBO))
                 .join()
-                .orElseThrow(ServiceNotFoundException::new);
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST, "No credentials with ID "
+                        + credentials.getId() + " was found"));
 
         final CredentialsBO update = credentials.getHashedPassword() == null ?
                 credentials.withHashedPassword(existing.getHashedPassword()) : credentials;
@@ -234,7 +236,7 @@ public class CredentialsServiceImpl implements CredentialsService {
     private void ensureNoDuplicate(final String identifier) {
         credentialsRepository.findByIdentifier(identifier)
                 .join()
-                .ifPresent(ignored -> { throw new ServiceConflictException("Username already exists"); });
+                .ifPresent(ignored -> { throw new ServiceConflictException(ErrorCode.IDENTIFIER_ALREADY_EXISTS, "Username already exists"); });
     }
 
     // TODO should be done by the DB
@@ -242,12 +244,12 @@ public class CredentialsServiceImpl implements CredentialsService {
         credentialsRepository.findByIdentifier(identifier)
                 .join()
                 .filter(credentials -> !credentials.getAccountId().equals(accountId))
-                .ifPresent(ignored -> { throw new ServiceConflictException("Username already exists"); });
+                .ifPresent(ignored -> { throw new ServiceConflictException(ErrorCode.IDENTIFIER_ALREADY_EXISTS, "Username already exists"); });
     }
 
     private void ensureAccountExists(final String accountId) {
         if (accountsService.getById(accountId).isEmpty()) {
-            throw new ServiceException("No account with ID " + accountId + " exists");
+            throw new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " + accountId + " exists");
         }
     }
 }

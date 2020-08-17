@@ -8,6 +8,7 @@ import com.authguard.service.VerificationMessageService;
 import com.authguard.service.config.AccountConfig;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
+import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.AccountEmailBO;
 import com.google.inject.Inject;
@@ -123,7 +124,7 @@ public class AccountsServiceImpl implements AccountsService {
         final AccountBO existing = accountsRepository.getById(accountId)
                 .join()
                 .map(serviceMapper::toBO)
-                .orElseThrow(ServiceNotFoundException::new);
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " + accountId + " was found"));
 
         final List<AccountEmailBO> newEmails = existing.getEmails().stream()
                 .map(email -> {
@@ -147,7 +148,8 @@ public class AccountsServiceImpl implements AccountsService {
         final AccountBO existing = accountsRepository.getById(accountId)
                 .join()
                 .map(serviceMapper::toBO)
-                .orElseThrow(ServiceNotFoundException::new);
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
+                        + accountId + " was found"));
 
         final List<String> newEmails = emails.stream()
                 .map(AccountEmailBO::getEmail)
@@ -172,7 +174,8 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public List<PermissionBO> getPermissions(final String accountId) {
         final AccountBO account = getById(accountId)
-                .orElseThrow(ServiceNotFoundException::new);
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
+                        + accountId + " was found"));
 
         return permissionsAggregator.aggregate(account.getRoles(), account.getPermissions());
     }
@@ -186,13 +189,14 @@ public class AccountsServiceImpl implements AccountsService {
                     .filter(permission -> !verifiedPermissions.contains(permission))
                     .collect(Collectors.toList());
 
-            throw new ServiceException("The following permissions are not valid" + difference);
+            throw new ServiceException(ErrorCode.PERMISSION_DOES_NOT_EXIST, "The following permissions are not valid" + difference);
         }
 
         final AccountBO account = accountsRepository.getById(accountId)
                 .join()
                 .map(serviceMapper::toBO)
-                .orElseThrow(ServiceNotFoundException::new);
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
+                        + accountId + " was found"));
 
         final List<PermissionBO> combinedPermissions = Stream.concat(account.getPermissions().stream(), permissions.stream())
                 .distinct()
@@ -210,7 +214,8 @@ public class AccountsServiceImpl implements AccountsService {
         final AccountBO account = accountsRepository.getById(accountId)
                 .join()
                 .map(serviceMapper::toBO)
-                .orElseThrow(ServiceNotFoundException::new);
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
+                        + accountId + " was found"));
 
         final List<PermissionBO> filteredPermissions = account.getPermissions().stream()
                 .filter(permission -> !permissions.contains(permission))
@@ -228,7 +233,8 @@ public class AccountsServiceImpl implements AccountsService {
         final AccountBO account = accountsRepository.getById(accountId)
                 .join()
                 .map(serviceMapper::toBO)
-                .orElseThrow(ServiceNotFoundException::new);
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
+                        + accountId + " was found"));
 
         final List<String> combinedRoles = Stream.concat(account.getRoles().stream(), roles.stream())
                 .distinct()
@@ -247,7 +253,8 @@ public class AccountsServiceImpl implements AccountsService {
         final AccountBO account = accountsRepository.getById(accountId)
                 .join()
                 .map(serviceMapper::toBO)
-                .orElseThrow(ServiceNotFoundException::new);
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
+                        + accountId + " was found"));
 
         final List<String> filteredRoles = account.getRoles().stream()
                 .filter(role -> !roles.contains(role))

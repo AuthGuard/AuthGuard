@@ -4,6 +4,7 @@ import com.authguard.dal.model.AppDO;
 import com.authguard.emb.MessageBus;
 import com.authguard.emb.Messages;
 import com.authguard.service.exceptions.ServiceNotFoundException;
+import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.google.inject.Inject;
 import com.authguard.dal.ApplicationsRepository;
@@ -43,7 +44,7 @@ public class ApplicationsServiceImpl implements ApplicationsService {
          * account exists if it's set.
          */
         if (app.getParentAccountId() != null && accountsService.getById(app.getParentAccountId()).isEmpty()) {
-            throw new ServiceNotFoundException("No account with ID " + app.getParentAccountId() + " exists");
+            throw new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " + app.getParentAccountId() + " exists");
         }
 
         final AppDO appDO = serviceMapper.toDO(app.withId(UUID.randomUUID().toString()));

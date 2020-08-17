@@ -2,6 +2,7 @@ package com.authguard.service.impl;
 
 import com.authguard.service.ExchangeService;
 import com.authguard.service.exceptions.ServiceException;
+import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.model.TokenRestrictionsBO;
@@ -33,11 +34,11 @@ public class ExchangeServiceImpl implements ExchangeService {
         final Exchange exchange = exchanges.get(key);
 
         if (exchange == null) {
-            throw new ServiceException("Unknown token exchange " + fromTokenType + " to " + toTokenType);
+            throw new ServiceException(ErrorCode.UNKNOWN_EXCHANGE, "Unknown token exchange " + fromTokenType + " to " + toTokenType);
         }
 
         return (restrictions == null ? exchange.exchangeToken(token) : exchange.exchangeToken(token, restrictions))
-                .orElseThrow(() -> new ServiceException("Failed to generate token"));
+                .orElseThrow(() -> new ServiceException(ErrorCode.TOKEN_GENERATION_FAILED, "Failed to generate token"));
     }
 
     @Override

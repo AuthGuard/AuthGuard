@@ -1,6 +1,7 @@
 package com.authguard.rest.access;
 
 import com.authguard.service.ApiKeysService;
+import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.exchange.helpers.BasicAuth;
 import com.authguard.service.model.AppBO;
 import com.google.inject.Inject;
@@ -38,7 +39,7 @@ public class AuthorizationHandler implements Handler {
         final String[] parts = authorization.split("\\s");
 
         if (parts.length != 2) {
-            throw new ServiceException("Invalid format for authorization value");
+            throw new ServiceException(ErrorCode.INVALID_AUTHORIZATION_FORMAT, "Invalid format for authorization value");
         }
 
         return parts;

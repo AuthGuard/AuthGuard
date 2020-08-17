@@ -1,16 +1,9 @@
 package com.authguard.service.exceptions;
 
+import com.authguard.service.exceptions.codes.ErrorCode;
+
 public class ServiceNotFoundException extends ServiceException {
-    public ServiceNotFoundException(final String errorCode, final String message) {
+    public ServiceNotFoundException(final ErrorCode errorCode, final String message) {
         super(errorCode, message);
-    }
-
-    public ServiceNotFoundException(final String message) {
-        super(message);
-    }
-
-
-    public ServiceNotFoundException() {
-        super(null, "");
     }
 }

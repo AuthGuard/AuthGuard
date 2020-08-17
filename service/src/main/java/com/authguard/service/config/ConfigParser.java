@@ -19,7 +19,7 @@ public class ConfigParser {
             case 'd':
                 return Duration.ofDays(amount);
             default:
-                throw new ServiceException("Unable to parse " + str);
+                throw new IllegalStateException("Unable to parse " + str);
         }
     }
 }

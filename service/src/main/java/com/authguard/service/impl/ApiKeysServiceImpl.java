@@ -2,6 +2,7 @@ package com.authguard.service.impl;
 
 import com.authguard.dal.model.ApiKeyDO;
 import com.authguard.service.exceptions.ServiceNotFoundException;
+import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.jwt.ApiTokenProvider;
 import com.authguard.service.jwt.ApiTokenVerifier;
 import com.authguard.service.mappers.ServiceMapper;
@@ -36,7 +37,8 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     @Override
     public String generateApiKey(final String appId) {
         final AppBO app = applicationsService.getById(appId)
-                .orElseThrow(() -> new ServiceNotFoundException("No app with ID " + appId + " found"));
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST,
+                        "No app with ID " + appId + " found"));
 
         return generateApiKey(app);
     }
