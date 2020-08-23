@@ -1,19 +1,33 @@
 package com.authguard.service.passwords;
 
+import com.authguard.config.ConfigContext;
+import com.authguard.service.config.PasswordsConfig;
+import com.authguard.service.config.SCryptConfig;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.bouncycastle.crypto.generators.SCrypt;
 
 public class SCryptPassword extends AbstractSecurePassword {
-    private static final int CPU_MEMORY_COST_PARAM = 2;
-    private static final int BLOCK_SIZE = 1;
-    private static final int PARALLELIZATION_PARAM = 1;
-    private static final int SALT_SIZE = 32;
+    private final SCryptConfig config;
 
     public SCryptPassword() {
-        super(SALT_SIZE);
+        this(SCryptConfig.builder().build());
+    }
+
+    public SCryptPassword(final SCryptConfig config) {
+        super(config.getSaltSize());
+
+        this.config = config;
+    }
+
+    @Inject
+    public SCryptPassword(final @Named("passwords") ConfigContext config) {
+        this(config.asConfigBean(PasswordsConfig.class).getScrypt());
     }
 
     @Override
     protected byte[] hashWithSalt(final String plain, final byte[] saltBytes) {
-        return SCrypt.generate(plain.getBytes(), saltBytes, CPU_MEMORY_COST_PARAM, BLOCK_SIZE, PARALLELIZATION_PARAM, 50);
+        return SCrypt.generate(plain.getBytes(), saltBytes, config.getCPUMemoryCostParameter(),
+                config.getBlockSize(), config.getParallelization(), config.getKeySize());
     }
 }
