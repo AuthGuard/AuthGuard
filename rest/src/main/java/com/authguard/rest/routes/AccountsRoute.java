@@ -1,8 +1,14 @@
 package com.authguard.rest.routes;
 
+import com.authguard.api.dto.entities.AccountDTO;
+import com.authguard.api.dto.entities.AccountEmailDTO;
+import com.authguard.api.dto.entities.AppDTO;
+import com.authguard.api.dto.requests.AccountEmailsRequestDTO;
+import com.authguard.api.dto.requests.CreateAccountRequestDTO;
+import com.authguard.api.dto.requests.PermissionsRequestDTO;
 import com.authguard.rest.access.ActorRoles;
-import com.authguard.api.dto.*;
 import com.authguard.rest.exceptions.Error;
+import com.authguard.rest.util.BodyHandler;
 import com.authguard.service.AccountsService;
 import com.authguard.service.ApplicationsService;
 import com.authguard.service.model.AccountEmailBO;
@@ -22,12 +28,23 @@ public class AccountsRoute implements EndpointGroup {
     private final ApplicationsService applicationsService;
     private final RestMapper restMapper;
 
+    private final BodyHandler<CreateAccountRequestDTO> accountRequestBodyHandler;
+    private final BodyHandler<PermissionsRequestDTO> permissionsRequestBodyHandler;
+    private final BodyHandler<AccountEmailsRequestDTO> accountEmailsRequestBodyHandler;
+
     @Inject
     AccountsRoute(final AccountsService accountsService, final ApplicationsService applicationsService,
                   final RestMapper restMapper) {
         this.accountsService = accountsService;
         this.applicationsService = applicationsService;
         this.restMapper = restMapper;
+
+        this.accountRequestBodyHandler = new BodyHandler.Builder<>(CreateAccountRequestDTO.class)
+                .build();
+        this.permissionsRequestBodyHandler = new BodyHandler.Builder<>(PermissionsRequestDTO.class)
+                .build();
+        this.accountEmailsRequestBodyHandler = new BodyHandler.Builder<>(AccountEmailsRequestDTO.class)
+                .build();
     }
 
     public void addEndpoints() {
@@ -50,9 +67,9 @@ public class AccountsRoute implements EndpointGroup {
     }
 
     private void create(final Context context) {
-        final AccountDTO account = RestJsonMapper.asClass(context.body(), AccountDTO.class);
+        final CreateAccountRequestDTO request = accountRequestBodyHandler.getValidated(context);
 
-        final Optional<AccountDTO> createdAccount = Optional.of(restMapper.toBO(account))
+        final Optional<AccountDTO> createdAccount = Optional.of(restMapper.toBO(request))
                 .map(accountsService::create)
                 .map(restMapper::toDTO);
 
@@ -104,7 +121,8 @@ public class AccountsRoute implements EndpointGroup {
 
     private void grantPermissions(final Context context) {
         final String accountId = context.pathParam("id");
-        final PermissionsRequestDTO permissionsRequest = RestJsonMapper.asClass(context.body(), PermissionsRequestDTO.class);
+        final PermissionsRequestDTO permissionsRequest = permissionsRequestBodyHandler.getValidated(context);
+
         final List<PermissionBO> permissions = permissionsRequest.getPermissions().stream()
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
@@ -115,7 +133,7 @@ public class AccountsRoute implements EndpointGroup {
 
     private void revokePermissions(final Context context) {
         final String accountId = context.pathParam("id");
-        final PermissionsRequestDTO permissionsRequest = RestJsonMapper.asClass(context.body(), PermissionsRequestDTO.class);
+        final PermissionsRequestDTO permissionsRequest = permissionsRequestBodyHandler.getValidated(context);
         final List<PermissionBO> permissions = permissionsRequest.getPermissions().stream()
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
@@ -126,7 +144,7 @@ public class AccountsRoute implements EndpointGroup {
 
     private void addEmails(final Context context) {
         final String accountId = context.pathParam("id");
-        final AccountEmailsRequestDTO emailsRequest = RestJsonMapper.asClass(context.body(), AccountEmailsRequestDTO.class);
+        final AccountEmailsRequestDTO emailsRequest = accountEmailsRequestBodyHandler.getValidated(context);
         final List<AccountEmailBO> emails = emailsRequest.getEmails().stream()
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
@@ -138,7 +156,7 @@ public class AccountsRoute implements EndpointGroup {
 
     private void removeEmails(final Context context) {
         final String accountId = context.pathParam("id");
-        final AccountEmailsRequestDTO emailsRequest = RestJsonMapper.asClass(context.body(), AccountEmailsRequestDTO.class);
+        final AccountEmailsRequestDTO emailsRequest = accountEmailsRequestBodyHandler.getValidated(context);
         final List<String> emails = emailsRequest.getEmails().stream()
                 .map(AccountEmailDTO::getEmail)
                 .collect(Collectors.toList());

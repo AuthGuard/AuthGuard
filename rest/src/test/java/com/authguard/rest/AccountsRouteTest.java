@@ -1,12 +1,16 @@
 package com.authguard.rest;
 
-import com.authguard.api.dto.AccountDTO;
+import com.authguard.api.dto.entities.AccountDTO;
+import com.authguard.api.dto.entities.AccountEmailDTO;
+import com.authguard.api.dto.requests.CreateAccountRequestDTO;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
 import com.authguard.service.AccountsService;
 import com.authguard.service.model.AccountBO;
 import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
@@ -16,6 +20,8 @@ import static org.mockito.ArgumentMatchers.eq;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AccountsRouteTest extends AbstractRouteTest {
+    private static final Logger LOG = LoggerFactory.getLogger(AccountsRouteTest.class);
+
     private static final String ENDPOINT = "accounts";
 
     AccountsRouteTest() {
@@ -35,15 +41,22 @@ class AccountsRouteTest extends AbstractRouteTest {
     }
 
     @Test
-    @Disabled
     void create() {
-        final AccountDTO accountDTO = randomObject(AccountDTO.class);
-        final AccountBO accountBO = mapper().toBO(accountDTO);
+        final CreateAccountRequestDTO requestDTO = CreateAccountRequestDTO.builder()
+                .externalId("external")
+                .addEmails(AccountEmailDTO.builder()
+                        .email("email@server.com")
+                        .build())
+                .build();
+
+        final AccountBO accountBO = mapper().toBO(requestDTO);
         final AccountBO serviceResponse = accountBO.withId(UUID.randomUUID().toString());
 
         Mockito.when(accountsService.create(eq(accountBO))).thenReturn(serviceResponse);
 
-        final ValidatableResponse httpResponse = given().body(accountDTO)
+        LOG.info("Request {}", requestDTO);
+
+        final ValidatableResponse httpResponse = given().body(requestDTO)
                 .contentType(ContentType.JSON)
                 .post(url())
                 .then()
@@ -56,7 +69,7 @@ class AccountsRouteTest extends AbstractRouteTest {
                 .getBody()
                 .as(AccountDTO.class);
 
-        assertThat(response).isEqualToIgnoringGivenFields(accountDTO, "id", "plainPassword");
+        assertThat(response).isEqualToIgnoringGivenFields(requestDTO, "id", "deleted");
         assertThat(response.getId()).isEqualTo(serviceResponse.getId());
     }
 }

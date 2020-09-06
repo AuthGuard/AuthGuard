@@ -1,7 +1,9 @@
 package com.authguard.rest.routes;
 
 import com.authguard.rest.access.ActorRoles;
-import com.authguard.api.dto.*;
+import com.authguard.api.dto.entities.*;
+import com.authguard.api.dto.requests.*;
+import com.authguard.rest.util.BodyHandler;
 import com.authguard.service.CredentialsService;
 import com.authguard.service.model.UserIdentifierBO;
 import com.google.inject.Inject;
@@ -18,10 +20,18 @@ public class CredentialsRoute implements EndpointGroup {
     private final RestMapper restMapper;
     private final CredentialsService credentialsService;
 
+    private final BodyHandler<CreateCredentialsRequestDTO> credentialsRequestBodyHandler;
+    private final BodyHandler<UserIdentifiersRequestDTO> userIdentifiersRequestBodyHandler;
+
     @Inject
     public CredentialsRoute(final RestMapper restMapper, final CredentialsService credentialsService) {
         this.restMapper = restMapper;
         this.credentialsService = credentialsService;
+
+        this.credentialsRequestBodyHandler = new BodyHandler.Builder<>(CreateCredentialsRequestDTO.class)
+                .build();
+        this.userIdentifiersRequestBodyHandler = new BodyHandler.Builder<>(UserIdentifiersRequestDTO.class)
+                .build();
     }
 
     @Override
@@ -40,10 +50,9 @@ public class CredentialsRoute implements EndpointGroup {
     }
 
     private void create(final Context context) {
-        final CredentialsDTO credentials = RestJsonMapper.asClass(context.body(), CredentialsDTO.class);
+        final CreateCredentialsRequestDTO request = credentialsRequestBodyHandler.getValidated(context);
 
-        final Optional<CredentialsDTO> created = Optional.of(credentials)
-                .map(restMapper::toBO)
+        final Optional<CredentialsDTO> created = Optional.of(restMapper.toBO(request))
                 .map(credentialsService::create)
                 .map(restMapper::toDTO);
 
@@ -52,7 +61,6 @@ public class CredentialsRoute implements EndpointGroup {
         } else {
             context.status(400).result("Failed to create account");
         }
-
     }
 
     private void update(final Context context) {
@@ -95,7 +103,7 @@ public class CredentialsRoute implements EndpointGroup {
 
     private void addIdentifiers(final Context context) {
         final String credentialsId = context.pathParam("id");
-        final UserIdentifiersRequestDTO request = RestJsonMapper.asClass(context.body(), UserIdentifiersRequestDTO.class);
+        final UserIdentifiersRequestDTO request = userIdentifiersRequestBodyHandler.getValidated(context);
         final List<UserIdentifierBO> identifiers = request.getIdentifiers().stream()
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
@@ -107,7 +115,7 @@ public class CredentialsRoute implements EndpointGroup {
 
     private void removeIdentifiers(final Context context) {
         final String credentialsId = context.pathParam("id");
-        final UserIdentifiersRequestDTO request = RestJsonMapper.asClass(context.body(), UserIdentifiersRequestDTO.class);
+        final UserIdentifiersRequestDTO request = userIdentifiersRequestBodyHandler.getValidated(context);
         final List<String> identifiers = request.getIdentifiers().stream()
                 .map(UserIdentifierDTO::getIdentifier)
                 .collect(Collectors.toList());

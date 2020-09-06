@@ -2,6 +2,7 @@ package com.authguard.rest.server;
 
 import com.authguard.rest.exceptions.Error;
 import com.authguard.rest.exceptions.ExceptionHandlers;
+import com.authguard.rest.exceptions.RequestValidationException;
 import com.authguard.rest.exceptions.RuntimeJsonException;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.ServiceConflictException;
@@ -31,5 +32,7 @@ public class ServerExceptionHandlers implements ServerConfigurer {
         app.exception(ServiceConflictException.class, ExceptionHandlers.serviceConflictException());
 
         app.exception(RuntimeJsonException.class, ExceptionHandlers.jsonMappingException());
+
+        app.exception(RequestValidationException.class, ExceptionHandlers.requestValidationException());
     }
 }

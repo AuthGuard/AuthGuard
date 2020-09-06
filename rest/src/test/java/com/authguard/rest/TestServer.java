@@ -21,7 +21,9 @@ class TestServer {
         this.configContext = new ConfigurationLoader().load();
 
         injector = Guice.createInjector(new MocksBinder(), new MappersBinder(), new ConfigBinder(configContext));
-        app = Javalin.create();
+        app = Javalin.create(javalinConfig -> {
+            javalinConfig.accessManager(new TestAccessManager());
+        });
     }
 
     void start() {
