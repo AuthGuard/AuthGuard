@@ -1,7 +1,9 @@
 package com.authguard.rest.routes;
 
-import com.authguard.api.dto.AppDTO;
+import com.authguard.api.dto.entities.AppDTO;
+import com.authguard.api.dto.requests.CreateAppRequestDTO;
 import com.authguard.rest.access.ActorRoles;
+import com.authguard.rest.util.BodyHandler;
 import com.authguard.service.ApplicationsService;
 import com.google.inject.Inject;
 import io.javalin.apibuilder.EndpointGroup;
@@ -15,10 +17,15 @@ public class ApplicationsRoute implements EndpointGroup {
     private final ApplicationsService applicationsService;
     private final RestMapper restMapper;
 
+    private final BodyHandler<CreateAppRequestDTO> appRequestRequestBodyHandler;
+
     @Inject
     public ApplicationsRoute(final ApplicationsService applicationsService, final RestMapper restMapper) {
         this.applicationsService = applicationsService;
         this.restMapper = restMapper;
+
+        this.appRequestRequestBodyHandler = new BodyHandler.Builder<>(CreateAppRequestDTO.class)
+                .build();
     }
 
     @Override
@@ -33,10 +40,9 @@ public class ApplicationsRoute implements EndpointGroup {
     }
 
     private void create(final Context context) {
-        final AppDTO app = RestJsonMapper.asClass(context.body(), AppDTO.class);
+        final CreateAppRequestDTO request = appRequestRequestBodyHandler.getValidated(context);
 
-        final Optional<Object> created = Optional.of(app)
-                .map(restMapper::toBO)
+        final Optional<Object> created = Optional.of(restMapper.toBO(request))
                 .map(applicationsService::create)
                 .map(restMapper::toDTO);
 

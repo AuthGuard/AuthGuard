@@ -1,7 +1,7 @@
 package com.authguard.rest;
 
-import com.authguard.api.dto.AuthRequestDTO;
-import com.authguard.api.dto.TokensDTO;
+import com.authguard.api.dto.entities.TokensDTO;
+import com.authguard.api.dto.requests.AuthRequestDTO;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
 import com.authguard.service.AuthenticationService;

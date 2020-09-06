@@ -1,7 +1,7 @@
 package com.authguard.rest.routes;
 
-import com.authguard.api.dto.PermissionsRequestDTO;
-import com.authguard.api.dto.RoleDTO;
+import com.authguard.api.dto.requests.PermissionsRequestDTO;
+import com.authguard.api.dto.entities.RoleDTO;
 import com.authguard.rest.access.ActorRoles;
 import com.authguard.service.RolesService;
 import com.authguard.service.model.PermissionBO;

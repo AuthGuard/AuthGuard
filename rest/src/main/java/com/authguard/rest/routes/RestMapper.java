@@ -1,6 +1,7 @@
 package com.authguard.rest.routes;
 
-import com.authguard.api.dto.*;
+import com.authguard.api.dto.entities.*;
+import com.authguard.api.dto.requests.*;
 import com.authguard.service.model.*;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
@@ -8,9 +9,11 @@ import org.mapstruct.Mapping;
 
 @Mapper
 public interface RestMapper {
+    AccountBO toBO(CreateAccountRequestDTO createAccountRequestDTO);
     AccountBO toBO(AccountDTO accountDTO);
     AccountDTO toDTO(AccountBO accountBO);
 
+    CredentialsBO toBO(CreateCredentialsRequestDTO createAccountRequestDTO);
     CredentialsBO toBO(CredentialsDTO credentialsDTO);
     CredentialsDTO toDTO(CredentialsBO credentialsBO);
 
@@ -32,6 +35,8 @@ public interface RestMapper {
     UserIdentifierBO toBO(UserIdentifierDTO userIdentifierDTO);
     UserIdentifierDTO toDTO(UserIdentifierBO userIdentifierBO);
 
+    @Mapping(target = "parentAccountId", source = "accountId")
+    AppBO toBO(CreateAppRequestDTO createAppRequestDTO);
     @Mapping(target = "parentAccountId", source = "accountId")
     AppBO toBO(AppDTO appDTO);
     @InheritInverseConfiguration

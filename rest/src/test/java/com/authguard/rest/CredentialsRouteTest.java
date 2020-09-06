@@ -1,6 +1,6 @@
 package com.authguard.rest;
 
-import com.authguard.api.dto.CredentialsDTO;
+import com.authguard.api.dto.entities.CredentialsDTO;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
 import com.authguard.service.CredentialsService;

@@ -51,4 +51,11 @@ public class ExceptionHandlers {
                     .json(error);
         };
     }
+
+    public static ExceptionHandler<RequestValidationException> requestValidationException() {
+        return (e, context) -> {
+            final RequestValidationError error = new RequestValidationError(e.getViolations());
+            context.status(400).json(error);
+        };
+    }
 }
