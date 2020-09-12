@@ -13,6 +13,7 @@ public class PermissionsRequestValidator implements Validator<PermissionsRequest
     public List<Violation> validate(final PermissionsRequestDTO obj) {
         return FluentValidator.begin()
                 .validate("permissions", obj.getPermissions(), Constraints.required, Constraints.hasItems)
+                .validate("action", obj.getAction(), Constraints.required)
                 .validateCollection("permissions", obj.getPermissions(), Validators.getForClass(PermissionDTO.class))
                 .getViolations();
     }

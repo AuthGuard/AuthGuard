@@ -5,6 +5,7 @@ import com.authguard.api.dto.entities.AccountEmailDTO;
 import com.authguard.api.dto.entities.AppDTO;
 import com.authguard.api.dto.requests.AccountEmailsRequestDTO;
 import com.authguard.api.dto.requests.CreateAccountRequestDTO;
+import com.authguard.api.dto.requests.PermissionsRequest;
 import com.authguard.api.dto.requests.PermissionsRequestDTO;
 import com.authguard.rest.access.ActorRoles;
 import com.authguard.rest.exceptions.Error;
@@ -54,8 +55,7 @@ public class AccountsRoute implements EndpointGroup {
         delete("/:id", this::deleteAccount, ActorRoles.adminClient());
         get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
 
-        patch("/:id/permissions", this::grantPermissions, ActorRoles.adminClient());
-        delete("/:id/permissions", this::revokePermissions, ActorRoles.adminClient());
+        patch("/:id/permissions", this::updatePermissions, ActorRoles.adminClient());
 
         patch("/:id/emails", this::addEmails, ActorRoles.adminClient());
         delete("/:id/emails", this::removeEmails, ActorRoles.adminClient());
@@ -119,7 +119,7 @@ public class AccountsRoute implements EndpointGroup {
         }
     }
 
-    private void grantPermissions(final Context context) {
+    private void updatePermissions(final Context context) {
         final String accountId = context.pathParam("id");
         final PermissionsRequestDTO permissionsRequest = permissionsRequestBodyHandler.getValidated(context);
 
@@ -127,18 +127,14 @@ public class AccountsRoute implements EndpointGroup {
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
 
-        final AccountDTO updatedAccount = restMapper.toDTO(accountsService.grantPermissions(accountId, permissions));
-        context.json(updatedAccount);
-    }
+        final AccountDTO updatedAccount;
 
-    private void revokePermissions(final Context context) {
-        final String accountId = context.pathParam("id");
-        final PermissionsRequestDTO permissionsRequest = permissionsRequestBodyHandler.getValidated(context);
-        final List<PermissionBO> permissions = permissionsRequest.getPermissions().stream()
-                .map(restMapper::toBO)
-                .collect(Collectors.toList());
+        if (permissionsRequest.getAction() == PermissionsRequest.Action.GRANT) {
+            updatedAccount = restMapper.toDTO(accountsService.grantPermissions(accountId, permissions));
+        } else {
+            updatedAccount = restMapper.toDTO(accountsService.revokePermissions(accountId, permissions));
+        }
 
-        final AccountDTO updatedAccount = restMapper.toDTO(accountsService.revokePermissions(accountId, permissions));
         context.json(updatedAccount);
     }
 

@@ -13,5 +13,11 @@ import java.util.List;
 @JsonSerialize(as = PermissionsRequestDTO.class)
 @JsonDeserialize(as = PermissionsRequestDTO.class)
 public interface PermissionsRequest {
+    Action getAction();
     List<PermissionDTO> getPermissions();
+
+    enum Action {
+        GRANT,
+        REVOKE
+    }
 }
