@@ -27,6 +27,7 @@ public interface RestMapper {
     PermissionDTO toDTO(PermissionBO permissionBO);
 
     RoleBO toBO(RoleDTO roleDTO);
+    RoleBO toBO(CreateRoleRequestDTO createRoleRequestDTO);
     RoleDTO toDTO(RoleBO roleBO);
 
     AccountEmailBO toBO(AccountEmailDTO accountEmailDTO);
