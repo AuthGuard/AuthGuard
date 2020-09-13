@@ -1,4 +1,4 @@
-package com.authguard.rest.access;
+package com.authguard.api.access;
 
 import io.javalin.core.security.Role;
 

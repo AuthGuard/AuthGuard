@@ -1,15 +1,13 @@
 package com.authguard.rest.routes;
 
 import com.authguard.api.dto.entities.TokensDTO;
-import com.authguard.rest.access.ActorRoles;
+import com.authguard.api.routes.ApiKeysApi;
+import com.authguard.rest.mappers.RestMapper;
 import com.authguard.service.ApiKeysService;
 import com.google.inject.Inject;
-import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 
-import static io.javalin.apibuilder.ApiBuilder.post;
-
-public class ApiKeysRoute implements EndpointGroup {
+public class ApiKeysRoute extends ApiKeysApi {
     private final ApiKeysService apiKeysService;
 
     @Inject
@@ -17,12 +15,7 @@ public class ApiKeysRoute implements EndpointGroup {
         this.apiKeysService = apiKeysService;
     }
 
-    @Override
-    public void addEndpoints() {
-        post("/:id", this::generate, ActorRoles.anyAdmin());
-    }
-
-    private void generate(final Context context) {
+    public void generate(final Context context) {
         final String appId = context.pathParam("id");
 
         final TokensDTO key = TokensDTO.builder()

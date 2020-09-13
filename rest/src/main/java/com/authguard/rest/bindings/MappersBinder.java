@@ -1,8 +1,8 @@
 package com.authguard.rest.bindings;
 
-import com.authguard.rest.routes.RestMapper;
+import com.authguard.rest.mappers.RestMapper;
+import com.authguard.rest.mappers.RestMapperImpl;
 import com.google.inject.AbstractModule;
-import com.authguard.rest.routes.RestMapperImpl;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.mappers.ServiceMapperImpl;
 

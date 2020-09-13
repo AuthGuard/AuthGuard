@@ -1,22 +1,23 @@
 package com.authguard.rest.routes;
 
-import com.authguard.rest.access.ActorRoles;
-import com.authguard.api.dto.entities.*;
-import com.authguard.api.dto.requests.*;
+import com.authguard.api.dto.entities.CredentialsDTO;
+import com.authguard.api.dto.entities.UserIdentifierDTO;
+import com.authguard.api.dto.requests.CreateCredentialsRequestDTO;
+import com.authguard.api.dto.requests.UserIdentifiersRequestDTO;
+import com.authguard.api.routes.CredentialsApi;
+import com.authguard.rest.mappers.RestJsonMapper;
+import com.authguard.rest.mappers.RestMapper;
 import com.authguard.rest.util.BodyHandler;
 import com.authguard.service.CredentialsService;
 import com.authguard.service.model.UserIdentifierBO;
 import com.google.inject.Inject;
-import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static io.javalin.apibuilder.ApiBuilder.*;
-
-public class CredentialsRoute implements EndpointGroup {
+public class CredentialsRoute extends CredentialsApi {
     private final RestMapper restMapper;
     private final CredentialsService credentialsService;
 
@@ -34,22 +35,7 @@ public class CredentialsRoute implements EndpointGroup {
                 .build();
     }
 
-    @Override
-    public void addEndpoints() {
-        get("/:id", this::getById, ActorRoles.adminClient());
-
-        post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin"));
-
-        put("/:id", this::update, ActorRoles.adminClient());
-        patch("/:id/password", this::updatePassword, ActorRoles.adminClient());
-
-        patch("/:id/identifiers", this::addIdentifiers, ActorRoles.adminClient());
-        delete("/:id/identifiers", this::removeIdentifiers, ActorRoles.adminClient());
-
-        delete("/:id", this::removeById, ActorRoles.adminClient());
-    }
-
-    private void create(final Context context) {
+    public void create(final Context context) {
         final CreateCredentialsRequestDTO request = credentialsRequestBodyHandler.getValidated(context);
 
         final Optional<CredentialsDTO> created = Optional.of(restMapper.toBO(request))
@@ -63,7 +49,7 @@ public class CredentialsRoute implements EndpointGroup {
         }
     }
 
-    private void update(final Context context) {
+    public void update(final Context context) {
         final CredentialsDTO credentials = RestJsonMapper.asClass(context.body(), CredentialsDTO.class);
 
         if (credentials.getPlainPassword() != null) {
@@ -85,7 +71,7 @@ public class CredentialsRoute implements EndpointGroup {
         }
     }
 
-    private void updatePassword(final Context context) {
+    public void updatePassword(final Context context) {
         final CredentialsDTO credentials = RestJsonMapper.asClass(context.body(), CredentialsDTO.class);
         final String credentialsId = context.pathParam("id");
 
@@ -101,7 +87,7 @@ public class CredentialsRoute implements EndpointGroup {
         }
     }
 
-    private void addIdentifiers(final Context context) {
+    public void addIdentifiers(final Context context) {
         final String credentialsId = context.pathParam("id");
         final UserIdentifiersRequestDTO request = userIdentifiersRequestBodyHandler.getValidated(context);
         final List<UserIdentifierBO> identifiers = request.getIdentifiers().stream()
@@ -113,7 +99,7 @@ public class CredentialsRoute implements EndpointGroup {
                 .ifPresentOrElse(context::json, () -> context.status(404));
     }
 
-    private void removeIdentifiers(final Context context) {
+    public void removeIdentifiers(final Context context) {
         final String credentialsId = context.pathParam("id");
         final UserIdentifiersRequestDTO request = userIdentifiersRequestBodyHandler.getValidated(context);
         final List<String> identifiers = request.getIdentifiers().stream()
@@ -125,7 +111,7 @@ public class CredentialsRoute implements EndpointGroup {
                 .ifPresentOrElse(context::json, () -> context.status(404));
     }
 
-    private void getById(final Context context) {
+    public void getById(final Context context) {
         final Optional<CredentialsDTO> credentials = credentialsService.getById(context.pathParam("id"))
                 .map(restMapper::toDTO);
 
@@ -136,7 +122,7 @@ public class CredentialsRoute implements EndpointGroup {
         }
     }
 
-    private void removeById(final Context context) {
+    public void removeById(final Context context) {
         final Optional<CredentialsDTO> credentials = credentialsService.delete(context.pathParam("id"))
                 .map(restMapper::toDTO);
 

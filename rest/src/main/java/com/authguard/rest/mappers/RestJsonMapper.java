@@ -1,4 +1,4 @@
-package com.authguard.rest.routes;
+package com.authguard.rest.mappers;
 
 import com.authguard.rest.exceptions.RuntimeJsonException;
 import com.fasterxml.jackson.core.JsonProcessingException;

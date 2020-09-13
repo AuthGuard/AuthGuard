@@ -19,12 +19,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class AccountsRouteTest extends AbstractRouteTest {
-    private static final Logger LOG = LoggerFactory.getLogger(AccountsRouteTest.class);
+class AccountsApiTest extends AbstractRouteTest {
+    private static final Logger LOG = LoggerFactory.getLogger(AccountsApiTest.class);
 
     private static final String ENDPOINT = "accounts";
 
-    AccountsRouteTest() {
+    AccountsApiTest() {
         super(ENDPOINT);
     }
 

@@ -1,14 +1,11 @@
 package com.authguard.rest.routes;
 
-import com.authguard.rest.access.ActorRoles;
+import com.authguard.api.routes.VerificationApi;
 import com.authguard.service.VerificationService;
 import com.google.inject.Inject;
-import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 
-import static io.javalin.apibuilder.ApiBuilder.post;
-
-public class VerificationRoute implements EndpointGroup {
+public class VerificationRoute extends VerificationApi {
     private final VerificationService verificationService;
 
     @Inject
@@ -16,12 +13,7 @@ public class VerificationRoute implements EndpointGroup {
         this.verificationService = verificationService;
     }
 
-    @Override
-    public void addEndpoints() {
-        post("/email", this::verifyEmail, ActorRoles.adminClient());
-    }
-
-    private void verifyEmail(final Context context) {
+    public void verifyEmail(final Context context) {
         final String token = context.queryParam("token");
 
         if (token == null) {
