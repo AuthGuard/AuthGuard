@@ -1,0 +1,311 @@
+{
+	"info": {
+		"_postman_id": "48fffb7b-729c-4916-b7a3-68f710682039",
+		"name": "AuthGuard - Permissions",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "create test:read permission",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "12826af4-fba2-4624-8ec8-18577def1a3d",
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"group\": \"test\",\n    \"name\": \"read\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/permissions",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"permissions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "grant test:read permission",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "259c07a2-a0d6-41af-b9d5-8014d3441f46",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"action\": \"GRANT\",\n    \"permissions\": [\n        {\n            \"group\": \"test\",\n            \"name\": \"read\"\n        }\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts/{{accountId}}/permissions",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts",
+						"{{accountId}}",
+						"permissions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get account after permission grant",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "99175fe0-c77e-4768-947f-9c3b44a1802c",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Account has test:read permission\", function () {",
+							"    const response = pm.response.json();",
+							"    const permissions = response.permissions;",
+							"",
+							"    pm.expect(permissions).to.deep.contain({",
+							"        group: \"test\",",
+							"        name: \"read\"",
+							"    });",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts/{{accountId}}",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts",
+						"{{accountId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "revoke test:read permission",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "bf815111-b5a7-495a-a1db-93d6004c542b",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"action\": \"REVOKE\",\n    \"permissions\": [\n        {\n            \"group\": \"test\",\n            \"name\": \"read\"\n        }\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts/{{accountId}}/permissions",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts",
+						"{{accountId}}",
+						"permissions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get account after permission revoke",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "b14de73a-95d2-4f71-b615-57dec033de91",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Account has test:read permission\", function () {",
+							"    const response = pm.response.json();",
+							"    const permissions = response.permissions;",
+							"",
+							"    pm.expect(permissions).to.be.empty;",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts/{{accountId}}",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts",
+						"{{accountId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{admin-api-key}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "52bd84a2-5f58-4c94-9982-dd679726c703",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "f29447ac-2611-4fcb-9230-5e993d33a7e0",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"protocolProfileBehavior": {}
+}

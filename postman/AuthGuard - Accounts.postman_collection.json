@@ -1,0 +1,397 @@
+{
+	"info": {
+		"_postman_id": "a8dc2d8f-f404-44a0-8bb0-46b4de9b9688",
+		"name": "AuthGuard - Accounts",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "create account",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "f1c3b094-a41e-4ab7-8eec-ab9288831cec",
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"    ",
+							"    ",
+							"    let response = pm.response.json();",
+							"    pm.environment.set(\"accountId\", response.id);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create credentials",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "a71a133d-9522-4f8f-8cc8-210cfd039c84",
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"accountId\": \"{{accountId}}\",\n\t\"identifiers\": [\n\t\t{\n\t\t\t\"identifier\": \"username\",\n\t\t\t\"type\": \"USERNAME\"\n\t\t}\n\t],\n\t\"plainPassword\": \"password\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/credentials",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"credentials"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create credentials invalid password",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "2c498302-452c-4813-b612-407126060c6a",
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"accountId\": \"{{accountId}}\",\n\t\"identifiers\": [\n\t\t{\n\t\t\t\"identifier\": \"username\",\n\t\t\t\"type\": \"USERNAME\"\n\t\t}\n\t],\n\t\"plainPassword\": \"nocap\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/credentials",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"credentials"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create credentials same username",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "645e6a7f-7b8b-405d-ac97-b576d7c4b2e5",
+						"exec": [
+							"pm.test(\"Status code is 409\", function () {",
+							"    pm.response.to.have.status(409);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"accountId\": \"{{accountId}}\",\n\t\"identifiers\": [\n\t\t{\n\t\t\t\"identifier\": \"username\",\n\t\t\t\"type\": \"USERNAME\"\n\t\t}\n\t],\n\t\"plainPassword\": \"password\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/credentials",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"credentials"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create credentials no account ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "ca5374a8-6de2-46cf-badd-46bc01db61c6",
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"    ",
+							"    const error = pm.response.json();",
+							"    ",
+							"    pm.expect(error.message).to.have.length.greaterThan(0);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"accountId\": \"this-should-not-exist\",\n\t\"identifiers\": [\n\t\t{\n\t\t\t\"identifier\": \"not-to-be-used\",\n\t\t\t\"type\": \"USERNAME\"\n\t\t}\n\t],\n\t\"plainPassword\": \"password\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/credentials",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"credentials"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "activate account",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "3aa9fce5-f26b-48d8-9a16-7ab33bdaa297",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Account is activated\", function () {",
+							"    const response = pm.response.json();",
+							"    pm.expect(response.active).to.equal(true);",
+							"})",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts/{{accountId}}/activate",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts",
+						"{{accountId}}",
+						"activate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "deactivate account",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "0e87ff6b-b3bc-4a94-9803-2e0b0dcc9b73",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Account is deactivated\", function () {",
+							"    const response = pm.response.json();",
+							"    pm.expect(response.active).to.equal(false);",
+							"})",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts/{{accountId}}/deactivate",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts",
+						"{{accountId}}",
+						"deactivate"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{admin-api-key}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "31a2d613-3f15-4192-9b69-b93699f854bb",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "f5e358cd-ec14-4f3b-a373-31c95116c0c3",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"protocolProfileBehavior": {}
+}

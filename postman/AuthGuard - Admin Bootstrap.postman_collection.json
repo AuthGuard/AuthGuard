@@ -1,0 +1,277 @@
+{
+	"info": {
+		"_postman_id": "099cd5be-83f1-40b5-832f-b2f81395dc7b",
+		"name": "AuthGuard - Admin Bootstrap",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "create admin account",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "4ef7bfbe-a5ac-419d-a684-5275c19bf9af",
+						"exec": [
+							"pm.test(\"Response code is 201\", () => {",
+							"    pm.expect(pm.response.code).to.equal(201);",
+							"});",
+							"",
+							"pm.test(\"Body is valid and set admin ID\", () => {",
+							"    const account = pm.response.json();",
+							"    ",
+							"    pm.environment.set(\"admin-account-id\", account.id);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"roles\": [\n\t\t\"authguard_admin\"\n\t]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create admin credentials",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "9966bf2f-4cd2-48e5-b3d3-9ef6945914b4",
+						"exec": [
+							"pm.test(\"Status code is 201\", () => {",
+							"    pm.response.to.have.status(201);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"accountId\": \"{{admin-account-id}}\",\n\t\"identifiers\": [\n\t\t{\n\t\t\t\"identifier\": \"authguard_admin\",\n\t\t\t\"type\": \"USERNAME\"\n\t\t}\n\t],\n\t\"plainPassword\": \"Password\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/credentials",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"credentials"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create admin application",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "ca62260d-7c75-4c34-aa73-f187131eda42",
+						"exec": [
+							"pm.test(\"Status code is 201\", () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Set app ID\", () => {",
+							"    const app = pm.response.json();",
+							"    pm.environment.set(\"admin-app-id\", app.id);",
+							"})",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "Password",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "authguard_admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"AuthGuard Postman\",\n\t\"accountId\": \"{{admin-account-id}}\",\n\t\"roles\": [\n\t\t\"authguard_admin_client\"\n\t]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/apps",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"apps"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create admin API key",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "79012b3d-37bb-4d48-8357-fbabe1b0108e",
+						"exec": [
+							"pm.test(\"Status code is 201\", () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Set API key\", () => {",
+							"    const tokens = pm.response.json();",
+							"    pm.environment.set(\"admin-api-key\", tokens.token);",
+							"})",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "Password",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "authguard_admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"accountId\": \"{{admin-account-id}}\",\n\t\"roles\": [\n\t\t\"authguard_admin_client\"\n\t]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/keys/{{admin-app-id}}",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"keys",
+						"{{admin-app-id}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{
+				"key": "password",
+				"value": "Password",
+				"type": "string"
+			},
+			{
+				"key": "username",
+				"value": "admin",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "c1f231d4-ea38-41d5-a281-c50aca7e087a",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "164221e8-4edf-44a4-a9eb-e03f5416088b",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"protocolProfileBehavior": {}
+}

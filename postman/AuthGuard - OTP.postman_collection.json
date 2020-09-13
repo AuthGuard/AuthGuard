@@ -1,0 +1,179 @@
+{
+	"info": {
+		"_postman_id": "c6131ae4-99ad-4948-99af-5ba79b990ed9",
+		"name": "AuthGuard - OTP",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "247ce39b-76f4-4d2c-b640-e9d39ea5d54c",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"let response = pm.response.json();",
+							"pm.environment.set(\"otp-id\", response.token);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"authorization\": \"Basic dXNlcm5hbWU6cGFzc3dvcmQ=\"\n}"
+				},
+				"url": {
+					"raw": "{{authguard}}/auth/authenticate",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"auth",
+						"authenticate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "verify OTP",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "f2300ef0-0617-4661-9feb-0ed4dc065903",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"let response = pm.response.json();",
+							"pm.environment.set(\"idToken\", response.token);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"passwordId\": \"{{otp-id}}\",\n\t\"password\": \"768033\"\n}"
+				},
+				"url": {
+					"raw": "{{authguard}}/otp/verify",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"otp",
+						"verify"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "refresh",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "25a9db24-428c-428c-8f5b-fdaf18940e0f",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"authorization\": \"{{refreshToken}}\"\n}"
+				},
+				"url": {
+					"raw": "{{authguard}}/auth/authorize/refresh",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"auth",
+						"authorize",
+						"refresh"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{admin-api-key}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "5cf5dbe1-6251-4fa7-b453-407c683f7d7c",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "43900ab2-c285-40bc-abec-5077136fa7e8",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"protocolProfileBehavior": {}
+}
