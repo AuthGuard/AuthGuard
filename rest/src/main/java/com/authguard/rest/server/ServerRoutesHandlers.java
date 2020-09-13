@@ -25,6 +25,8 @@ public class ServerRoutesHandlers implements ServerConfigurer {
             path("/accounts", injector.getInstance(AccountsRoute.class));
             path("/apps", injector.getInstance(ApplicationsRoute.class));
             path("/admin", injector.getInstance(AdminRoute.class));
+            path("/roles", injector.getInstance(RolesRoute.class));
+            path("/permissions", injector.getInstance(PermissionsRoute.class));
 
             if (config.get("otp") != null) {
                 path("/otp", injector.getInstance(OtpRoute.class));

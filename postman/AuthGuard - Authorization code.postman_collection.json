@@ -1,0 +1,204 @@
+{
+	"info": {
+		"_postman_id": "d157d7ee-5927-4a7e-8c88-dfbc3a4cb8e6",
+		"name": "AuthGuard - Authorization code",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "11120e8b-030e-4ce5-a2e9-c93287582a84",
+						"exec": [
+							"pm.test(\"Status code is 200\", () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Token type is correct\", () => {",
+							"    const response = pm.response.json();",
+							"    pm.expect(response.type).to.equal(\"authorizationCode\");",
+							"});",
+							"",
+							"pm.test(\"Set environment variable\", () => {",
+							"    const response = pm.response.json();",
+							"    pm.environment.set(\"authorization-code\", response.token);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"authorization\": \"Basic dXNlcm5hbWU6cGFzc3dvcmQ=\"\n}"
+				},
+				"url": {
+					"raw": "{{authguard}}/auth/authenticate",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"auth",
+						"authenticate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "exchange for access token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "42d4fc02-3e06-49e5-9e79-170ae35e5cbd",
+						"exec": [
+							"pm.test(\"Status code is 200\", () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Token type is correct\", () => {",
+							"    const response = pm.response.json();",
+							"    pm.expect(response.type).to.equal(\"accessToken\");",
+							"});",
+							"",
+							"pm.test(\"Set environment variable\", () => {",
+							"    const response = pm.response.json();",
+							"    pm.environment.set(\"access-token\", response.token);",
+							"    pm.environment.set(\"refresh-token\", response.refreshToken);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"authorization\": \"{{authorization-code}}\"\n}"
+				},
+				"url": {
+					"raw": "{{authguard}}/auth/exchange?from=authorizationCode&to=accessToken",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"auth",
+						"exchange"
+					],
+					"query": [
+						{
+							"key": "from",
+							"value": "authorizationCode"
+						},
+						{
+							"key": "to",
+							"value": "accessToken"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "refresh",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "03995f48-2a15-46c7-849e-6df23cd57b4c",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"authorization\": \"{{refreshToken}}\"\n}"
+				},
+				"url": {
+					"raw": "{{authguard}}/auth/authorize/refresh",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"auth",
+						"authorize",
+						"refresh"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{admin-api-key}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "86fa707b-0765-4a77-b7c8-9e8fc805f4dd",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "6034f791-95f5-411a-bddf-56bed1bb0573",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"protocolProfileBehavior": {}
+}

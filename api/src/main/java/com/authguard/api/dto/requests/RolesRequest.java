@@ -1,6 +1,5 @@
 package com.authguard.api.dto.requests;
 
-import com.authguard.api.dto.entities.PermissionDTO;
 import com.authguard.api.dto.style.DTOStyle;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -10,11 +9,11 @@ import java.util.List;
 
 @Value.Immutable
 @DTOStyle
-@JsonSerialize(as = PermissionsRequestDTO.class)
-@JsonDeserialize(as = PermissionsRequestDTO.class)
-public interface PermissionsRequest {
+@JsonSerialize(as = RolesRequestDTO.class)
+@JsonDeserialize(as = RolesRequestDTO.class)
+public interface RolesRequest {
     Action getAction();
-    List<PermissionDTO> getPermissions();
+    List<String> getRoles();
 
     enum Action {
         GRANT,

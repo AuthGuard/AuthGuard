@@ -1,6 +1,7 @@
 package com.authguard.api.dto.validation.validators;
 
 import com.authguard.api.dto.entities.PermissionDTO;
+import com.authguard.api.dto.requests.PermissionsRequest;
 import com.authguard.api.dto.requests.PermissionsRequestDTO;
 import com.authguard.api.dto.validation.Validator;
 import com.authguard.api.dto.validation.violations.Violation;
@@ -16,6 +17,7 @@ class PermissionsRequestValidatorTest {
     @Test
     void validateValid() {
         final PermissionsRequestDTO request = PermissionsRequestDTO.builder()
+                .action(PermissionsRequest.Action.GRANT)
                 .addPermissions(PermissionDTO.builder()
                         .group("group")
                         .name("*")
@@ -30,7 +32,7 @@ class PermissionsRequestValidatorTest {
     }
 
     @Test
-    void validateNoPermissions() {
+    void validateNoFields() {
         final PermissionsRequestDTO request = PermissionsRequestDTO.builder()
                 .build();
 
@@ -38,12 +40,16 @@ class PermissionsRequestValidatorTest {
 
         final List<Violation> violations = validator.validate(request);
 
-        assertThat(violations).contains(new Violation("permissions", ViolationType.EMPTY_LIST));
+        assertThat(violations).containsExactly(
+                new Violation("permissions", ViolationType.EMPTY_LIST),
+                new Violation("action", ViolationType.MISSING_REQUIRED_VALUE)
+        );
     }
 
     @Test
     void validateInvalidPermission() {
         final PermissionsRequestDTO request = PermissionsRequestDTO.builder()
+                .action(PermissionsRequest.Action.GRANT)
                 .addPermissions(PermissionDTO.builder()
                         .build())
                 .build();

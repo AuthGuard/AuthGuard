@@ -3,9 +3,7 @@ package com.authguard.rest.routes;
 import com.authguard.api.dto.entities.AccountDTO;
 import com.authguard.api.dto.entities.AccountEmailDTO;
 import com.authguard.api.dto.entities.AppDTO;
-import com.authguard.api.dto.requests.AccountEmailsRequestDTO;
-import com.authguard.api.dto.requests.CreateAccountRequestDTO;
-import com.authguard.api.dto.requests.PermissionsRequestDTO;
+import com.authguard.api.dto.requests.*;
 import com.authguard.rest.access.ActorRoles;
 import com.authguard.rest.exceptions.Error;
 import com.authguard.rest.util.BodyHandler;
@@ -30,6 +28,7 @@ public class AccountsRoute implements EndpointGroup {
 
     private final BodyHandler<CreateAccountRequestDTO> accountRequestBodyHandler;
     private final BodyHandler<PermissionsRequestDTO> permissionsRequestBodyHandler;
+    private final BodyHandler<RolesRequestDTO> rolesRequestBodyHandler;
     private final BodyHandler<AccountEmailsRequestDTO> accountEmailsRequestBodyHandler;
 
     @Inject
@@ -43,6 +42,8 @@ public class AccountsRoute implements EndpointGroup {
                 .build();
         this.permissionsRequestBodyHandler = new BodyHandler.Builder<>(PermissionsRequestDTO.class)
                 .build();
+        this.rolesRequestBodyHandler = new BodyHandler.Builder<>(RolesRequestDTO.class)
+                .build();
         this.accountEmailsRequestBodyHandler = new BodyHandler.Builder<>(AccountEmailsRequestDTO.class)
                 .build();
     }
@@ -54,8 +55,8 @@ public class AccountsRoute implements EndpointGroup {
         delete("/:id", this::deleteAccount, ActorRoles.adminClient());
         get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
 
-        patch("/:id/permissions", this::grantPermissions, ActorRoles.adminClient());
-        delete("/:id/permissions", this::revokePermissions, ActorRoles.adminClient());
+        patch("/:id/permissions", this::updatePermissions, ActorRoles.adminClient());
+        patch("/:id/roles", this::updateRoles, ActorRoles.adminClient());
 
         patch("/:id/emails", this::addEmails, ActorRoles.adminClient());
         delete("/:id/emails", this::removeEmails, ActorRoles.adminClient());
@@ -119,26 +120,37 @@ public class AccountsRoute implements EndpointGroup {
         }
     }
 
-    private void grantPermissions(final Context context) {
+    private void updatePermissions(final Context context) {
         final String accountId = context.pathParam("id");
-        final PermissionsRequestDTO permissionsRequest = permissionsRequestBodyHandler.getValidated(context);
+        final PermissionsRequestDTO request = permissionsRequestBodyHandler.getValidated(context);
 
-        final List<PermissionBO> permissions = permissionsRequest.getPermissions().stream()
+        final List<PermissionBO> permissions = request.getPermissions().stream()
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
 
-        final AccountDTO updatedAccount = restMapper.toDTO(accountsService.grantPermissions(accountId, permissions));
+        final AccountDTO updatedAccount;
+
+        if (request.getAction() == PermissionsRequest.Action.GRANT) {
+            updatedAccount = restMapper.toDTO(accountsService.grantPermissions(accountId, permissions));
+        } else {
+            updatedAccount = restMapper.toDTO(accountsService.revokePermissions(accountId, permissions));
+        }
+
         context.json(updatedAccount);
     }
 
-    private void revokePermissions(final Context context) {
+    private void updateRoles(final Context context) {
         final String accountId = context.pathParam("id");
-        final PermissionsRequestDTO permissionsRequest = permissionsRequestBodyHandler.getValidated(context);
-        final List<PermissionBO> permissions = permissionsRequest.getPermissions().stream()
-                .map(restMapper::toBO)
-                .collect(Collectors.toList());
+        final RolesRequestDTO request = rolesRequestBodyHandler.getValidated(context);
 
-        final AccountDTO updatedAccount = restMapper.toDTO(accountsService.revokePermissions(accountId, permissions));
+        final AccountDTO updatedAccount;
+
+        if (request.getAction() == RolesRequest.Action.GRANT) {
+            updatedAccount = restMapper.toDTO(accountsService.grantRoles(accountId, request.getRoles()));
+        } else {
+            updatedAccount = restMapper.toDTO(accountsService.revokeRoles(accountId, request.getRoles()));
+        }
+
         context.json(updatedAccount);
     }
 
