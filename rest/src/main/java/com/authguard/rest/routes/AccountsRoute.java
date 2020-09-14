@@ -4,24 +4,22 @@ import com.authguard.api.dto.entities.AccountDTO;
 import com.authguard.api.dto.entities.AccountEmailDTO;
 import com.authguard.api.dto.entities.AppDTO;
 import com.authguard.api.dto.requests.*;
-import com.authguard.rest.access.ActorRoles;
+import com.authguard.api.routes.AccountsApi;
 import com.authguard.rest.exceptions.Error;
+import com.authguard.rest.mappers.RestMapper;
 import com.authguard.rest.util.BodyHandler;
 import com.authguard.service.AccountsService;
 import com.authguard.service.ApplicationsService;
 import com.authguard.service.model.AccountEmailBO;
 import com.authguard.service.model.PermissionBO;
 import com.google.inject.Inject;
-import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static io.javalin.apibuilder.ApiBuilder.*;
-
-public class AccountsRoute implements EndpointGroup {
+public class AccountsRoute extends AccountsApi {
     private final AccountsService accountsService;
     private final ApplicationsService applicationsService;
     private final RestMapper restMapper;
@@ -48,26 +46,7 @@ public class AccountsRoute implements EndpointGroup {
                 .build();
     }
 
-    public void addEndpoints() {
-        post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin"));
-
-        get("/:id", this::getById, ActorRoles.adminClient());
-        delete("/:id", this::deleteAccount, ActorRoles.adminClient());
-        get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
-
-        patch("/:id/permissions", this::updatePermissions, ActorRoles.adminClient());
-        patch("/:id/roles", this::updateRoles, ActorRoles.adminClient());
-
-        patch("/:id/emails", this::addEmails, ActorRoles.adminClient());
-        delete("/:id/emails", this::removeEmails, ActorRoles.adminClient());
-
-        get("/:id/apps", this::getApps, ActorRoles.adminClient());
-
-        patch("/:id/activate", this::activate, ActorRoles.adminClient());
-        patch("/:id/deactivate", this::deactivate, ActorRoles.adminClient());
-    }
-
-    private void create(final Context context) {
+    public void create(final Context context) {
         final CreateAccountRequestDTO request = accountRequestBodyHandler.getValidated(context);
 
         final Optional<AccountDTO> createdAccount = Optional.of(restMapper.toBO(request))
@@ -81,7 +60,7 @@ public class AccountsRoute implements EndpointGroup {
         }
     }
 
-    private void getById(final Context context) {
+    public void getById(final Context context) {
         final String accountId = context.pathParam("id");
 
         final Optional<AccountDTO> account = accountsService.getById(accountId)
@@ -94,7 +73,7 @@ public class AccountsRoute implements EndpointGroup {
         }
     }
 
-    private void deleteAccount(final Context context) {
+    public void deleteAccount(final Context context) {
         final String accountId = context.pathParam("id");
 
         final Optional<AccountDTO> account = accountsService.delete(accountId)
@@ -107,7 +86,7 @@ public class AccountsRoute implements EndpointGroup {
         }
     }
 
-    private void getByExternalId(final Context context) {
+    public void getByExternalId(final Context context) {
         final String accountId = context.pathParam("id");
 
         final Optional<AccountDTO> account = accountsService.getByExternalId(accountId)
@@ -120,7 +99,7 @@ public class AccountsRoute implements EndpointGroup {
         }
     }
 
-    private void updatePermissions(final Context context) {
+    public void updatePermissions(final Context context) {
         final String accountId = context.pathParam("id");
         final PermissionsRequestDTO request = permissionsRequestBodyHandler.getValidated(context);
 
@@ -139,7 +118,7 @@ public class AccountsRoute implements EndpointGroup {
         context.json(updatedAccount);
     }
 
-    private void updateRoles(final Context context) {
+    public void updateRoles(final Context context) {
         final String accountId = context.pathParam("id");
         final RolesRequestDTO request = rolesRequestBodyHandler.getValidated(context);
 
@@ -154,7 +133,7 @@ public class AccountsRoute implements EndpointGroup {
         context.json(updatedAccount);
     }
 
-    private void addEmails(final Context context) {
+    public void addEmails(final Context context) {
         final String accountId = context.pathParam("id");
         final AccountEmailsRequestDTO emailsRequest = accountEmailsRequestBodyHandler.getValidated(context);
         final List<AccountEmailBO> emails = emailsRequest.getEmails().stream()
@@ -166,7 +145,7 @@ public class AccountsRoute implements EndpointGroup {
                 .ifPresentOrElse(context::json, () -> context.status(404));
     }
 
-    private void removeEmails(final Context context) {
+    public void removeEmails(final Context context) {
         final String accountId = context.pathParam("id");
         final AccountEmailsRequestDTO emailsRequest = accountEmailsRequestBodyHandler.getValidated(context);
         final List<String> emails = emailsRequest.getEmails().stream()
@@ -178,7 +157,7 @@ public class AccountsRoute implements EndpointGroup {
                 .ifPresentOrElse(context::json, () -> context.status(404));
     }
 
-    private void getApps(final Context context) {
+    public void getApps(final Context context) {
         final String accountId = context.pathParam("id");
 
         final List<AppDTO> apps = applicationsService.getByAccountId(accountId)
@@ -189,7 +168,7 @@ public class AccountsRoute implements EndpointGroup {
         context.status(200).json(apps);
     }
 
-    private void activate(final Context context) {
+    public void activate(final Context context) {
         final String accountId = context.pathParam("id");
 
         final Optional<AccountDTO> account = accountsService.activate(accountId)
@@ -202,7 +181,7 @@ public class AccountsRoute implements EndpointGroup {
         }
     }
 
-    private void deactivate(final Context context) {
+    public void deactivate(final Context context) {
         final String accountId = context.pathParam("id");
 
         final Optional<AccountDTO> account = accountsService.deactivate(accountId)

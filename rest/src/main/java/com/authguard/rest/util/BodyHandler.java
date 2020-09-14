@@ -4,7 +4,7 @@ import com.authguard.api.dto.validation.Validator;
 import com.authguard.api.dto.validation.validators.Validators;
 import com.authguard.api.dto.validation.violations.Violation;
 import com.authguard.rest.exceptions.RequestValidationException;
-import com.authguard.rest.routes.RestJsonMapper;
+import com.authguard.rest.mappers.RestJsonMapper;
 import io.javalin.http.Context;
 
 import java.util.List;

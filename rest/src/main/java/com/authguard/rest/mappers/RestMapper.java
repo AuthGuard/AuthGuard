@@ -1,4 +1,4 @@
-package com.authguard.rest.routes;
+package com.authguard.rest.mappers;
 
 import com.authguard.api.dto.entities.*;
 import com.authguard.api.dto.requests.*;

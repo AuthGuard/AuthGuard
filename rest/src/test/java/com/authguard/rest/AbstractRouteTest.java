@@ -1,7 +1,7 @@
 package com.authguard.rest;
 
-import com.authguard.rest.routes.RestMapper;
-import com.authguard.rest.routes.RestMapperImpl;
+import com.authguard.rest.mappers.RestMapper;
+import com.authguard.rest.mappers.RestMapperImpl;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.AfterAll;

@@ -1,22 +1,19 @@
 package com.authguard.rest.routes;
 
 import com.authguard.api.dto.entities.PermissionDTO;
-import com.authguard.rest.access.ActorRoles;
+import com.authguard.api.routes.PermissionsApi;
+import com.authguard.rest.mappers.RestJsonMapper;
+import com.authguard.rest.mappers.RestMapper;
 import com.authguard.service.PermissionsService;
 import com.authguard.service.model.PermissionBO;
 import com.google.inject.Inject;
-import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.post;
-
-public class PermissionsRoute implements EndpointGroup {
+public class PermissionsRoute extends PermissionsApi {
     private final PermissionsService permissionsService;
     private final RestMapper restMapper;
 
@@ -26,13 +23,7 @@ public class PermissionsRoute implements EndpointGroup {
         this.restMapper = restMapper;
     }
 
-    @Override
-    public void addEndpoints() {
-        post("/", this::createPermission, ActorRoles.adminClient());
-        get("/", this::getPermissions, ActorRoles.adminClient());
-    }
-
-    private void createPermission(final Context context) {
+    public void createPermission(final Context context) {
         final PermissionDTO permission = RestJsonMapper.asClass(context.body(), PermissionDTO.class);
         final PermissionBO created = permissionsService.create(restMapper.toBO(permission));
 
@@ -40,7 +31,7 @@ public class PermissionsRoute implements EndpointGroup {
                 .json(restMapper.toDTO(created));
     }
 
-    private void getPermissions(final Context context) {
+    public void getPermissions(final Context context) {
         final String groupName = context.queryParam("group");
 
         if (groupName == null) {

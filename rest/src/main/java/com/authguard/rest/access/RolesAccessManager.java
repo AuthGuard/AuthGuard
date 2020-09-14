@@ -1,5 +1,6 @@
 package com.authguard.rest.access;
 
+import com.authguard.api.access.ActorRole;
 import com.authguard.service.model.AppBO;
 import io.javalin.core.security.AccessManager;
 import io.javalin.core.security.Role;
