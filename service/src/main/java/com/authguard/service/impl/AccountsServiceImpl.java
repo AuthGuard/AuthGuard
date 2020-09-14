@@ -31,6 +31,7 @@ public class AccountsServiceImpl implements AccountsService {
 
     private final AccountsRepository accountsRepository;
     private final PermissionsService permissionsService;
+    private final RolesService rolesService;
     private final AccountConfig accountConfig;
     private final VerificationMessageService verificationMessageService;
     private final ServiceMapper serviceMapper;
@@ -48,6 +49,7 @@ public class AccountsServiceImpl implements AccountsService {
                                final @Named("accounts") ConfigContext accountConfigContext) {
         this.accountsRepository = accountsRepository;
         this.permissionsService = permissionsService;
+        this.rolesService = rolesService;
         this.verificationMessageService = verificationMessageService;
         this.serviceMapper = serviceMapper;
         this.messageBus = messageBus;
@@ -230,6 +232,16 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public AccountBO grantRoles(final String accountId, final List<String> roles) {
+        final List<String> verifiedRoles = rolesService.verifyRoles(roles);
+
+        if (verifiedRoles.size() != roles.size()) {
+            final List<String> difference = roles.stream()
+                    .filter(role -> !verifiedRoles.contains(role))
+                    .collect(Collectors.toList());
+
+            throw new ServiceException(ErrorCode.ROLE_DOES_NOT_EXIST, "The following roles are not valid " + difference);
+        }
+
         final AccountBO account = accountsRepository.getById(accountId)
                 .join()
                 .map(serviceMapper::toBO)
