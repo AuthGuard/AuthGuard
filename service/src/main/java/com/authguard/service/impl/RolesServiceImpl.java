@@ -65,7 +65,7 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public List<PermissionBO> getPermissionsByName(final String name) {
+    public List<PermissionBO> getPermissions(final String name) {
         return getRoleByName(name)
                 .map(RoleBO::getPermissions)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ROLE_DOES_NOT_EXIST, "Role " + name + " doesn't exist"));

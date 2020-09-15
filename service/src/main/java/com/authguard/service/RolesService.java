@@ -43,7 +43,7 @@ public interface RolesService {
      * @throws ServiceNotFoundException
      *         if none was found.
      */
-    List<PermissionBO> getPermissionsByName(String name);
+    List<PermissionBO> getPermissions(String name);
 
     /**
      * Grant permissions to a role.
