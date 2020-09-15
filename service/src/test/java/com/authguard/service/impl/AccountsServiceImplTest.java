@@ -23,6 +23,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -186,10 +187,34 @@ class AccountsServiceImplTest {
                 RANDOM.nextObject(String.class)
         );
 
+        Mockito.when(rolesService.verifyRoles(roles)).thenReturn(roles);
+
         final AccountBO updated = accountService.grantRoles(account.getId(), roles);
 
         assertThat(updated).isNotEqualTo(account);
         assertThat(updated.getRoles()).contains(roles.toArray(new String[0]));
+    }
+
+    @Test
+    void grantRolesInvalidRoles() {
+        final AccountDO account = RANDOM.nextObject(AccountDO.class);
+
+        Mockito.when(accountsRepository.getById(account.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+        Mockito.when(accountsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
+
+        final List<String> roles = Arrays.asList(
+                RANDOM.nextObject(String.class),
+                RANDOM.nextObject(String.class)
+        );
+
+        final List<String> validRoles = Collections.singletonList(roles.get(0));
+
+        Mockito.when(rolesService.verifyRoles(roles)).thenReturn(validRoles);
+
+        assertThatThrownBy(() -> accountService.grantRoles(account.getId(), roles))
+                .isInstanceOf(ServiceException.class);
     }
 
     @Test

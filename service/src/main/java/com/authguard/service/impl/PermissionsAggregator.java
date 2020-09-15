@@ -24,7 +24,7 @@ class PermissionsAggregator {
 
     List<PermissionBO> aggregate(final List<String> roles, final List<PermissionBO> accountPermissions) {
         final Stream<PermissionBO> rolesPermissions =  roles.stream()
-                .map(rolesService::getPermissionsByName)
+                .map(rolesService::getPermissions)
                 .flatMap(Collection::stream);
 
         return expand(Stream.concat(accountPermissions.stream(), rolesPermissions));

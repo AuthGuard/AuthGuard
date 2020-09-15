@@ -34,6 +34,8 @@ public interface RolesService {
      */
     Optional<RoleBO> getRoleByName(String name);
 
+    List<String> verifyRoles(List<String> roles);
+
     /**
      * Find permissions of a role by name.
      * @param name The name of the role.
@@ -41,16 +43,16 @@ public interface RolesService {
      * @throws ServiceNotFoundException
      *         if none was found.
      */
-    List<PermissionBO> getPermissionsByName(String name);
+    List<PermissionBO> getPermissions(String name);
 
     /**
      * Grant permissions to a role.
      * @param name The name of the role.
-     * @param permission A list of permissions to grant.
+     * @param permissions A list of permissions to grant.
      * @return Optional of the updated role or empty if none
      *         was found.
      */
-    Optional<RoleBO> grantPermissions(String name, List<PermissionBO> permission);
+    Optional<RoleBO> grantPermissions(String name, List<PermissionBO> permissions);
 
     /**
      * Revoke permissions of a role.
