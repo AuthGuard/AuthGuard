@@ -3,6 +3,8 @@ package com.authguard.rest;
 import com.authguard.api.dto.entities.AccountDTO;
 import com.authguard.api.dto.entities.AccountEmailDTO;
 import com.authguard.api.dto.requests.CreateAccountRequestDTO;
+import com.authguard.rest.util.IdempotencyHeader;
+import com.authguard.service.model.RequestContextBO;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
 import com.authguard.service.AccountsService;
@@ -48,16 +50,21 @@ class AccountsApiTest extends AbstractRouteTest {
                         .email("email@server.com")
                         .build())
                 .build();
+        final RequestContextBO requestContext = RequestContextBO.builder()
+                .idempotentKey(UUID.randomUUID().toString())
+                .build();
 
         final AccountBO accountBO = mapper().toBO(requestDTO);
         final AccountBO serviceResponse = accountBO.withId(UUID.randomUUID().toString());
 
-        Mockito.when(accountsService.create(eq(accountBO))).thenReturn(serviceResponse);
+        Mockito.when(accountsService.create(Mockito.eq(accountBO), Mockito.any()))
+                .thenReturn(serviceResponse);
 
         LOG.info("Request {}", requestDTO);
 
         final ValidatableResponse httpResponse = given().body(requestDTO)
                 .contentType(ContentType.JSON)
+                .header(IdempotencyHeader.HEADER_NAME, requestContext.getIdempotentKey())
                 .post(url())
                 .then()
                 .statusCode(201)

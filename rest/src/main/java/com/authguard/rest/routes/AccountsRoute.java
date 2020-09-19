@@ -8,10 +8,12 @@ import com.authguard.api.routes.AccountsApi;
 import com.authguard.rest.exceptions.Error;
 import com.authguard.rest.mappers.RestMapper;
 import com.authguard.rest.util.BodyHandler;
+import com.authguard.rest.util.IdempotencyHeader;
 import com.authguard.service.AccountsService;
 import com.authguard.service.ApplicationsService;
 import com.authguard.service.model.AccountEmailBO;
 import com.authguard.service.model.PermissionBO;
+import com.authguard.service.model.RequestContextBO;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
 
@@ -47,10 +49,16 @@ public class AccountsRoute extends AccountsApi {
     }
 
     public void create(final Context context) {
+        final String idempotentKey = IdempotencyHeader.getKeyOrFail(context);
         final CreateAccountRequestDTO request = accountRequestBodyHandler.getValidated(context);
 
+        final RequestContextBO requestContext = RequestContextBO.builder()
+                .idempotentKey(idempotentKey)
+                .source(context.ip())
+                .build();
+
         final Optional<AccountDTO> createdAccount = Optional.of(restMapper.toBO(request))
-                .map(accountsService::create)
+                .map(accountBO -> accountsService.create(accountBO, requestContext))
                 .map(restMapper::toDTO);
 
         if (createdAccount.isPresent()) {

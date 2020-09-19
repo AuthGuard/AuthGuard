@@ -1,12 +1,13 @@
 package com.authguard.service;
 
 import com.authguard.service.model.AppBO;
+import com.authguard.service.model.RequestContextBO;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface ApplicationsService {
-    AppBO create(AppBO app);
+    AppBO create(AppBO app, RequestContextBO requestContext);
     Optional<AppBO> getById(String id);
     Optional<AppBO> getByExternalId(String externalId);
     Optional<AppBO> update(AppBO app);

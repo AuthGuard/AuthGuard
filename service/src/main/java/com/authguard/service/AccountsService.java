@@ -5,6 +5,7 @@ import com.authguard.service.impl.AccountsServiceImpl;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AccountEmailBO;
 import com.authguard.service.model.PermissionBO;
+import com.authguard.service.model.RequestContextBO;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,7 +22,7 @@ public interface AccountsService {
      * like 'id' and 'deleted' will be overwritten by any
      * implementation.
      */
-    AccountBO create(AccountBO account);
+    AccountBO create(AccountBO account, RequestContextBO requestContext);
 
     /**
      * Find an account by ID.

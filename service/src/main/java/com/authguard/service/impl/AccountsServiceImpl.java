@@ -4,18 +4,16 @@ import com.authguard.config.ConfigContext;
 import com.authguard.dal.model.AccountDO;
 import com.authguard.emb.MessageBus;
 import com.authguard.emb.Messages;
-import com.authguard.service.VerificationMessageService;
+import com.authguard.service.*;
 import com.authguard.service.config.AccountConfig;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.AccountEmailBO;
+import com.authguard.service.model.RequestContextBO;
 import com.google.inject.Inject;
 import com.authguard.dal.AccountsRepository;
-import com.authguard.service.AccountsService;
-import com.authguard.service.PermissionsService;
-import com.authguard.service.RolesService;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.PermissionBO;
 import com.google.inject.name.Named;
@@ -32,6 +30,7 @@ public class AccountsServiceImpl implements AccountsService {
     private final AccountsRepository accountsRepository;
     private final PermissionsService permissionsService;
     private final RolesService rolesService;
+    private final IdempotencyService idempotencyService;
     private final AccountConfig accountConfig;
     private final VerificationMessageService verificationMessageService;
     private final ServiceMapper serviceMapper;
@@ -44,6 +43,7 @@ public class AccountsServiceImpl implements AccountsService {
                                final PermissionsService permissionsService,
                                final VerificationMessageService verificationMessageService,
                                final RolesService rolesService,
+                               final IdempotencyService idempotencyService,
                                final ServiceMapper serviceMapper,
                                final MessageBus messageBus,
                                final @Named("accounts") ConfigContext accountConfigContext) {
@@ -51,6 +51,7 @@ public class AccountsServiceImpl implements AccountsService {
         this.permissionsService = permissionsService;
         this.rolesService = rolesService;
         this.verificationMessageService = verificationMessageService;
+        this.idempotencyService = idempotencyService;
         this.serviceMapper = serviceMapper;
         this.messageBus = messageBus;
         this.accountConfig = accountConfigContext.asConfigBean(AccountConfig.class);
@@ -59,7 +60,13 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public AccountBO create(final AccountBO account) {
+    public AccountBO create(final AccountBO account, final RequestContextBO requestContext) {
+        return idempotencyService
+                .performOperation(() -> doCreate(account), requestContext.getIdempotentKey(), account.getEntityType())
+                .join();
+    }
+
+    private AccountBO doCreate(final AccountBO account) {
         final AccountDO accountDO = serviceMapper.toDO(account.withId(UUID.randomUUID().toString()));
 
         return accountsRepository.save(accountDO)

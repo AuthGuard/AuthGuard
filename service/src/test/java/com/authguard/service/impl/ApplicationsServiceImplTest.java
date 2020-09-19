@@ -5,20 +5,21 @@ import com.authguard.emb.MessageBus;
 import com.authguard.service.AccountsService;
 import com.authguard.service.ApplicationsService;
 import com.authguard.dal.model.AppDO;
+import com.authguard.service.IdempotencyService;
 import com.authguard.service.mappers.ServiceMapperImpl;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AppBO;
 import com.authguard.service.model.PermissionBO;
+import com.authguard.service.model.RequestContextBO;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,21 +32,28 @@ class ApplicationsServiceImplTest {
     private ApplicationsRepository applicationsRepository;
     private ApplicationsService applicationsService;
     private AccountsService accountsService;
+    private IdempotencyService idempotencyService;
     private MessageBus messageBus;
 
     @BeforeEach
     void setup() {
         applicationsRepository = Mockito.mock(ApplicationsRepository.class);
         accountsService = Mockito.mock(AccountsService.class);
+        idempotencyService = Mockito.mock(IdempotencyService.class);
         messageBus = Mockito.mock(MessageBus.class);
 
         applicationsService = new ApplicationsServiceImpl(applicationsRepository, accountsService,
-                new ServiceMapperImpl(), messageBus);
+                idempotencyService, new ServiceMapperImpl(), messageBus);
     }
 
     @Test
     void create() {
         final AppBO app = random.nextObject(AppBO.class);
+
+        final String idempotentKey = "idempotent-key";
+        final RequestContextBO requestContext = RequestContextBO.builder()
+                .idempotentKey(idempotentKey)
+                .build();
 
         Mockito.when(accountsService.getById(app.getParentAccountId()))
                 .thenReturn(Optional.of(random.nextObject(AccountBO.class)));
@@ -53,7 +61,12 @@ class ApplicationsServiceImplTest {
         Mockito.when(applicationsRepository.save(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AppDO.class)));
 
-        final AppBO created = applicationsService.create(app);
+        Mockito.when(idempotencyService.performOperation(Mockito.any(), Mockito.eq(idempotentKey), Mockito.eq(app.getEntityType())))
+                .thenAnswer(invocation -> {
+                    return CompletableFuture.completedFuture(invocation.getArgument(0, Supplier.class).get());
+                });
+
+        final AppBO created = applicationsService.create(app, requestContext);
 
         assertThat(created).isEqualToIgnoringGivenFields(app, "id", "entityType");
 

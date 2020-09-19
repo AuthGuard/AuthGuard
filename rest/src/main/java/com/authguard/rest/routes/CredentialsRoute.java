@@ -8,7 +8,9 @@ import com.authguard.api.routes.CredentialsApi;
 import com.authguard.rest.mappers.RestJsonMapper;
 import com.authguard.rest.mappers.RestMapper;
 import com.authguard.rest.util.BodyHandler;
+import com.authguard.rest.util.IdempotencyHeader;
 import com.authguard.service.CredentialsService;
+import com.authguard.service.model.RequestContextBO;
 import com.authguard.service.model.UserIdentifierBO;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
@@ -36,10 +38,16 @@ public class CredentialsRoute extends CredentialsApi {
     }
 
     public void create(final Context context) {
+        final String idempotentKey = IdempotencyHeader.getKeyOrFail(context);
         final CreateCredentialsRequestDTO request = credentialsRequestBodyHandler.getValidated(context);
 
+        final RequestContextBO requestContext = RequestContextBO.builder()
+                .idempotentKey(idempotentKey)
+                .source(context.ip())
+                .build();
+
         final Optional<CredentialsDTO> created = Optional.of(restMapper.toBO(request))
-                .map(credentialsService::create)
+                .map(credentialsBO -> credentialsService.create(credentialsBO, requestContext))
                 .map(restMapper::toDTO);
 
         if (created.isPresent()) {
