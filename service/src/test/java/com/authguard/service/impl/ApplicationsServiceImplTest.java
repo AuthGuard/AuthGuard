@@ -55,7 +55,7 @@ class ApplicationsServiceImplTest {
 
         final AppBO created = applicationsService.create(app);
 
-        assertThat(created).isEqualToIgnoringGivenFields(app, "id");
+        assertThat(created).isEqualToIgnoringGivenFields(app, "id", "entityType");
 
         Mockito.verify(messageBus, Mockito.times(1))
                 .publish(eq("apps"), any());
@@ -72,7 +72,8 @@ class ApplicationsServiceImplTest {
         final Optional<AppBO> retrieved = applicationsService.getById("");
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(app, "permissions");
+        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(app,
+                "permissions", "entityType");
         assertThat(retrieved.get().getPermissions()).containsExactly(app.getPermissions().stream()
                 .map(permissionDO -> PermissionBO.builder()
                         .group(permissionDO.getGroup())

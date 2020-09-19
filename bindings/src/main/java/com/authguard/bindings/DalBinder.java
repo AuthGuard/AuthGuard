@@ -27,6 +27,7 @@ public class DalBinder extends AbstractModule {
         bind(PermissionsRepository.class).to(dynamicBinder.findBindingsFor(PermissionsRepository.class));
         bind(RolesRepository.class).to(dynamicBinder.findBindingsFor(RolesRepository.class));
         bind(AccountTokensRepository.class).to(dynamicBinder.findBindingsFor(AccountTokensRepository.class));
+        bind(IdempotentRecordsRepository.class).to(dynamicBinder.findBindingsFor(IdempotentRecordsRepository.class));
 
         // optional bindings
         if (configContext.get("otp") != null) {

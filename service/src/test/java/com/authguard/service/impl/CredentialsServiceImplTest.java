@@ -126,7 +126,8 @@ class CredentialsServiceImplTest {
         final Optional<CredentialsBO> retrieved = credentialsService.getById("");
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(credentials, "hashedPassword", "plainPassword", "identifiers");
+        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(credentials,
+                "hashedPassword", "plainPassword", "identifiers", "entityType");
         assertThat(retrieved.get().getHashedPassword()).isNull();
         assertThat(retrieved.get().getPlainPassword()).isNull();
     }
@@ -147,7 +148,8 @@ class CredentialsServiceImplTest {
         final Optional<CredentialsBO> retrieved = credentialsService.getByUsername("");
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(credentials, "hashedPassword", "plainPassword", "identifiers");
+        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(credentials,
+                "hashedPassword", "plainPassword", "identifiers", "entityType");
         assertThat(retrieved.get().getHashedPassword()).isNull();
         assertThat(retrieved.get().getPlainPassword()).isNull();
     }

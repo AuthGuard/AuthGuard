@@ -104,7 +104,8 @@ class AccountsServiceImplTest {
         final Optional<AccountBO> retrieved = accountService.getById("");
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(account, "permissions", "emails");
+        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(account,
+                "permissions", "emails", "entityType");
         assertThat(retrieved.get().getPermissions()).containsExactly(account.getPermissions().stream()
                 .map(permissionDO -> PermissionBO.builder()
                         .group(permissionDO.getGroup())
@@ -325,7 +326,8 @@ class AccountsServiceImplTest {
         final AccountBO updated = accountService.activate(account.getId()).orElse(null);
 
         assertThat(updated).isNotNull();
-        assertThat(updated).isEqualToIgnoringGivenFields(account, "permissions", "emails", "active");
+        assertThat(updated).isEqualToIgnoringGivenFields(account,
+                "permissions", "emails", "active", "entityType");
         assertThat(updated.isActive()).isTrue();
     }
 
@@ -342,7 +344,8 @@ class AccountsServiceImplTest {
         final AccountBO updated = accountService.deactivate(account.getId()).orElse(null);
 
         assertThat(updated).isNotNull();
-        assertThat(updated).isEqualToIgnoringGivenFields(account, "permissions", "emails", "active");
+        assertThat(updated).isEqualToIgnoringGivenFields(account,
+                "permissions", "emails", "active", "entityType");
         assertThat(updated.isActive()).isFalse();
     }
 }
