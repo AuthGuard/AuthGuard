@@ -26,6 +26,10 @@ public class Messages {
         return basicMessage(EventType.PASSWORDLESS_GENERATED, object);
     }
 
+    public static Message emailVerification(final Object object) {
+        return basicMessage(EventType.EMAIL_VERIFICATION, object);
+    }
+
     private static Message basicMessage(final EventType eventType, final Object object) {
         return Message.builder()
                 .eventType(eventType)

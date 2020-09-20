@@ -51,7 +51,10 @@ public interface AccountsService {
 
     Optional<AccountBO> removeEmails(String accountId, List<String> emails);
 
-    Optional<AccountBO> addEmails(String accountId, List<AccountEmailBO> emails);
+    /**
+     * Can be used to update an existing email or add new ones.
+     */
+    Optional<AccountBO> updateEmails(String accountId, List<AccountEmailBO> emails);
 
     /**
      * Grant permissions to an account. This should only updatePatch

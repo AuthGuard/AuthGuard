@@ -6,16 +6,14 @@ import com.authguard.emb.MessageBus;
 import com.authguard.emb.Messages;
 import com.authguard.service.*;
 import com.authguard.service.config.AccountConfig;
+import com.authguard.service.exceptions.ServiceConflictException;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
-import com.authguard.service.model.AccountEmailBO;
-import com.authguard.service.model.RequestContextBO;
+import com.authguard.service.model.*;
 import com.google.inject.Inject;
 import com.authguard.dal.AccountsRepository;
-import com.authguard.service.model.AccountBO;
-import com.authguard.service.model.PermissionBO;
 import com.google.inject.name.Named;
 
 import java.util.List;
@@ -26,13 +24,13 @@ import java.util.stream.Stream;
 
 public class AccountsServiceImpl implements AccountsService {
     private static final String ACCOUNTS_CHANNEL = "accounts";
+    private static final String VERIFICATION_CHANNEL = "verification";
 
     private final AccountsRepository accountsRepository;
     private final PermissionsService permissionsService;
     private final RolesService rolesService;
     private final IdempotencyService idempotencyService;
     private final AccountConfig accountConfig;
-    private final VerificationMessageService verificationMessageService;
     private final ServiceMapper serviceMapper;
     private final MessageBus messageBus;
 
@@ -41,7 +39,6 @@ public class AccountsServiceImpl implements AccountsService {
     @Inject
     public AccountsServiceImpl(final AccountsRepository accountsRepository,
                                final PermissionsService permissionsService,
-                               final VerificationMessageService verificationMessageService,
                                final RolesService rolesService,
                                final IdempotencyService idempotencyService,
                                final ServiceMapper serviceMapper,
@@ -50,7 +47,6 @@ public class AccountsServiceImpl implements AccountsService {
         this.accountsRepository = accountsRepository;
         this.permissionsService = permissionsService;
         this.rolesService = rolesService;
-        this.verificationMessageService = verificationMessageService;
         this.idempotencyService = idempotencyService;
         this.serviceMapper = serviceMapper;
         this.messageBus = messageBus;
@@ -75,7 +71,10 @@ public class AccountsServiceImpl implements AccountsService {
                     messageBus.publish(ACCOUNTS_CHANNEL, Messages.created(created));
 
                     if (accountConfig.verifyEmail()) {
-                        verificationMessageService.sendVerificationEmail(created);
+                        messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(VerificationRequestBO.builder()
+                                .account(created)
+                                .emails(created.getEmails())
+                                .build()));
                     }
 
                     return created;
@@ -153,7 +152,7 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public Optional<AccountBO> addEmails(final String accountId, final List<AccountEmailBO> emails) {
+    public Optional<AccountBO> updateEmails(final String accountId, final List<AccountEmailBO> emails) {
         final AccountBO existing = accountsRepository.getById(accountId)
                 .join()
                 .map(serviceMapper::toBO)
@@ -167,17 +166,23 @@ public class AccountsServiceImpl implements AccountsService {
         final Stream<AccountEmailBO> nonUpdatedEmails = existing.getEmails().stream()
                 .filter(old -> !newEmails.contains(old.getEmail()));
 
-        final Stream<AccountEmailBO> emailsWithActive = emails.stream()
-                .map(email -> email.withActive(true));
-
-        final List<AccountEmailBO> combinedList = Stream.concat(emailsWithActive, nonUpdatedEmails)
+        final List<AccountEmailBO> combinedList = Stream.concat(emails.stream(), nonUpdatedEmails)
                 .collect(Collectors.toList());
 
-        final AccountBO updated = AccountBO.builder().from(existing)
+        final AccountBO updateRequest = AccountBO.builder().from(existing)
                 .emails(combinedList)
                 .build();
 
-        return update(updated);
+        final Optional<AccountBO> updated = update(updateRequest);
+
+        updated.ifPresent(updatedAccount -> messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(
+                VerificationRequestBO.builder()
+                        .account(updatedAccount)
+                        .emails(emails)
+                        .build()
+        )));
+
+        return updated;
     }
 
     @Override

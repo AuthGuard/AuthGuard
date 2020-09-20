@@ -3,9 +3,9 @@ package com.authguard.bindings;
 import com.authguard.config.ConfigContext;
 import com.authguard.service.*;
 import com.authguard.service.impl.*;
+import com.authguard.service.passwords.SCryptPassword;
 import com.authguard.service.passwords.SecurePassword;
 import com.google.inject.AbstractModule;
-import com.authguard.service.passwords.SCryptPassword;
 
 public class ServicesBinder extends AbstractModule {
     private final ConfigContext configContext;
@@ -32,7 +32,6 @@ public class ServicesBinder extends AbstractModule {
 
         // optional bindings
         if (configContext.get("verification") != null) {
-            bind(VerificationMessageService.class).to(VerificationMessageServiceImpl.class);
             bind(VerificationService.class).to(VerificationServiceImpl.class);
         }
 
