@@ -29,7 +29,13 @@
 			],
 			"request": {
 				"method": "POST",
-				"header": [],
+				"header": [
+					{
+						"key": "X-IdempotentKey",
+						"value": "idemp:admin-bootstrap",
+						"type": "text"
+					}
+				],
 				"body": {
 					"mode": "raw",
 					"raw": "{\n\t\"roles\": [\n\t\t\"authguard_admin\"\n\t]\n}",
@@ -75,6 +81,11 @@
 						"name": "Content-Type",
 						"type": "text",
 						"value": "application/json"
+					},
+					{
+						"key": "X-IdempotentKey",
+						"value": "idemp:admin-bootstrap",
+						"type": "text"
 					}
 				],
 				"body": {
@@ -143,6 +154,11 @@
 						"name": "Content-Type",
 						"type": "text",
 						"value": "application/json"
+					},
+					{
+						"key": "X-IdempotentKey",
+						"value": "idemp:admin-bootstrap",
+						"type": "text"
 					}
 				],
 				"body": {
@@ -211,6 +227,11 @@
 						"name": "Content-Type",
 						"type": "text",
 						"value": "application/json"
+					},
+					{
+						"key": "X-IdempotentKey",
+						"value": "idemp:admin-bootstrap",
+						"type": "text"
 					}
 				],
 				"body": {

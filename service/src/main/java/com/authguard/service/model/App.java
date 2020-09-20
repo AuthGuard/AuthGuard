@@ -6,8 +6,7 @@ import java.util.List;
 
 @Value.Immutable
 @BOStyle
-public interface App {
-    String getId();
+public interface App extends Entity {
     String getExternalId();
     String getName();
     String getParentAccountId();
@@ -16,4 +15,10 @@ public interface App {
     List<String> getRoles();
     boolean isActive();
     boolean isDeleted();
+
+    @Override
+    @Value.Derived
+    default String getEntityType() {
+        return "App";
+    }
 }

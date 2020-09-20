@@ -4,12 +4,15 @@ import com.authguard.rest.exceptions.Error;
 import com.authguard.rest.exceptions.ExceptionHandlers;
 import com.authguard.rest.exceptions.RequestValidationException;
 import com.authguard.rest.exceptions.RuntimeJsonException;
+import com.authguard.service.exceptions.IdempotencyException;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.ServiceConflictException;
 import com.authguard.service.exceptions.ServiceException;
 import io.javalin.Javalin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.CompletionException;
 
 public class ServerExceptionHandlers implements ServerConfigurer {
     private final static Logger log = LoggerFactory.getLogger(Server.class.getSimpleName());
@@ -25,14 +28,18 @@ public class ServerExceptionHandlers implements ServerConfigurer {
                     .json(new Error("", message));
         });
 
-        app.exception(ServiceException.class, ExceptionHandlers.serviceException());
+        app.exception(ServiceException.class, ExceptionHandlers::serviceException);
 
-        app.exception(ServiceAuthorizationException.class, ExceptionHandlers.serviceAuthorizationException());
+        app.exception(ServiceAuthorizationException.class, ExceptionHandlers::serviceAuthorizationException);
 
-        app.exception(ServiceConflictException.class, ExceptionHandlers.serviceConflictException());
+        app.exception(ServiceConflictException.class, ExceptionHandlers::serviceConflictException);
 
-        app.exception(RuntimeJsonException.class, ExceptionHandlers.jsonMappingException());
+        app.exception(RuntimeJsonException.class, ExceptionHandlers::jsonMappingException);
 
-        app.exception(RequestValidationException.class, ExceptionHandlers.requestValidationException());
+        app.exception(RequestValidationException.class, ExceptionHandlers::requestValidationException);
+
+        app.exception(IdempotencyException.class, ExceptionHandlers::idempotencyException);
+
+        app.exception(CompletionException.class, ExceptionHandlers::completionException);
     }
 }

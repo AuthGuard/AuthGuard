@@ -2,6 +2,7 @@ package com.authguard.service;
 
 import com.authguard.service.impl.CredentialsServiceImpl;
 import com.authguard.service.model.CredentialsBO;
+import com.authguard.service.model.RequestContextBO;
 import com.authguard.service.model.UserIdentifierBO;
 
 import java.util.List;
@@ -19,7 +20,7 @@ public interface CredentialsService {
      * @param credentials The credentials to create
      * @return The created credentials in the repository.
      */
-    CredentialsBO create(CredentialsBO credentials);
+    CredentialsBO create(CredentialsBO credentials, RequestContextBO requestContext);
 
     /**
      * Find credentials by ID.

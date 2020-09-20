@@ -1,6 +1,7 @@
 package com.authguard.rest;
 
 import com.authguard.api.dto.entities.CredentialsDTO;
+import com.authguard.service.model.RequestContextBO;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
 import com.authguard.service.CredentialsService;
@@ -41,8 +42,11 @@ class CredentialsRouteTest extends AbstractRouteTest {
         final CredentialsBO serviceResponse = credentialsBO
                 .withPlainPassword(null)
                 .withId(UUID.randomUUID().toString());
+        final RequestContextBO requestContext = RequestContextBO.builder()
+                .idempotentKey(UUID.randomUUID().toString())
+                .build();
 
-        Mockito.when(credentialsService.create(credentialsBO)).thenReturn(serviceResponse);
+        Mockito.when(credentialsService.create(credentialsBO, requestContext)).thenReturn(serviceResponse);
 
         final ValidatableResponse httpResponse = given().body(credentialsDTO)
                 .contentType(ContentType.JSON)

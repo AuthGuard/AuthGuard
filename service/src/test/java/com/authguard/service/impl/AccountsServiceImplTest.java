@@ -4,6 +4,7 @@ import com.authguard.config.ConfigContext;
 import com.authguard.dal.AccountsRepository;
 import com.authguard.dal.model.EmailDO;
 import com.authguard.emb.MessageBus;
+import com.authguard.service.IdempotencyService;
 import com.authguard.service.PermissionsService;
 import com.authguard.service.RolesService;
 import com.authguard.service.VerificationMessageService;
@@ -14,6 +15,7 @@ import com.authguard.service.mappers.ServiceMapperImpl;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AccountEmailBO;
 import com.authguard.service.model.PermissionBO;
+import com.authguard.service.model.RequestContextBO;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.AfterEach;
@@ -27,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,6 +41,7 @@ import static org.mockito.ArgumentMatchers.eq;
 class AccountsServiceImplTest {
     private AccountsRepository accountsRepository;
     private PermissionsService permissionsService;
+    private IdempotencyService idempotencyService;
     private RolesService rolesService;
     private VerificationMessageService verificationMessageService;
     private MessageBus messageBus;
@@ -52,6 +56,7 @@ class AccountsServiceImplTest {
         accountsRepository = Mockito.mock(AccountsRepository.class);
         permissionsService = Mockito.mock(PermissionsService.class);
         rolesService = Mockito.mock(RolesService.class);
+        idempotencyService = Mockito.mock(IdempotencyService.class);
         verificationMessageService = Mockito.mock(VerificationMessageService.class);
         messageBus = Mockito.mock(MessageBus.class);
 
@@ -65,7 +70,7 @@ class AccountsServiceImplTest {
                 .thenReturn(accountConfig);
 
         accountService = new AccountsServiceImpl(accountsRepository, permissionsService,
-                verificationMessageService, rolesService, new ServiceMapperImpl(), messageBus, configContext);
+                verificationMessageService, rolesService, idempotencyService, new ServiceMapperImpl(), messageBus, configContext);
     }
 
     @AfterEach
@@ -81,10 +86,20 @@ class AccountsServiceImplTest {
                 .withDeleted(false)
                 .withId(null);
 
+        final String idempotentKey = "idempotent-key";
+        final RequestContextBO requestContext = RequestContextBO.builder()
+                .idempotentKey(idempotentKey)
+                .build();
+
         Mockito.when(accountsRepository.save(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountDO.class)));
 
-        final AccountBO persisted = accountService.create(account);
+        Mockito.when(idempotencyService.performOperation(Mockito.any(), Mockito.eq(idempotentKey), Mockito.eq(account.getEntityType())))
+                .thenAnswer(invocation -> {
+                    return CompletableFuture.completedFuture(invocation.getArgument(0, Supplier.class).get());
+                });
+
+        final AccountBO persisted = accountService.create(account, requestContext);
 
         assertThat(persisted).isNotNull();
         assertThat(persisted).isEqualToIgnoringGivenFields(account, "id");
@@ -104,7 +119,8 @@ class AccountsServiceImplTest {
         final Optional<AccountBO> retrieved = accountService.getById("");
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(account, "permissions", "emails");
+        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(account,
+                "permissions", "emails", "entityType");
         assertThat(retrieved.get().getPermissions()).containsExactly(account.getPermissions().stream()
                 .map(permissionDO -> PermissionBO.builder()
                         .group(permissionDO.getGroup())
@@ -325,7 +341,8 @@ class AccountsServiceImplTest {
         final AccountBO updated = accountService.activate(account.getId()).orElse(null);
 
         assertThat(updated).isNotNull();
-        assertThat(updated).isEqualToIgnoringGivenFields(account, "permissions", "emails", "active");
+        assertThat(updated).isEqualToIgnoringGivenFields(account,
+                "permissions", "emails", "active", "entityType");
         assertThat(updated.isActive()).isTrue();
     }
 
@@ -342,7 +359,8 @@ class AccountsServiceImplTest {
         final AccountBO updated = accountService.deactivate(account.getId()).orElse(null);
 
         assertThat(updated).isNotNull();
-        assertThat(updated).isEqualToIgnoringGivenFields(account, "permissions", "emails", "active");
+        assertThat(updated).isEqualToIgnoringGivenFields(account,
+                "permissions", "emails", "active", "entityType");
         assertThat(updated.isActive()).isFalse();
     }
 }

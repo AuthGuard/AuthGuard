@@ -25,6 +25,7 @@ public class ServicesBinder extends AbstractModule {
         bind(ApiKeysService.class).to(ApiKeysServiceImpl.class);
         bind(PermissionsService.class).to(PermissionsServiceImpl.class);
         bind(RolesService.class).to(RolesServiceImpl.class);
+        bind(IdempotencyService.class).to(IdempotencyServiceImpl.class);
 
         // should be conditional on property value
         bind(SecurePassword.class).to(SCryptPassword.class);

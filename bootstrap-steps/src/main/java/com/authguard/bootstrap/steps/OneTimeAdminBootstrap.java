@@ -4,10 +4,7 @@ import com.authguard.bootstrap.BootstrapStep;
 import com.authguard.config.ConfigContext;
 import com.authguard.service.AccountsService;
 import com.authguard.service.CredentialsService;
-import com.authguard.service.model.AccountBO;
-import com.authguard.service.model.CredentialsBO;
-import com.authguard.service.model.UserIdentifier;
-import com.authguard.service.model.UserIdentifierBO;
+import com.authguard.service.model.*;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.slf4j.Logger;
@@ -15,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 public class OneTimeAdminBootstrap implements BootstrapStep {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
@@ -38,10 +36,13 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
 
         if (admins.isEmpty()) {
             log.info("No admin accounts were found, a one-time admin account will be created");
+            final RequestContextBO requestContext = RequestContextBO.builder()
+                    .idempotentKey(UUID.randomUUID().toString())
+                    .build();
 
-            final AccountBO createdAccount = accountsService.create(oneTimeAccount());
+            final AccountBO createdAccount = accountsService.create(oneTimeAccount(), requestContext);
             final CredentialsBO createdCredentials = credentialsService
-                    .create(oneTimeAdminCredentials(createdAccount.getId()));
+                    .create(oneTimeAdminCredentials(createdAccount.getId()), requestContext);
 
             log.info("A one-time admin account was created with {}", createdCredentials.getIdentifiers());
         }

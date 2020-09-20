@@ -23,5 +23,6 @@ public class MocksBinder extends AbstractModule {
         bind(ExchangeService.class).toInstance(Mockito.mock(ExchangeService.class));
         bind(BasicAuth.class).toInstance(Mockito.mock(BasicAuth.class));
         bind(AutoSubscribers.class).toInstance(Mockito.mock(AutoSubscribers.class));
+        bind(IdempotencyService.class).toInstance(Mockito.mock(IdempotencyService.class));
     }
 }

@@ -36,4 +36,7 @@ public interface ServiceMapper {
 
     SessionDO toDO(SessionBO sessionBO);
     SessionBO toBO(SessionDO sessionDO);
+
+    IdempotentRecordDO toDO(IdempotentRecordBO idempotentRecordBO);
+    IdempotentRecordBO toBO(IdempotentRecordDO idempotentRecordDO);
 }

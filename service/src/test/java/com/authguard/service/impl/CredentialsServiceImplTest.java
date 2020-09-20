@@ -2,30 +2,35 @@ package com.authguard.service.impl;
 
 import com.authguard.dal.CredentialsAuditRepository;
 import com.authguard.dal.CredentialsRepository;
-import com.authguard.emb.MessageBus;
-import com.authguard.service.AccountsService;
-import com.authguard.service.config.PasswordConditions;
-import com.authguard.service.config.PasswordsConfig;
-import com.authguard.service.exceptions.ServiceInvalidPasswordException;
-import com.authguard.service.passwords.PasswordValidator;
-import com.authguard.service.passwords.SecurePassword;
 import com.authguard.dal.model.CredentialsAuditDO;
 import com.authguard.dal.model.CredentialsDO;
-import com.authguard.service.exceptions.ServiceConflictException;
+import com.authguard.emb.MessageBus;
+import com.authguard.service.AccountsService;
+import com.authguard.service.IdempotencyService;
+import com.authguard.service.config.PasswordConditions;
+import com.authguard.service.config.PasswordsConfig;
 import com.authguard.service.exceptions.ServiceException;
+import com.authguard.service.exceptions.ServiceInvalidPasswordException;
 import com.authguard.service.mappers.ServiceMapperImpl;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.CredentialsBO;
 import com.authguard.service.model.HashedPasswordBO;
+import com.authguard.service.model.RequestContextBO;
+import com.authguard.service.passwords.PasswordValidator;
+import com.authguard.service.passwords.SecurePassword;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,6 +40,7 @@ import static org.mockito.ArgumentMatchers.eq;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class CredentialsServiceImplTest {
     private AccountsService accountsService;
+    private IdempotencyService idempotencyService;
     private CredentialsRepository credentialsRepository;
     private CredentialsAuditRepository credentialsAuditRepository;
     private SecurePassword securePassword;
@@ -46,6 +52,7 @@ class CredentialsServiceImplTest {
     @BeforeAll
     void setup() {
         accountsService = Mockito.mock(AccountsService.class);
+        idempotencyService = Mockito.mock(IdempotencyService.class);
         credentialsRepository = Mockito.mock(CredentialsRepository.class);
         credentialsAuditRepository = Mockito.mock(CredentialsAuditRepository.class);
         securePassword = Mockito.mock(SecurePassword.class);
@@ -54,7 +61,7 @@ class CredentialsServiceImplTest {
         final PasswordValidator passwordValidator = new PasswordValidator(PasswordsConfig.builder()
                 .conditions(PasswordConditions.builder().build()).build());
 
-        credentialsService = new CredentialsServiceImpl(accountsService, credentialsRepository,
+        credentialsService = new CredentialsServiceImpl(accountsService, idempotencyService, credentialsRepository,
                 credentialsAuditRepository, securePassword, passwordValidator, messageBus, new ServiceMapperImpl());
     }
 
@@ -75,11 +82,19 @@ class CredentialsServiceImplTest {
                 .withPlainPassword("SecurePassword77$3");
         final HashedPasswordBO hashedPassword = RANDOM.nextObject(HashedPasswordBO.class);
 
+        final String idempotentKey = "idempotent-key";
+        final RequestContextBO requestContext = RequestContextBO.builder()
+                .idempotentKey(idempotentKey)
+                .build();
+
         Mockito.when(securePassword.hash(any())).thenReturn(hashedPassword);
         Mockito.when(credentialsRepository.save(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CredentialsDO.class)));
 
-        final CredentialsBO persisted = credentialsService.create(credentials);
+        Mockito.when(idempotencyService.performOperation(Mockito.any(), Mockito.eq(idempotentKey), Mockito.eq(credentials.getEntityType())))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, Supplier.class).get()));
+
+        final CredentialsBO persisted = credentialsService.create(credentials, requestContext);
 
         assertThat(persisted).isNotNull();
         assertThat(persisted).isEqualToIgnoringGivenFields(credentials, "id", "plainPassword", "hashedPassword");
@@ -91,30 +106,35 @@ class CredentialsServiceImplTest {
     }
 
     @Test
-    void createDuplicateUsername() {
-        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class);
-
-        Mockito.when(credentialsRepository.findByIdentifier(any()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(CredentialsDO.builder().build())));
-
-        assertThatThrownBy(() -> credentialsService.create(credentials)).isInstanceOf(ServiceConflictException.class);
-    }
-
-    @Test
     void createNonExistingAccount() {
         final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class);
+        final String idempotentKey = "idempotent-key";
+        final RequestContextBO requestContext = RequestContextBO.builder()
+                .idempotentKey(idempotentKey)
+                .build();
 
         Mockito.when(accountsService.getById(credentials.getAccountId())).thenReturn(Optional.empty());
+        Mockito.when(idempotencyService.performOperation(Mockito.any(), Mockito.eq(idempotentKey), Mockito.eq(credentials.getEntityType())))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, Supplier.class).get()));
 
-        assertThatThrownBy(() -> credentialsService.create(credentials)).isInstanceOf(ServiceException.class);
+        assertThatThrownBy(() -> credentialsService.create(credentials, requestContext))
+                .isInstanceOf(ServiceException.class);
     }
 
     @Test
     void createWithInvalidPassword() {
         final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class)
                 .withPlainPassword("bad");
+        final String idempotentKey = "idempotent-key";
+        final RequestContextBO requestContext = RequestContextBO.builder()
+                .idempotentKey(idempotentKey)
+                .build();
 
-        assertThatThrownBy(() -> credentialsService.create(credentials)).isInstanceOf(ServiceInvalidPasswordException.class);
+        Mockito.when(idempotencyService.performOperation(Mockito.any(), Mockito.eq(idempotentKey), Mockito.eq(credentials.getEntityType())))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, Supplier.class).get()));
+
+        assertThatThrownBy(() -> credentialsService.create(credentials, requestContext))
+                .isInstanceOf(ServiceInvalidPasswordException.class);
     }
 
     @Test
@@ -126,7 +146,8 @@ class CredentialsServiceImplTest {
         final Optional<CredentialsBO> retrieved = credentialsService.getById("");
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(credentials, "hashedPassword", "plainPassword", "identifiers");
+        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(credentials,
+                "hashedPassword", "plainPassword", "identifiers", "entityType");
         assertThat(retrieved.get().getHashedPassword()).isNull();
         assertThat(retrieved.get().getPlainPassword()).isNull();
     }
@@ -147,7 +168,8 @@ class CredentialsServiceImplTest {
         final Optional<CredentialsBO> retrieved = credentialsService.getByUsername("");
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(credentials, "hashedPassword", "plainPassword", "identifiers");
+        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(credentials,
+                "hashedPassword", "plainPassword", "identifiers", "entityType");
         assertThat(retrieved.get().getHashedPassword()).isNull();
         assertThat(retrieved.get().getPlainPassword()).isNull();
     }
@@ -238,17 +260,5 @@ class CredentialsServiceImplTest {
 
         Mockito.verify(messageBus, Mockito.times(1))
                 .publish(eq("credentials"), any());
-    }
-
-    @Test
-    void updateDuplicateUsername() {
-        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class);
-
-        Mockito.when(credentialsRepository.findByIdentifier(any()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(CredentialsDO.builder()
-                        .accountId("")
-                        .build())));
-
-        assertThatThrownBy(() -> credentialsService.update(credentials)).isInstanceOf(ServiceConflictException.class);
     }
 }

@@ -34,6 +34,64 @@
 						"name": "Content-Type",
 						"value": "application/json",
 						"type": "text"
+					},
+					{
+						"key": "X-IdempotentKey",
+						"value": "idemp:accounts",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create account-retry same idempotent key",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "1f544133-eff4-4251-beee-707c5271db7e",
+						"exec": [
+							"pm.test(\"Status code is 409\", function () {",
+							"    pm.response.to.have.status(409);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					},
+					{
+						"key": "X-IdempotentKey",
+						"type": "text",
+						"value": "idemp:accounts"
 					}
 				],
 				"body": {
@@ -80,6 +138,11 @@
 						"key": "Content-Type",
 						"name": "Content-Type",
 						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "X-IdempotentKey",
+						"value": "idemp:accounts",
 						"type": "text"
 					}
 				],
@@ -140,59 +203,18 @@
 					}
 				},
 				"url": {
-					"raw": "{{authguard}}/credentials",
+					"raw": "{{authguard}}/credentials?X-IdempotentKey=idemp:accounts-invalid-pass",
 					"host": [
 						"{{authguard}}"
 					],
 					"path": [
 						"credentials"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "create credentials same username",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "645e6a7f-7b8b-405d-ac97-b576d7c4b2e5",
-						"exec": [
-							"pm.test(\"Status code is 409\", function () {",
-							"    pm.response.to.have.status(409);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"name": "Content-Type",
-						"type": "text",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n\t\"accountId\": \"{{accountId}}\",\n\t\"identifiers\": [\n\t\t{\n\t\t\t\"identifier\": \"username\",\n\t\t\t\"type\": \"USERNAME\"\n\t\t}\n\t],\n\t\"plainPassword\": \"password\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
+					],
+					"query": [
+						{
+							"key": "X-IdempotentKey",
+							"value": "idemp:accounts-invalid-pass"
 						}
-					}
-				},
-				"url": {
-					"raw": "{{authguard}}/credentials",
-					"host": [
-						"{{authguard}}"
-					],
-					"path": [
-						"credentials"
 					]
 				}
 			},
@@ -227,6 +249,11 @@
 						"name": "Content-Type",
 						"type": "text",
 						"value": "application/json"
+					},
+					{
+						"key": "X-IdempotentKey",
+						"value": "idemp:accounts:no-account-id",
+						"type": "text"
 					}
 				],
 				"body": {

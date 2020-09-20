@@ -6,7 +6,9 @@ import com.authguard.api.routes.ApplicationsApi;
 import com.authguard.rest.mappers.RestJsonMapper;
 import com.authguard.rest.mappers.RestMapper;
 import com.authguard.rest.util.BodyHandler;
+import com.authguard.rest.util.IdempotencyHeader;
 import com.authguard.service.ApplicationsService;
+import com.authguard.service.model.RequestContextBO;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
 
@@ -28,10 +30,16 @@ public class ApplicationsRoute extends ApplicationsApi {
     }
 
     public void create(final Context context) {
+        final String idempotentKey = IdempotencyHeader.getKeyOrFail(context);
         final CreateAppRequestDTO request = appRequestRequestBodyHandler.getValidated(context);
 
+        final RequestContextBO requestContext = RequestContextBO.builder()
+                .idempotentKey(idempotentKey)
+                .source(context.ip())
+                .build();
+
         final Optional<Object> created = Optional.of(restMapper.toBO(request))
-                .map(applicationsService::create)
+                .map(appBO -> applicationsService.create(appBO, requestContext))
                 .map(restMapper::toDTO);
 
         if (created.isPresent()) {

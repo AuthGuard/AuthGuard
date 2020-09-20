@@ -1,9 +1,13 @@
 package com.authguard.service.impl;
 
+import com.authguard.dal.CredentialsAuditRepository;
+import com.authguard.dal.CredentialsRepository;
 import com.authguard.dal.model.CredentialsDO;
 import com.authguard.emb.MessageBus;
 import com.authguard.emb.Messages;
 import com.authguard.service.AccountsService;
+import com.authguard.service.CredentialsService;
+import com.authguard.service.IdempotencyService;
 import com.authguard.service.exceptions.ServiceConflictException;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceInvalidPasswordException;
@@ -12,12 +16,9 @@ import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.*;
 import com.authguard.service.passwords.PasswordValidator;
+import com.authguard.service.passwords.SecurePassword;
 import com.authguard.service.passwords.Violation;
 import com.google.inject.Inject;
-import com.authguard.dal.CredentialsAuditRepository;
-import com.authguard.dal.CredentialsRepository;
-import com.authguard.service.CredentialsService;
-import com.authguard.service.passwords.SecurePassword;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,6 +27,7 @@ public class CredentialsServiceImpl implements CredentialsService {
     private static final String CREDENTIALS_CHANNEL = "credentials";
 
     private final AccountsService accountsService;
+    private final IdempotencyService idempotencyService;
     private final CredentialsRepository credentialsRepository;
     private final CredentialsAuditRepository credentialsAuditRepository;
     private final SecurePassword securePassword;
@@ -35,6 +37,7 @@ public class CredentialsServiceImpl implements CredentialsService {
 
     @Inject
     public CredentialsServiceImpl(final AccountsService accountsService,
+                                  final IdempotencyService idempotencyService,
                                   final CredentialsRepository credentialsRepository,
                                   final CredentialsAuditRepository credentialsAuditRepository,
                                   final SecurePassword securePassword,
@@ -42,6 +45,7 @@ public class CredentialsServiceImpl implements CredentialsService {
                                   final MessageBus messageBus,
                                   final ServiceMapper serviceMapper) {
         this.accountsService = accountsService;
+        this.idempotencyService = idempotencyService;
         this.credentialsRepository = credentialsRepository;
         this.credentialsAuditRepository = credentialsAuditRepository;
         this.securePassword = securePassword;
@@ -51,7 +55,12 @@ public class CredentialsServiceImpl implements CredentialsService {
     }
 
     @Override
-    public CredentialsBO create(final CredentialsBO credentials) {
+    public CredentialsBO create(final CredentialsBO credentials, final RequestContextBO requestContext) {
+        return idempotencyService.performOperation(() -> doCreate(credentials), requestContext.getIdempotentKey(), credentials.getEntityType())
+                .join();
+    }
+
+    private CredentialsBO doCreate(final CredentialsBO credentials) {
         final List<Violation> passwordViolations = passwordValidator.findViolations(credentials.getPlainPassword());
 
         if (!passwordViolations.isEmpty()) {
@@ -59,8 +68,6 @@ public class CredentialsServiceImpl implements CredentialsService {
         }
 
         ensureAccountExists(credentials.getAccountId());
-        credentials.getIdentifiers()
-                .forEach(identifier -> ensureNoDuplicate(identifier.getIdentifier()));
 
         final HashedPasswordBO hashedPassword = securePassword.hash(credentials.getPlainPassword());
         final CredentialsBO credentialsHashedPassword = CredentialsBO.builder()
@@ -164,9 +171,6 @@ public class CredentialsServiceImpl implements CredentialsService {
     }
 
     private Optional<CredentialsBO> doUpdate(final CredentialsBO credentials, boolean storePasswordAudit) {
-        credentials.getIdentifiers()
-                .forEach(identifier -> ensureNoDuplicate(identifier.getIdentifier(), credentials.getAccountId()));
-
         final CredentialsBO existing = credentialsRepository.getById(credentials.getId())
                 .thenApply(optional -> optional.map(serviceMapper::toBO))
                 .join()
@@ -230,21 +234,6 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .build();
 
         credentialsAuditRepository.save(serviceMapper.toDO(audit));
-    }
-
-    // TODO should be done by the DB
-    private void ensureNoDuplicate(final String identifier) {
-        credentialsRepository.findByIdentifier(identifier)
-                .join()
-                .ifPresent(ignored -> { throw new ServiceConflictException(ErrorCode.IDENTIFIER_ALREADY_EXISTS, "Username already exists"); });
-    }
-
-    // TODO should be done by the DB
-    private void ensureNoDuplicate(final String identifier, final String accountId) {
-        credentialsRepository.findByIdentifier(identifier)
-                .join()
-                .filter(credentials -> !credentials.getAccountId().equals(accountId))
-                .ifPresent(ignored -> { throw new ServiceConflictException(ErrorCode.IDENTIFIER_ALREADY_EXISTS, "Username already exists"); });
     }
 
     private void ensureAccountExists(final String accountId) {

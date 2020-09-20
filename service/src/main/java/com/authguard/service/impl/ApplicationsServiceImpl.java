@@ -3,9 +3,11 @@ package com.authguard.service.impl;
 import com.authguard.dal.model.AppDO;
 import com.authguard.emb.MessageBus;
 import com.authguard.emb.Messages;
+import com.authguard.service.IdempotencyService;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
+import com.authguard.service.model.RequestContextBO;
 import com.google.inject.Inject;
 import com.authguard.dal.ApplicationsRepository;
 import com.authguard.service.AccountsService;
@@ -22,22 +24,30 @@ public class ApplicationsServiceImpl implements ApplicationsService {
 
     private final ApplicationsRepository applicationsRepository;
     private final AccountsService accountsService;
+    private final IdempotencyService idempotencyService;
     private final ServiceMapper serviceMapper;
     private final MessageBus messageBus;
 
     @Inject
     public ApplicationsServiceImpl(final ApplicationsRepository applicationsRepository,
                                    final AccountsService accountsService,
+                                   final IdempotencyService idempotencyService,
                                    final ServiceMapper serviceMapper,
                                    final MessageBus messageBus) {
         this.applicationsRepository = applicationsRepository;
         this.accountsService = accountsService;
+        this.idempotencyService = idempotencyService;
         this.serviceMapper = serviceMapper;
         this.messageBus = messageBus;
     }
 
     @Override
-    public AppBO create(final AppBO app) {
+    public AppBO create(final AppBO app, final RequestContextBO requestContext) {
+        return idempotencyService.performOperation(() -> doCreate(app), requestContext.getIdempotentKey(), app.getEntityType())
+                .join();
+    }
+
+    private AppBO doCreate(final AppBO app) {
         /*
          * It's undecided whether an app should be under an
          * account or not. So for now, we only check that the
