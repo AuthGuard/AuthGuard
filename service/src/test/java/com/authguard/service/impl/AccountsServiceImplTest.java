@@ -2,15 +2,14 @@ package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.AccountsRepository;
+import com.authguard.dal.model.AccountDO;
 import com.authguard.dal.model.EmailDO;
 import com.authguard.emb.MessageBus;
 import com.authguard.service.IdempotencyService;
 import com.authguard.service.PermissionsService;
 import com.authguard.service.RolesService;
-import com.authguard.service.VerificationMessageService;
 import com.authguard.service.config.AccountConfig;
 import com.authguard.service.exceptions.ServiceException;
-import com.authguard.dal.model.AccountDO;
 import com.authguard.service.mappers.ServiceMapperImpl;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AccountEmailBO;
@@ -43,7 +42,6 @@ class AccountsServiceImplTest {
     private PermissionsService permissionsService;
     private IdempotencyService idempotencyService;
     private RolesService rolesService;
-    private VerificationMessageService verificationMessageService;
     private MessageBus messageBus;
     private AccountsServiceImpl accountService;
 
@@ -57,7 +55,6 @@ class AccountsServiceImplTest {
         permissionsService = Mockito.mock(PermissionsService.class);
         rolesService = Mockito.mock(RolesService.class);
         idempotencyService = Mockito.mock(IdempotencyService.class);
-        verificationMessageService = Mockito.mock(VerificationMessageService.class);
         messageBus = Mockito.mock(MessageBus.class);
 
         final ConfigContext configContext = Mockito.mock(ConfigContext.class);
@@ -69,8 +66,8 @@ class AccountsServiceImplTest {
         Mockito.when(configContext.asConfigBean(AccountConfig.class))
                 .thenReturn(accountConfig);
 
-        accountService = new AccountsServiceImpl(accountsRepository, permissionsService,
-                verificationMessageService, rolesService, idempotencyService, new ServiceMapperImpl(), messageBus, configContext);
+        accountService = new AccountsServiceImpl(accountsRepository, permissionsService,rolesService,
+                idempotencyService, new ServiceMapperImpl(), messageBus, configContext);
     }
 
     @AfterEach
@@ -107,6 +104,8 @@ class AccountsServiceImplTest {
         // need better assertion
         Mockito.verify(messageBus, Mockito.times(1))
                 .publish(eq("accounts"), any());
+
+        Mockito.verify(messageBus).publish(eq("verification"), any());
     }
 
     @Test
@@ -268,18 +267,17 @@ class AccountsServiceImplTest {
                 RANDOM.nextObject(AccountEmailBO.class)
         );
 
-        final Optional<AccountBO> updated = accountService.addEmails(account.getId(), emails);
+        final Optional<AccountBO> updated = accountService.updateEmails(account.getId(), emails);
 
         assertThat(updated).isPresent();
         assertThat(updated.get()).isNotEqualTo(account);
-        assertThat(updated.get().getEmails())
-                .contains(emails.stream()
-                        .map(email -> email.withActive(true))
-                        .toArray(AccountEmailBO[]::new));
+        assertThat(updated.get().getEmails()).containsAnyElementsOf(emails);
 
         // need better assertion
         Mockito.verify(messageBus, Mockito.times(1))
                 .publish(eq("accounts"), any());
+
+        Mockito.verify(messageBus).publish(eq("verification"), any());
     }
 
     @Test

@@ -40,7 +40,7 @@ public class Application {
                 new JwtBinder(configContext),
                 new DalBinder(configContext, searchPackages),
                 new EmbBinder(searchPackages),
-                new ExternalProvidersBinder(searchPackages));
+                new ExternalProvidersBinder(configContext, searchPackages));
 
         log.info("Initialed injection binders");
 

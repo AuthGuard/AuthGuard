@@ -2,6 +2,7 @@ package com.authguard.service.exceptions.codes;
 
 public enum ErrorCode {
     ACCOUNT_DOES_NOT_EXIST("AC.011"),
+    ACCOUNT_DUPLICATE_EMAILS("AC.031"),
 
     APP_DOES_NOT_EXIST("AP.011"),
 

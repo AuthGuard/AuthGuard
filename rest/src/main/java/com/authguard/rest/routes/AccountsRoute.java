@@ -148,7 +148,7 @@ public class AccountsRoute extends AccountsApi {
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
 
-        accountsService.addEmails(accountId, emails)
+        accountsService.updateEmails(accountId, emails)
                 .map(restMapper::toDTO)
                 .ifPresentOrElse(context::json, () -> context.status(404));
     }
