@@ -6,7 +6,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Payload;
-import com.authguard.service.AuthTokenVerfier;
+import com.authguard.service.auth.AuthTokenVerfier;
 import com.authguard.service.config.StrategyConfig;
 
 import java.util.Optional;

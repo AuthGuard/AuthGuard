@@ -1,7 +1,7 @@
 package com.authguard.service.otp;
 
 import com.authguard.dal.OtpRepository;
-import com.authguard.service.AuthTokenVerfier;
+import com.authguard.service.auth.AuthTokenVerfier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;

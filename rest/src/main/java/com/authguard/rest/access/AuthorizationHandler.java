@@ -2,7 +2,7 @@ package com.authguard.rest.access;
 
 import com.authguard.service.ApiKeysService;
 import com.authguard.service.exceptions.codes.ErrorCode;
-import com.authguard.service.exchange.helpers.BasicAuth;
+import com.authguard.service.basic.BasicAuthProvider;
 import com.authguard.service.model.AppBO;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
@@ -18,11 +18,11 @@ import java.util.Optional;
 public class AuthorizationHandler implements Handler {
     private static final Logger LOG = LoggerFactory.getLogger(AuthorizationHandler.class);
 
-    private final BasicAuth basicAuth;
+    private final BasicAuthProvider basicAuth;
     private final ApiKeysService apiKeysService;
 
     @Inject
-    public AuthorizationHandler(final BasicAuth basicAuth, final ApiKeysService apiKeysService) {
+    public AuthorizationHandler(final BasicAuthProvider basicAuth, final ApiKeysService apiKeysService) {
         this.basicAuth = basicAuth;
         this.apiKeysService = apiKeysService;
     }

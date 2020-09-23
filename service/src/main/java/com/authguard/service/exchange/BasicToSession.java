@@ -1,6 +1,6 @@
 package com.authguard.service.exchange;
 
-import com.authguard.service.exchange.helpers.BasicAuth;
+import com.authguard.service.basic.BasicAuthProvider;
 import com.authguard.service.model.TokensBO;
 import com.authguard.service.sessions.SessionProvider;
 import com.google.inject.Inject;
@@ -9,11 +9,11 @@ import java.util.Optional;
 
 @TokenExchange(from = "basic", to = "session")
 public class BasicToSession implements Exchange {
-    private final BasicAuth basicAuth;
+    private final BasicAuthProvider basicAuth;
     private final SessionProvider sessionProvider;
 
     @Inject
-    public BasicToSession(final BasicAuth basicAuth, final SessionProvider sessionProvider) {
+    public BasicToSession(final BasicAuthProvider basicAuth, final SessionProvider sessionProvider) {
         this.basicAuth = basicAuth;
         this.sessionProvider = sessionProvider;
     }

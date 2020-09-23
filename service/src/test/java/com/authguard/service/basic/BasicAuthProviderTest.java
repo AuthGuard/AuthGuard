@@ -1,4 +1,4 @@
-package com.authguard.service.exchange.helpers;
+package com.authguard.service.basic;
 
 
 import com.authguard.service.*;
@@ -22,12 +22,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class BasicAuthTest {
+class BasicAuthProviderTest {
     private AccountsService accountsService;
     private CredentialsService credentialsService;
     private SecurePassword securePassword;
 
-    private BasicAuth basicAuth;
+    private BasicAuthProvider basicAuth;
 
     private final static EasyRandom RANDOM = new EasyRandom();
 
@@ -37,7 +37,7 @@ class BasicAuthTest {
         credentialsService = Mockito.mock(CredentialsService.class);
         securePassword = Mockito.mock(SecurePassword.class);
 
-        basicAuth = new BasicAuth(credentialsService, accountsService, securePassword);
+        basicAuth = new BasicAuthProvider(credentialsService, accountsService, securePassword);
     }
 
     @AfterEach

@@ -2,7 +2,7 @@ package com.authguard.service.sessions;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.SessionsRepository;
-import com.authguard.service.AuthProvider;
+import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.config.ConfigParser;
 import com.authguard.service.config.SessionsConfig;
 import com.authguard.service.mappers.ServiceMapper;

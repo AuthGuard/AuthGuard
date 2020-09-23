@@ -4,7 +4,7 @@ import com.authguard.config.ConfigContext;
 import com.authguard.dal.OtpRepository;
 import com.authguard.emb.MessageBus;
 import com.authguard.emb.Messages;
-import com.authguard.service.AuthProvider;
+import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.config.ConfigParser;
 import com.authguard.service.config.OtpConfig;
 import com.authguard.service.mappers.ServiceMapper;

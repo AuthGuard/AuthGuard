@@ -3,7 +3,7 @@ package com.authguard.service.oauth;
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
-import com.authguard.service.AuthProvider;
+import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.config.AuthorizationCodeConfig;
 import com.authguard.service.config.ConfigParser;
 import com.authguard.service.model.AccountBO;

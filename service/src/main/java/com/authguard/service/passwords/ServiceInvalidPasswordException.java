@@ -1,5 +1,6 @@
-package com.authguard.service.exceptions;
+package com.authguard.service.passwords;
 
+import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.passwords.Violation;
 

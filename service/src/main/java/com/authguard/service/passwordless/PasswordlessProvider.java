@@ -5,7 +5,7 @@ import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.emb.MessageBus;
 import com.authguard.emb.Messages;
-import com.authguard.service.AuthProvider;
+import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.config.ConfigParser;
 import com.authguard.service.config.PasswordlessConfig;
 import com.authguard.service.model.AccountBO;

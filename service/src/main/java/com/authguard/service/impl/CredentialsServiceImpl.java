@@ -10,7 +10,7 @@ import com.authguard.service.CredentialsService;
 import com.authguard.service.IdempotencyService;
 import com.authguard.service.exceptions.ServiceConflictException;
 import com.authguard.service.exceptions.ServiceException;
-import com.authguard.service.exceptions.ServiceInvalidPasswordException;
+import com.authguard.service.passwords.ServiceInvalidPasswordException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;

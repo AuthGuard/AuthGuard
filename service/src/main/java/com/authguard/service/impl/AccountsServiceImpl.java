@@ -6,7 +6,6 @@ import com.authguard.emb.MessageBus;
 import com.authguard.emb.Messages;
 import com.authguard.service.*;
 import com.authguard.service.config.AccountConfig;
-import com.authguard.service.exceptions.ServiceConflictException;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.exceptions.codes.ErrorCode;

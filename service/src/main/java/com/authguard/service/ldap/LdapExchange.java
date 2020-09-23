@@ -1,6 +1,6 @@
 package com.authguard.service.ldap;
 
-import com.authguard.service.AuthProvider;
+import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.helpers.TokensUtils;
 import com.authguard.service.model.AccountBO;

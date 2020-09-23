@@ -9,7 +9,7 @@ import com.authguard.service.config.ConfigParser;
 import com.authguard.service.config.JwtConfig;
 import com.authguard.service.config.StrategyConfig;
 import com.google.inject.Inject;
-import com.authguard.service.AuthProvider;
+import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.model.*;
 import com.google.inject.name.Named;
 
@@ -47,7 +47,7 @@ public class AccessTokenProvider implements AuthProvider {
 
     @Override
     public TokensBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
-        final TokenBuilderBO tokenBuilder = generateAccessToken(account, restrictions);
+        final JwtTokenBuilder tokenBuilder = generateAccessToken(account, restrictions);
         final String token = tokenBuilder.getBuilder().sign(algorithm);
         final String refreshToken = jwtGenerator.generateRandomRefreshToken();
 
@@ -76,8 +76,8 @@ public class AccessTokenProvider implements AuthProvider {
                 .join();
     }
 
-    private TokenBuilderBO generateAccessToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
-        final TokenBuilderBO.Builder tokenBuilder = TokenBuilderBO.builder();
+    private JwtTokenBuilder generateAccessToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
+        final JwtTokenBuilder.Builder tokenBuilder = JwtTokenBuilder.builder();
         final JWTCreator.Builder jwtBuilder = jwtGenerator.generateUnsignedToken(account,
                 ConfigParser.parseDuration(strategy.getTokenLife()));
 

@@ -1,8 +1,9 @@
-package com.authguard.service.exchange.helpers;
+package com.authguard.service.basic;
 
 import com.authguard.service.AccountsService;
 import com.authguard.service.CredentialsService;
 import com.authguard.service.exceptions.codes.ErrorCode;
+import com.authguard.service.exchange.helpers.TokensUtils;
 import com.authguard.service.passwords.SecurePassword;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.ServiceException;
@@ -13,14 +14,14 @@ import com.google.inject.Inject;
 import java.util.Base64;
 import java.util.Optional;
 
-public class BasicAuth {
+public class BasicAuthProvider {
     private final CredentialsService credentialsService;
     private final AccountsService accountsService;
     private final SecurePassword securePassword;
 
     @Inject
-    public BasicAuth(final CredentialsService credentialsService, final AccountsService accountsService,
-                     final SecurePassword securePassword) {
+    public BasicAuthProvider(final CredentialsService credentialsService, final AccountsService accountsService,
+                             final SecurePassword securePassword) {
         this.credentialsService = credentialsService;
         this.securePassword = securePassword;
         this.accountsService = accountsService;

@@ -2,7 +2,7 @@ package com.authguard.service.passwordless;
 
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
-import com.authguard.service.AuthTokenVerfier;
+import com.authguard.service.auth.AuthTokenVerfier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.google.inject.Inject;
