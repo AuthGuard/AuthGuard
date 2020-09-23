@@ -2,7 +2,7 @@ package com.authguard.rest;
 
 import com.authguard.emb.AutoSubscribers;
 import com.authguard.service.*;
-import com.authguard.service.exchange.helpers.BasicAuth;
+import com.authguard.service.basic.BasicAuthProvider;
 import com.google.inject.AbstractModule;
 import org.mockito.Mockito;
 
@@ -20,7 +20,7 @@ public class MocksBinder extends AbstractModule {
         bind(RolesService.class).toInstance(Mockito.mock(RolesService.class));
         bind(VerificationService.class).toInstance(Mockito.mock(VerificationService.class));
         bind(ExchangeService.class).toInstance(Mockito.mock(ExchangeService.class));
-        bind(BasicAuth.class).toInstance(Mockito.mock(BasicAuth.class));
+        bind(BasicAuthProvider.class).toInstance(Mockito.mock(BasicAuthProvider.class));
         bind(AutoSubscribers.class).toInstance(Mockito.mock(AutoSubscribers.class));
         bind(IdempotencyService.class).toInstance(Mockito.mock(IdempotencyService.class));
     }

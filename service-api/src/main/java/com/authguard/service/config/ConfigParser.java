@@ -1,7 +1,5 @@
 package com.authguard.service.config;
 
-import com.authguard.service.exceptions.ServiceException;
-
 import java.time.Duration;
 
 public class ConfigParser {

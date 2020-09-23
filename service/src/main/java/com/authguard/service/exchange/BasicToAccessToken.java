@@ -1,6 +1,6 @@
 package com.authguard.service.exchange;
 
-import com.authguard.service.exchange.helpers.BasicAuth;
+import com.authguard.service.basic.BasicAuthProvider;
 import com.authguard.service.jwt.AccessTokenProvider;
 import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
@@ -10,11 +10,11 @@ import java.util.Optional;
 
 @TokenExchange(from = "basic", to = "accessToken")
 public class BasicToAccessToken implements Exchange {
-    private final BasicAuth basicAuth;
+    private final BasicAuthProvider basicAuth;
     private final AccessTokenProvider accessTokenProvider;
 
     @Inject
-    public BasicToAccessToken(final BasicAuth basicAuth, final AccessTokenProvider accessTokenProvider) {
+    public BasicToAccessToken(final BasicAuthProvider basicAuth, final AccessTokenProvider accessTokenProvider) {
         this.basicAuth = basicAuth;
         this.accessTokenProvider = accessTokenProvider;
     }

@@ -1,6 +1,6 @@
 package com.authguard.service.exchange;
 
-import com.authguard.service.exchange.helpers.BasicAuth;
+import com.authguard.service.basic.BasicAuthProvider;
 import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
 import com.authguard.service.oauth.AuthorizationCodeProvider;
@@ -10,11 +10,11 @@ import java.util.Optional;
 
 @TokenExchange(from = "basic", to = "authorizationCode")
 public class BasicToAuthorizationCode implements Exchange {
-    private final BasicAuth basicAuth;
+    private final BasicAuthProvider basicAuth;
     private final AuthorizationCodeProvider authorizationCodeProvider;
 
     @Inject
-    public BasicToAuthorizationCode(final BasicAuth basicAuth, final AuthorizationCodeProvider authorizationCodeProvider) {
+    public BasicToAuthorizationCode(final BasicAuthProvider basicAuth, final AuthorizationCodeProvider authorizationCodeProvider) {
         this.basicAuth = basicAuth;
         this.authorizationCodeProvider = authorizationCodeProvider;
     }

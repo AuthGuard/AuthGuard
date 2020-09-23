@@ -6,9 +6,7 @@ import com.authguard.service.exceptions.ServiceConflictException;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.model.IdempotentRecordBO;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.http.Context;
-import io.javalin.http.ExceptionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

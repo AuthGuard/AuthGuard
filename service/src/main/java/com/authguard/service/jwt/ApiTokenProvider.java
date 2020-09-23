@@ -4,11 +4,10 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.google.inject.Inject;
-import com.authguard.service.AuthProvider;
+import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.config.JwtConfig;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AppBO;
-import com.authguard.service.model.TokenBuilderBO;
 import com.authguard.service.model.TokensBO;
 
 
@@ -32,7 +31,7 @@ public class ApiTokenProvider implements AuthProvider {
 
     @Override
     public TokensBO generateToken(final AppBO app) {
-        final TokenBuilderBO tokenBuilder = generateApiToken(app);
+        final JwtTokenBuilder tokenBuilder = generateApiToken(app);
         final String token = tokenBuilder.getBuilder().sign(algorithm);
 
         return TokensBO.builder()
@@ -40,7 +39,7 @@ public class ApiTokenProvider implements AuthProvider {
                 .build();
     }
 
-    private TokenBuilderBO generateApiToken(final AppBO app) {
+    private JwtTokenBuilder generateApiToken(final AppBO app) {
         final String keyId = jti.next();
 
         final JWTCreator.Builder jwtBuilder = JWT.create()
@@ -48,7 +47,7 @@ public class ApiTokenProvider implements AuthProvider {
                 .withJWTId(keyId)
                 .withClaim("type", "API");
 
-        return TokenBuilderBO.builder()
+        return JwtTokenBuilder.builder()
                 .id(keyId)
                 .builder(jwtBuilder)
                 .build();

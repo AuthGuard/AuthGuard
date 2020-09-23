@@ -1,4 +1,4 @@
-package com.authguard.service;
+package com.authguard.service.auth;
 
 import com.authguard.dal.model.AccountTokenDO;
 

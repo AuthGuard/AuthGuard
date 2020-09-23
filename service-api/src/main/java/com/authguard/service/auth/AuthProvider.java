@@ -1,4 +1,4 @@
-package com.authguard.service;
+package com.authguard.service.auth;
 
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AppBO;

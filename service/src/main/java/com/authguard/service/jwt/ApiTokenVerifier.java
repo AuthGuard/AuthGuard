@@ -2,7 +2,7 @@ package com.authguard.service.jwt;
 
 import com.auth0.jwt.algorithms.Algorithm;
 import com.authguard.config.ConfigContext;
-import com.authguard.service.AuthTokenVerfier;
+import com.authguard.service.auth.AuthTokenVerfier;
 import com.authguard.service.config.JwtConfig;
 import com.authguard.service.config.StrategyConfig;
 import com.google.inject.Inject;

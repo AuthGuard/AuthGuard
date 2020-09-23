@@ -6,11 +6,10 @@ import com.authguard.config.ConfigContext;
 import com.authguard.service.config.ConfigParser;
 import com.authguard.service.config.StrategyConfig;
 import com.google.inject.Inject;
-import com.authguard.service.AuthProvider;
+import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.config.JwtConfig;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AppBO;
-import com.authguard.service.model.TokenBuilderBO;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.name.Named;
 
@@ -31,7 +30,7 @@ public class IdTokenProvider implements AuthProvider {
 
     @Override
     public TokensBO generateToken(final AccountBO account) {
-        final TokenBuilderBO tokenBuilder = generateIdToke(account);
+        final JwtTokenBuilder tokenBuilder = generateIdToke(account);
         final String token = tokenBuilder.getBuilder().sign(algorithm);
         final String refreshToken = jwtGenerator.generateRandomRefreshToken();
 
@@ -46,7 +45,7 @@ public class IdTokenProvider implements AuthProvider {
         throw new UnsupportedOperationException("ID tokens cannot be generated for an application");
     }
 
-    private TokenBuilderBO generateIdToke(final AccountBO account) {
+    private JwtTokenBuilder generateIdToke(final AccountBO account) {
         final JWTCreator.Builder jwtBuilder = jwtGenerator
                 .generateUnsignedToken(account, ConfigParser.parseDuration(strategy.getTokenLife()));
 
@@ -54,7 +53,7 @@ public class IdTokenProvider implements AuthProvider {
             jwtBuilder.withClaim("eid", account.getExternalId());
         }
 
-        return TokenBuilderBO.builder()
+        return JwtTokenBuilder.builder()
                 .builder(jwtBuilder)
                 .build();
     }
