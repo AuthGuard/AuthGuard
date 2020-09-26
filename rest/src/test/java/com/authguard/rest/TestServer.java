@@ -18,7 +18,7 @@ class TestServer {
     private Server server;
 
     TestServer() {
-        this.configContext = new ConfigurationLoader().load();
+        this.configContext = new ConfigurationLoader().loadFromResources();
 
         injector = Guice.createInjector(new MocksBinder(), new MappersBinder(), new ConfigBinder(configContext));
         app = Javalin.create(javalinConfig -> {
