@@ -25,7 +25,14 @@ class ConfigurationLoader {
             "application.yml"
     );
 
-    public ConfigContext load() {
+    public ConfigContext loadFromFile(final String filePath) {
+        final File configFile = new File(filePath);
+
+        return new JacksonConfigContext(configFile, getMapper(configFile))
+                .getSubContext(ConfigContext.ROOT_CONFIG_PROPERTY);
+    }
+
+    public ConfigContext loadFromResources() {
         final File configFile = findFirstConfiguration();
 
         return new JacksonConfigContext(configFile, getMapper(configFile))
