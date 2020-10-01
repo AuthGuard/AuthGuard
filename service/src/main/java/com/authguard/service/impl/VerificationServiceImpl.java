@@ -14,8 +14,11 @@ import com.google.inject.Inject;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class VerificationServiceImpl implements VerificationService {
+    private static final String TARGET_EMAIL_PROPERTY = "email";
+
     private final AccountTokensRepository accountTokensRepository;
     private final AccountsService accountsService;
 
@@ -34,16 +37,14 @@ public class VerificationServiceImpl implements VerificationService {
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
                         "AccountDO token " + verificationToken + " does not exist"));
 
-        if (accountToken.getAdditionalInformation() == null
-                || !(accountToken.getAdditionalInformation() instanceof String)) {
-            throw new ServiceException(ErrorCode.INVALID_TOKEN, "Invalid account token: no valid additional information");
-        }
-
         if (accountToken.getExpiresAt().isBefore(ZonedDateTime.now())) {
             throw new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token " + verificationToken + " has expired");
         }
 
-        final String verifiedEmail = (String) accountToken.getAdditionalInformation();
+        final String verifiedEmail = Optional.ofNullable(accountToken.getAdditionalInformation())
+                .map(additional -> additional.get(TARGET_EMAIL_PROPERTY))
+                .orElseThrow(() -> new ServiceException(ErrorCode.INVALID_TOKEN, "Invalid account token: no valid additional information"));
+
         final AccountBO account = accountsService.getById(accountToken.getAssociatedAccountId())
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                         "AccountDO " + accountToken.getAssociatedAccountId() + " does not exist"));

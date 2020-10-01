@@ -38,8 +38,8 @@ class RolesServiceImplTest {
     @Test
     void getAll() {
         final List<RoleDO> roles = Arrays.asList(
-                RoleDO.builder().name("role-1").permissions(Collections.emptyList()).build(),
-                RoleDO.builder().name("role-2").permissions(Collections.emptyList()).build()
+                RoleDO.builder().name("role-1").build(),
+                RoleDO.builder().name("role-2").build()
         );
 
         Mockito.when(rolesRepository.getAll()).thenReturn(CompletableFuture.completedFuture(roles));
@@ -58,10 +58,6 @@ class RolesServiceImplTest {
     void create() {
         final RoleBO request = RoleBO.builder()
                 .name("role")
-                .addPermissions(PermissionBO.builder()
-                        .name("permission")
-                        .group("group")
-                        .build())
                 .build();
 
         Mockito.when(rolesRepository.save(Mockito.any()))
@@ -76,7 +72,6 @@ class RolesServiceImplTest {
     void getRoleByName() {
         final RoleDO role = RoleDO.builder()
                 .name("role")
-                .permissions(Collections.emptyList())
                 .build();
 
         Mockito.when(rolesRepository.getByName("role"))
@@ -97,8 +92,8 @@ class RolesServiceImplTest {
 
         Mockito.when(rolesRepository.getMultiple(request))
                 .thenReturn(CompletableFuture.completedFuture(Arrays.asList(
-                        RoleDO.builder().name("role-1").permissions(Collections.emptyList()).build(),
-                        RoleDO.builder().name("role-2").permissions(Collections.emptyList()).build()
+                        RoleDO.builder().name("role-1").build(),
+                        RoleDO.builder().name("role-2").build()
                 )));
 
         final List<String> actual = rolesService.verifyRoles(request);
@@ -112,7 +107,7 @@ class RolesServiceImplTest {
 
         Mockito.when(rolesRepository.getMultiple(request))
                 .thenReturn(CompletableFuture.completedFuture(Collections.singletonList(
-                        RoleDO.builder().name("role-1").permissions(Collections.emptyList()).build()
+                        RoleDO.builder().name("role-1").build()
                 )));
 
         final List<String> expected = Collections.singletonList("role-1");

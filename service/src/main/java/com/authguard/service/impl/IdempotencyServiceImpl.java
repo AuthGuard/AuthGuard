@@ -9,6 +9,7 @@ import com.authguard.service.model.IdempotentRecordBO;
 import com.google.inject.Inject;
 
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
@@ -50,6 +51,7 @@ public class IdempotencyServiceImpl implements IdempotencyService {
                 })
                 .thenApply(result -> {
                     final IdempotentRecordBO record = IdempotentRecordBO.builder()
+                            .id(UUID.randomUUID().toString())
                             .entityId(result.getId())
                             .entityType(result.getEntityType())
                             .idempotentKey(idempotentKey)

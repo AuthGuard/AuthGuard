@@ -3,15 +3,16 @@ package com.authguard.service.model;
 import org.immutables.value.Value;
 
 import java.util.List;
+import java.util.Set;
 
 @Value.Immutable
 @BOStyle
 public interface Account extends Entity {
     String getExternalId();
-    List<PermissionBO> getPermissions();
-    List<String> getScopes();
-    List<String> getRoles();
-    List<AccountEmailBO> getEmails();
+    Set<PermissionBO> getPermissions();
+    Set<String> getScopes();
+    Set<String> getRoles();
+    Set<AccountEmailBO> getEmails();
     boolean isActive();
     boolean isDeleted();
 

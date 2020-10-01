@@ -22,7 +22,7 @@ class PermissionsAggregator {
         this.permissionsService = permissionsService;
     }
 
-    List<PermissionBO> aggregate(final List<String> roles, final List<PermissionBO> accountPermissions) {
+    List<PermissionBO> aggregate(final Collection<String> roles, final Collection<PermissionBO> accountPermissions) {
         final Stream<PermissionBO> rolesPermissions =  roles.stream()
                 .map(rolesService::getPermissions)
                 .flatMap(Collection::stream);

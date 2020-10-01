@@ -4,6 +4,7 @@ import com.authguard.config.ConfigContext;
 import com.authguard.config.JacksonConfigContext;
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
+import com.authguard.service.mappers.ServiceMapperImpl;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.TokensBO;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -31,7 +32,7 @@ class AuthorizationCodeProviderTest {
     void generateToken() {
         final AccountTokensRepository accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
         final AuthorizationCodeProvider authorizationCodeProvider =
-                new AuthorizationCodeProvider(accountTokensRepository, config());
+                new AuthorizationCodeProvider(accountTokensRepository, new ServiceMapperImpl(), config());
 
         final AccountBO account = AccountBO.builder()
                 .id("account-id")
