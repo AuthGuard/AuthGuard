@@ -25,6 +25,7 @@ public class BasicJtiProvider implements JtiProvider {
         final String id = UUID.randomUUID().toString();
 
         accountTokensRepository.save(AccountTokenDO.builder()
+                .id(UUID.randomUUID().toString())
                 .token(id)
                 .build()).join();
 

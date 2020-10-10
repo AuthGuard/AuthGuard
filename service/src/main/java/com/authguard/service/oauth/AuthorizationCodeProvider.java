@@ -6,6 +6,7 @@ import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.config.AuthorizationCodeConfig;
 import com.authguard.service.config.ConfigParser;
+import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AppBO;
 import com.authguard.service.model.TokenRestrictionsBO;
@@ -15,17 +16,21 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 import java.time.ZonedDateTime;
+import java.util.UUID;
 
 public class AuthorizationCodeProvider implements AuthProvider {
     private final AccountTokensRepository accountTokensRepository;
+    private final ServiceMapper serviceMapper;
     private final AuthorizationCodeConfig config;
 
     private final CryptographicRandom random;
 
     @Inject
     public AuthorizationCodeProvider(final AccountTokensRepository accountTokensRepository,
+                                     final ServiceMapper serviceMapper,
                                      final @Named("authorizationCode") ConfigContext config) {
         this.accountTokensRepository = accountTokensRepository;
+        this.serviceMapper = serviceMapper;
         this.config = config.asConfigBean(AuthorizationCodeConfig.class);
 
         this.random = new CryptographicRandom();
@@ -41,10 +46,11 @@ public class AuthorizationCodeProvider implements AuthProvider {
         final String code = random.base64(config.getRandomSize());
 
         final AccountTokenDO accountToken = AccountTokenDO.builder()
+                .id(UUID.randomUUID().toString())
                 .token(code)
                 .associatedAccountId(account.getId())
                 .expiresAt(ZonedDateTime.now().plus(ConfigParser.parseDuration(config.getLifeTime())))
-                .additionalInformation(restrictions)
+                .tokenRestrictions(serviceMapper.toDO(restrictions))
                 .build();
 
         accountTokensRepository.save(accountToken);

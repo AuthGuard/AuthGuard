@@ -17,6 +17,7 @@ import com.google.inject.name.Named;
 import java.security.SecureRandom;
 import java.time.ZonedDateTime;
 import java.util.Base64;
+import java.util.UUID;
 
 public class PasswordlessProvider implements AuthProvider {
     private static final String PASSWORDLESS_CHANNEL = "passwordless";
@@ -42,6 +43,7 @@ public class PasswordlessProvider implements AuthProvider {
         final String token = randomToken();
 
         final AccountTokenDO accountToken = AccountTokenDO.builder()
+                .id(UUID.randomUUID().toString())
                 .associatedAccountId(account.getId())
                 .token(token)
                 .expiresAt(ZonedDateTime.now().plus(ConfigParser.parseDuration(passwordlessConfig.getTokenLife())))

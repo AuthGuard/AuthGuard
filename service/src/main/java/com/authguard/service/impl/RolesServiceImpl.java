@@ -14,6 +14,7 @@ import com.authguard.service.model.RoleBO;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -42,6 +43,8 @@ public class RolesServiceImpl implements RolesService {
     @Override
     public RoleBO create(final RoleBO role) {
         final RoleDO roleDO = serviceMapper.toDO(role);
+
+        roleDO.setId(UUID.randomUUID().toString());
 
         return rolesRepository.save(roleDO)
                 .thenApply(serviceMapper::toBO)

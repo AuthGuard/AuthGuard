@@ -23,10 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -235,7 +232,7 @@ class AccountsServiceImplTest {
     @Test
     void revokeRoles() {
         final AccountDO account = RANDOM.nextObject(AccountDO.class);
-        final List<String> currentRoles = account.getRoles();
+        final List<String> currentRoles = new ArrayList<>(account.getRoles());
 
         Mockito.when(accountsRepository.getById(account.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));

@@ -5,6 +5,7 @@ import com.authguard.service.AccountsService;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.jwt.AccessTokenProvider;
+import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
 import com.authguard.service.oauth.AuthorizationCodeVerifier;
@@ -21,14 +22,17 @@ public class AuthorizationCodeToAccessToken implements Exchange {
     private final AccountsService accountsService;
     private final AuthorizationCodeVerifier authorizationCodeVerifier;
     private final AccessTokenProvider accessTokenProvider;
+    private final ServiceMapper serviceMapper;
 
     @Inject
     public AuthorizationCodeToAccessToken(final AccountsService accountsService,
                                           final AuthorizationCodeVerifier authorizationCodeVerifier,
-                                          final AccessTokenProvider accessTokenProvider) {
+                                          final AccessTokenProvider accessTokenProvider,
+                                          final ServiceMapper serviceMapper) {
         this.accountsService = accountsService;
         this.authorizationCodeVerifier = authorizationCodeVerifier;
         this.accessTokenProvider = accessTokenProvider;
+        this.serviceMapper = serviceMapper;
     }
 
     @Override
@@ -50,8 +54,8 @@ public class AuthorizationCodeToAccessToken implements Exchange {
         } else {
             if (TokenRestrictionsBO.class.isAssignableFrom(accountToken.getAdditionalInformation().getClass())) {
                 return accountsService.getById(accountToken.getAssociatedAccountId())
-                        .map(account -> accessTokenProvider.generateToken(account,
-                                (TokenRestrictionsBO) accountToken.getAdditionalInformation()));
+                        .map(account -> accessTokenProvider
+                                .generateToken(account, serviceMapper.toBO(accountToken.getTokenRestrictions())));
             } else {
                 throw new ServiceAuthorizationException(ErrorCode.INVALID_ADDITIONAL_INFORMATION_TYPE,
                         "Found additional information of wrong type " + accountToken.getAdditionalInformation().getClass());

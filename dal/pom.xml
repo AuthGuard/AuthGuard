@@ -13,6 +13,8 @@
 
     <properties>
         <lombok.version>1.18.12</lombok.version>
+        <h2.version>1.4.200</h2.version>
+        <hibernate-orm.version>5.4.21.Final</hibernate-orm.version>
     </properties>
 
     <dependencies>
@@ -27,6 +29,27 @@
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.persistence</groupId>
+            <artifactId>javax.persistence-api</artifactId>
+            <version>${javax-persistence.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-agroal</artifactId>
+            <version>${hibernate-orm.version}</version>
+            <type>pom</type>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

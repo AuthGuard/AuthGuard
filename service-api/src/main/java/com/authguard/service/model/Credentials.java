@@ -2,13 +2,13 @@ package com.authguard.service.model;
 
 import org.immutables.value.Value;
 
-import java.util.List;
+import java.util.Set;
 
 @Value.Immutable
 @BOStyle
 public interface Credentials extends Entity {
     String getAccountId();
-    List<UserIdentifierBO> getIdentifiers();
+    Set<UserIdentifierBO> getIdentifiers();
     String getPlainPassword();
     HashedPasswordBO getHashedPassword();
 

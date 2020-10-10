@@ -14,6 +14,7 @@ import com.authguard.service.model.*;
 import com.google.inject.name.Named;
 
 import java.time.ZonedDateTime;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 public class AccessTokenProvider implements AuthProvider {
@@ -67,6 +68,7 @@ public class AccessTokenProvider implements AuthProvider {
 
     private void storeRefreshToken(final String accountId, final String refreshToken) {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
+                .id(UUID.randomUUID().toString())
                 .token(refreshToken)
                 .associatedAccountId(accountId)
                 .expiresAt(refreshTokenExpiry())
