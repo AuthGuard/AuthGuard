@@ -9,58 +9,46 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>service</artifactId>
+    <artifactId>jwt</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>com.authguard</groupId>
             <artifactId>service-api</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.authguard</groupId>
-            <artifactId>dal</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.authguard</groupId>
-            <artifactId>emb</artifactId>
-            <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>com.authguard</groupId>
             <artifactId>config</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>com.authguard</groupId>
-            <artifactId>email</artifactId>
+            <artifactId>dal</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <!--
-        The JWT module dependency is just here temporarily, it will need to move out
-         -->
-        <dependency>
-            <groupId>com.authguard</groupId>
-            <artifactId>jwt</artifactId>
-            <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
-            <groupId>com.unboundid</groupId>
-            <artifactId>unboundid-ldapsdk</artifactId>
-            <version>${unbounded-ldap.version}</version>
+            <groupId>com.auth0</groupId>
+            <artifactId>java-jwt</artifactId>
+            <version>${auth0-jwt.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>${apache-commons.version}</version>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>${bouncy-castle.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <version>${bouncy-castle.version}</version>
         </dependency>
     </dependencies>
 

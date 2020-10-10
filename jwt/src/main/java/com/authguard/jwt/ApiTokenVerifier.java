@@ -1,4 +1,4 @@
-package com.authguard.service.jwt;
+package com.authguard.jwt;
 
 import com.auth0.jwt.algorithms.Algorithm;
 import com.authguard.config.ConfigContext;

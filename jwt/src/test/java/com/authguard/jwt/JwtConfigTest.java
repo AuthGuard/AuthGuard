@@ -1,4 +1,4 @@
-package com.authguard.service.jwt;
+package com.authguard.jwt;
 
 import com.authguard.config.ConfigContext;
 import org.jeasy.random.EasyRandom;
@@ -6,8 +6,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class JwtConfigTest {

@@ -1,4 +1,4 @@
-package com.authguard.service.jwt;
+package com.authguard.jwt;
 
 import java.security.KeyFactory;
 import java.security.KeyPair;

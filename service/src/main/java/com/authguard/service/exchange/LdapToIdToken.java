@@ -1,6 +1,6 @@
 package com.authguard.service.exchange;
 
-import com.authguard.service.jwt.IdTokenProvider;
+import com.authguard.jwt.IdTokenProvider;
 import com.authguard.service.ldap.LdapExchange;
 import com.authguard.service.ldap.LdapService;
 import com.google.inject.Inject;
