@@ -1,4 +1,4 @@
-package com.authguard.service.jwt;
+package com.authguard.jwt;
 
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;

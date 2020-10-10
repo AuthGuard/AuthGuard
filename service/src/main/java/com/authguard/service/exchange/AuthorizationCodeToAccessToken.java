@@ -4,7 +4,7 @@ import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.service.AccountsService;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
-import com.authguard.service.jwt.AccessTokenProvider;
+import com.authguard.jwt.AccessTokenProvider;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;

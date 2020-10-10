@@ -1,4 +1,4 @@
-package com.authguard.service.jwt;
+package com.authguard.jwt;
 
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
@@ -6,7 +6,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import java.util.UUID;
-import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * This class is only here until a proper implementation is available

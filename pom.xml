@@ -15,6 +15,7 @@
         <module>emb</module>
         <module>external</module>
         <module>service-api</module>
+        <module>jwt</module>
         <module>service</module>
         <module>bootstrap</module>
         <module>bootstrap-steps</module>

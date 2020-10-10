@@ -2,9 +2,9 @@ package com.authguard.bindings;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.service.config.JwtConfig;
-import com.authguard.service.jwt.BasicJtiProvider;
+import com.authguard.jwt.BasicJtiProvider;
 import com.google.inject.AbstractModule;
-import com.authguard.service.jwt.JtiProvider;
+import com.authguard.jwt.JtiProvider;
 
 public class JwtBinder extends AbstractModule {
     private final JwtConfig jwtConfig;

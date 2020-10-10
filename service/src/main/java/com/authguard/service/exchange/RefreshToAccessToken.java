@@ -5,7 +5,7 @@ import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.service.AccountsService;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
-import com.authguard.service.jwt.AccessTokenProvider;
+import com.authguard.jwt.AccessTokenProvider;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
