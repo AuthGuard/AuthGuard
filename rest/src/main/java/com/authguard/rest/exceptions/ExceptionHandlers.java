@@ -57,7 +57,7 @@ public class ExceptionHandlers {
         final IdempotentRecordBO record = e.getIdempotentRecord();
 
         final Error error = new Error(ErrorCode.IDEMPOTENCY_ERROR.getCode(),
-                String.format("Idempotent key {} was already used to create entity {} of type {}", record.getIdempotentKey(),
+                String.format("Idempotent key %s was already used to create entity %s of type %s", record.getIdempotentKey(),
                         record.getEntityId(), record.getEntityType()));
 
         context.status(409).json(error);
@@ -68,6 +68,8 @@ public class ExceptionHandlers {
         final Throwable cause = e.getCause();
 
         if (cause == null) {
+            LOG.error("A CompletionException was thrown without a cause", e);
+
             context.status(500).json(new Error("UNKNOWN", "An unknown error occurred"));
         } else if (cause instanceof ServiceAuthorizationException) {
             serviceAuthorizationException((ServiceAuthorizationException) cause, context);
@@ -82,6 +84,8 @@ public class ExceptionHandlers {
         } else if (cause instanceof IdempotencyException) {
             idempotencyException((IdempotencyException) cause, context);
         } else {
+            LOG.error("An unexpected exception was thrown", cause);
+
             context.status(500).json(new Error("UNKNOWN", "An unknown error occurred"));
         }
     }
