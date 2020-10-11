@@ -10,6 +10,7 @@ public interface ApiKeysRepository {
     CompletableFuture<ApiKeyDO> save(ApiKeyDO apiKey);
     CompletableFuture<Optional<ApiKeyDO>> getById(String id);
     CompletableFuture<Collection<ApiKeyDO>> getByAppId(String id);
+    CompletableFuture<Optional<ApiKeyDO>> getByKey(String key);
     CompletableFuture<Optional<ApiKeyDO>> update(ApiKeyDO apiKey);
     CompletableFuture<Optional<ApiKeyDO>> delete(String id);
 }
