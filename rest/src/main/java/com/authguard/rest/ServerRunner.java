@@ -29,6 +29,7 @@ public class ServerRunner {
         final Injector injector = Guice.createInjector(new MappersBinder(),
                 new ConfigBinder(configContext),
                 new ExchangesBinder(configContext, searchPackages),
+                new ApiKeysExchangeBinder(configContext, searchPackages),
                 new PasswordsBinder(configContext),
                 new ServicesBinder(configContext),
                 new JwtBinder(configContext),

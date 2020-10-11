@@ -1,35 +1,33 @@
 package com.authguard.service.impl;
 
-import com.authguard.dal.model.ApiKeyDO;
-import com.authguard.service.exceptions.ServiceNotFoundException;
-import com.authguard.service.exceptions.codes.ErrorCode;
-import com.authguard.jwt.ApiTokenProvider;
-import com.authguard.jwt.ApiTokenVerifier;
-import com.authguard.service.mappers.ServiceMapper;
-import com.google.inject.Inject;
 import com.authguard.dal.ApiKeysRepository;
+import com.authguard.dal.model.ApiKeyDO;
 import com.authguard.service.ApiKeysService;
 import com.authguard.service.ApplicationsService;
+import com.authguard.service.exceptions.ServiceNotFoundException;
+import com.authguard.service.exceptions.codes.ErrorCode;
+import com.authguard.service.exchange.ApiKeyExchange;
+import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.AppBO;
 import com.authguard.service.model.TokensBO;
+import com.google.inject.Inject;
 
 import java.util.Optional;
 import java.util.UUID;
 
 public class ApiKeysServiceImpl implements ApiKeysService {
     private final ApplicationsService applicationsService;
-    private final ApiTokenProvider tokenProvider;
-    private final ApiTokenVerifier tokenVerifier;
+    private final ApiKeyExchange apiKeyExchange;
     private final ApiKeysRepository keysRepository;
     private final ServiceMapper serviceMapper;
 
     @Inject
-    public ApiKeysServiceImpl(final ApplicationsService applicationsService, final ApiTokenProvider tokenProvider,
-                              final ApiTokenVerifier tokenVerifier, final ApiKeysRepository keysRepository,
+    public ApiKeysServiceImpl(final ApplicationsService applicationsService,
+                              final ApiKeyExchange apiKeyExchange,
+                              final ApiKeysRepository keysRepository,
                               final ServiceMapper serviceMapper) {
         this.applicationsService = applicationsService;
-        this.tokenProvider = tokenProvider;
-        this.tokenVerifier = tokenVerifier;
+        this.apiKeyExchange = apiKeyExchange;
         this.keysRepository = keysRepository;
         this.serviceMapper = serviceMapper;
     }
@@ -45,7 +43,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
 
     @Override
     public String generateApiKey(final AppBO app) {
-        final TokensBO token = tokenProvider.generateToken(app);
+        final TokensBO token = apiKeyExchange.generateKey(app);
         final ApiKeyDO keyDO = serviceMapper.toDO(token, app);
 
         keyDO.setId(UUID.randomUUID().toString());
@@ -57,12 +55,9 @@ public class ApiKeysServiceImpl implements ApiKeysService {
 
     @Override
     public Optional<AppBO> validateApiKey(final String key) {
-        return tokenVerifier.verifyAccountToken(key)
-                .flatMap(applicationsService::getById);
-    }
+        return apiKeyExchange.verifyAndGetAppId(key)
+                .thenApply(optional -> optional.flatMap(applicationsService::getById))
+                .join();
 
-//    @Override
-//    public Optional<AppBO> deleteKey(final String key) {
-//        return Optional.empty();
-//    }
+    }
 }

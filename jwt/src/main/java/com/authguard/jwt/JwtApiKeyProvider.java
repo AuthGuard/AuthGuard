@@ -11,12 +11,12 @@ import com.authguard.service.model.AppBO;
 import com.authguard.service.model.TokensBO;
 
 
-public class ApiTokenProvider implements AuthProvider {
+public class JwtApiKeyProvider implements AuthProvider {
     private final Algorithm algorithm;
     private final JtiProvider jti;
 
     @Inject
-    public ApiTokenProvider(final JwtConfig jwtConfig, final JtiProvider jti) {
+    public JwtApiKeyProvider(final JwtConfig jwtConfig, final JtiProvider jti) {
         this.jti = jti;
 
         this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getPublicKey(),
