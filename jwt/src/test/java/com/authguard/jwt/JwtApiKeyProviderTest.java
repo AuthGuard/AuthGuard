@@ -16,7 +16,7 @@ import org.mockito.Mockito;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class ApiTokenProviderTest {
+class JwtApiKeyProviderTest {
     private static final String ALGORITHM = "HMAC256";
     private static final String KEY = "this secret is only for testing purposes";
 
@@ -30,12 +30,12 @@ class ApiTokenProviderTest {
     }
 
 
-    private ApiTokenProvider newProviderInstance(final JtiProvider jtiProvider) {
-        return new ApiTokenProvider(jwtConfig(), jtiProvider);
+    private JwtApiKeyProvider newProviderInstance(final JtiProvider jtiProvider) {
+        return new JwtApiKeyProvider(jwtConfig(), jtiProvider);
     }
     @Test
     void generateTokenAccount() {
-        final ApiTokenProvider tokenProvider = newProviderInstance(Mockito.mock(JtiProvider.class));
+        final JwtApiKeyProvider tokenProvider = newProviderInstance(Mockito.mock(JtiProvider.class));
         assertThatThrownBy(() -> tokenProvider.generateToken(RANDOM.nextObject(AccountBO.class)))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
@@ -43,7 +43,7 @@ class ApiTokenProviderTest {
     @Test
     void generateTokenApp() {
         final JtiProvider jtiProvider = Mockito.mock(JtiProvider.class);
-        final ApiTokenProvider tokenProvider = newProviderInstance(jtiProvider);
+        final JwtApiKeyProvider tokenProvider = newProviderInstance(jtiProvider);
 
         final String jti = "tokenId";
         final AppBO app = RANDOM.nextObject(AppBO.class);

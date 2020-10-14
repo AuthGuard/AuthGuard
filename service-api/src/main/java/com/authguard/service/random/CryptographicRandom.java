@@ -14,6 +14,10 @@ public class CryptographicRandom {
         return Base64.getEncoder().encodeToString(bytes(size));
     }
 
+    public String base64Url(final int size) {
+        return Base64.getUrlEncoder().encodeToString(bytes(size));
+    }
+
     public byte[] bytes(final int size) {
         final byte[] bytes = new byte[size];
 
