@@ -10,8 +10,8 @@ public abstract class AuthApi implements EndpointGroup {
     
     @Override
     public void addEndpoints() {
-        post("/authenticate", this::authenticate, ActorRoles.adminClient());
-        post("/exchange", this::exchange, ActorRoles.adminClient());
+        post("/authenticate", this::authenticate, ActorRoles.adminOrAuthClient());
+        post("/exchange", this::exchange, ActorRoles.adminOrAuthClient());
     }
 
     public abstract void authenticate(final Context context);

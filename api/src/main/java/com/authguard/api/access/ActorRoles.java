@@ -18,14 +18,22 @@ public class ActorRoles {
     }
 
     public static Set<Role> adminClient() {
-        return of("authguard_admin_client");
+        return of(AuthGuardRoles.ADMIN_CLIENT);
     }
 
     public static Set<Role> adminAccount() {
-        return of("authguard_admin");
+        return of(AuthGuardRoles.ADMIN_ACCOUNT);
     }
 
     public static Set<Role> anyAdmin() {
-        return of("authguard_admin", "authguard_admin_client");
+        return of(AuthGuardRoles.ADMIN_ACCOUNT, AuthGuardRoles.ADMIN_CLIENT);
+    }
+
+    public static Set<Role> anyAdminOrAuthClient() {
+        return of(AuthGuardRoles.ADMIN_ACCOUNT, AuthGuardRoles.ADMIN_CLIENT, AuthGuardRoles.AUTH_CLIENT);
+    }
+
+    public static Set<Role> adminOrAuthClient() {
+        return of(AuthGuardRoles.ADMIN_CLIENT, AuthGuardRoles.AUTH_CLIENT);
     }
 }
