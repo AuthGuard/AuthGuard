@@ -14,11 +14,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletionException;
 
-public class ServerExceptionHandlers implements ServerConfigurer {
-    private final static Logger log = LoggerFactory.getLogger(Server.class.getSimpleName());
+public class ServerExceptionHandlers implements JavalinAppConfigurer {
+    private final static Logger log = LoggerFactory.getLogger(AuthGuardServer.class.getSimpleName());
 
     @Override
-    public void configureFor(final Javalin app) {
+    public void configure(final Javalin app) {
         app.exception(Exception.class, (e, context) -> {
             log.error("An exception was thrown", e);
 

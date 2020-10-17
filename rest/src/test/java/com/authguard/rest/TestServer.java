@@ -2,7 +2,7 @@ package com.authguard.rest;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.bindings.ConfigBinder;
-import com.authguard.rest.server.Server;
+import com.authguard.rest.server.AuthGuardServer;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.javalin.Javalin;
@@ -15,7 +15,7 @@ class TestServer {
     private final Injector injector;
     private final Javalin app;
 
-    private Server server;
+    private AuthGuardServer authGuardServer;
 
     TestServer() {
         this.configContext = new ConfigurationLoader().loadFromResources();
@@ -27,11 +27,11 @@ class TestServer {
     }
 
     void start() {
-        server = new Server(injector, configContext);
+        authGuardServer = new AuthGuardServer(injector, configContext);
 
         this.port = app.port();
 
-        server.start(app, app.port());
+        authGuardServer.start(app, app.port());
     }
 
     void stop() {
