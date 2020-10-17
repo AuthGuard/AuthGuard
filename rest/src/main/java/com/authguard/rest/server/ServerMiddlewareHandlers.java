@@ -6,8 +6,8 @@ import io.javalin.Javalin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ServerMiddlewareHandlers implements ServerConfigurer {
-    private final static Logger log = LoggerFactory.getLogger(Server.class.getSimpleName());
+public class ServerMiddlewareHandlers implements JavalinAppConfigurer {
+    private final static Logger log = LoggerFactory.getLogger(AuthGuardServer.class.getSimpleName());
 
     private final Injector injector;
 
@@ -16,7 +16,7 @@ public class ServerMiddlewareHandlers implements ServerConfigurer {
     }
 
     @Override
-    public void configureFor(final Javalin app) {
+    public void configure(final Javalin app) {
         app.before(context -> context.attribute("time", System.currentTimeMillis()));
         app.before(injector.getInstance(AuthorizationHandler.class));
 

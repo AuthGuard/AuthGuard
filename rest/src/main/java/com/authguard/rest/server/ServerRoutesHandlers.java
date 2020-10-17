@@ -7,7 +7,7 @@ import io.javalin.Javalin;
 
 import static io.javalin.apibuilder.ApiBuilder.path;
 
-public class ServerRoutesHandlers implements ServerConfigurer {
+public class ServerRoutesHandlers implements JavalinAppConfigurer {
     private final Injector injector;
     private final ConfigContext config;
 
@@ -17,7 +17,7 @@ public class ServerRoutesHandlers implements ServerConfigurer {
     }
 
     @Override
-    public void configureFor(final Javalin app) {
+    public void configure(final Javalin app) {
         app.routes(() -> {
             path("/credentials", injector.getInstance(CredentialsRoute.class));
             path("/auth", injector.getInstance(AuthRoute.class));

@@ -1,6 +1,7 @@
 package com.authguard.rest;
 
 import com.authguard.config.ConfigContext;
+import com.authguard.rest.exceptions.InitializationException;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +45,12 @@ public class AuthGuardCli {
         log.debug("Loaded configuration: {}", configContext);
 
         // run the server
-        serverRunner.run(configContext);
+        try {
+            serverRunner.run(configContext);
+        } catch (final InitializationException e) {
+            System.err.println("Failed to initialize the server. Error: " + e.getMessage());
+            return 1;
+        }
 
         return 0;
     }
