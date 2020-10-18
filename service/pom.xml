@@ -43,7 +43,7 @@
         </dependency>
 
         <!--
-        The JWT module dependency is just here temporarily, it will need to move out
+        The JWT and LDAP modules dependency are just here temporarily, they will need to move out
          -->
         <dependency>
             <groupId>com.authguard</groupId>
@@ -52,9 +52,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.unboundid</groupId>
-            <artifactId>unboundid-ldapsdk</artifactId>
-            <version>${unbounded-ldap.version}</version>
+            <groupId>com.authguard</groupId>
+            <artifactId>ldap</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>

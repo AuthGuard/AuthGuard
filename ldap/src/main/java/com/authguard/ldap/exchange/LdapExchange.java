@@ -1,11 +1,12 @@
-package com.authguard.service.ldap;
+package com.authguard.ldap.exchange;
 
+import com.authguard.ldap.LdapService;
 import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.exchange.Exchange;
-import com.authguard.service.exchange.helpers.TokensUtils;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.TokensBO;
 
+import java.util.Base64;
 import java.util.Optional;
 
 public abstract class LdapExchange implements Exchange {
@@ -19,9 +20,13 @@ public abstract class LdapExchange implements Exchange {
 
     @Override
     public Optional<TokensBO> exchangeToken(final String basicToken) {
-        final String[] credentials = TokensUtils.decodeAndSplitBasic(basicToken);
+        final String[] credentials = decodeAndSplitBasic(basicToken);
         final AccountBO account = ldapService.authenticate(credentials[0], credentials[1]);
 
         return Optional.of(authProvider.generateToken(account));
+    }
+
+    public static String[] decodeAndSplitBasic(final String base64) {
+        return new String(Base64.getDecoder().decode(base64)).split(":");
     }
 }

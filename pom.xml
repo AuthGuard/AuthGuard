@@ -23,6 +23,7 @@
         <module>bindings</module>
         <module>api</module>
         <module>rest</module>
+        <module>ldap</module>
     </modules>
 
     <properties>

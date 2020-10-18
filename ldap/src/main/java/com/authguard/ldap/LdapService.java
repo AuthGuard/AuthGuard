@@ -1,4 +1,4 @@
-package com.authguard.service.ldap;
+package com.authguard.ldap;
 
 import com.authguard.service.model.AccountBO;
 
