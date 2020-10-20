@@ -1,5 +1,6 @@
-package com.authguard.service.config;
+package com.authguard.ldap.config;
 
+import com.authguard.service.config.ConfigStyle;
 import org.immutables.value.Value;
 
 import java.util.Map;
@@ -16,6 +17,7 @@ public interface LdapConfigInterface {
     String getAdminBindFormat();
     String getSearchAttribute();
     String getPasswordAttribute();
+    String getBindType();
 
     Map<String, String> getFieldMapping();
 }

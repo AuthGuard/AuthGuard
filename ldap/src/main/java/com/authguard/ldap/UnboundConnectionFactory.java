@@ -1,4 +1,4 @@
-package com.authguard.service.ldap;
+package com.authguard.ldap;
 
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPException;
@@ -7,7 +7,7 @@ import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 import java.util.Optional;
 
-public class UnboundedConnectionFactory {
+public class UnboundConnectionFactory {
     private static final int DEFAULT_PORT = 389;
     private static final int DEFAULT_SECURE_PORT = 636;
 
@@ -17,23 +17,23 @@ public class UnboundedConnectionFactory {
     private String adminPassword;
     private boolean secure;
 
-    public UnboundedConnectionFactory(final String host, final Integer port) {
+    public UnboundConnectionFactory(final String host, final Integer port) {
         this.host = host;
         this.port = port;
     }
 
-    public UnboundedConnectionFactory(final String host) {
+    public UnboundConnectionFactory(final String host) {
         this.host = host;
     }
 
-    public UnboundedConnectionFactory withAdmin(final String admin, final String adminPassword) {
+    public UnboundConnectionFactory withAdmin(final String admin, final String adminPassword) {
         this.admin = admin;
         this.adminPassword = adminPassword;
 
         return this;
     }
 
-    public UnboundedConnectionFactory useSecureConnection(final boolean secure) {
+    public UnboundConnectionFactory useSecureConnection(final boolean secure) {
         this.secure = secure;
         return this;
     }

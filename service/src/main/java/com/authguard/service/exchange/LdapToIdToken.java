@@ -1,8 +1,8 @@
 package com.authguard.service.exchange;
 
 import com.authguard.jwt.IdTokenProvider;
-import com.authguard.service.ldap.LdapExchange;
-import com.authguard.service.ldap.LdapService;
+import com.authguard.ldap.exchange.LdapExchange;
+import com.authguard.ldap.LdapService;
 import com.google.inject.Inject;
 
 @TokenExchange(from = "ldap", to = "idToken")

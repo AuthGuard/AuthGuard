@@ -1,25 +1,24 @@
-package com.authguard.service.ldap;
+package com.authguard.ldap;
 
-import com.authguard.service.config.LdapConfig;
+import com.authguard.ldap.config.LdapConfig;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.model.AccountBO;
-import com.authguard.service.model.HashedPasswordBO;
-import com.authguard.service.passwords.SecurePassword;
 import com.unboundid.ldap.listener.InMemoryDirectoryServer;
 import com.unboundid.ldap.listener.InMemoryDirectoryServerConfig;
 import com.unboundid.ldap.sdk.LDAPException;
-import org.junit.jupiter.api.*;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class UnboundedLdapServiceTest {
+class UnboundLdapServiceTest {
 
     private InMemoryDirectoryServer ldapServer;
-    private UnboundedLdapService ldapService;
-    private SecurePassword securePassword;
+    private UnboundLdapService ldapService;
 
     @BeforeAll
     void setup() throws LDAPException {
@@ -32,11 +31,8 @@ class UnboundedLdapServiceTest {
         ldapServer.importFromLDIF(true, this.getClass().getClassLoader().getResource("ldap-config.ldif").getFile());
         ldapServer.startListening();
 
-        // mocks
-        securePassword = Mockito.mock(SecurePassword.class);
-
         // set up the service
-        ldapService = new UnboundedLdapService(LdapConfig.builder()
+        ldapService = new UnboundLdapService(LdapConfig.builder()
                 .adminBindFormat("cn=%s")
                 .baseDN("ou=people,dc=example,dc=com")
                 .searchAttribute("uid")
@@ -46,7 +42,8 @@ class UnboundedLdapServiceTest {
                 .isSecure(false)
                 .admin("Directory Manager")
                 .adminPassword("password")
-                .build(), securePassword);
+                .bindType("simple")
+                .build());
     }
 
     @AfterAll
@@ -54,16 +51,8 @@ class UnboundedLdapServiceTest {
         ldapServer.close();
     }
 
-    @BeforeEach
-    void reset() {
-        Mockito.reset(securePassword);
-    }
-
     @Test
     void authenticate() {
-        Mockito.when(securePassword.verify("bobspassword", HashedPasswordBO.builder().password("bobspassword").build()))
-                .thenReturn(true);
-
         final AccountBO user = ldapService.authenticate("bob", "bobspassword");
 
         assertThat(user).isNotNull();
