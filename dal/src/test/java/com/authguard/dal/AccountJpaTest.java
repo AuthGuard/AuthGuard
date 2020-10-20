@@ -53,7 +53,6 @@ class AccountJpaTest {
                 .permissions(Collections.singleton(PermissionDO.builder()
                         .id("read-posts-permission")
                         .build()))
-                .scopes(Collections.singleton("test-scope"))
                 .emails(new HashSet<>(Arrays.asList(
                         EmailDO.builder()
                                 .email("get_by_id@emails.com")

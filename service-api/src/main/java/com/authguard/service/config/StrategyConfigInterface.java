@@ -12,6 +12,5 @@ public interface StrategyConfigInterface {
     boolean useJti();
     boolean includePermissions();
     boolean includeRoles();
-    boolean includeScopes();
     boolean includeExternalId();
 }

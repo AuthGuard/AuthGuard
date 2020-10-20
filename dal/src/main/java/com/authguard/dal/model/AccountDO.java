@@ -34,10 +34,6 @@ public class AccountDO extends AbstractDO {
     @JoinTable(name = "account_permissions")
     private Set<PermissionDO> permissions;
 
-    @ElementCollection(fetch = FetchType.EAGER) // temporary
-    @JoinTable(name = "account_scopes")
-    private Set<String> scopes;
-
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL) // temporary
     @JoinTable(name = "account_emails")
     private Set<EmailDO> emails;

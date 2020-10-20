@@ -42,8 +42,7 @@ public interface AccountsService {
     /**
      * Get all permissions of an account. Implementations of
      * this method should aggregate permissions granted to the
-     * account directly and permissions granted by roles and
-     * scopes.
+     * account directly and permissions granted by roles.
      * @throws ServiceNotFoundException
      *         if no account was found.
      */

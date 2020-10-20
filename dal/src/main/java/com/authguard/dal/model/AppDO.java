@@ -34,8 +34,5 @@ public class AppDO extends AbstractDO {
     @ManyToMany(fetch = FetchType.EAGER)
     private Set<PermissionDO> permissions;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    private Set<String> scopes;
-
     private boolean active;
 }

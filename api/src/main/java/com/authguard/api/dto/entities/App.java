@@ -17,7 +17,6 @@ public interface App {
     String getName();
     String getAccountId();
     List<PermissionDTO> getPermissions();
-    List<String> getScopes();
     List<String> getRoles();
     boolean isActive();
     boolean isDeleted();

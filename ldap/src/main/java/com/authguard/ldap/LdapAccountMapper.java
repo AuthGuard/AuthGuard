@@ -55,10 +55,6 @@ public class LdapAccountMapper {
                         );
                         break;
 
-                    case "scopes":
-                        builder.scopes(ImmutableList.copyOf(value));
-                        break;
-
                     case "emails":
                         builder.emails(
                                 Stream.of(value).
