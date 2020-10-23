@@ -16,7 +16,6 @@ class StrategyConfigTest {
                 .put("useJti", true)
                 .put("includePermissions", true)
                 .put("includeRoles", true)
-                .put("includeScopes", true)
                 .put("includeExternalId", true);
 
         final StrategyConfig expected = StrategyConfig.builder()
@@ -26,7 +25,6 @@ class StrategyConfigTest {
                 .includeExternalId(true)
                 .includePermissions(true)
                 .includeRoles(true)
-                .includeScopes(true)
                 .build();
 
         final ObjectMapper mapper = new ObjectMapper();

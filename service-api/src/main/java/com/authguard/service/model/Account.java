@@ -2,7 +2,6 @@ package com.authguard.service.model;
 
 import org.immutables.value.Value;
 
-import java.util.List;
 import java.util.Set;
 
 @Value.Immutable
@@ -10,7 +9,6 @@ import java.util.Set;
 public interface Account extends Entity {
     String getExternalId();
     Set<PermissionBO> getPermissions();
-    Set<String> getScopes();
     Set<String> getRoles();
     Set<AccountEmailBO> getEmails();
     boolean isActive();

@@ -101,7 +101,7 @@ class AccessTokenProviderTest {
         assertThat(accountTokenCaptor.getValue().getExpiresAt()).isNotNull()
                 .isAfter(ZonedDateTime.now());
 
-        verifyToken(tokens.getToken().toString(), account.getId(), null, null, null);
+        verifyToken(tokens.getToken().toString(), account.getId(), null, null);
     }
 
     @Test
@@ -114,17 +114,13 @@ class AccessTokenProviderTest {
                 .withPermissions(Arrays.asList(
                         PermissionBO.builder().group("super").name("permission-1").build(),
                         PermissionBO.builder().group("super").name("permission-2").build())
-                )
-                .withScopes(Arrays.asList("scope-1", "scope-2"));
+                );
 
         final TokenRestrictionsBO restrictions = TokenRestrictionsBO.builder()
                 .addPermissions("super.permission-1")
-                .addScopes("scope-2")
                 .build();
 
         final TokensBO tokens = accessTokenProvider.generateToken(account, restrictions);
-
-        System.out.println(tokens);
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
@@ -140,8 +136,7 @@ class AccessTokenProviderTest {
         assertThat(accountTokenCaptor.getValue().getExpiresAt()).isNotNull()
                 .isAfter(ZonedDateTime.now());
 
-        verifyToken(tokens.getToken().toString(), account.getId(), null,
-                Collections.singletonList("permission-1"), Collections.singletonList("scope-2"));
+        verifyToken(tokens.getToken().toString(), account.getId(), null, Collections.singletonList("permission-1"));
     }
 
     @Test
@@ -162,11 +157,10 @@ class AccessTokenProviderTest {
         assertThat(tokens.getRefreshToken()).isNotNull();
         assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
 
-        verifyToken(tokens.getToken().toString(), account.getId(), jti, null, null);
+        verifyToken(tokens.getToken().toString(), account.getId(), jti, null);
     }
 
-    private void verifyToken(final String token, final String subject, final String jti,
-                             final List<String> permissions, final List<String> scopes) {
+    private void verifyToken(final String token, final String subject, final String jti, final List<String> permissions) {
         final Verification verifier = JWT.require(Algorithm.HMAC256(KEY))
                 .withIssuer(ISSUER)
                 .withSubject(subject);
@@ -179,10 +173,6 @@ class AccessTokenProviderTest {
 
         if (permissions != null) {
             assertThat(decodedJWT.getClaim("permissions").asArray(String.class)).hasSameSizeAs(permissions);
-        }
-
-        if (scopes != null) {
-            assertThat(decodedJWT.getClaim("scopes").asArray(String.class)).containsExactlyInAnyOrder(scopes.toArray(new String[0]));
         }
     }
 }

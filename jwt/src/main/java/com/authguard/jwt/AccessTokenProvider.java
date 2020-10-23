@@ -5,12 +5,12 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
+import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.config.ConfigParser;
 import com.authguard.service.config.JwtConfig;
 import com.authguard.service.config.StrategyConfig;
-import com.google.inject.Inject;
-import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.model.*;
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 import java.time.ZonedDateTime;
@@ -93,10 +93,6 @@ public class AccessTokenProvider implements AuthProvider {
             jwtBuilder.withArrayClaim("permissions", jwtPermissions(account, restrictions));
         }
 
-        if (strategy.includeScopes()) {
-            jwtBuilder.withArrayClaim("scopes", jwtScopes(account, restrictions));
-        }
-
         if (strategy.includeExternalId()) {
             jwtBuilder.withClaim("eid", account.getExternalId());
         }
@@ -122,15 +118,5 @@ public class AccessTokenProvider implements AuthProvider {
         }
 
         return mappedPermissions.toArray(String[]::new);
-    }
-
-    private String[] jwtScopes(final AccountBO account, final TokenRestrictionsBO restrictions) {
-        if (restrictions == null || restrictions.getScopes().isEmpty()) {
-            return account.getScopes().toArray(new String[0]);
-        }
-
-        return account.getScopes().stream()
-                .filter(restrictions.getScopes()::contains)
-                .toArray(String[]::new);
     }
 }

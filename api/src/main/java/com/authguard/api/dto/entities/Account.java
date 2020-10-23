@@ -15,7 +15,6 @@ public interface Account {
     String getId();
     String getExternalId();
     List<PermissionDTO> getPermissions();
-    List<String> getScopes();
     List<String> getRoles();
     List<AccountEmailDTO> getEmails();
     boolean isActive();
