@@ -1,7 +1,8 @@
-package com.authguard.service.exchange;
+package com.authguard.ldap.exchange;
 
-import com.authguard.ldap.exchange.LdapExchange;
 import com.authguard.ldap.LdapService;
+import com.authguard.service.exchange.Exchange;
+import com.authguard.service.exchange.TokenExchange;
 import com.authguard.sessions.SessionProvider;
 import com.google.inject.Inject;
 
