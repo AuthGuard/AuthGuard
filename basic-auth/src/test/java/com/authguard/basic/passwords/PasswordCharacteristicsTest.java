@@ -1,4 +1,4 @@
-package com.authguard.service.passwords;
+package com.authguard.basic.passwords;
 
 import org.junit.jupiter.api.Test;
 

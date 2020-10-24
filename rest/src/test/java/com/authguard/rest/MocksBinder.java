@@ -1,8 +1,8 @@
 package com.authguard.rest;
 
+import com.authguard.basic.BasicAuthProvider;
 import com.authguard.emb.AutoSubscribers;
 import com.authguard.service.*;
-import com.authguard.service.basic.BasicAuthProvider;
 import com.google.inject.AbstractModule;
 import org.mockito.Mockito;
 

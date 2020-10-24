@@ -1,4 +1,4 @@
-package com.authguard.service.passwords;
+package com.authguard.basic.passwords;
 
 public class PasswordCharacteristics {
     private boolean containsDigits = false;

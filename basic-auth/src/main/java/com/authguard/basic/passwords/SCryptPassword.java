@@ -1,4 +1,4 @@
-package com.authguard.service.passwords;
+package com.authguard.basic.passwords;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.service.config.PasswordsConfig;

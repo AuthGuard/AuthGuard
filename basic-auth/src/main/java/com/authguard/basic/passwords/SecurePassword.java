@@ -1,4 +1,4 @@
-package com.authguard.service.passwords;
+package com.authguard.basic.passwords;
 
 import com.authguard.service.model.HashedPasswordBO;
 

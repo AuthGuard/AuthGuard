@@ -1,6 +1,6 @@
 package com.authguard.service.exchange;
 
-import com.authguard.service.basic.BasicAuthProvider;
+import com.authguard.basic.BasicAuthProvider;
 import com.authguard.service.model.TokensBO;
 import com.authguard.service.otp.OtpProvider;
 import com.google.inject.Inject;

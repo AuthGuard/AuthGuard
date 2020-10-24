@@ -47,6 +47,12 @@
          -->
         <dependency>
             <groupId>com.authguard</groupId>
+            <artifactId>basic-auth</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.authguard</groupId>
             <artifactId>jwt</artifactId>
             <version>${project.version}</version>
         </dependency>

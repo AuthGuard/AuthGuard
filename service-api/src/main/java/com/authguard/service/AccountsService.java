@@ -1,7 +1,6 @@
 package com.authguard.service;
 
 import com.authguard.service.exceptions.ServiceNotFoundException;
-import com.authguard.service.impl.AccountsServiceImpl;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AccountEmailBO;
 import com.authguard.service.model.PermissionBO;
@@ -12,8 +11,6 @@ import java.util.Optional;
 
 /**
  * AccountDO service interface.
- *
- * @see AccountsServiceImpl
  */
 public interface AccountsService {
     /**

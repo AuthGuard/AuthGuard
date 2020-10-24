@@ -1,8 +1,7 @@
-package com.authguard.service.passwords;
+package com.authguard.basic.passwords;
 
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.codes.ErrorCode;
-import com.authguard.service.passwords.Violation;
 
 import java.util.List;
 import java.util.stream.Collectors;

@@ -1,11 +1,12 @@
-package com.authguard.service.basic;
+package com.authguard.basic;
 
 
-import com.authguard.service.*;
+import com.authguard.basic.passwords.SecurePassword;
+import com.authguard.service.AccountsService;
+import com.authguard.service.CredentialsService;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.model.*;
-import com.authguard.service.passwords.SecurePassword;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.AfterEach;

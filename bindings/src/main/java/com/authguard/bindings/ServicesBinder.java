@@ -3,8 +3,8 @@ package com.authguard.bindings;
 import com.authguard.config.ConfigContext;
 import com.authguard.service.*;
 import com.authguard.service.impl.*;
-import com.authguard.service.passwords.SCryptPassword;
-import com.authguard.service.passwords.SecurePassword;
+import com.authguard.basic.passwords.SCryptPassword;
+import com.authguard.basic.passwords.SecurePassword;
 import com.google.inject.AbstractModule;
 
 public class ServicesBinder extends AbstractModule {

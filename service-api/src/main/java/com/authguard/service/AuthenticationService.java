@@ -1,15 +1,12 @@
 package com.authguard.service;
 
 import com.authguard.service.exceptions.ServiceAuthorizationException;
-import com.authguard.service.impl.AuthenticationServiceImpl;
 import com.authguard.service.model.TokensBO;
 
 import java.util.Optional;
 
 /**
  * Authentication service interface.
- *
- * @see AuthenticationServiceImpl
  */
 public interface AuthenticationService {
     /**

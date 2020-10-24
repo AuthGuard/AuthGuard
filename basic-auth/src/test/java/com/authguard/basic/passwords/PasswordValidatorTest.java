@@ -1,4 +1,4 @@
-package com.authguard.service.passwords;
+package com.authguard.basic.passwords;
 
 import com.authguard.service.config.PasswordConditions;
 import com.authguard.service.config.PasswordsConfig;
@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 class PasswordValidatorTest {
 

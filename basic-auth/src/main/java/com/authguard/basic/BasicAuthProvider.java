@@ -1,10 +1,9 @@
-package com.authguard.service.basic;
+package com.authguard.basic;
 
 import com.authguard.service.AccountsService;
 import com.authguard.service.CredentialsService;
 import com.authguard.service.exceptions.codes.ErrorCode;
-import com.authguard.service.exchange.helpers.TokensUtils;
-import com.authguard.service.passwords.SecurePassword;
+import com.authguard.basic.passwords.SecurePassword;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.model.AccountBO;

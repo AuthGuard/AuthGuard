@@ -1,6 +1,5 @@
 package com.authguard.service;
 
-import com.authguard.service.impl.PermissionsServiceImpl;
 import com.authguard.service.model.PermissionBO;
 
 import java.util.Collection;
@@ -9,8 +8,6 @@ import java.util.Optional;
 
 /**
  * Permissions service interface.
- *
- * @see PermissionsServiceImpl
  */
 public interface PermissionsService {
     /**

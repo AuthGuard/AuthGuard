@@ -1,4 +1,4 @@
-package com.authguard.service.exchange.helpers;
+package com.authguard.basic;
 
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.codes.ErrorCode;

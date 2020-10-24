@@ -1,6 +1,5 @@
 package com.authguard.service;
 
-import com.authguard.service.impl.CredentialsServiceImpl;
 import com.authguard.service.model.CredentialsBO;
 import com.authguard.service.model.RequestContextBO;
 import com.authguard.service.model.UserIdentifierBO;
@@ -10,8 +9,6 @@ import java.util.Optional;
 
 /**
  * CredentialsDO service interface.
- *
- * @see CredentialsServiceImpl
  */
 public interface CredentialsService {
     /**

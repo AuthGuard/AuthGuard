@@ -1,18 +1,17 @@
-package com.authguard.service.passwords;
+package com.authguard.basic.passwords;
 
-import com.authguard.service.passwords.SCryptPassword;
 import org.apache.commons.lang3.RandomStringUtils;
 import com.authguard.service.model.HashedPasswordBO;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class SCryptPasswordTest {
+class BCryptPasswordTest {
     @Test
     void hash() {
-        final SCryptPassword scrypt = new SCryptPassword();
+        final BCryptPassword bcrypt = new BCryptPassword();
         final String password = RandomStringUtils.randomAlphanumeric(12);
-        final HashedPasswordBO hashedPassword = scrypt.hash(password);
+        final HashedPasswordBO hashedPassword = bcrypt.hash(password);
 
         assertThat(hashedPassword).isNotNull();
         assertThat(hashedPassword.getPassword()).isNotEqualTo(password);
@@ -21,7 +20,7 @@ class SCryptPasswordTest {
 
     @Test
     void verify() {
-        final SCryptPassword scrypt = new SCryptPassword();
+        final BCryptPassword scrypt = new BCryptPassword();
         final String password = RandomStringUtils.randomAlphanumeric(12);
         final HashedPasswordBO hashedPassword = scrypt.hash(password);
 
@@ -30,7 +29,7 @@ class SCryptPasswordTest {
 
     @Test
     void verifyMismatch() {
-        final SCryptPassword scrypt = new SCryptPassword();
+        final BCryptPassword scrypt = new BCryptPassword();
         final String password = RandomStringUtils.randomAlphanumeric(12);
         final HashedPasswordBO hashedPassword = scrypt.hash(password);
 

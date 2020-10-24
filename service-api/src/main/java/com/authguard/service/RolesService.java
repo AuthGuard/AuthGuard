@@ -1,7 +1,6 @@
 package com.authguard.service;
 
 import com.authguard.service.exceptions.ServiceNotFoundException;
-import com.authguard.service.impl.RolesServiceImpl;
 import com.authguard.service.model.PermissionBO;
 import com.authguard.service.model.RoleBO;
 
@@ -10,8 +9,6 @@ import java.util.Optional;
 
 /**
  * Roles service interface.
- *
- * @see RolesServiceImpl
  */
 public interface RolesService {
     /**
