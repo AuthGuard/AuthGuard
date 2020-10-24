@@ -1,7 +1,9 @@
-package com.authguard.service.exchange;
+package com.authguard.jwt.exchange;
 
 import com.authguard.service.AccountsService;
 import com.authguard.jwt.AccessTokenProvider;
+import com.authguard.service.exchange.Exchange;
+import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.model.TokensBO;
 import com.authguard.basic.passwordless.PasswordlessVerifier;
 import com.google.inject.Inject;

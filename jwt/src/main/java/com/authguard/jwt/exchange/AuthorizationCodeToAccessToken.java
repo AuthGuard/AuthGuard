@@ -1,14 +1,16 @@
-package com.authguard.service.exchange;
+package com.authguard.jwt.exchange;
 
 import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.service.AccountsService;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.jwt.AccessTokenProvider;
+import com.authguard.service.exchange.Exchange;
+import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
-import com.authguard.service.oauth.AuthorizationCodeVerifier;
+import com.authguard.jwt.oauth.AuthorizationCodeVerifier;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

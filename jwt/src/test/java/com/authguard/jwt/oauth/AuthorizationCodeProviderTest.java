@@ -1,9 +1,10 @@
-package com.authguard.service.oauth;
+package com.authguard.jwt.oauth;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.config.JacksonConfigContext;
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
+import com.authguard.jwt.oauth.AuthorizationCodeProvider;
 import com.authguard.service.mappers.ServiceMapperImpl;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.TokensBO;

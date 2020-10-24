@@ -1,7 +1,8 @@
-package com.authguard.service.oauth;
+package com.authguard.jwt.oauth;
 
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
+import com.authguard.jwt.oauth.AuthorizationCodeVerifier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
