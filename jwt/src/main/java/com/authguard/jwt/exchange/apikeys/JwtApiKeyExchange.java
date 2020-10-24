@@ -1,4 +1,4 @@
-package com.authguard.service.exchange.apps;
+package com.authguard.jwt.exchange.apikeys;
 
 import com.authguard.jwt.ApiTokenVerifier;
 import com.authguard.jwt.JwtApiKeyProvider;
