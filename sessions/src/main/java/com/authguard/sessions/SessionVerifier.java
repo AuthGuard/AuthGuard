@@ -1,4 +1,4 @@
-package com.authguard.service.sessions;
+package com.authguard.sessions;
 
 import com.authguard.dal.SessionsRepository;
 import com.authguard.service.auth.AuthTokenVerfier;

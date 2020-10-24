@@ -1,9 +1,10 @@
-package com.authguard.service.sessions;
+package com.authguard.sessions;
 
 import com.authguard.dal.SessionsRepository;
 import com.authguard.dal.model.SessionDO;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.mappers.ServiceMapperImpl;
+import com.authguard.sessions.SessionVerifier;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 

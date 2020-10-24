@@ -2,7 +2,7 @@ package com.authguard.service.exchange;
 
 import com.authguard.ldap.exchange.LdapExchange;
 import com.authguard.ldap.LdapService;
-import com.authguard.service.sessions.SessionProvider;
+import com.authguard.sessions.SessionProvider;
 import com.google.inject.Inject;
 
 @TokenExchange(from = "ldap", to = "session")

@@ -1,4 +1,4 @@
-package com.authguard.service.sessions;
+package com.authguard.sessions;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.config.JacksonConfigContext;
@@ -7,6 +7,7 @@ import com.authguard.dal.model.SessionDO;
 import com.authguard.service.mappers.ServiceMapperImpl;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.TokensBO;
+import com.authguard.sessions.SessionProvider;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
