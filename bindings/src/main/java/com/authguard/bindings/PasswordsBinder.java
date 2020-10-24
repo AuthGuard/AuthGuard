@@ -1,9 +1,9 @@
 package com.authguard.bindings;
 
 import com.authguard.config.ConfigContext;
-import com.authguard.service.passwords.BCryptPassword;
-import com.authguard.service.passwords.SCryptPassword;
-import com.authguard.service.passwords.SecurePassword;
+import com.authguard.basic.passwords.BCryptPassword;
+import com.authguard.basic.passwords.SCryptPassword;
+import com.authguard.basic.passwords.SecurePassword;
 import com.google.inject.AbstractModule;
 
 public class PasswordsBinder extends AbstractModule {

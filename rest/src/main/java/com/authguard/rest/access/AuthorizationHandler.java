@@ -1,14 +1,14 @@
 package com.authguard.rest.access;
 
+import com.authguard.basic.BasicAuthProvider;
 import com.authguard.service.ApiKeysService;
+import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.codes.ErrorCode;
-import com.authguard.service.basic.BasicAuthProvider;
+import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AppBO;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import com.authguard.service.exceptions.ServiceException;
-import com.authguard.service.model.AccountBO;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

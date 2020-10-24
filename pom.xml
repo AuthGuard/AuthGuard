@@ -15,7 +15,10 @@
         <module>emb</module>
         <module>external</module>
         <module>service-api</module>
+        <module>basic-auth</module>
         <module>jwt</module>
+        <module>ldap</module>
+        <module>sessions</module>
         <module>service</module>
         <module>bootstrap</module>
         <module>bootstrap-steps</module>
@@ -23,7 +26,6 @@
         <module>bindings</module>
         <module>api</module>
         <module>rest</module>
-        <module>ldap</module>
     </modules>
 
     <properties>

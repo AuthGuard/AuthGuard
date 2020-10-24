@@ -10,14 +10,14 @@ import com.authguard.service.CredentialsService;
 import com.authguard.service.IdempotencyService;
 import com.authguard.service.exceptions.ServiceConflictException;
 import com.authguard.service.exceptions.ServiceException;
-import com.authguard.service.passwords.ServiceInvalidPasswordException;
+import com.authguard.basic.passwords.ServiceInvalidPasswordException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.*;
-import com.authguard.service.passwords.PasswordValidator;
-import com.authguard.service.passwords.SecurePassword;
-import com.authguard.service.passwords.Violation;
+import com.authguard.basic.passwords.PasswordValidator;
+import com.authguard.basic.passwords.SecurePassword;
+import com.authguard.basic.passwords.Violation;
 import com.google.inject.Inject;
 
 import java.util.*;
