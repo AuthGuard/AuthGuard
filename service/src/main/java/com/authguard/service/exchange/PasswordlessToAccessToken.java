@@ -3,7 +3,7 @@ package com.authguard.service.exchange;
 import com.authguard.service.AccountsService;
 import com.authguard.jwt.AccessTokenProvider;
 import com.authguard.service.model.TokensBO;
-import com.authguard.service.passwordless.PasswordlessVerifier;
+import com.authguard.basic.passwordless.PasswordlessVerifier;
 import com.google.inject.Inject;
 
 import java.util.Optional;

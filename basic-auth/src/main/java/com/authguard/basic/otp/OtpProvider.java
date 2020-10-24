@@ -1,4 +1,4 @@
-package com.authguard.service.otp;
+package com.authguard.basic.otp;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.OtpRepository;

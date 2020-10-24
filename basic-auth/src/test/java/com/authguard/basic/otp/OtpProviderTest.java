@@ -1,5 +1,6 @@
-package com.authguard.service.otp;
+package com.authguard.basic.otp;
 
+import com.authguard.basic.otp.OtpProvider;
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.OtpRepository;
 import com.authguard.dal.model.OneTimePasswordDO;

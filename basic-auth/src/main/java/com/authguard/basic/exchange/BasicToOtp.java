@@ -1,8 +1,10 @@
-package com.authguard.service.exchange;
+package com.authguard.basic.exchange;
 
 import com.authguard.basic.BasicAuthProvider;
+import com.authguard.service.exchange.Exchange;
+import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.model.TokensBO;
-import com.authguard.service.otp.OtpProvider;
+import com.authguard.basic.otp.OtpProvider;
 import com.google.inject.Inject;
 
 import java.util.Optional;

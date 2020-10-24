@@ -2,7 +2,7 @@ package com.authguard.service.exchange;
 
 import com.authguard.service.AccountsService;
 import com.authguard.service.model.TokensBO;
-import com.authguard.service.otp.OtpVerifier;
+import com.authguard.basic.otp.OtpVerifier;
 import com.authguard.service.sessions.SessionProvider;
 import com.google.inject.Inject;
 

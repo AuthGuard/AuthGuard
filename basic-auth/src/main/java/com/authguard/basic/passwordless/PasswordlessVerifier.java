@@ -1,4 +1,4 @@
-package com.authguard.service.passwordless;
+package com.authguard.basic.passwordless;
 
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;

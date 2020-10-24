@@ -2,7 +2,7 @@ package com.authguard.service.exchange;
 
 import com.authguard.ldap.exchange.LdapExchange;
 import com.authguard.ldap.LdapService;
-import com.authguard.service.passwordless.PasswordlessProvider;
+import com.authguard.basic.passwordless.PasswordlessProvider;
 import com.google.inject.Inject;
 
 @TokenExchange(from = "ldap", to = "passwordless")
