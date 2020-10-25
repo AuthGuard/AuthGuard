@@ -6,7 +6,12 @@ import io.javalin.http.Context;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
 
-public abstract class AccountsApi implements EndpointGroup {
+public abstract class AccountsApi implements ApiRoute {
+
+    @Override
+    public String getPath() {
+        return "accounts";
+    }
 
     public void addEndpoints() {
         post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin"));

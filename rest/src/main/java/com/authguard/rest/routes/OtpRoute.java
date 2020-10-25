@@ -1,5 +1,6 @@
 package com.authguard.rest.routes;
 
+import com.authguard.api.annotations.DependsOnConfiguration;
 import com.authguard.api.dto.entities.TokensDTO;
 import com.authguard.api.dto.requests.OtpRequestDTO;
 import com.authguard.api.routes.OtpApi;
@@ -9,6 +10,7 @@ import com.authguard.service.OtpService;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
 
+@DependsOnConfiguration("otp")
 public class OtpRoute extends OtpApi {
     private final OtpService otpService;
     private final RestMapper restMapper;

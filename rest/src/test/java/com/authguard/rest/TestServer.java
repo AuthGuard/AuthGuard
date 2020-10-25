@@ -1,12 +1,15 @@
 package com.authguard.rest;
 
-import com.authguard.config.ConfigContext;
+import com.authguard.bindings.ApiRoutesBinder;
 import com.authguard.bindings.ConfigBinder;
+import com.authguard.config.ConfigContext;
+import com.authguard.rest.bindings.MappersBinder;
 import com.authguard.rest.server.AuthGuardServer;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.javalin.Javalin;
-import com.authguard.rest.bindings.MappersBinder;
+
+import java.util.Collections;
 
 class TestServer {
     private int port;
@@ -20,14 +23,18 @@ class TestServer {
     TestServer() {
         this.configContext = new ConfigurationLoader().loadFromResources();
 
-        injector = Guice.createInjector(new MocksBinder(), new MappersBinder(), new ConfigBinder(configContext));
+        injector = Guice.createInjector(
+                new MocksBinder(),
+                new MappersBinder(),
+                new ConfigBinder(configContext),
+                new ApiRoutesBinder(Collections.singleton("com.authguard"), configContext));
         app = Javalin.create(javalinConfig -> {
             javalinConfig.accessManager(new TestAccessManager());
         });
     }
 
     void start() {
-        authGuardServer = new AuthGuardServer(injector, configContext);
+        authGuardServer = new AuthGuardServer(injector);
 
         this.port = app.port();
 

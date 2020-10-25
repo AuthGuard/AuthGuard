@@ -6,7 +6,12 @@ import io.javalin.http.Context;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
 
-public abstract class CredentialsApi implements EndpointGroup {
+public abstract class CredentialsApi implements ApiRoute {
+
+    @Override
+    public String getPath() {
+        return "credentials";
+    }
 
     @Override
     public void addEndpoints() {

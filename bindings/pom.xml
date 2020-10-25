@@ -26,6 +26,12 @@
 
         <dependency>
             <groupId>com.authguard</groupId>
+            <artifactId>api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.authguard</groupId>
             <artifactId>config</artifactId>
             <version>${project.version}</version>
         </dependency>

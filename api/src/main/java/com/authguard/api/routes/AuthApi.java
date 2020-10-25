@@ -6,8 +6,13 @@ import io.javalin.http.Context;
 
 import static io.javalin.apibuilder.ApiBuilder.post;
 
-public abstract class AuthApi implements EndpointGroup {
-    
+public abstract class AuthApi implements ApiRoute {
+
+    @Override
+    public String getPath() {
+        return "auth";
+    }
+
     @Override
     public void addEndpoints() {
         post("/authenticate", this::authenticate, ActorRoles.adminOrAuthClient());

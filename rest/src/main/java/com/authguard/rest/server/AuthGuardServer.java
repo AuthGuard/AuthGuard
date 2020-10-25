@@ -1,6 +1,5 @@
 package com.authguard.rest.server;
 
-import com.authguard.config.ConfigContext;
 import com.authguard.emb.AutoSubscribers;
 import com.google.inject.Injector;
 import io.javalin.Javalin;
@@ -11,11 +10,9 @@ public class AuthGuardServer {
     private final static Logger LOG = LoggerFactory.getLogger(AuthGuardServer.class);
 
     private final Injector injector;
-    private final ConfigContext configContext;
 
-    public AuthGuardServer(final Injector injector, final ConfigContext configContext) {
+    public AuthGuardServer(final Injector injector) {
         this.injector = injector;
-        this.configContext = configContext;
     }
 
     public void start(final Javalin app) {
@@ -35,7 +32,7 @@ public class AuthGuardServer {
 
         final ServerMiddlewareHandlers middleware = new ServerMiddlewareHandlers(injector);
         final ServerExceptionHandlers exceptions = new ServerExceptionHandlers();
-        final ServerRoutesHandlers routes = new ServerRoutesHandlers(injector, configContext);
+        final ServerRoutesHandlers routes = new ServerRoutesHandlers(injector);
 
         middleware.configure(app);
 

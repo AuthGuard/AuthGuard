@@ -6,7 +6,12 @@ import io.javalin.http.Context;
 
 import static io.javalin.apibuilder.ApiBuilder.post;
 
-public abstract class ApiKeysApi implements EndpointGroup {
+public abstract class ApiKeysApi implements ApiRoute {
+
+    @Override
+    public String getPath() {
+        return "keys";
+    }
 
     @Override
     public void addEndpoints() {

@@ -1,12 +1,16 @@
 package com.authguard.api.routes;
 
 import com.authguard.api.access.ActorRoles;
-import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 
 import static io.javalin.apibuilder.ApiBuilder.post;
 
-public abstract class OtpApi implements EndpointGroup {
+public abstract class OtpApi implements ApiRoute {
+
+    @Override
+    public String getPath() {
+        return "otp";
+    }
 
     @Override
     public void addEndpoints() {
