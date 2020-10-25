@@ -1,5 +1,6 @@
 package com.authguard.rest.routes;
 
+import com.authguard.api.annotations.DependsOnConfiguration;
 import com.authguard.api.dto.requests.PasswordlessRequestDTO;
 import com.authguard.api.routes.PasswordlessApi;
 import com.authguard.rest.util.BodyHandler;
@@ -8,6 +9,7 @@ import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
 
+@DependsOnConfiguration("passwordless")
 public class PasswordlessRoute extends PasswordlessApi {
     private final PasswordlessService passwordlessService;
     private final BodyHandler<PasswordlessRequestDTO> passwordlessRequestBodyHandler;

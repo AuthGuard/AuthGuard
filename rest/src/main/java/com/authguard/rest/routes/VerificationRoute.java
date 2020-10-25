@@ -1,10 +1,12 @@
 package com.authguard.rest.routes;
 
+import com.authguard.api.annotations.DependsOnConfiguration;
 import com.authguard.api.routes.VerificationApi;
 import com.authguard.service.VerificationService;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
 
+@DependsOnConfiguration("verification")
 public class VerificationRoute extends VerificationApi {
     private final VerificationService verificationService;
 

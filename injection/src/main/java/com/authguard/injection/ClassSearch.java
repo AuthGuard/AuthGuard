@@ -3,6 +3,7 @@ package com.authguard.injection;
 import com.google.inject.AbstractModule;
 import org.reflections.Reflections;
 
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -57,6 +58,7 @@ public class ClassSearch {
 
         return implementations.stream()
                 .filter(clazz -> !clazz.isInterface())
+                .filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()))
                 .collect(Collectors.toSet());
     }
 }

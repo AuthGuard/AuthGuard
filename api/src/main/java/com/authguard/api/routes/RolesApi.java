@@ -6,7 +6,12 @@ import io.javalin.http.Context;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
 
-public abstract class RolesApi implements EndpointGroup {
+public abstract class RolesApi implements ApiRoute {
+
+    @Override
+    public String getPath() {
+        return "roles";
+    }
 
     @Override
     public void addEndpoints() {

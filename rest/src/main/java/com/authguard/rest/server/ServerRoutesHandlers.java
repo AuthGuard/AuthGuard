@@ -1,44 +1,38 @@
 package com.authguard.rest.server;
 
-import com.authguard.config.ConfigContext;
-import com.authguard.rest.routes.*;
+import com.authguard.api.routes.ApiRoute;
+import com.google.inject.Binding;
 import com.google.inject.Injector;
+import com.google.inject.TypeLiteral;
 import io.javalin.Javalin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 import static io.javalin.apibuilder.ApiBuilder.path;
 
 public class ServerRoutesHandlers implements JavalinAppConfigurer {
-    private final Injector injector;
-    private final ConfigContext config;
+    private static final Logger LOG = LoggerFactory.getLogger(ServerRoutesHandlers.class);
 
-    public ServerRoutesHandlers(final Injector injector, final ConfigContext config) {
+    private final Injector injector;
+
+    public ServerRoutesHandlers(final Injector injector) {
         this.injector = injector;
-        this.config = config;
     }
 
     @Override
     public void configure(final Javalin app) {
+        final List<Binding<ApiRoute>> routeBindings = injector.findBindingsByType(TypeLiteral.get(ApiRoute.class));
+
         app.routes(() -> {
-            path("/credentials", injector.getInstance(CredentialsRoute.class));
-            path("/auth", injector.getInstance(AuthRoute.class));
-            path("/keys", injector.getInstance(ApiKeysRoute.class));
-            path("/accounts", injector.getInstance(AccountsRoute.class));
-            path("/apps", injector.getInstance(ApplicationsRoute.class));
-            path("/admin", injector.getInstance(AdminRoute.class));
-            path("/roles", injector.getInstance(RolesRoute.class));
-            path("/permissions", injector.getInstance(PermissionsRoute.class));
+            routeBindings.forEach(binding -> {
+                final ApiRoute route = binding.getProvider().get();
 
-            if (config.get("otp") != null) {
-                path("/otp", injector.getInstance(OtpRoute.class));
-            }
+                LOG.info("Binding path /{} to route {}", route.getPath(), route);
 
-            if (config.get("verification") != null) {
-                path("/verification", injector.getInstance(VerificationRoute.class));
-            }
-
-            if (config.get("passwordless") != null) {
-                path("/passwordless", injector.getInstance(PasswordlessRoute.class));
-            }
+                path("/" + route.getPath(), route);
+            });
         });
     }
 }

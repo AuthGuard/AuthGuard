@@ -7,7 +7,12 @@ import io.javalin.http.Context;
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.post;
 
-public abstract class PermissionsApi implements EndpointGroup {
+public abstract class PermissionsApi implements ApiRoute {
+
+    @Override
+    public String getPath() {
+        return "permissions";
+    }
 
     @Override
     public void addEndpoints() {

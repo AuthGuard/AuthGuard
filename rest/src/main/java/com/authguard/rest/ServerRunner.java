@@ -33,6 +33,7 @@ public class ServerRunner {
                 new ConfigBinder(configContext),
                 new ExchangesBinder(configContext, searchPackages),
                 new ApiKeysExchangeBinder(configContext, searchPackages),
+                new ApiRoutesBinder(searchPackages, configContext),
                 new PasswordsBinder(configContext),
                 new ServicesBinder(configContext),
                 new JwtBinder(configContext),
@@ -53,7 +54,7 @@ public class ServerRunner {
                         .port(3000)
                         .build());
 
-        new AuthGuardServer(injector, configContext).start(Javalin.create(config -> {
+        new AuthGuardServer(injector).start(Javalin.create(config -> {
             config.enforceSsl = serverConfig.enforceSsl();
 
             config.server(() -> new JettyServerProvider(serverConfig).get());
