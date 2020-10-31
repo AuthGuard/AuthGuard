@@ -1,6 +1,7 @@
 package com.authguard.jwt.oauth;
 
 import com.authguard.jwt.oauth.config.ImmutableOAuthClientConfiguration;
+import com.authguard.jwt.oauth.util.HttpUrlAssertion;
 import okhttp3.HttpUrl;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -56,20 +57,7 @@ class OAuthServiceClientTest {
 
         final HttpUrl parsed = HttpUrl.get(actual);
 
-        assertThat(parsed.scheme()).isEqualTo(expected.scheme());
-        assertThat(parsed.host()).isEqualTo(expected.host());
-        assertThat(parsed.port()).isEqualTo(expected.port());
-        assertThat(parsed.pathSegments()).isEqualTo(expected.pathSegments());
-        assertThat(parsed.queryParameter("client_id"))
-                .isEqualTo(expected.queryParameter("client_id"));
-        assertThat(parsed.queryParameter("redirect_uri"))
-                .isEqualTo(expected.queryParameter("redirect_uri"));
-        assertThat(parsed.queryParameter("state"))
-                .isEqualTo(expected.queryParameter("state"));
-        assertThat(parsed.queryParameter("response_type"))
-                .isEqualTo(expected.queryParameter("response_type"));
-        assertThat(parsed.queryParameter("scope"))
-                .isEqualTo(expected.queryParameter("scope"));
+        HttpUrlAssertion.assertAuthorizationUrl(parsed, expected, "nonce");
 
         assertThat(parsed.queryParameter("nonce")).isNotNull();
     }

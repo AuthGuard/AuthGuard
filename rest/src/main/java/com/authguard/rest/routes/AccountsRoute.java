@@ -5,7 +5,7 @@ import com.authguard.api.dto.entities.AccountEmailDTO;
 import com.authguard.api.dto.entities.AppDTO;
 import com.authguard.api.dto.requests.*;
 import com.authguard.api.routes.AccountsApi;
-import com.authguard.rest.exceptions.Error;
+import com.authguard.api.dto.entities.Error;
 import com.authguard.rest.mappers.RestMapper;
 import com.authguard.rest.util.BodyHandler;
 import com.authguard.rest.util.IdempotencyHeader;

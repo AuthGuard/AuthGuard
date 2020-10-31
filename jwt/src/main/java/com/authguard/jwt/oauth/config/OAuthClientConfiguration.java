@@ -8,11 +8,18 @@ import java.util.Set;
 
 @Value.Immutable
 @Value.Style(
-        validationMethod = Value.Style.ValidationMethod.NONE
+        validationMethod = Value.Style.ValidationMethod.NONE,
+        jdkOnly = true
 )
 @JsonSerialize(as = ImmutableOAuthClientConfiguration.class)
 @JsonDeserialize(as = ImmutableOAuthClientConfiguration.class)
 public interface OAuthClientConfiguration {
+    /**
+     * The name of the identity provider. Used to identify
+     * the client.
+     */
+    String getProvider();
+
     /**
      * The URL to call to get an authorization code.
      */

@@ -1,4 +1,4 @@
-package com.authguard.rest.exceptions;
+package com.authguard.api.dto.entities;
 
 public class Error {
     private final String code;
