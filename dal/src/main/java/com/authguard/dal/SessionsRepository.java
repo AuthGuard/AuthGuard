@@ -9,4 +9,6 @@ public interface SessionsRepository {
     CompletableFuture<SessionDO> save(final SessionDO session);
 
     CompletableFuture<Optional<SessionDO>> getById(final String sessionId);
+
+    CompletableFuture<Optional<SessionDO>> getByToken(final String sessionToken);
 }

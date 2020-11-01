@@ -1,17 +1,14 @@
 package com.authguard.sessions;
 
-import com.authguard.dal.SessionsRepository;
-import com.authguard.dal.model.SessionDO;
+import com.authguard.service.SessionsService;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
-import com.authguard.service.mappers.ServiceMapperImpl;
-import com.authguard.sessions.SessionVerifier;
+import com.authguard.service.model.SessionBO;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -21,30 +18,31 @@ class SessionVerifierTest {
 
     @Test
     void verify() {
-        final SessionsRepository sessionsRepository = Mockito.mock(SessionsRepository.class);
-        final SessionVerifier sessionVerifier = new SessionVerifier(sessionsRepository, new ServiceMapperImpl());
+        final SessionsService sessionsService = Mockito.mock(SessionsService.class);
+        final SessionVerifier sessionVerifier = new SessionVerifier(sessionsService);
 
-        final SessionDO session = SessionDO.builder()
+        final SessionBO session = SessionBO.builder()
                 .id("session-id")
+                .sessionToken("token")
                 .accountId("account-id")
                 .expiresAt(ZonedDateTime.now().plus(Duration.ofMinutes(20)))
                 .build();
 
-        Mockito.when(sessionsRepository.getById(session.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(session)));
+        Mockito.when(sessionsService.getByToken(session.getSessionToken()))
+                .thenReturn(Optional.of(session));
 
-        final Optional<String> accountId = sessionVerifier.verifyAccountToken(session.getId());
+        final Optional<String> accountId = sessionVerifier.verifyAccountToken(session.getSessionToken());
 
         assertThat(accountId).contains(session.getAccountId());
     }
 
     @Test
     void verifyNonExistingSession() {
-        final SessionsRepository sessionsRepository = Mockito.mock(SessionsRepository.class);
-        final SessionVerifier sessionVerifier = new SessionVerifier(sessionsRepository, new ServiceMapperImpl());
+        final SessionsService sessionsService = Mockito.mock(SessionsService.class);
+        final SessionVerifier sessionVerifier = new SessionVerifier(sessionsService);
 
-        Mockito.when(sessionsRepository.getById(any()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+        Mockito.when(sessionsService.getByToken(any()))
+                .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> sessionVerifier.verifyAccountToken("invalid"))
                 .isInstanceOf(ServiceAuthorizationException.class);
@@ -52,17 +50,18 @@ class SessionVerifierTest {
 
     @Test
     void verifyExpiredSession() {
-        final SessionsRepository sessionsRepository = Mockito.mock(SessionsRepository.class);
-        final SessionVerifier sessionVerifier = new SessionVerifier(sessionsRepository, new ServiceMapperImpl());
+        final SessionsService sessionsService = Mockito.mock(SessionsService.class);
+        final SessionVerifier sessionVerifier = new SessionVerifier(sessionsService);
 
-        final SessionDO session = SessionDO.builder()
+        final SessionBO session = SessionBO.builder()
                 .id("session-id")
+                .sessionToken("token")
                 .accountId("account-id")
                 .expiresAt(ZonedDateTime.now().minus(Duration.ofMinutes(20)))
                 .build();
 
-        Mockito.when(sessionsRepository.getById(session.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(session)));
+        Mockito.when(sessionsService.getByToken(session.getSessionToken()))
+                .thenReturn(Optional.of(session));
 
         assertThatThrownBy(() -> sessionVerifier.verifyAccountToken("session-id"))
                 .isInstanceOf(ServiceAuthorizationException.class);
