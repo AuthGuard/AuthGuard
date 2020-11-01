@@ -2,18 +2,14 @@ package com.authguard.sessions;
 
 import com.authguard.config.ConfigContext;
 import com.authguard.config.JacksonConfigContext;
-import com.authguard.dal.SessionsRepository;
-import com.authguard.dal.model.SessionDO;
-import com.authguard.service.mappers.ServiceMapperImpl;
+import com.authguard.service.SessionsService;
 import com.authguard.service.model.AccountBO;
+import com.authguard.service.model.SessionBO;
 import com.authguard.service.model.TokensBO;
-import com.authguard.sessions.SessionProvider;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-
-import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,12 +26,12 @@ class SessionProviderTest {
 
     @Test
     void generateForAccount() {
-        final SessionsRepository sessionsRepository = Mockito.mock(SessionsRepository.class);
+        final SessionsService sessionsService = Mockito.mock(SessionsService.class);
 
-        Mockito.when(sessionsRepository.save(any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, SessionDO.class)));
+        Mockito.when(sessionsService.create(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0, SessionBO.class).withSessionToken("token"));
 
-        final SessionProvider sessionProvider = new SessionProvider(sessionsRepository, sessionsConfig(), new ServiceMapperImpl());
+        final SessionProvider sessionProvider = new SessionProvider(sessionsService, sessionsConfig());
 
         final AccountBO account = AccountBO.builder()
                 .id("account-id")
@@ -44,5 +40,6 @@ class SessionProviderTest {
         final TokensBO generated = sessionProvider.generateToken(account);
 
         assertThat(generated.getType()).isEqualTo("session");
+        assertThat(generated.getToken()).isNotNull().isInstanceOf(String.class);
     }
 }

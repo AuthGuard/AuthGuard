@@ -5,10 +5,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import javax.persistence.*;
 import java.time.ZonedDateTime;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -16,10 +15,18 @@ import java.time.ZonedDateTime;
 @SuperBuilder
 // JPA
 @Entity
-@Table(name = "roles", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"name"})
+@Table(name = "sessions", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"sessionToken"})
 })
+@NamedQuery(
+        name = "sessions.getByToken",
+        query = "SELECT session FROM SessionDO session WHERE session.sessionToken = :token"
+)
 public class SessionDO extends AbstractDO {
+    private String sessionToken;
     private String accountId;
     private ZonedDateTime expiresAt;
+
+    @ElementCollection
+    private Map<String, String> data;
 }
