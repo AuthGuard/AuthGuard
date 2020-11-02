@@ -1,14 +1,14 @@
 package com.authguard.jwt.oauth.service;
 
-import com.authguard.dal.SessionsRepository;
-import com.authguard.dal.model.SessionDO;
 import com.authguard.jwt.oauth.TestIdentityServer;
 import com.authguard.jwt.oauth.TokensResponse;
 import com.authguard.jwt.oauth.config.ImmutableOAuthClientConfiguration;
 import com.authguard.jwt.oauth.config.ImmutableOAuthConfiguration;
 import com.authguard.jwt.oauth.util.HttpUrlAssertion;
+import com.authguard.service.SessionsService;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.ServiceException;
+import com.authguard.service.model.SessionBO;
 import okhttp3.HttpUrl;
 import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
@@ -16,14 +16,13 @@ import org.mockito.Mockito;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class OAuthServiceTest {
-    private SessionsRepository sessionsRepository;
+    private SessionsService sessionsService;
     private TestIdentityServer testIdentityServer;
     private ImmutableOAuthClientConfiguration clientConfiguration;
 
@@ -50,9 +49,9 @@ class OAuthServiceTest {
                 .addClients(clientConfiguration)
                 .build();
 
-        sessionsRepository = Mockito.mock(SessionsRepository.class);
+        sessionsService = Mockito.mock(SessionsService.class);
 
-        oAuthService = new OAuthService(oAuthConfiguration, sessionsRepository);
+        oAuthService = new OAuthService(oAuthConfiguration, sessionsService);
     }
 
     @AfterAll
@@ -62,13 +61,13 @@ class OAuthServiceTest {
 
     @BeforeEach
     void reset() {
-        Mockito.reset(sessionsRepository);
+        Mockito.reset(sessionsService);
     }
 
     @Test
     void getAuthorizationUrl() {
-        Mockito.when(sessionsRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, SessionDO.class)));
+        Mockito.when(sessionsService.create(Mockito.any()))
+                .thenAnswer(invocation -> invocation.getArgument(0, SessionBO.class).withSessionToken("state_token"));
 
         final HttpUrl actual = HttpUrl.get(oAuthService.getAuthorizationUrl("test").join());
 
@@ -81,15 +80,12 @@ class OAuthServiceTest {
                 .addQueryParameter("redirect_uri", clientConfiguration.getAuthRedirectUrl())
                 .addQueryParameter("response_type", "code")
                 .addQueryParameter("scope", "openid profile")
+                .addQueryParameter("state", "state_token")
                 .build();
 
-        HttpUrlAssertion.assertAuthorizationUrl(actual, expected, "state", "nonce");
+        HttpUrlAssertion.assertAuthorizationUrl(actual, expected, "nonce");
 
-        assertThat(actual.queryParameter("state"))
-                .isNotNull()
-                .hasSizeGreaterThan(10);
-
-        Mockito.verify(sessionsRepository, Mockito.times(1)).save(Mockito.any());
+        Mockito.verify(sessionsService, Mockito.times(1)).create(Mockito.any());
     }
 
     @Test
@@ -100,14 +96,14 @@ class OAuthServiceTest {
 
     @Test
     void exchangeAuthorizationCode() {
-        Mockito.when(sessionsRepository.getById(Mockito.any()))
+        Mockito.when(sessionsService.getByToken(Mockito.any()))
                 .thenAnswer(invocation -> {
-                    final SessionDO session = SessionDO.builder()
-                            .id(invocation.getArgument(0))
+                    final SessionBO session = SessionBO.builder()
+                            .sessionToken(invocation.getArgument(0))
                             .expiresAt(ZonedDateTime.now().plus(Duration.ofMinutes(2)))
                             .build();
 
-                    return CompletableFuture.completedFuture(Optional.of(session));
+                    return Optional.of(session);
                 });
 
         final TokensResponse actual = oAuthService.exchangeAuthorizationCode("test", "random", "code")
@@ -119,8 +115,8 @@ class OAuthServiceTest {
 
     @Test
     void exchangeAuthorizationCodeInvalidState() {
-        Mockito.when(sessionsRepository.getById(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.empty()));
+        Mockito.when(sessionsService.getByToken(Mockito.any()))
+                .thenAnswer(invocation -> Optional.empty());
 
         assertThatThrownBy(() -> oAuthService.exchangeAuthorizationCode("test", "random", "code")
                 .join()).hasCauseInstanceOf(ServiceAuthorizationException.class);
@@ -128,14 +124,14 @@ class OAuthServiceTest {
 
     @Test
     void exchangeAuthorizationCodeExpiredState() {
-        Mockito.when(sessionsRepository.getById(Mockito.any()))
+        Mockito.when(sessionsService.getByToken(Mockito.any()))
                 .thenAnswer(invocation -> {
-                    final SessionDO session = SessionDO.builder()
-                            .id(invocation.getArgument(0))
+                    final SessionBO session = SessionBO.builder()
+                            .sessionToken(invocation.getArgument(0))
                             .expiresAt(ZonedDateTime.now().minus(Duration.ofMinutes(2)))
                             .build();
 
-                    return CompletableFuture.completedFuture(Optional.of(session));
+                    return Optional.of(session);
                 });
 
         assertThatThrownBy(() -> oAuthService.exchangeAuthorizationCode("test", "random", "code")

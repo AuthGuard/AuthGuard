@@ -1,16 +1,16 @@
 package com.authguard.jwt.oauth.service;
 
 import com.authguard.config.ConfigContext;
-import com.authguard.dal.SessionsRepository;
-import com.authguard.dal.model.SessionDO;
 import com.authguard.jwt.oauth.OAuthServiceClient;
 import com.authguard.jwt.oauth.ResponseType;
 import com.authguard.jwt.oauth.TokensResponse;
 import com.authguard.jwt.oauth.config.ImmutableOAuthClientConfiguration;
 import com.authguard.jwt.oauth.config.ImmutableOAuthConfiguration;
+import com.authguard.service.SessionsService;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.codes.ErrorCode;
+import com.authguard.service.model.SessionBO;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -25,16 +25,16 @@ import java.util.stream.Collectors;
 
 public class OAuthService {
     private final Map<String, OAuthServiceClient> providersClients;
-    private final SessionsRepository sessionsRepository; // temporary until we have a sessions service
+    private final SessionsService sessionsService; // temporary until we have a sessions service
     private final Duration stateTtl;
 
     @Inject
-    public OAuthService(final @Named("oauth") ConfigContext configContext, final SessionsRepository sessionsRepository) {
-        this(configContext.asConfigBean(ImmutableOAuthConfiguration.class), sessionsRepository);
+    public OAuthService(final @Named("oauth") ConfigContext configContext, final SessionsService sessionsService) {
+        this(configContext.asConfigBean(ImmutableOAuthConfiguration.class), sessionsService);
     }
 
-    public OAuthService(final ImmutableOAuthConfiguration configuration, final SessionsRepository sessionsRepository) {
-        this.sessionsRepository = sessionsRepository;
+    public OAuthService(final ImmutableOAuthConfiguration configuration, final SessionsService sessionsService) {
+        this.sessionsService = sessionsService;
 
         this.providersClients = createClients(configuration.getClients());
         this.stateTtl = Duration.ofMinutes(5);
@@ -50,14 +50,11 @@ public class OAuthService {
     public CompletableFuture<String> getAuthorizationUrl(final String provider) {
         final OAuthServiceClient client = Optional.ofNullable(providersClients.get(provider))
                 .orElseThrow(() -> new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid identity provider"));
-        final String state = StateCodes.create();
-        final SessionDO session = SessionDO.builder()
-                .id(state)
-                .expiresAt(ZonedDateTime.now().plus(stateTtl))
-                .build();
 
-        return sessionsRepository.save(session)
-                .thenApply(created -> client.createAuthorizationUrl(state, ResponseType.CODE));
+        return CompletableFuture.supplyAsync(() -> sessionsService.create(SessionBO.builder()
+                .expiresAt(ZonedDateTime.now().plus(stateTtl))
+                .build()))
+                .thenApply(session -> client.createAuthorizationUrl(session.getSessionToken(), ResponseType.CODE));
     }
 
     /**
@@ -75,7 +72,7 @@ public class OAuthService {
         final OAuthServiceClient client = Optional.ofNullable(providersClients.get(provider))
                 .orElseThrow(() -> new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid identity provider"));
 
-        return sessionsRepository.getById(state)
+        return CompletableFuture.supplyAsync(() -> sessionsService.getByToken(state))
                 .thenCompose(sessionOptional -> {
                     return sessionOptional.map(session -> {
                         if (session.getExpiresAt().isAfter(ZonedDateTime.now())) {
