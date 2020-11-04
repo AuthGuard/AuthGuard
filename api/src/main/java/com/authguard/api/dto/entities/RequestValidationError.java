@@ -1,4 +1,4 @@
-package com.authguard.rest.exceptions;
+package com.authguard.api.dto.entities;
 
 import com.authguard.api.dto.validation.violations.Violation;
 

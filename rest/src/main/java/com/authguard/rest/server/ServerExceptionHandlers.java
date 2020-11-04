@@ -1,6 +1,6 @@
 package com.authguard.rest.server;
 
-import com.authguard.rest.exceptions.Error;
+import com.authguard.api.dto.entities.Error;
 import com.authguard.rest.exceptions.ExceptionHandlers;
 import com.authguard.rest.exceptions.RequestValidationException;
 import com.authguard.rest.exceptions.RuntimeJsonException;

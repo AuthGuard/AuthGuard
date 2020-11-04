@@ -1,5 +1,7 @@
 package com.authguard.rest.exceptions;
 
+import com.authguard.api.dto.entities.Error;
+import com.authguard.api.dto.entities.RequestValidationError;
 import com.authguard.service.exceptions.IdempotencyException;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.ServiceConflictException;

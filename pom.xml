@@ -46,6 +46,8 @@
         <reflections.version>0.9.11</reflections.version>
         <guice.version>4.2.2</guice.version>
         <rxjava.version>3.0.2</rxjava.version>
+        <vertx.version>3.9.4</vertx.version>
+        <okhttp.version>4.9.0</okhttp.version>
         <unbounded-ldap.version>5.0.1</unbounded-ldap.version>
         <javax-persistence.version>2.2</javax-persistence.version>
 
@@ -55,6 +57,7 @@
         <easy-random.version>4.0.0</easy-random.version>
         <mockito.version>3.0.0</mockito.version>
         <rest-assured.version>4.0.0</rest-assured.version>
+        <wiremock.version>2.27.2</wiremock.version>
     </properties>
 
     <dependencies>
