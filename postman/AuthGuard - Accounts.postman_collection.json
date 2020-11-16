@@ -278,6 +278,61 @@
 			"response": []
 		},
 		{
+			"name": "deactivate account",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "0e87ff6b-b3bc-4a94-9803-2e0b0dcc9b73",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Account is deactivated\", function () {",
+							"    const response = pm.response.json();",
+							"    pm.expect(response.active).to.equal(false);",
+							"})",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts/{{accountId}}/deactivate",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts",
+						"{{accountId}}",
+						"deactivate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "activate account",
 			"event": [
 				{
@@ -333,20 +388,20 @@
 			"response": []
 		},
 		{
-			"name": "deactivate account",
+			"name": "update email address",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "0e87ff6b-b3bc-4a94-9803-2e0b0dcc9b73",
+						"id": "82ee9b66-6185-424a-a563-0b155f45107b",
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
+							"pm.test(\"Status code is 200\", () => {",
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"Account is deactivated\", function () {",
+							"pm.test(\"Email was updated\", () => {",
 							"    const response = pm.response.json();",
-							"    pm.expect(response.active).to.equal(false);",
+							"    pm.expect(response.email.email).to.equal(\"new@email.net\");",
 							"})",
 							""
 						],
@@ -366,7 +421,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "",
+					"raw": "{\n    \"email\": {\n        \"email\": \"new@email.net\"\n    },\n    \"backup\": false\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -374,14 +429,69 @@
 					}
 				},
 				"url": {
-					"raw": "{{authguard}}/accounts/{{accountId}}/deactivate",
+					"raw": "{{authguard}}/accounts/{{accountId}}/email",
 					"host": [
 						"{{authguard}}"
 					],
 					"path": [
 						"accounts",
 						"{{accountId}}",
-						"deactivate"
+						"email"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update backup email address",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "516b058d-0c9c-40e6-818a-4ecec1463634",
+						"exec": [
+							"pm.test(\"Status code is 200\", () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Backup email was updated\", () => {",
+							"    const response = pm.response.json();",
+							"    pm.expect(response.backupEmail.email).to.equal(\"new@email.net\");",
+							"})",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": {\n        \"email\": \"new@email.net\"\n    },\n    \"backup\": true\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts/{{accountId}}/email",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts",
+						"{{accountId}}",
+						"email"
 					]
 				}
 			},

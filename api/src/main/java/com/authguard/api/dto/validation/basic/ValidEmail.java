@@ -17,8 +17,8 @@ public class ValidEmail implements Constraint<AccountEmailDTO> {
 
     @Override
     public Optional<Violation> validate(final String fieldName, final AccountEmailDTO obj) {
-        if (!emailValidator.isValid(obj.getEmail())) {
-            final Violation violation = new Violation("email", ViolationType.INVALID_VALUE);
+        if (obj != null && !emailValidator.isValid(obj.getEmail())) {
+            final Violation violation = new Violation(fieldName, ViolationType.INVALID_VALUE);
 
             return Optional.of(violation);
         }

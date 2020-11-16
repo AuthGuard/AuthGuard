@@ -46,7 +46,7 @@ class AccountsApiTest extends AbstractRouteTest {
     void create() {
         final CreateAccountRequestDTO requestDTO = CreateAccountRequestDTO.builder()
                 .externalId("external")
-                .addEmails(AccountEmailDTO.builder()
+                .email(AccountEmailDTO.builder()
                         .email("email@server.com")
                         .build())
                 .build();

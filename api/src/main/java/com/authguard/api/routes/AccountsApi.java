@@ -1,7 +1,6 @@
 package com.authguard.api.routes;
 
 import com.authguard.api.access.ActorRoles;
-import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
@@ -23,8 +22,7 @@ public abstract class AccountsApi implements ApiRoute {
         patch("/:id/permissions", this::updatePermissions, ActorRoles.adminClient());
         patch("/:id/roles", this::updateRoles, ActorRoles.adminClient());
 
-        patch("/:id/emails", this::addEmails, ActorRoles.adminClient());
-        delete("/:id/emails", this::removeEmails, ActorRoles.adminClient());
+        patch("/:id/email", this::updateEmail, ActorRoles.adminClient());
 
         get("/:id/apps", this::getApps, ActorRoles.adminClient());
 
@@ -44,9 +42,7 @@ public abstract class AccountsApi implements ApiRoute {
 
     public abstract void updateRoles(final Context context);
 
-    public abstract void addEmails(final Context context);
-
-    public abstract void removeEmails(final Context context);
+    public abstract void updateEmail(final Context context);
 
     public abstract void getApps(final Context context);
 

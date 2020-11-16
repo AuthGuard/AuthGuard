@@ -7,7 +7,8 @@ public class AccountsMapper {
     public AccountDTO toAccountDTO(final CreateAccountRequestDTO request) {
         return AccountDTO.builder()
                 .externalId(request.getExternalId())
-                .emails(request.getEmails())
+                .email(request.getEmail())
+                .backupEmail(request.getBackupEmail())
                 .build();
     }
 }

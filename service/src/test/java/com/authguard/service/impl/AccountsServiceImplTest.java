@@ -3,13 +3,13 @@ package com.authguard.service.impl;
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.AccountsRepository;
 import com.authguard.dal.model.AccountDO;
-import com.authguard.dal.model.EmailDO;
 import com.authguard.emb.MessageBus;
 import com.authguard.service.IdempotencyService;
 import com.authguard.service.PermissionsService;
 import com.authguard.service.RolesService;
 import com.authguard.service.config.AccountConfig;
 import com.authguard.service.exceptions.ServiceException;
+import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.mappers.ServiceMapperImpl;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AccountEmailBO;
@@ -41,6 +41,7 @@ class AccountsServiceImplTest {
     private RolesService rolesService;
     private MessageBus messageBus;
     private AccountsServiceImpl accountService;
+    private ServiceMapper serviceMapper;
 
     private final static EasyRandom RANDOM = new EasyRandom(
             new EasyRandomParameters().collectionSizeRange(3, 5)
@@ -63,8 +64,9 @@ class AccountsServiceImplTest {
         Mockito.when(configContext.asConfigBean(AccountConfig.class))
                 .thenReturn(accountConfig);
 
+        serviceMapper = new ServiceMapperImpl();
         accountService = new AccountsServiceImpl(accountsRepository, permissionsService,rolesService,
-                idempotencyService, new ServiceMapperImpl(), messageBus, configContext);
+                idempotencyService, serviceMapper, messageBus, configContext);
     }
 
     @AfterEach
@@ -107,22 +109,18 @@ class AccountsServiceImplTest {
 
     @Test
     void getById() {
-        final AccountDO account = RANDOM.nextObject(AccountDO.class);
-        account.setDeleted(false);
+        final AccountBO accountBO = RANDOM.nextObject(AccountBO.class)
+                .withActive(true)
+                .withDeleted(false);
+        final AccountDO accountDO = serviceMapper.toDO(accountBO);
 
-        Mockito.when(accountsRepository.getById(any())).thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+        Mockito.when(accountsRepository.getById(any()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
 
         final Optional<AccountBO> retrieved = accountService.getById("");
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(account,
-                "permissions", "emails", "entityType");
-        assertThat(retrieved.get().getPermissions()).containsExactly(account.getPermissions().stream()
-                .map(permissionDO -> PermissionBO.builder()
-                        .group(permissionDO.getGroup())
-                        .name(permissionDO.getName())
-                        .build()
-                ).toArray(PermissionBO[]::new));
+        assertThat(retrieved.get()).isEqualTo(accountBO);
     }
 
     @Test
@@ -251,24 +249,22 @@ class AccountsServiceImplTest {
     }
 
     @Test
-    void addEmails() {
-        final AccountDO account = RANDOM.nextObject(AccountDO.class);
+    void updatePrimaryEmail() {
+        final AccountBO accountBO = RANDOM.nextObject(AccountBO.class);
+        final AccountDO accountDO = serviceMapper.toDO(accountBO);
+        final AccountEmailBO email = RANDOM.nextObject(AccountEmailBO.class);
 
-        Mockito.when(accountsRepository.getById(account.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+        Mockito.when(accountsRepository.getById(accountDO.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
         Mockito.when(accountsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
-        final List<AccountEmailBO> emails = Arrays.asList(
-                RANDOM.nextObject(AccountEmailBO.class),
-                RANDOM.nextObject(AccountEmailBO.class)
-        );
+        RANDOM.nextObject(AccountEmailBO.class);
 
-        final Optional<AccountBO> updated = accountService.updateEmails(account.getId(), emails);
+        final Optional<AccountBO> updated = accountService.updateEmail(accountDO.getId(), email, false);
+        final AccountBO expected = accountBO.withEmail(email);
 
-        assertThat(updated).isPresent();
-        assertThat(updated.get()).isNotEqualTo(account);
-        assertThat(updated.get().getEmails()).containsAnyElementsOf(emails);
+        assertThat(updated).contains(expected);
 
         // need better assertion
         Mockito.verify(messageBus, Mockito.times(1))
@@ -278,84 +274,65 @@ class AccountsServiceImplTest {
     }
 
     @Test
-    void removeEmails() {
-        final AccountDO account = RANDOM.nextObject(AccountDO.class);
-        final List<String> currentEmails = account.getEmails().stream()
-                .map(EmailDO::getEmail)
-                .collect(Collectors.toList());
+    void updateBackupEmail() {
+        final AccountBO accountBO = RANDOM.nextObject(AccountBO.class);
+        final AccountDO accountDO = serviceMapper.toDO(accountBO);
+        final AccountEmailBO email = RANDOM.nextObject(AccountEmailBO.class);
 
-        Mockito.when(accountsRepository.getById(account.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+        Mockito.when(accountsRepository.getById(accountDO.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
         Mockito.when(accountsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
-        final List<String> emailsToRemove = Arrays.asList(
-                currentEmails.get(0),
-                currentEmails.get(1)
-        );
+        RANDOM.nextObject(AccountEmailBO.class);
 
-        final Optional<AccountBO> updated = accountService.removeEmails(account.getId(), emailsToRemove);
+        final Optional<AccountBO> updated = accountService.updateEmail(accountDO.getId(), email, true);
+        final AccountBO expected = accountBO.withBackupEmail(email);
 
-        assertThat(updated).isPresent();
-        assertThat(updated.get()).isNotEqualTo(account);
-
-        for (final String emailToRemove : emailsToRemove) {
-            Optional<AccountEmailBO> foundEmail = updated.get().getEmails().stream().filter(email -> email.getEmail().equals(emailToRemove)).findFirst();
-
-            assertThat(foundEmail).isPresent();
-            assertThat(foundEmail.get()).extracting("isActive").isEqualTo(false);
-        }
+        assertThat(updated).contains(expected);
 
         // need better assertion
         Mockito.verify(messageBus, Mockito.times(1))
                 .publish(eq("accounts"), any());
-    }
 
-    @Test
-    void deleteAccount() {
-        final AccountDO account = RANDOM.nextObject(AccountDO.class);
-
-        Mockito.when(accountsRepository.delete(account.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
-
-        accountService.delete(account.getId());
-
-        Mockito.verify(accountsRepository).delete(account.getId());
+        Mockito.verify(messageBus).publish(eq("verification"), any());
     }
 
     @Test
     void activateAccount() {
-        final AccountDO account = RANDOM.nextObject(AccountDO.class);
-        account.setActive(false);
+        final AccountBO accountBO = RANDOM.nextObject(AccountBO.class)
+                .withActive(true)
+                .withDeleted(false);
+        final AccountDO accountDO = serviceMapper.toDO(accountBO);
 
-        Mockito.when(accountsRepository.getById(account.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+        Mockito.when(accountsRepository.getById(accountDO.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
         Mockito.when(accountsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
-        final AccountBO updated = accountService.activate(account.getId()).orElse(null);
+        final AccountBO updated = accountService.activate(accountDO.getId()).orElse(null);
 
         assertThat(updated).isNotNull();
-        assertThat(updated).isEqualToIgnoringGivenFields(account,
-                "permissions", "emails", "active", "entityType");
+        assertThat(updated).isEqualToIgnoringGivenFields(accountBO, "active");
         assertThat(updated.isActive()).isTrue();
     }
 
     @Test
     void deactivateAccount() {
-        final AccountDO account = RANDOM.nextObject(AccountDO.class);
-        account.setActive(true);
+        final AccountBO accountBO = RANDOM.nextObject(AccountBO.class)
+                .withActive(true)
+                .withDeleted(false);
+        final AccountDO accountDO = serviceMapper.toDO(accountBO);
 
-        Mockito.when(accountsRepository.getById(account.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+        Mockito.when(accountsRepository.getById(accountDO.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
         Mockito.when(accountsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
-        final AccountBO updated = accountService.deactivate(account.getId()).orElse(null);
+        final AccountBO updated = accountService.deactivate(accountDO.getId()).orElse(null);
 
         assertThat(updated).isNotNull();
-        assertThat(updated).isEqualToIgnoringGivenFields(account,
-                "permissions", "emails", "active", "entityType");
+        assertThat(updated).isEqualToIgnoringGivenFields(accountBO, "active");
         assertThat(updated.isActive()).isFalse();
     }
 }

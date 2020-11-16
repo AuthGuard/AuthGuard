@@ -16,27 +16,52 @@ import java.util.Set;
 @Entity
 @Table(name = "accounts")
 @NamedQuery(
+        name = "accounts.getById",
+        query = "SELECT account FROM AccountDO account " +
+                "JOIN FETCH account.roles " +
+                "JOIN FETCH account.permissions " +
+                "WHERE account.id = :id"
+)
+@NamedQuery(
         name = "accounts.getByExternalId",
-        query = "SELECT account FROM AccountDO account WHERE account.externalId = :externalId"
+        query = "SELECT account FROM AccountDO account " +
+                "JOIN FETCH account.roles " +
+                "JOIN FETCH account.permissions " +
+                "WHERE account.externalId = :externalId"
 )
 @NamedQuery(
         name = "accounts.getByRole",
-        query = "SELECT account FROM AccountDO account JOIN account.roles role WHERE role = :role"
+        query = "SELECT account FROM AccountDO account " +
+                "JOIN FETCH account.permissions " +
+                "JOIN FETCH account.roles role " +
+                "WHERE role = :role"
 )
 public class AccountDO extends AbstractDO {
     private String externalId;
 
-    @ElementCollection(fetch = FetchType.EAGER) // temporary
+    @ElementCollection(fetch = FetchType.LAZY)
     @JoinTable(name = "account_roles")
     private Set<String> roles;
 
-    @ManyToMany(fetch = FetchType.EAGER) // temporary
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "account_permissions")
     private Set<PermissionDO> permissions;
 
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL) // temporary
-    @JoinTable(name = "account_emails")
-    private Set<EmailDO> emails;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "email", column = @Column(name = "email")),
+            @AttributeOverride(name = "verified", column = @Column(name = "email_verified")),
+            @AttributeOverride(name = "active", column = @Column(name = "email_active"))
+    })
+    private EmailDO email;
+
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "email", column = @Column(name = "backup_email")),
+            @AttributeOverride(name = "verified", column = @Column(name = "backup_email_verified")),
+            @AttributeOverride(name = "active", column = @Column(name = "backup_email_active"))
+    })
+    private EmailDO backupEmail;
 
     private boolean active;
 }

@@ -25,7 +25,6 @@ class AccountJpaTest {
     @BeforeAll
     void setup() {
         final H2 h2 = new H2().withMappedClass(AccountDO.class)
-                .withMappedClass(EmailDO.class)
                 .withMappedClass(PermissionDO.class)
                 .withMappedClass(RoleDO.class)
                 .prepare();
@@ -53,15 +52,10 @@ class AccountJpaTest {
                 .permissions(Collections.singleton(PermissionDO.builder()
                         .id("read-posts-permission")
                         .build()))
-                .emails(new HashSet<>(Arrays.asList(
-                        EmailDO.builder()
-                                .email("get_by_id@emails.com")
-                                .build(),
-                        EmailDO.builder()
-                                .email("generic@emails.com")
-                                .build()
-                )))
-                .build();
+                .email(EmailDO.builder()
+                        .email("primary@emails.com")
+                        .build()
+                ).build();
 
         entityManager.persist(createdAccount);
 
@@ -70,9 +64,11 @@ class AccountJpaTest {
 
     @Test
     void getById() {
-        final AccountDO retrieved = entityManager.find(AccountDO.class, createdAccount.getId());
+        final TypedQuery<AccountDO> query = entityManager.createNamedQuery("accounts.getById", AccountDO.class)
+                .setParameter("id", createdAccount.getId());
 
-        assertThat(retrieved).isEqualTo(createdAccount);
+        final List<AccountDO> retrieved = query.getResultList();
+        assertThat(retrieved).containsExactly(createdAccount);
     }
 
     @Test

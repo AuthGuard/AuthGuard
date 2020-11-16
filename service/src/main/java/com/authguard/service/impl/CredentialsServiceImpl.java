@@ -1,5 +1,9 @@
 package com.authguard.service.impl;
 
+import com.authguard.basic.passwords.PasswordValidator;
+import com.authguard.basic.passwords.SecurePassword;
+import com.authguard.basic.passwords.ServiceInvalidPasswordException;
+import com.authguard.basic.passwords.Violation;
 import com.authguard.dal.CredentialsAuditRepository;
 import com.authguard.dal.CredentialsRepository;
 import com.authguard.dal.model.CredentialsDO;
@@ -10,14 +14,10 @@ import com.authguard.service.CredentialsService;
 import com.authguard.service.IdempotencyService;
 import com.authguard.service.exceptions.ServiceConflictException;
 import com.authguard.service.exceptions.ServiceException;
-import com.authguard.basic.passwords.ServiceInvalidPasswordException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.*;
-import com.authguard.basic.passwords.PasswordValidator;
-import com.authguard.basic.passwords.SecurePassword;
-import com.authguard.basic.passwords.Violation;
 import com.google.inject.Inject;
 
 import java.util.*;
@@ -61,15 +61,9 @@ public class CredentialsServiceImpl implements CredentialsService {
     }
 
     private CredentialsBO doCreate(final CredentialsBO credentials) {
-        final List<Violation> passwordViolations = passwordValidator.findViolations(credentials.getPlainPassword());
-
-        if (!passwordViolations.isEmpty()) {
-            throw new ServiceInvalidPasswordException(passwordViolations);
-        }
-
         ensureAccountExists(credentials.getAccountId());
 
-        final HashedPasswordBO hashedPassword = securePassword.hash(credentials.getPlainPassword());
+        final HashedPasswordBO hashedPassword = verifyAndHashPassword(credentials.getPlainPassword());
         final CredentialsBO credentialsHashedPassword = CredentialsBO.builder()
                 .from(credentials)
                 .hashedPassword(hashedPassword)
@@ -116,7 +110,7 @@ public class CredentialsServiceImpl implements CredentialsService {
 
     @Override
     public Optional<CredentialsBO> updatePassword(final CredentialsBO credentials) {
-        final HashedPasswordBO newPassword = securePassword.hash(credentials.getPlainPassword());
+        final HashedPasswordBO newPassword = verifyAndHashPassword(credentials.getPlainPassword());
         final CredentialsBO update = credentials.withHashedPassword(newPassword);
 
         return doUpdate(update, true);
@@ -215,6 +209,16 @@ public class CredentialsServiceImpl implements CredentialsService {
                         })
                 )
                 .join();
+    }
+
+    private HashedPasswordBO verifyAndHashPassword(final String plain) {
+        final List<Violation> passwordViolations = passwordValidator.findViolations(plain);
+
+        if (!passwordViolations.isEmpty()) {
+            throw new ServiceInvalidPasswordException(passwordViolations);
+        }
+
+        return securePassword.hash(plain);
     }
 
     private CredentialsBO removeSensitiveInformation(final CredentialsBO credentials) {

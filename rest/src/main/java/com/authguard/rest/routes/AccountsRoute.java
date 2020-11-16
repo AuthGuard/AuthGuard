@@ -1,17 +1,15 @@
 package com.authguard.rest.routes;
 
 import com.authguard.api.dto.entities.AccountDTO;
-import com.authguard.api.dto.entities.AccountEmailDTO;
 import com.authguard.api.dto.entities.AppDTO;
+import com.authguard.api.dto.entities.Error;
 import com.authguard.api.dto.requests.*;
 import com.authguard.api.routes.AccountsApi;
-import com.authguard.api.dto.entities.Error;
 import com.authguard.rest.mappers.RestMapper;
 import com.authguard.rest.util.BodyHandler;
 import com.authguard.rest.util.IdempotencyHeader;
 import com.authguard.service.AccountsService;
 import com.authguard.service.ApplicationsService;
-import com.authguard.service.model.AccountEmailBO;
 import com.authguard.service.model.PermissionBO;
 import com.authguard.service.model.RequestContextBO;
 import com.google.inject.Inject;
@@ -141,26 +139,12 @@ public class AccountsRoute extends AccountsApi {
         context.json(updatedAccount);
     }
 
-    public void addEmails(final Context context) {
+    @Override
+    public void updateEmail(final Context context) {
         final String accountId = context.pathParam("id");
         final AccountEmailsRequestDTO emailsRequest = accountEmailsRequestBodyHandler.getValidated(context);
-        final List<AccountEmailBO> emails = emailsRequest.getEmails().stream()
-                .map(restMapper::toBO)
-                .collect(Collectors.toList());
 
-        accountsService.updateEmails(accountId, emails)
-                .map(restMapper::toDTO)
-                .ifPresentOrElse(context::json, () -> context.status(404));
-    }
-
-    public void removeEmails(final Context context) {
-        final String accountId = context.pathParam("id");
-        final AccountEmailsRequestDTO emailsRequest = accountEmailsRequestBodyHandler.getValidated(context);
-        final List<String> emails = emailsRequest.getEmails().stream()
-                .map(AccountEmailDTO::getEmail)
-                .collect(Collectors.toList());
-
-        accountsService.removeEmails(accountId, emails)
+        accountsService.updateEmail(accountId, restMapper.toBO(emailsRequest.getEmail()), emailsRequest.isBackup())
                 .map(restMapper::toDTO)
                 .ifPresentOrElse(context::json, () -> context.status(404));
     }

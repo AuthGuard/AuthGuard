@@ -26,10 +26,10 @@ class CreateAccountRequestValidatorTest {
     }
 
     @Test
-    void validateValidFields() {
+    void validateValidEmail() {
         final CreateAccountRequestDTO request = CreateAccountRequestDTO.builder()
                 .externalId("external")
-                .addEmails(AccountEmailDTO.builder()
+                .email(AccountEmailDTO.builder()
                         .email("valid@valid.com")
                         .build())
                 .build();
@@ -45,7 +45,7 @@ class CreateAccountRequestValidatorTest {
     void validateInvalidEmail() {
         final CreateAccountRequestDTO request = CreateAccountRequestDTO.builder()
                 .externalId("external")
-                .addEmails(AccountEmailDTO.builder()
+                .email(AccountEmailDTO.builder()
                         .email("invalid")
                         .build())
                 .build();
@@ -55,5 +55,37 @@ class CreateAccountRequestValidatorTest {
         final List<Violation> violations = validator.validate(request);
 
         assertThat(violations).contains(new Violation("email", ViolationType.INVALID_VALUE));
+    }
+
+    @Test
+    void validateValidBackupEmail() {
+        final CreateAccountRequestDTO request = CreateAccountRequestDTO.builder()
+                .externalId("external")
+                .backupEmail(AccountEmailDTO.builder()
+                        .email("valid@valid.com")
+                        .build())
+                .build();
+
+        final Validator<CreateAccountRequestDTO> validator = Validators.getForClass(CreateAccountRequestDTO.class);
+
+        final List<Violation> violations = validator.validate(request);
+
+        assertThat(violations).isEmpty();
+    }
+
+    @Test
+    void validateInvalidBackupEmail() {
+        final CreateAccountRequestDTO request = CreateAccountRequestDTO.builder()
+                .externalId("external")
+                .backupEmail(AccountEmailDTO.builder()
+                        .email("invalid")
+                        .build())
+                .build();
+
+        final Validator<CreateAccountRequestDTO> validator = Validators.getForClass(CreateAccountRequestDTO.class);
+
+        final List<Violation> violations = validator.validate(request);
+
+        assertThat(violations).contains(new Violation("backupEmail", ViolationType.INVALID_VALUE));
     }
 }

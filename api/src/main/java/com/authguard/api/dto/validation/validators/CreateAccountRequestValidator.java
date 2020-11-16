@@ -13,7 +13,8 @@ public class CreateAccountRequestValidator implements Validator<CreateAccountReq
     public List<Violation> validate(final CreateAccountRequestDTO obj) {
         return FluentValidator.begin()
                 .validate("externalId", obj.getExternalId(), Constraints.reasonableLength)
-                .validateCollection("emails", obj.getEmails(), Constraints.validEmail)
+                .validate("email", obj.getEmail(), Constraints.validEmail)
+                .validate("backupEmail", obj.getBackupEmail(), Constraints.validEmail)
                 .getViolations();
     }
 }

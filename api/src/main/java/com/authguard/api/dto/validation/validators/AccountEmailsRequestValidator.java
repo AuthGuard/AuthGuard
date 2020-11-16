@@ -11,8 +11,7 @@ public class AccountEmailsRequestValidator implements Validator<AccountEmailsReq
     @Override
     public List<Violation> validate(final AccountEmailsRequestDTO obj) {
         return FluentValidator.begin()
-                .validate("emails", obj.getEmails(), Constraints.required, Constraints.hasItems)
-                .validateCollection("emails", obj.getEmails(), Constraints.validEmail)
+                .validate("email", obj.getEmail(), Constraints.validEmail)
                 .getViolations();
     }
 }

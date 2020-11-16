@@ -16,7 +16,7 @@ class AccountEmailsRequestValidatorTest {
     @Test
     void validateValid() {
         final AccountEmailsRequestDTO request = AccountEmailsRequestDTO.builder()
-                .addEmails(AccountEmailDTO.builder()
+                .email(AccountEmailDTO.builder()
                         .email("valid@valid.com")
                         .build())
                 .build();
@@ -31,7 +31,7 @@ class AccountEmailsRequestValidatorTest {
     @Test
     void validateInvalidEmail() {
         final AccountEmailsRequestDTO request = AccountEmailsRequestDTO.builder()
-                .addEmails(AccountEmailDTO.builder()
+                .email(AccountEmailDTO.builder()
                         .email("invalid")
                         .build())
                 .build();
@@ -40,18 +40,6 @@ class AccountEmailsRequestValidatorTest {
 
         final List<Violation> violations = validator.validate(request);
 
-        assertThat(violations).contains(new Violation("email", ViolationType.INVALID_VALUE));
-    }
-
-    @Test
-    void validateNoEmails() {
-        final AccountEmailsRequestDTO request = AccountEmailsRequestDTO.builder()
-                .build();
-
-        final Validator<AccountEmailsRequestDTO> validator = Validators.getForClass(AccountEmailsRequestDTO.class);
-
-        final List<Violation> violations = validator.validate(request);
-
-        assertThat(violations).contains(new Violation("emails", ViolationType.EMPTY_LIST));
+        assertThat(violations).containsExactly(new Violation("email", ViolationType.INVALID_VALUE));
     }
 }
