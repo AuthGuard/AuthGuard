@@ -10,7 +10,8 @@ public interface Account extends Entity {
     String getExternalId();
     Set<PermissionBO> getPermissions();
     Set<String> getRoles();
-    Set<AccountEmailBO> getEmails();
+    AccountEmailBO getEmail();
+    AccountEmailBO getBackupEmail();
     boolean isActive();
     boolean isDeleted();
 

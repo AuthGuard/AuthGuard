@@ -15,7 +15,8 @@ import java.util.List;
 @JsonSerialize(as = CreateAccountRequestDTO.class)
 public interface CreateAccountRequest {
     String getExternalId();
-    List<AccountEmailDTO> getEmails();
+    AccountEmailDTO getEmail();
+    AccountEmailDTO getBackupEmail();
     List<PermissionDTO> getPermissions();
     List<String> getScopes();
     List<String> getRoles();

@@ -55,13 +55,18 @@ public class LdapAccountMapper {
                         );
                         break;
 
-                    case "emails":
-                        builder.emails(
-                                Stream.of(value).
-                                        map(email -> AccountEmailBO.builder().email(email).build())
-                                        .collect(Collectors.toList())
-                        );
+                    case "email":
+                        Stream.of(value)
+                                .findFirst()
+                                .map(email -> AccountEmailBO.builder().email(email).build())
+                                .ifPresent(builder::email);
                         break;
+
+                    case "backupEmail":
+                        Stream.of(value)
+                                .findFirst()
+                                .map(email -> AccountEmailBO.builder().email(email).build())
+                                .ifPresent(builder::backupEmail);
 
                     default:
                         LOG.warn("Invalid field mapping to {}", mappedField);

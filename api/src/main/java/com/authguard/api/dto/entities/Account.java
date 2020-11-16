@@ -16,7 +16,8 @@ public interface Account {
     String getExternalId();
     List<PermissionDTO> getPermissions();
     List<String> getRoles();
-    List<AccountEmailDTO> getEmails();
+    AccountEmailDTO getEmail();
+    AccountEmailDTO getBackupEmail();
     boolean isActive();
     boolean isDeleted();
 }

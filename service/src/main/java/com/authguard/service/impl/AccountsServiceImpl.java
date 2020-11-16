@@ -1,10 +1,14 @@
 package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
+import com.authguard.dal.AccountsRepository;
 import com.authguard.dal.model.AccountDO;
 import com.authguard.emb.MessageBus;
 import com.authguard.emb.Messages;
-import com.authguard.service.*;
+import com.authguard.service.AccountsService;
+import com.authguard.service.IdempotencyService;
+import com.authguard.service.PermissionsService;
+import com.authguard.service.RolesService;
 import com.authguard.service.config.AccountConfig;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
@@ -12,12 +16,9 @@ import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.*;
 import com.google.inject.Inject;
-import com.authguard.dal.AccountsRepository;
 import com.google.inject.name.Named;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -72,7 +73,7 @@ public class AccountsServiceImpl implements AccountsService {
                     if (accountConfig.verifyEmail()) {
                         messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(VerificationRequestBO.builder()
                                 .account(created)
-                                .emails(created.getEmails())
+                                .emails(Arrays.asList(account.getEmail(), account.getBackupEmail()))
                                 .build()));
                     }
 
@@ -127,57 +128,27 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public Optional<AccountBO> removeEmails(final String accountId, final List<String> emails) {
+    public Optional<AccountBO> updateEmail(final String accountId, final AccountEmailBO email, final boolean backup) {
         final AccountBO existing = accountsRepository.getById(accountId)
                 .join()
                 .map(serviceMapper::toBO)
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " + accountId + " was found"));
-
-        final List<AccountEmailBO> newEmails = existing.getEmails().stream()
-                .map(email -> {
-                    if (emails.contains(email.getEmail())) {
-                        return email.withActive(false);
-                    }
-
-                    return email;
-                })
-                .collect(Collectors.toList());
-
-        final AccountBO updated = AccountBO.builder().from(existing)
-                .emails(newEmails)
-                .build();
-
-        return update(updated);
-    }
-
-    @Override
-    public Optional<AccountBO> updateEmails(final String accountId, final List<AccountEmailBO> emails) {
-        final AccountBO existing = accountsRepository.getById(accountId)
-                .join()
-                .map(serviceMapper::toBO)
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID "
                         + accountId + " was found"));
 
-        final List<String> newEmails = emails.stream()
-                .map(AccountEmailBO::getEmail)
-                .collect(Collectors.toList());
+        if (backup) {
+            return doUpdateEmail(existing.withBackupEmail(email), email);
+        } else {
+            return doUpdateEmail(existing.withEmail(email), email);
+        }
+    }
 
-        final Stream<AccountEmailBO> nonUpdatedEmails = existing.getEmails().stream()
-                .filter(old -> !newEmails.contains(old.getEmail()));
-
-        final List<AccountEmailBO> combinedList = Stream.concat(emails.stream(), nonUpdatedEmails)
-                .collect(Collectors.toList());
-
-        final AccountBO updateRequest = AccountBO.builder().from(existing)
-                .emails(combinedList)
-                .build();
-
-        final Optional<AccountBO> updated = update(updateRequest);
+    private Optional<AccountBO> doUpdateEmail(final AccountBO withNewEmail, final AccountEmailBO email) {
+        final Optional<AccountBO> updated = update(withNewEmail);
 
         updated.ifPresent(updatedAccount -> messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(
                 VerificationRequestBO.builder()
                         .account(updatedAccount)
-                        .emails(emails)
+                        .emails(Collections.singletonList(email))
                         .build()
         )));
 

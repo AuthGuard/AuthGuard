@@ -8,12 +8,9 @@ import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.model.AccountBO;
-import com.authguard.service.model.AccountEmailBO;
 import com.google.inject.Inject;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 public class VerificationServiceImpl implements VerificationService {
@@ -49,26 +46,16 @@ public class VerificationServiceImpl implements VerificationService {
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                         "AccountDO " + accountToken.getAssociatedAccountId() + " does not exist"));
 
-        final List<AccountEmailBO> updatedEmails = new ArrayList<>();
-        boolean emailFound = false;
+        final AccountBO updated;
 
-        for (final AccountEmailBO email : account.getEmails()) {
-            if (email.getEmail().equals(verifiedEmail)) {
-                updatedEmails.add(AccountEmailBO.builder().from(email).verified(true).build());
-                emailFound = true;
-            } else {
-                updatedEmails.add(email);
-            }
+        if (verifiedEmail.equals(account.getEmail().getEmail())) {
+            updated = account.withEmail(account.getEmail().withVerified(true));
+        } else if (verifiedEmail.equals(account.getBackupEmail().getEmail())) {
+            updated = account.withBackupEmail(account.getBackupEmail().withVerified(true));
+        } else {
+            throw new ServiceException(ErrorCode.INVALID_TOKEN, "Account " + account.getId() + " does not contain the " +
+                    "email associated with the verification token");
         }
-
-        if (!emailFound) {
-            throw new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
-                    "AccountDO " + account.getId() + " does not contain email " + verifiedEmail);
-        }
-
-        final AccountBO updated = AccountBO.builder().from(account)
-                .emails(updatedEmails)
-                .build();
 
         accountsService.update(updated);
     }
