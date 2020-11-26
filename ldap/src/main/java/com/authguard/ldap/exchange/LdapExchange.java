@@ -5,6 +5,7 @@ import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.TokensBO;
+import io.vavr.control.Either;
 
 import java.util.Base64;
 import java.util.Optional;
@@ -19,11 +20,11 @@ public abstract class LdapExchange implements Exchange {
     }
 
     @Override
-    public Optional<TokensBO> exchangeToken(final String basicToken) {
+    public Either<Exception, TokensBO> exchangeToken(final String basicToken) {
         final String[] credentials = decodeAndSplitBasic(basicToken);
         final AccountBO account = ldapService.authenticate(credentials[0], credentials[1]);
 
-        return Optional.of(authProvider.generateToken(account));
+        return Either.right(authProvider.generateToken(account));
     }
 
     public static String[] decodeAndSplitBasic(final String base64) {

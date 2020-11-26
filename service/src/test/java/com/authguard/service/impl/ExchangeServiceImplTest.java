@@ -2,14 +2,15 @@ package com.authguard.service.impl;
 
 import com.authguard.service.ExchangeService;
 import com.authguard.service.exceptions.ServiceException;
+import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.model.TokensBO;
+import io.vavr.control.Either;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -19,8 +20,8 @@ class ExchangeServiceImplTest {
     @TokenExchange(from = "basic", to = "basic")
     static class ValidExchange implements Exchange {
         @Override
-        public Optional<TokensBO> exchangeToken(final String fromToken) {
-            return Optional.of(TokensBO.builder()
+        public Either<Exception, TokensBO> exchangeToken(final String fromToken) {
+            return Either.right(TokensBO.builder()
                     .token(fromToken)
                     .type("Basic")
                     .build());
@@ -29,16 +30,16 @@ class ExchangeServiceImplTest {
 
     static class InvalidExchange implements Exchange {
         @Override
-        public Optional<TokensBO> exchangeToken(final String fromToken) {
-            return Optional.empty();
+        public Either<Exception, TokensBO> exchangeToken(final String fromToken) {
+            return Either.right(null);
         }
     }
 
     @TokenExchange(from = "basic", to = "empty")
     static class EmptyExchange implements Exchange {
         @Override
-        public Optional<TokensBO> exchangeToken(final String fromToken) {
-            return Optional.empty();
+        public Either<Exception, TokensBO> exchangeToken(final String fromToken) {
+            return Either.left(new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "Empty"));
         }
     }
 

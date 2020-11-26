@@ -6,6 +6,7 @@ import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
+import io.vavr.control.Either;
 
 import java.util.Optional;
 
@@ -21,7 +22,7 @@ public class BasicToIdToken implements Exchange {
     }
 
     @Override
-    public Optional<TokensBO> exchangeToken(String basicToken) {
+    public Either<Exception, TokensBO> exchangeToken(String basicToken) {
         return basicAuth.authenticateAndGetAccount(basicToken)
                 .map(idTokenProvider::generateToken);
     }

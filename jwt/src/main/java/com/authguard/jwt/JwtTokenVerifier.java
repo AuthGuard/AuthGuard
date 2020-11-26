@@ -8,6 +8,9 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Payload;
 import com.authguard.service.auth.AuthTokenVerfier;
 import com.authguard.service.config.StrategyConfig;
+import com.authguard.service.exceptions.ServiceAuthorizationException;
+import com.authguard.service.exceptions.codes.ErrorCode;
+import io.vavr.control.Either;
 
 import java.util.Optional;
 
@@ -31,13 +34,18 @@ public class JwtTokenVerifier implements AuthTokenVerfier {
         this.verifier = JWT.require(algorithm).build();
     }
 
-    Optional<DecodedJWT> verify(final String token) {
+    Either<Exception, DecodedJWT> verify(final String token) {
         try {
-            return Optional.of(JWT.decode(token))
-                    .map(verifier::verify)
-                    .filter(this::verifyJti);
+            final DecodedJWT decoded = JWT.decode(token);
+            final DecodedJWT verified = verifier.verify(decoded);
+
+            if (this.verifyJti(verified)) {
+                return Either.right(verified);
+            } else {
+                return Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid JTI "));
+            }
         } catch (final JWTVerificationException e) {
-            return Optional.empty();
+            return Either.left(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid JWT"));
         }
     }
 
@@ -46,8 +54,7 @@ public class JwtTokenVerifier implements AuthTokenVerfier {
     }
 
     @Override
-    public Optional<String> verifyAccountToken(String token) {
-        return verify(token)
-                .map(Payload::getSubject);
+    public Either<Exception, String> verifyAccountToken(String token) {
+        return verify(token).map(Payload::getSubject);
     }
 }

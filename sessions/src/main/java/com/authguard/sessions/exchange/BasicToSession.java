@@ -6,8 +6,7 @@ import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.model.TokensBO;
 import com.authguard.sessions.SessionProvider;
 import com.google.inject.Inject;
-
-import java.util.Optional;
+import io.vavr.control.Either;
 
 @TokenExchange(from = "basic", to = "session")
 public class BasicToSession implements Exchange {
@@ -21,7 +20,7 @@ public class BasicToSession implements Exchange {
     }
 
     @Override
-    public Optional<TokensBO> exchangeToken(final String basicToken) {
+    public Either<Exception, TokensBO> exchangeToken(final String basicToken) {
         return basicAuth.authenticateAndGetAccount(basicToken)
                 .map(sessionProvider::generateToken);
     }

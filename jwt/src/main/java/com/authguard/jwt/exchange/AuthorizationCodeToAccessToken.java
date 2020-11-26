@@ -1,21 +1,21 @@
 package com.authguard.jwt.exchange;
 
 import com.authguard.dal.model.AccountTokenDO;
+import com.authguard.jwt.AccessTokenProvider;
+import com.authguard.jwt.oauth.AuthorizationCodeVerifier;
 import com.authguard.service.AccountsService;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
-import com.authguard.jwt.AccessTokenProvider;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.mappers.ServiceMapper;
+import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
-import com.authguard.jwt.oauth.AuthorizationCodeVerifier;
 import com.google.inject.Inject;
+import io.vavr.control.Either;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
 
 @TokenExchange(from = "authorizationCode", to = "accessToken")
 public class AuthorizationCodeToAccessToken implements Exchange {
@@ -38,24 +38,24 @@ public class AuthorizationCodeToAccessToken implements Exchange {
     }
 
     @Override
-    public Optional<TokensBO> exchangeToken(final String authorizationCode) {
+    public Either<Exception, TokensBO> exchangeToken(final String authorizationCode) {
         return authorizationCodeVerifier.verifyAndGetAccountToken(authorizationCode)
                 .flatMap(this::generateToken);
     }
 
     @Override
-    public Optional<TokensBO> exchangeToken(final String authorizationCode, final TokenRestrictionsBO restrictions) {
+    public Either<Exception, TokensBO> exchangeToken(final String authorizationCode, final TokenRestrictionsBO restrictions) {
         return authorizationCodeVerifier.verifyAccountToken(authorizationCode)
-                .flatMap(accountsService::getById)
+                .flatMap(this::getAccount)
                 .map(account -> accessTokenProvider.generateToken(account, restrictions));
     }
 
-    private Optional<TokensBO> generateToken(final AccountTokenDO accountToken) {
+    private Either<Exception, TokensBO> generateToken(final AccountTokenDO accountToken) {
         if (accountToken.getAdditionalInformation() == null) {
             return generateWithNoRestrictions(accountToken);
         } else {
             if (TokenRestrictionsBO.class.isAssignableFrom(accountToken.getAdditionalInformation().getClass())) {
-                return accountsService.getById(accountToken.getAssociatedAccountId())
+                return getAccount(accountToken.getAssociatedAccountId())
                         .map(account -> accessTokenProvider
                                 .generateToken(account, serviceMapper.toBO(accountToken.getTokenRestrictions())));
             } else {
@@ -65,8 +65,15 @@ public class AuthorizationCodeToAccessToken implements Exchange {
         }
     }
 
-    private Optional<TokensBO> generateWithNoRestrictions(final AccountTokenDO accountToken) {
-        return accountsService.getById(accountToken.getAssociatedAccountId())
+    private Either<Exception, TokensBO> generateWithNoRestrictions(final AccountTokenDO accountToken) {
+        return getAccount(accountToken.getAssociatedAccountId())
                 .map(accessTokenProvider::generateToken);
+    }
+
+    private Either<Exception, AccountBO> getAccount(final String accountId) {
+        return accountsService.getById(accountId)
+                .<Either<Exception, AccountBO>>map(Either::right)
+                .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
+                        "Account " + accountId + " does not exist")));
     }
 }

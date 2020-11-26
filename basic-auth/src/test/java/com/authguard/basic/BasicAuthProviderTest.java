@@ -7,6 +7,7 @@ import com.authguard.service.CredentialsService;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.model.*;
+import io.vavr.control.Either;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.AfterEach;
@@ -68,9 +69,9 @@ class BasicAuthProviderTest {
         Mockito.when(accountsService.getById(credentials.getAccountId())).thenReturn(Optional.of(account));
         Mockito.when(securePassword.verify(eq(password), eq(hashedPasswordBO))).thenReturn(true);
 
-        final Optional<AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
+        final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
 
-        assertThat(result).isPresent().contains(account);
+        assertThat(result.get()).isEqualTo(account);
     }
 
     @Test
@@ -103,7 +104,10 @@ class BasicAuthProviderTest {
         Mockito.when(credentialsService.getByUsernameUnsafe(username)).thenReturn(Optional.of(credentials));
         Mockito.when(securePassword.verify(eq(password), eq(hashedPasswordBO))).thenReturn(false);
 
-        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization)).isInstanceOf(ServiceAuthorizationException.class);
+        final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
@@ -115,7 +119,10 @@ class BasicAuthProviderTest {
     @Test
     void authenticateUnsupportedScheme() {
         final String authorization = "Unsupported " + RandomStringUtils.randomAlphanumeric(20);
-        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization)).isInstanceOf(ServiceException.class);
+        final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(ServiceException.class);
     }
 
     @Test

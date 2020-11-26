@@ -5,6 +5,7 @@ import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.model.TokensBO;
 import com.authguard.sessions.SessionVerifier;
 import com.google.inject.Inject;
+import io.vavr.control.Either;
 
 import java.util.Optional;
 
@@ -18,7 +19,7 @@ public class SessionToAccountId implements Exchange {
     }
 
     @Override
-    public Optional<TokensBO> exchangeToken(final String sessionId) {
+    public Either<Exception, TokensBO> exchangeToken(final String sessionId) {
         return sessionVerifier.verifyAccountToken(sessionId)
                 .map(accountId -> TokensBO.builder()
                         .type("accountId")

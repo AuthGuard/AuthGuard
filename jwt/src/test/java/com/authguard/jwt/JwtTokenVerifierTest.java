@@ -10,6 +10,7 @@ import com.authguard.service.config.StrategyConfig;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.PermissionBO;
 import com.authguard.service.model.TokensBO;
+import io.vavr.control.Either;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,6 @@ import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -86,9 +86,9 @@ class JwtTokenVerifierTest {
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
         final TokensBO tokens = generateToken(jwtConfig, account, null);
-        final Optional<DecodedJWT> validatedToken = jwtTokenVerifier.verify(tokens.getToken().toString());
+        final Either<Exception, DecodedJWT> validatedToken = jwtTokenVerifier.verify(tokens.getToken().toString());
 
-        assertThat(validatedToken).isNotEmpty();
+        assertThat(validatedToken.isRight()).isTrue();
         verifyToken(validatedToken.get(), account.getId(), null, null, null);
     }
 
@@ -106,9 +106,9 @@ class JwtTokenVerifierTest {
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
         final TokensBO tokens = generateToken(jwtConfig, account, jti);
-        final Optional<DecodedJWT> validatedToken = jwtTokenVerifier.verify(tokens.getToken().toString());
+        final Either<Exception, DecodedJWT> validatedToken = jwtTokenVerifier.verify(tokens.getToken().toString());
 
-        assertThat(validatedToken).isNotEmpty();
+        assertThat(validatedToken.isRight()).isTrue();
         verifyToken(validatedToken.get(), account.getId(), jti, null, null);
     }
 
@@ -126,9 +126,9 @@ class JwtTokenVerifierTest {
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
         final TokensBO tokens = generateToken(jwtConfig, account, jti);
-        final Optional<DecodedJWT> validatedToken = jwtTokenVerifier.verify(tokens.getToken().toString());
+        final Either<Exception, DecodedJWT> validatedToken = jwtTokenVerifier.verify(tokens.getToken().toString());
 
-        assertThat(validatedToken).isEmpty();
+        assertThat(validatedToken.isLeft());
     }
 
     @Test

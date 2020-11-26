@@ -6,9 +6,9 @@ import com.authguard.service.auth.AuthTokenVerfier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.google.inject.Inject;
+import io.vavr.control.Either;
 
 import java.time.ZonedDateTime;
-import java.util.Optional;
 
 public class PasswordlessVerifier implements AuthTokenVerfier {
     private final AccountTokensRepository accountTokensRepository;
@@ -19,16 +19,19 @@ public class PasswordlessVerifier implements AuthTokenVerfier {
     }
 
     @Override
-    public Optional<String> verifyAccountToken(final String passwordlessToken) {
-        final AccountTokenDO storedToken = accountTokensRepository.getByToken(passwordlessToken)
+    public Either<Exception, String> verifyAccountToken(final String passwordlessToken) {
+        return accountTokensRepository.getByToken(passwordlessToken)
                 .join()
-                .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN,
-                        "No passwordless token found for " + passwordlessToken));
+                .map(this::verifyToken)
+                .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN,
+                        "No passwordless token found for " + passwordlessToken)));
+    }
 
-        if (storedToken.getExpiresAt().isBefore(ZonedDateTime.now())) {
-            throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Expired passwordless token");
+    private Either<Exception, String> verifyToken(final AccountTokenDO accountToken) {
+        if (accountToken.getExpiresAt().isBefore(ZonedDateTime.now())) {
+            return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Expired passwordless token"));
         }
 
-        return Optional.of(storedToken.getAssociatedAccountId());
+        return Either.right(accountToken.getAssociatedAccountId());
     }
 }

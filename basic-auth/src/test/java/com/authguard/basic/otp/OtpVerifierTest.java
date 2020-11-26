@@ -1,6 +1,5 @@
 package com.authguard.basic.otp;
 
-import com.authguard.basic.otp.OtpVerifier;
 import com.authguard.config.ConfigContext;
 import com.authguard.dal.OtpRepository;
 import com.authguard.dal.model.OneTimePasswordDO;
@@ -8,6 +7,7 @@ import com.authguard.service.config.OtpConfig;
 import com.authguard.service.config.OtpMode;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.mappers.ServiceMapperImpl;
+import io.vavr.control.Either;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
@@ -17,7 +17,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class OtpVerifierTest {
 
@@ -52,9 +51,9 @@ class OtpVerifierTest {
         Mockito.when(mockOtpRepository.getById(otp.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(otp)));
 
-        final Optional<String> generated = otpVerifier.verifyAccountToken(otp.getId() + ":" + otp.getPassword());
+        final Either<Exception, String> generated = otpVerifier.verifyAccountToken(otp.getId() + ":" + otp.getPassword());
 
-        assertThat(generated).contains(otp.getAccountId());
+        assertThat(generated.get()).isEqualTo(otp.getAccountId());
     }
 
     @Test
@@ -85,8 +84,10 @@ class OtpVerifierTest {
 
         setup(otpConfig);
 
-        assertThatThrownBy(() -> otpVerifier.verifyAccountToken("not a valid OTP"))
-                .isInstanceOf(ServiceAuthorizationException.class);
+        final Either<Exception, String> result = otpVerifier.verifyAccountToken("not a valid OTP");
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
@@ -104,7 +105,9 @@ class OtpVerifierTest {
         Mockito.when(mockOtpRepository.getById(otp.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        assertThatThrownBy(() -> otpVerifier.verifyAccountToken(otp.getId() + ":" + otp.getPassword()))
-                .isInstanceOf(ServiceAuthorizationException.class);
+        final Either<Exception, String> result = otpVerifier.verifyAccountToken(otp.getId() + ":" + otp.getPassword());
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
     }
 }

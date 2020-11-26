@@ -7,6 +7,7 @@ import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
 import com.authguard.jwt.oauth.AuthorizationCodeProvider;
 import com.google.inject.Inject;
+import io.vavr.control.Either;
 
 import java.util.Optional;
 
@@ -22,13 +23,13 @@ public class BasicToAuthorizationCode implements Exchange {
     }
 
     @Override
-    public Optional<TokensBO> exchangeToken(final String basic) {
+    public Either<Exception, TokensBO> exchangeToken(final String basic) {
         return basicAuth.authenticateAndGetAccount(basic)
                 .map(authorizationCodeProvider::generateToken);
     }
 
     @Override
-    public Optional<TokensBO> exchangeToken(final String basic, final TokenRestrictionsBO restrictions) {
+    public Either<Exception, TokensBO> exchangeToken(final String basic, final TokenRestrictionsBO restrictions) {
         return basicAuth.authenticateAndGetAccount(basic)
                 .map(account -> authorizationCodeProvider.generateToken(account, restrictions));
     }
