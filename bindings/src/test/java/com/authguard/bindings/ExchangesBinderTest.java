@@ -1,6 +1,5 @@
 package com.authguard.bindings;
 
-import com.authguard.bindings.ExchangesBinder;
 import com.authguard.config.ConfigContext;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
@@ -9,10 +8,13 @@ import com.google.inject.CreationException;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import io.vavr.control.Either;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -30,16 +32,16 @@ class ExchangesBinderTest {
     @TokenExchange(from = "basic", to = "random")
     public static class FirstExchange implements Exchange {
         @Override
-        public Optional<TokensBO> exchangeToken(final String fromToken) {
-            return Optional.empty();
+        public Either<Exception, TokensBO> exchangeToken(final String fromToken) {
+            return Either.right(null);
         }
     }
 
     @TokenExchange(from = "random", to = "chaos")
     public static class SecondExchange implements Exchange {
         @Override
-        public Optional<TokensBO> exchangeToken(final String fromToken) {
-            return Optional.empty();
+        public Either<Exception, TokensBO> exchangeToken(final String fromToken) {
+            return Either.right(null);
         }
     }
 

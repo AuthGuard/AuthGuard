@@ -6,9 +6,9 @@ import com.authguard.service.auth.AuthTokenVerfier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.google.inject.Inject;
+import io.vavr.control.Either;
 
 import java.time.ZonedDateTime;
-import java.util.Optional;
 
 public class AuthorizationCodeVerifier implements AuthTokenVerfier {
     private final AccountTokensRepository accountTokensRepository;
@@ -19,21 +19,24 @@ public class AuthorizationCodeVerifier implements AuthTokenVerfier {
     }
 
     @Override
-    public Optional<String> verifyAccountToken(final String token) {
+    public Either<Exception, String> verifyAccountToken(final String token) {
         return verifyAndGetAccountToken(token)
                 .map(AccountTokenDO::getAssociatedAccountId);
     }
 
     @Override
-    public Optional<AccountTokenDO> verifyAndGetAccountToken(final String token) {
-        final AccountTokenDO accountToken = accountTokensRepository.getByToken(token)
+    public Either<Exception, AccountTokenDO> verifyAndGetAccountToken(final String token) {
+        return accountTokensRepository.getByToken(token)
                 .join()
-                .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid authorization code " + token));
+                .map(this::verifyToken)
+                .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid authorization code " + token)));
+    }
 
+    private Either<Exception, AccountTokenDO> verifyToken(final AccountTokenDO accountToken) {
         if (accountToken.getExpiresAt().isBefore(ZonedDateTime.now())) {
             throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "The authorization code has expired");
         }
 
-        return Optional.of(accountToken);
+        return Either.right(accountToken);
     }
 }

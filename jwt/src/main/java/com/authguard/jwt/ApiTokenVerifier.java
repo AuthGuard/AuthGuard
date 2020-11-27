@@ -7,8 +7,7 @@ import com.authguard.service.config.JwtConfig;
 import com.authguard.service.config.StrategyConfig;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-
-import java.util.Optional;
+import io.vavr.control.Either;
 
 public class ApiTokenVerifier implements AuthTokenVerfier {
     private final JwtTokenVerifier jwtVerifier;
@@ -24,7 +23,7 @@ public class ApiTokenVerifier implements AuthTokenVerfier {
     }
 
     @Override
-    public Optional<String> verifyAccountToken(final String token) {
+    public Either<Exception, String> verifyAccountToken(final String token) {
         return jwtVerifier.verifyAccountToken(token);
     }
 }

@@ -2,8 +2,8 @@ package com.authguard.jwt.oauth;
 
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
-import com.authguard.jwt.oauth.AuthorizationCodeVerifier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
+import io.vavr.control.Either;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -47,8 +47,10 @@ class AuthorizationCodeVerifierTest {
         Mockito.when(accountTokensRepository.getByToken(authorizationCode))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        assertThatThrownBy(() -> authorizationCodeVerifier.verifyAccountToken(authorizationCode))
-                .isInstanceOf(ServiceAuthorizationException.class);
+        final Either<Exception, String> result = authorizationCodeVerifier.verifyAccountToken(authorizationCode);
+
+        assertThat(result.isLeft());
+        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test

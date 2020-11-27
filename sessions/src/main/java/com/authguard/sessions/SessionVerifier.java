@@ -6,9 +6,9 @@ import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.model.SessionBO;
 import com.google.inject.Inject;
+import io.vavr.control.Either;
 
 import java.time.ZonedDateTime;
-import java.util.Optional;
 
 public class SessionVerifier implements AuthTokenVerfier {
     private final SessionsService sessionsService;
@@ -19,14 +19,17 @@ public class SessionVerifier implements AuthTokenVerfier {
     }
 
     @Override
-    public Optional<String> verifyAccountToken(final String sessionToken) {
-        final SessionBO session = sessionsService.getByToken(sessionToken)
-                .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid session token"));
+    public Either<Exception, String> verifyAccountToken(final String sessionToken) {
+        return sessionsService.getByToken(sessionToken)
+                .map(this::verifySession)
+                .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid session token")));
+    }
 
+    private Either<Exception, String> verifySession(final SessionBO session) {
         if (session.getExpiresAt().isBefore(ZonedDateTime.now())) {
-            throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Session has expired");
+            return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Session has expired"));
         }
 
-        return Optional.of(session.getAccountId());
+        return Either.right(session.getAccountId());
     }
 }

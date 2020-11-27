@@ -2,13 +2,12 @@ package com.authguard.service.exchange;
 
 import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
-
-import java.util.Optional;
+import io.vavr.control.Either;
 
 public interface Exchange {
-    Optional<TokensBO> exchangeToken(String fromToken);
+    Either<Exception, TokensBO> exchangeToken(String fromToken);
 
-    default Optional<TokensBO> exchangeToken(String fromToken, TokenRestrictionsBO restrictions) {
+    default Either<Exception, TokensBO> exchangeToken(String fromToken, TokenRestrictionsBO restrictions) {
         return exchangeToken(fromToken);
     }
 }

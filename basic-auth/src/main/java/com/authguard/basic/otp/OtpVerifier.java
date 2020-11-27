@@ -7,6 +7,7 @@ import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.OneTimePasswordBO;
 import com.google.inject.Inject;
+import io.vavr.control.Either;
 
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -22,29 +23,36 @@ public class OtpVerifier implements AuthTokenVerfier {
     }
 
     @Override
-    public Optional<String> verifyAccountToken(final String token) {
+    public Either<Exception, String> verifyAccountToken(final String token) {
         final String[] parts = token.split(":");
 
         if (parts.length != 2) {
-            throw new ServiceAuthorizationException(ErrorCode.INVALID_AUTHORIZATION_FORMAT, "Invalid OTP token format");
+            return Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_AUTHORIZATION_FORMAT,
+                    "Invalid OTP token format"));
         }
 
         final String passwordId = parts[0];
         final String otp = parts[1];
 
-        final OneTimePasswordBO generated = otpRepository.getById(passwordId)
+        final Optional<OneTimePasswordBO> generatedOpt = otpRepository.getById(passwordId)
                 .thenApply(optional -> optional.map(serviceMapper::toBO))
-                .join()
-                .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid OTP ID"));
+                .join();
 
-        if (generated.getExpiresAt().isBefore(ZonedDateTime.now())) {
-            throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "OTP " + passwordId + " has expired");
-        }
+        if (generatedOpt.isPresent()) {
+            final OneTimePasswordBO generated = generatedOpt.get();
 
-        if (generated.getPassword().equals(otp)) {
-            return Optional.of(generated.getAccountId());
+            if (generated.getExpiresAt().isBefore(ZonedDateTime.now())) {
+                return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "OTP " + passwordId + " has expired"));
+            }
+
+            if (generated.getPassword().equals(otp)) {
+                return Either.right(generated.getAccountId());
+            } else {
+                return Either.left(new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH,
+                        "OTP " + passwordId + " values did not match"));
+            }
         } else {
-            return Optional.empty();
+            return Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid OTP ID"));
         }
     }
 }

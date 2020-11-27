@@ -7,6 +7,7 @@ import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
+import io.vavr.control.Either;
 
 import java.util.Optional;
 
@@ -22,13 +23,13 @@ public class BasicToAccessToken implements Exchange {
     }
 
     @Override
-    public Optional<TokensBO> exchangeToken(final String basicToken) {
+    public Either<Exception, TokensBO> exchangeToken(final String basicToken) {
         return basicAuth.authenticateAndGetAccount(basicToken)
                 .map(accessTokenProvider::generateToken);
     }
 
     @Override
-    public Optional<TokensBO> exchangeToken(final String basicToken, final TokenRestrictionsBO restrictions) {
+    public Either<Exception, TokensBO> exchangeToken(final String basicToken, final TokenRestrictionsBO restrictions) {
         return basicAuth.authenticateAndGetAccount(basicToken)
                 .map(account -> accessTokenProvider.generateToken(account, restrictions));
     }

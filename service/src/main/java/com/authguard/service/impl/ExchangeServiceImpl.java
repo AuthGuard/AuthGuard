@@ -8,6 +8,7 @@ import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
+import io.vavr.control.Either;
 
 import java.util.List;
 import java.util.Map;
@@ -37,8 +38,21 @@ public class ExchangeServiceImpl implements ExchangeService {
             throw new ServiceException(ErrorCode.UNKNOWN_EXCHANGE, "Unknown token exchange " + fromTokenType + " to " + toTokenType);
         }
 
-        return (restrictions == null ? exchange.exchangeToken(token) : exchange.exchangeToken(token, restrictions))
-                .orElseThrow(() -> new ServiceException(ErrorCode.TOKEN_GENERATION_FAILED, "Failed to generate token"));
+        final Either<Exception, TokensBO> generatedTokens = restrictions == null ?
+                exchange.exchangeToken(token) :
+                exchange.exchangeToken(token, restrictions);
+
+        if (generatedTokens.isRight()) {
+            return generatedTokens.get();
+        } else {
+            final Exception e = generatedTokens.getLeft();
+
+            if (e.getClass().isAssignableFrom(ServiceException.class)) {
+                throw (ServiceException) e;
+            } else {
+                throw new RuntimeException(e); // TODO remove this
+            }
+        }
     }
 
     @Override
