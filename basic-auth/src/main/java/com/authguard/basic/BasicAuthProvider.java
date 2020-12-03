@@ -8,6 +8,7 @@ import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.CredentialsBO;
+import com.authguard.service.model.EntityType;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
 
@@ -89,7 +90,8 @@ public class BasicAuthProvider {
             if (securePassword.verify(password, credentials.get().getHashedPassword())) {
                 return getAccountById(credentials.get().getAccountId());
             } else {
-                return Either.left(new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH, "Passwords do not match"));
+                return Either.left(new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH,
+                        "Passwords do not match", EntityType.ACCOUNT, credentials.get().getAccountId()));
             }
         } else {
             return Either.left(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,

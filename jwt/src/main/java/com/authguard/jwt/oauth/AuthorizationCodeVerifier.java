@@ -5,6 +5,7 @@ import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.service.auth.AuthTokenVerfier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
+import com.authguard.service.model.EntityType;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
 
@@ -34,7 +35,8 @@ public class AuthorizationCodeVerifier implements AuthTokenVerfier {
 
     private Either<Exception, AccountTokenDO> verifyToken(final AccountTokenDO accountToken) {
         if (accountToken.getExpiresAt().isBefore(ZonedDateTime.now())) {
-            throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "The authorization code has expired");
+            throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "The authorization code has expired",
+                    EntityType.ACCOUNT, accountToken.getAssociatedAccountId());
         }
 
         return Either.right(accountToken);

@@ -26,6 +26,7 @@
         <module>bindings</module>
         <module>api</module>
         <module>rest</module>
+        <module>plugins</module>
     </modules>
 
     <properties>
