@@ -14,6 +14,7 @@ import com.authguard.service.messaging.AuthMessage;
 import com.authguard.service.model.EntityType;
 import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
+import com.authguard.service.util.ID;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
 
@@ -87,6 +88,7 @@ public class ExchangeServiceImpl implements ExchangeService {
                 tokens.getEntityType(), tokens.getEntityId());
 
         exchangeAttemptsRepository.save(ExchangeAttemptDO.builder()
+                .id(ID.generate())
                 .entityId(tokens.getEntityId())
                 .exchangeFrom(fromTokenType)
                 .exchangeTo(toTokenType)
@@ -107,6 +109,7 @@ public class ExchangeServiceImpl implements ExchangeService {
 
             if (sae.getEntityType() == EntityType.ACCOUNT) {
                 exchangeAttemptsRepository.save(ExchangeAttemptDO.builder()
+                        .id(ID.generate())
                         .entityId(sae.getEntityId())
                         .exchangeFrom(fromTokenType)
                         .exchangeTo(toTokenType)

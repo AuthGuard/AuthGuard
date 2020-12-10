@@ -41,4 +41,8 @@ public interface ServiceMapper {
 
     TokenRestrictionsDO toDO(TokenRestrictionsBO tokenRestrictionsBO);
     TokenRestrictionsBO toBO(TokenRestrictionsDO tokenRestrictionsDO);
+
+    AccountLockBO toBO(AccountLockDO accountLockDO);
+
+    ExchangeAttemptBO toBO(ExchangeAttemptDO exchangeAttemptDO);
 }

@@ -7,7 +7,7 @@ import org.junit.jupiter.api.TestInstance;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,7 +27,7 @@ public class AccountLockJpaTest {
 
         createdLock = AccountLockDO.builder()
                 .id("account-lock-id")
-                .expiresAt(LocalDateTime.now())
+                .expiresAt(OffsetDateTime.now())
                 .accountId("account")
                 .build();
 
