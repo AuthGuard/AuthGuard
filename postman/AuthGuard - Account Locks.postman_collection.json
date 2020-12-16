@@ -1,0 +1,266 @@
+{
+	"info": {
+		"_postman_id": "b843833a-4957-4430-9a93-8a1e376f4eb2",
+		"name": "AuthGuard - Account Locks",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "login #1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "90781ece-1ded-48d8-a878-a14096534943",
+						"exec": [
+							"pm.test(\"Status code is 400\", () => {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"authorization\": \"Basic dXNlcm5hbWU6d3Jvbmc=\"\n}"
+				},
+				"url": {
+					"raw": "{{authguard}}/auth/authenticate",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"auth",
+						"authenticate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login #2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "b7f9aa18-f667-4cfa-9467-0894df851ccc",
+						"exec": [
+							"pm.test(\"Status code is 400\", () => {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"authorization\": \"Basic dXNlcm5hbWU6d3Jvbmc=\"\n}"
+				},
+				"url": {
+					"raw": "{{authguard}}/auth/authenticate",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"auth",
+						"authenticate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login #3",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "789b9d77-d147-4d6c-81a4-7d7bca9b8f21",
+						"exec": [
+							"pm.test(\"Status code is 400\", () => {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"authorization\": \"Basic dXNlcm5hbWU6d3Jvbmc=\"\n}"
+				},
+				"url": {
+					"raw": "{{authguard}}/auth/authenticate",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"auth",
+						"authenticate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get locks",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "81edd275-438d-4093-8e50-c87630e13ac1",
+						"exec": [
+							"pm.test(\"Status code is 200\", () => {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    const response = pm.response.json();",
+							"    pm.expect(response).to.have.lengthOf(1);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{authguard}}/accounts/{{accountId}}/locks",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts",
+						"{{accountId}}",
+						"locks"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login with an active lock",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "56e26989-9318-47ef-a71f-df2266ed22a0",
+						"exec": [
+							"pm.test(\"Status code is 400 and error code is correct\", function () {",
+							"    pm.response.to.have.status(400);",
+							"    ",
+							"    let response = pm.response.json();",
+							"    ",
+							"    pm.expect(response.code).to.eq(\"AT.032\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"authorization\": \"Basic dXNlcm5hbWU6cGFzc3dvcmQ=\"\n}"
+				},
+				"url": {
+					"raw": "{{authguard}}/auth/authenticate",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"auth",
+						"authenticate"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{admin-api-key}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "8f772f83-c9d4-46cd-a23c-fa499f2525c9",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "b4f19ce2-abd8-4f22-8029-785db103ffdc",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"protocolProfileBehavior": {}
+}
