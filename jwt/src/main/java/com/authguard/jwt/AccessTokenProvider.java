@@ -58,6 +58,8 @@ public class AccessTokenProvider implements AuthProvider {
                 .id(tokenBuilder.getId().orElse(null))
                 .token(token)
                 .refreshToken(refreshToken)
+                .entityType(EntityType.ACCOUNT)
+                .entityId(account.getId())
                 .build();
     }
 
