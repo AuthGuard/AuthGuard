@@ -1,20 +1,19 @@
 package com.authguard.extensions;
 
-import com.authguard.dal.AccountLocksRepository;
 import com.authguard.dal.ExchangeAttemptsRepository;
-import com.authguard.dal.model.AccountLockDO;
 import com.authguard.dal.model.ExchangeAttemptDO;
 import com.authguard.emb.model.EventType;
 import com.authguard.emb.model.Message;
 import com.authguard.extensions.config.ImmutableAccountLockerConfig;
+import com.authguard.service.AccountLocksService;
 import com.authguard.service.messaging.AuthMessage;
+import com.authguard.service.model.AccountLockBO;
 import com.authguard.service.model.EntityType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -24,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class AccountLockerTest {
     private ExchangeAttemptsRepository exchangeAttemptsRepository;
-    private AccountLocksRepository accountLocksRepository;
+    private AccountLocksService accountLocksService;
     private ImmutableAccountLockerConfig config;
 
     private AccountLocker accountLocker;
@@ -32,11 +31,11 @@ class AccountLockerTest {
     @BeforeEach
     void setup() {
         exchangeAttemptsRepository = Mockito.mock(ExchangeAttemptsRepository.class);
-        accountLocksRepository = Mockito.mock(AccountLocksRepository.class);
+        accountLocksService = Mockito.mock(AccountLocksService.class);
         config = ImmutableAccountLockerConfig.builder()
                 .build();
 
-        accountLocker = new AccountLocker(exchangeAttemptsRepository, accountLocksRepository, config);
+        accountLocker = new AccountLocker(exchangeAttemptsRepository, accountLocksService, config);
     }
 
     @Test
@@ -70,7 +69,7 @@ class AccountLockerTest {
                 OffsetDateTime.now().minusMinutes(config.getCheckPeriod()).plusMinutes(1)
         );
 
-        Mockito.verifyZeroInteractions(accountLocksRepository);
+        Mockito.verifyZeroInteractions(accountLocksService);
     }
 
     @Test
@@ -99,7 +98,7 @@ class AccountLockerTest {
 
         // verify
         final ArgumentCaptor<OffsetDateTime> timeArgumentCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
-        final ArgumentCaptor<AccountLockDO> accountLockArgumentCaptor = ArgumentCaptor.forClass(AccountLockDO.class);
+        final ArgumentCaptor<AccountLockBO> accountLockArgumentCaptor = ArgumentCaptor.forClass(AccountLockBO.class);
 
         Mockito.verify(exchangeAttemptsRepository)
                 .findByEntityAndTimestamp(Mockito.eq("account"), timeArgumentCaptor.capture());
@@ -109,7 +108,7 @@ class AccountLockerTest {
                 OffsetDateTime.now().minusMinutes(config.getCheckPeriod()).plusMinutes(1)
         );
 
-        Mockito.verify(accountLocksRepository).save(accountLockArgumentCaptor.capture());
+        Mockito.verify(accountLocksService).create(accountLockArgumentCaptor.capture());
 
         assertThat(accountLockArgumentCaptor.getValue().getAccountId()).isEqualTo(authMessage.getEntityId());
         assertThat(accountLockArgumentCaptor.getValue().getExpiresAt()).isBetween(
@@ -135,7 +134,7 @@ class AccountLockerTest {
         accountLocker.onMessage(message);
 
         // verify
-        Mockito.verifyZeroInteractions(exchangeAttemptsRepository, accountLocksRepository);
+        Mockito.verifyZeroInteractions(exchangeAttemptsRepository, accountLocksService);
     }
 
     @Test
@@ -155,7 +154,7 @@ class AccountLockerTest {
         accountLocker.onMessage(message);
 
         // verify
-        Mockito.verifyZeroInteractions(exchangeAttemptsRepository, accountLocksRepository);
+        Mockito.verifyZeroInteractions(exchangeAttemptsRepository, accountLocksService);
     }
 
     @Test
@@ -175,6 +174,6 @@ class AccountLockerTest {
         accountLocker.onMessage(message);
 
         // verify
-        Mockito.verifyZeroInteractions(exchangeAttemptsRepository, accountLocksRepository);
+        Mockito.verifyZeroInteractions(exchangeAttemptsRepository, accountLocksService);
     }
 }

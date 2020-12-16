@@ -1,15 +1,15 @@
 package com.authguard.extensions;
 
 import com.authguard.config.ConfigContext;
-import com.authguard.dal.AccountLocksRepository;
 import com.authguard.dal.ExchangeAttemptsRepository;
-import com.authguard.dal.model.AccountLockDO;
 import com.authguard.emb.MessageSubscriber;
 import com.authguard.emb.annotations.Channel;
 import com.authguard.emb.model.EventType;
 import com.authguard.emb.model.Message;
 import com.authguard.extensions.config.ImmutableAccountLockerConfig;
+import com.authguard.service.AccountLocksService;
 import com.authguard.service.messaging.AuthMessage;
+import com.authguard.service.model.AccountLockBO;
 import com.authguard.service.model.EntityType;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -23,21 +23,21 @@ public class AccountLocker implements MessageSubscriber {
     private static final Logger LOG = LoggerFactory.getLogger(AccountLocker.class);
 
     private final ExchangeAttemptsRepository exchangeAttemptsRepository;
-    private final AccountLocksRepository accountLocksRepository;
+    private final AccountLocksService accountLocksService;
     private final ImmutableAccountLockerConfig config;
 
     @Inject
     public AccountLocker(final ExchangeAttemptsRepository exchangeAttemptsRepository,
-                         final AccountLocksRepository accountLocksRepository,
+                         final AccountLocksService accountLocksService,
                          final @Named("accountLocker") ConfigContext configContext) {
-        this(exchangeAttemptsRepository, accountLocksRepository, configContext.asConfigBean(ImmutableAccountLockerConfig.class));
+        this(exchangeAttemptsRepository, accountLocksService, configContext.asConfigBean(ImmutableAccountLockerConfig.class));
     }
 
     public AccountLocker(final ExchangeAttemptsRepository exchangeAttemptsRepository,
-                         final AccountLocksRepository accountLocksRepository,
+                         final AccountLocksService accountLocksService,
                          final ImmutableAccountLockerConfig config) {
         this.exchangeAttemptsRepository = exchangeAttemptsRepository;
-        this.accountLocksRepository = accountLocksRepository;
+        this.accountLocksService = accountLocksService;
         this.config = config;
     }
 
@@ -73,12 +73,12 @@ public class AccountLocker implements MessageSubscriber {
                             LOG.info("Account {} had {} failed attempts in the past {} minutes; a lock will be placed",
                                     authMessage.getEntityId(), attempts.size(), config.getCheckPeriod());
 
-                            final AccountLockDO lock = AccountLockDO.builder()
+                            final AccountLockBO lock = AccountLockBO.builder()
                                     .accountId(authMessage.getEntityId())
                                     .expiresAt(now.plusMinutes(config.getLockPeriod()))
                                     .build();
 
-                            accountLocksRepository.save(lock);
+                            accountLocksService.create(lock);
                         }
                     });
         } else {

@@ -1,9 +1,11 @@
 package com.authguard.service.impl;
 
 import com.authguard.dal.AccountLocksRepository;
+import com.authguard.dal.model.AccountLockDO;
 import com.authguard.service.AccountLocksService;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.AccountLockBO;
+import com.authguard.service.util.ID;
 import com.google.inject.Inject;
 
 import java.time.OffsetDateTime;
@@ -20,6 +22,17 @@ public class AccountLocksServiceImpl implements AccountLocksService {
                                    final ServiceMapper serviceMapper) {
         this.accountLocksRepository = accountLocksRepository;
         this.serviceMapper = serviceMapper;
+    }
+
+    @Override
+    public AccountLockBO create(final AccountLockBO accountLock) {
+        final AccountLockDO accountLockDO = serviceMapper.toDO(accountLock);
+
+        accountLockDO.setId(ID.generate());
+
+        return accountLocksRepository.save(accountLockDO)
+                .thenApply(serviceMapper::toBO)
+                .join();
     }
 
     @Override

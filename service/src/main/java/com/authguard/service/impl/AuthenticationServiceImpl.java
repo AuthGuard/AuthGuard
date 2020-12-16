@@ -1,30 +1,40 @@
 package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
+import com.authguard.service.AccountLocksService;
 import com.authguard.service.AuthenticationService;
 import com.authguard.service.ExchangeService;
 import com.authguard.service.config.AuthenticationConfig;
+import com.authguard.service.exceptions.ServiceAuthorizationException;
+import com.authguard.service.exceptions.codes.ErrorCode;
+import com.authguard.service.model.AccountLockBO;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
+import java.util.Collection;
 import java.util.Optional;
 
 public class AuthenticationServiceImpl implements AuthenticationService {
     private static final String FROM_TOKEN_TYPE = "basic";
 
     private final ExchangeService exchangeService;
+    private final AccountLocksService accountLocksService;
     private final String generateTokenType;
 
     @Inject
     public AuthenticationServiceImpl(final ExchangeService exchangeService,
-                                     final @Named("authentication") ConfigContext authenticationConfig) {
-        final AuthenticationConfig authenticationConfig1 = authenticationConfig.asConfigBean(AuthenticationConfig.class);
-        this.generateTokenType = authenticationConfig1.getGenerateToken();
+                                     final AccountLocksService accountLocksService,
+                                     final @Named("authentication") ConfigContext configContext) {
+        this.accountLocksService = accountLocksService;
+
+        final AuthenticationConfig authenticationConfig = configContext.asConfigBean(AuthenticationConfig.class);
+
+        this.generateTokenType = authenticationConfig.getGenerateToken();
 
         if (!exchangeService.supportsExchange(FROM_TOKEN_TYPE, this.generateTokenType)) {
             throw new IllegalArgumentException("Unsupported exchange basic to "
-                    + authenticationConfig1.getGenerateToken());
+                    + authenticationConfig.getGenerateToken());
         }
 
         this.exchangeService = exchangeService;
@@ -32,7 +42,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public Optional<TokensBO> authenticate(final String header) {
-        return Optional.of(exchangeService.exchange(header, FROM_TOKEN_TYPE, generateTokenType));
+        final TokensBO tokens = exchangeService.exchange(header, FROM_TOKEN_TYPE, generateTokenType);
+        final Collection<AccountLockBO> locks = accountLocksService.getActiveLocksByAccountId(tokens.getEntityId());
+
+        if (locks == null || locks.isEmpty()) {
+            return Optional.of(tokens);
+        } else {
+            throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_IS_LOCKED,
+                    "There is an active lock on account " + tokens.getEntityId());
+        }
     }
 
 }
