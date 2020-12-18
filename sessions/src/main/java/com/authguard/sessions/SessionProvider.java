@@ -5,10 +5,7 @@ import com.authguard.service.SessionsService;
 import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.config.ConfigParser;
 import com.authguard.service.config.SessionsConfig;
-import com.authguard.service.model.AccountBO;
-import com.authguard.service.model.AppBO;
-import com.authguard.service.model.SessionBO;
-import com.authguard.service.model.TokensBO;
+import com.authguard.service.model.*;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
@@ -37,6 +34,8 @@ public class SessionProvider implements AuthProvider {
         return TokensBO.builder()
                 .type("session")
                 .token(created.getSessionToken())
+                .entityType(EntityType.ACCOUNT)
+                .entityId(account.getId())
                 .build();
     }
 

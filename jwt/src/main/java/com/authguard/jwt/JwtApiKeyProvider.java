@@ -3,6 +3,7 @@ package com.authguard.jwt;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.authguard.service.model.EntityType;
 import com.google.inject.Inject;
 import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.config.JwtConfig;
@@ -36,6 +37,8 @@ public class JwtApiKeyProvider implements AuthProvider {
 
         return TokensBO.builder()
                 .token(token)
+                .entityType(EntityType.APPLICATION)
+                .entityId(app.getId())
                 .build();
     }
 

@@ -8,10 +8,7 @@ import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.config.ConfigParser;
 import com.authguard.service.config.OtpConfig;
 import com.authguard.service.mappers.ServiceMapper;
-import com.authguard.service.model.AccountBO;
-import com.authguard.service.model.AppBO;
-import com.authguard.service.model.OneTimePasswordBO;
-import com.authguard.service.model.TokensBO;
+import com.authguard.service.model.*;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -41,7 +38,7 @@ public class OtpProvider implements AuthProvider {
         final String passwordId = UUID.randomUUID().toString();
         final String password = generatePassword();
 
-        final TokensBO token = createToken(passwordId);
+        final TokensBO token = createToken(passwordId, account.getId());
 
         final OneTimePasswordBO oneTimePassword = OneTimePasswordBO.builder()
                 .id(passwordId)
@@ -62,10 +59,12 @@ public class OtpProvider implements AuthProvider {
         throw new UnsupportedOperationException("OTPs cannot be generated for applications");
     }
 
-    private TokensBO createToken(final String passwordId) {
+    private TokensBO createToken(final String passwordId, final String accountId) {
         return TokensBO.builder()
                 .type("OTP")
                 .token(passwordId)
+                .entityType(EntityType.ACCOUNT)
+                .entityId(accountId)
                 .build();
     }
 

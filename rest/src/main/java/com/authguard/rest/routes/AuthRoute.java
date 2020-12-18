@@ -1,30 +1,38 @@
 package com.authguard.rest.routes;
 
+import com.authguard.api.dto.entities.ExchangeAttemptDTO;
 import com.authguard.api.dto.entities.TokensDTO;
 import com.authguard.api.dto.requests.AuthRequestDTO;
+import com.authguard.api.dto.requests.ExchangeAttemptsRequestDTO;
 import com.authguard.api.routes.AuthApi;
+import com.authguard.rest.mappers.RestJsonMapper;
 import com.authguard.rest.mappers.RestMapper;
 import com.authguard.rest.util.BodyHandler;
 import com.authguard.service.AuthenticationService;
+import com.authguard.service.ExchangeAttemptsService;
 import com.authguard.service.ExchangeService;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
 
+import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class AuthRoute extends AuthApi {
     private final AuthenticationService authenticationService;
     private final ExchangeService exchangeService;
+    private final ExchangeAttemptsService exchangeAttemptsService;
     private final RestMapper restMapper;
 
     private final BodyHandler<AuthRequestDTO> authRequestBodyHandler;
 
     @Inject
     AuthRoute(final AuthenticationService authenticationService, final ExchangeService exchangeService,
-              final RestMapper restMapper) {
+              final ExchangeAttemptsService exchangeAttemptsService, final RestMapper restMapper) {
         this.authenticationService = authenticationService;
         this.exchangeService = exchangeService;
+        this.exchangeAttemptsService = exchangeAttemptsService;
         this.restMapper = restMapper;
 
         this.authRequestBodyHandler = new BodyHandler.Builder<>(AuthRequestDTO.class)
@@ -59,5 +67,16 @@ public class AuthRoute extends AuthApi {
         }
 
         context.json(restMapper.toDTO(tokens));
+    }
+
+    @Override
+    public void getExchangeAttempts(final Context context) {
+        final ExchangeAttemptsRequestDTO exchangeAttemptsRequest = RestJsonMapper.asClass(context.body(),
+                ExchangeAttemptsRequestDTO.class);
+
+        final Collection<ExchangeAttemptDTO> attempts = exchangeAttemptsService.get(exchangeAttemptsRequest.getEntityId())
+                .stream()
+                .map(restMapper::toDTO)
+                .collect(Collectors.toList());
     }
 }

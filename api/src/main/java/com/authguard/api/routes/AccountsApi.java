@@ -28,6 +28,8 @@ public abstract class AccountsApi implements ApiRoute {
 
         patch("/:id/activate", this::activate, ActorRoles.adminClient());
         patch("/:id/deactivate", this::deactivate, ActorRoles.adminClient());
+
+        get("/:id/locks", this::getActiveLocks, ActorRoles.adminClient());
     }
 
     public abstract void create(final Context context);
@@ -49,4 +51,6 @@ public abstract class AccountsApi implements ApiRoute {
     public abstract void activate(final Context context);
 
     public abstract void deactivate(final Context context);
+
+    public abstract void getActiveLocks(final Context context);
 }

@@ -1,6 +1,7 @@
 package com.authguard.rest.routes;
 
 import com.authguard.api.dto.entities.AccountDTO;
+import com.authguard.api.dto.entities.AccountLockDTO;
 import com.authguard.api.dto.entities.AppDTO;
 import com.authguard.api.dto.entities.Error;
 import com.authguard.api.dto.requests.*;
@@ -8,6 +9,7 @@ import com.authguard.api.routes.AccountsApi;
 import com.authguard.rest.mappers.RestMapper;
 import com.authguard.rest.util.BodyHandler;
 import com.authguard.rest.util.IdempotencyHeader;
+import com.authguard.service.AccountLocksService;
 import com.authguard.service.AccountsService;
 import com.authguard.service.ApplicationsService;
 import com.authguard.service.model.PermissionBO;
@@ -15,6 +17,7 @@ import com.authguard.service.model.RequestContextBO;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -22,6 +25,7 @@ import java.util.stream.Collectors;
 public class AccountsRoute extends AccountsApi {
     private final AccountsService accountsService;
     private final ApplicationsService applicationsService;
+    private final AccountLocksService accountLocksService;
     private final RestMapper restMapper;
 
     private final BodyHandler<CreateAccountRequestDTO> accountRequestBodyHandler;
@@ -31,9 +35,10 @@ public class AccountsRoute extends AccountsApi {
 
     @Inject
     AccountsRoute(final AccountsService accountsService, final ApplicationsService applicationsService,
-                  final RestMapper restMapper) {
+                  final AccountLocksService accountLocksService, final RestMapper restMapper) {
         this.accountsService = accountsService;
         this.applicationsService = applicationsService;
+        this.accountLocksService = accountLocksService;
         this.restMapper = restMapper;
 
         this.accountRequestBodyHandler = new BodyHandler.Builder<>(CreateAccountRequestDTO.class)
@@ -184,5 +189,17 @@ public class AccountsRoute extends AccountsApi {
         } else {
             context.status(404).json(new Error("404", "No account with ID " + accountId + " exists"));
         }
+    }
+
+    @Override
+    public void getActiveLocks(final Context context) {
+        final String accountId = context.pathParam("id");
+
+        final Collection<AccountLockDTO> locks = accountLocksService.getActiveLocksByAccountId(accountId)
+                .stream()
+                .map(restMapper::toDTO)
+                .collect(Collectors.toList());
+
+        context.status(200).json(locks);
     }
 }

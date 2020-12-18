@@ -10,6 +10,7 @@ import com.authguard.service.config.ConfigParser;
 import com.authguard.service.config.PasswordlessConfig;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AppBO;
+import com.authguard.service.model.EntityType;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -56,6 +57,8 @@ public class PasswordlessProvider implements AuthProvider {
         return TokensBO.builder()
                 .type("passwordless")
                 .token(accountToken.getId())
+                .entityType(EntityType.ACCOUNT)
+                .entityId(account.getId())
                 .build();
     }
 

@@ -10,6 +10,7 @@ import com.authguard.service.auth.AuthTokenVerfier;
 import com.authguard.service.config.StrategyConfig;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
+import com.authguard.service.model.EntityType;
 import io.vavr.control.Either;
 
 import java.util.Optional;
@@ -42,7 +43,8 @@ public class JwtTokenVerifier implements AuthTokenVerfier {
             if (this.verifyJti(verified)) {
                 return Either.right(verified);
             } else {
-                return Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid JTI "));
+                return Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid JTI", EntityType.ACCOUNT,
+                        verified.getSubject()));
             }
         } catch (final JWTVerificationException e) {
             return Either.left(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid JWT"));

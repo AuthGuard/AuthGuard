@@ -10,6 +10,7 @@ import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.AccountBO;
+import com.authguard.service.model.EntityType;
 import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
@@ -60,7 +61,8 @@ public class AuthorizationCodeToAccessToken implements Exchange {
                                 .generateToken(account, serviceMapper.toBO(accountToken.getTokenRestrictions())));
             } else {
                 throw new ServiceAuthorizationException(ErrorCode.INVALID_ADDITIONAL_INFORMATION_TYPE,
-                        "Found additional information of wrong type " + accountToken.getAdditionalInformation().getClass());
+                        "Found additional information of wrong type " + accountToken.getAdditionalInformation().getClass(),
+                        EntityType.ACCOUNT, accountToken.getAssociatedAccountId());
             }
         }
     }

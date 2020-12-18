@@ -5,6 +5,7 @@ import com.authguard.service.auth.AuthTokenVerfier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
+import com.authguard.service.model.EntityType;
 import com.authguard.service.model.OneTimePasswordBO;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
@@ -42,14 +43,15 @@ public class OtpVerifier implements AuthTokenVerfier {
             final OneTimePasswordBO generated = generatedOpt.get();
 
             if (generated.getExpiresAt().isBefore(ZonedDateTime.now())) {
-                return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "OTP " + passwordId + " has expired"));
+                return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "OTP " + passwordId + " has expired",
+                        EntityType.ACCOUNT, generated.getAccountId()));
             }
 
             if (generated.getPassword().equals(otp)) {
                 return Either.right(generated.getAccountId());
             } else {
                 return Either.left(new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH,
-                        "OTP " + passwordId + " values did not match"));
+                        "OTP " + passwordId + " values did not match", EntityType.ACCOUNT, generated.getAccountId()));
             }
         } else {
             return Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid OTP ID"));

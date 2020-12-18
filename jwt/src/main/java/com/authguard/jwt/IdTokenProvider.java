@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.authguard.config.ConfigContext;
 import com.authguard.service.config.ConfigParser;
 import com.authguard.service.config.StrategyConfig;
+import com.authguard.service.model.EntityType;
 import com.google.inject.Inject;
 import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.config.JwtConfig;
@@ -37,6 +38,8 @@ public class IdTokenProvider implements AuthProvider {
         return TokensBO.builder()
                 .token(token)
                 .refreshToken(refreshToken)
+                .entityType(EntityType.ACCOUNT)
+                .entityId(account.getId())
                 .build();
     }
 

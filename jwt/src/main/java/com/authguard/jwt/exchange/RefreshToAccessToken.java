@@ -9,6 +9,7 @@ import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.model.AccountBO;
+import com.authguard.service.model.EntityType;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
@@ -40,7 +41,8 @@ public class RefreshToAccessToken implements Exchange {
 
     private Either<Exception, TokensBO> generate(final AccountTokenDO accountToken) {
         if (!validateExpirationDateTime(accountToken)) {
-            return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Refresh token has expired"));
+            return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Refresh token has expired",
+                    EntityType.ACCOUNT, accountToken.getAssociatedAccountId()));
         }
 
         return generateTokenForAccount(accountToken.getAssociatedAccountId());
@@ -61,8 +63,8 @@ public class RefreshToAccessToken implements Exchange {
         final ZonedDateTime now = ZonedDateTime.now();
 
         if (now.isAfter(accountToken.getExpiresAt())) {
-            throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Refresh token " + accountToken.getExpiresAt()
-                    + " for account " + accountToken.getAssociatedAccountId() + " has expired");
+            throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Refresh token " + accountToken.getToken()
+                    + " has expired", EntityType.ACCOUNT, accountToken.getAssociatedAccountId());
         }
 
         return true;

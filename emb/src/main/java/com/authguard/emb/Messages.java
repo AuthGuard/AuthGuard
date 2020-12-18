@@ -30,7 +30,11 @@ public class Messages {
         return basicMessage(EventType.EMAIL_VERIFICATION, object);
     }
 
-    private static Message basicMessage(final EventType eventType, final Object object) {
+    public static Message auth(final Object object) {
+        return basicMessage(EventType.AUTHENTICATION, object);
+    }
+
+    public static Message basicMessage(final EventType eventType, final Object object) {
         return Message.builder()
                 .eventType(eventType)
                 .timestamp(OffsetDateTime.now())
