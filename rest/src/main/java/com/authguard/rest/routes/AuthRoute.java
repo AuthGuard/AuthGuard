@@ -1,5 +1,6 @@
 package com.authguard.rest.routes;
 
+import com.authguard.api.dto.entities.Error;
 import com.authguard.api.dto.entities.ExchangeAttemptDTO;
 import com.authguard.api.dto.entities.TokensDTO;
 import com.authguard.api.dto.requests.AuthRequestDTO;
@@ -48,7 +49,7 @@ public class AuthRoute extends AuthApi {
         if (tokens.isPresent()) {
             context.json(tokens.get());
         } else {
-            context.status(400).result("Failed to authenticate user");
+            context.status(400).json(new Error("400", "Failed to authenticate user"));
         }
     }
 

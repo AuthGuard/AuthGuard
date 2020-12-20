@@ -1,5 +1,6 @@
 package com.authguard.rest.access;
 
+import com.authguard.api.dto.entities.Error;
 import com.authguard.basic.BasicAuthProvider;
 import com.authguard.service.ApiKeysService;
 import com.authguard.service.exceptions.ServiceException;
@@ -57,7 +58,7 @@ public class AuthorizationHandler implements Handler {
                 return;
 
             default:
-                context.status(401).result("Unrecognized authorization scheme");
+                context.status(401).json(new Error("401", "Unrecognized authorization scheme"));
         }
     }
 

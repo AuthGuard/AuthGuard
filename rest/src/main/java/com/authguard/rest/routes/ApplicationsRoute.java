@@ -1,6 +1,7 @@
 package com.authguard.rest.routes;
 
 import com.authguard.api.dto.entities.AppDTO;
+import com.authguard.api.dto.entities.Error;
 import com.authguard.api.dto.requests.CreateAppRequestDTO;
 import com.authguard.api.routes.ApplicationsApi;
 import com.authguard.rest.mappers.RestJsonMapper;
@@ -45,7 +46,7 @@ public class ApplicationsRoute extends ApplicationsApi {
         if (created.isPresent()) {
             context.status(201).json(created.get());
         } else {
-            context.status(400).result("Failed to create application");
+            context.status(400).json(new Error("400", "Failed to create application"));
         }
     }
 
