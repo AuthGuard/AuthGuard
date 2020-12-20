@@ -11,7 +11,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "247ce39b-76f4-4d2c-b640-e9d39ea5d54c",
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -36,7 +35,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"authorization\": \"Basic dXNlcm5hbWU6cGFzc3dvcmQ=\"\n}"
+					"raw": "{\n\t\"identifier\": \"username\",\n    \"password\": \"password\"\n}"
 				},
 				"url": {
 					"raw": "{{authguard}}/auth/authenticate",
@@ -57,7 +56,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "f2300ef0-0617-4661-9feb-0ed4dc065903",
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -103,7 +101,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "25a9db24-428c-428c-8f5b-fdaf18940e0f",
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -126,7 +123,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"authorization\": \"{{refreshToken}}\"\n}"
+					"raw": "{\n\t\"token\": \"{{refreshToken}}\"\n}"
 				},
 				"url": {
 					"raw": "{{authguard}}/auth/authorize/refresh",
@@ -157,7 +154,6 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "5cf5dbe1-6251-4fa7-b453-407c683f7d7c",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -167,13 +163,11 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "43900ab2-c285-40bc-abec-5077136fa7e8",
 				"type": "text/javascript",
 				"exec": [
 					""
 				]
 			}
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }

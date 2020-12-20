@@ -8,6 +8,7 @@ import com.authguard.service.config.AuthenticationConfig;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.model.AccountLockBO;
+import com.authguard.service.model.AuthRequestBO;
 import com.authguard.service.model.TokensBO;
 import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.AfterEach;
@@ -57,17 +58,20 @@ class AuthenticationServiceImplTest {
     void authenticate() {
         final String username = "username";
         final String password = "password";
-        final String authorization = "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        final AuthRequestBO authRequest = AuthRequestBO.builder()
+                .identifier(username)
+                .password(password)
+                .build();
 
         final TokensBO tokens = RANDOM.nextObject(TokensBO.class);
 
-        Mockito.when(exchangeService.exchange(authorization, "basic", "accessToken"))
+        Mockito.when(exchangeService.exchange(authRequest, "basic", "accessToken"))
                 .thenReturn(tokens);
 
         Mockito.when(accountLocksService.getActiveLocksByAccountId(tokens.getEntityId()))
                 .thenReturn(Collections.emptyList());
 
-        final Optional<TokensBO> result = authenticationService.authenticate(authorization);
+        final Optional<TokensBO> result = authenticationService.authenticate(authRequest);
 
         assertThat(result).isPresent().contains(tokens);
     }
@@ -76,17 +80,20 @@ class AuthenticationServiceImplTest {
     void authenticateLockedAccount() {
         final String username = "username";
         final String password = "password";
-        final String authorization = "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        final AuthRequestBO authRequest = AuthRequestBO.builder()
+                .identifier(username)
+                .password(password)
+                .build();
 
         final TokensBO tokens = RANDOM.nextObject(TokensBO.class);
 
-        Mockito.when(exchangeService.exchange(authorization, "basic", "accessToken"))
+        Mockito.when(exchangeService.exchange(authRequest, "basic", "accessToken"))
                 .thenReturn(tokens);
 
         Mockito.when(accountLocksService.getActiveLocksByAccountId(tokens.getEntityId()))
                 .thenReturn(Collections.singleton(AccountLockBO.builder().build()));
 
-        assertThatThrownBy(() -> authenticationService.authenticate(authorization))
+        assertThatThrownBy(() -> authenticationService.authenticate(authRequest))
                 .isInstanceOf(ServiceAuthorizationException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCOUNT_IS_LOCKED);
     }

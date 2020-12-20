@@ -7,6 +7,7 @@ import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.ServiceException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.model.AccountBO;
+import com.authguard.service.model.AuthRequestBO;
 import com.authguard.service.model.CredentialsBO;
 import com.authguard.service.model.EntityType;
 import com.google.inject.Inject;
@@ -28,14 +29,16 @@ public class BasicAuthProvider {
         this.accountsService = accountsService;
     }
 
-    public Either<Exception, AccountBO> authenticateAndGetAccount(final String basicToken) {
-        final String[] parts = TokensUtils.parseAuthorization(basicToken);
+    public Either<Exception, AccountBO> authenticateAndGetAccount(final AuthRequestBO authRequest) {
+        return verifyCredentialsAndGetAccount(authRequest.getIdentifier(), authRequest.getPassword());
+    }
 
-        if (parts[0].equals("Basic")) {
-            return handleBasicAuthentication(parts[1]);
-        } else {
-            return Either.left(new ServiceException(ErrorCode.UNSUPPORTED_SCHEME, "Unsupported authorization scheme"));
-        }
+    public Either<Exception, AccountBO> authenticateAndGetAccount(final String basicToken) {
+        return handleBasicAuthentication(basicToken);
+    }
+
+    public Either<Exception, AccountBO> getAccount(final AuthRequestBO request) {
+        return handleBasicAuthenticationNoPassword(request.getIdentifier());
     }
 
     public Either<Exception, AccountBO> getAccount(final String basicToken) {

@@ -1,5 +1,6 @@
 package com.authguard.rest.routes;
 
+import com.authguard.api.dto.entities.Error;
 import com.authguard.api.dto.entities.ExchangeAttemptDTO;
 import com.authguard.api.dto.entities.TokensDTO;
 import com.authguard.api.dto.requests.AuthRequestDTO;
@@ -42,13 +43,13 @@ public class AuthRoute extends AuthApi {
     public void authenticate(final Context context) {
         final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
 
-        final Optional<TokensDTO> tokens = authenticationService.authenticate(authenticationRequest.getAuthorization())
+        final Optional<TokensDTO> tokens = authenticationService.authenticate(restMapper.toBO(authenticationRequest))
                 .map(restMapper::toDTO);
 
         if (tokens.isPresent()) {
             context.json(tokens.get());
         } else {
-            context.status(400).result("Failed to authenticate user");
+            context.status(400).json(new Error("400", "Failed to authenticate user"));
         }
     }
 
@@ -60,9 +61,9 @@ public class AuthRoute extends AuthApi {
         final TokensBO tokens;
 
         if (authenticationRequest.getRestrictions() == null) {
-            tokens = exchangeService.exchange(authenticationRequest.getAuthorization(), from, to);
+            tokens = exchangeService.exchange(restMapper.toBO(authenticationRequest), from, to);
         } else {
-            tokens = exchangeService.exchange(authenticationRequest.getAuthorization(),
+            tokens = exchangeService.exchange(restMapper.toBO(authenticationRequest),
                     restMapper.toBO(authenticationRequest.getRestrictions()), from, to);
         }
 

@@ -1,10 +1,7 @@
 package com.authguard.rest.mappers;
 
 import com.authguard.api.dto.entities.*;
-import com.authguard.api.dto.requests.CreateAccountRequestDTO;
-import com.authguard.api.dto.requests.CreateAppRequestDTO;
-import com.authguard.api.dto.requests.CreateCredentialsRequestDTO;
-import com.authguard.api.dto.requests.CreateRoleRequestDTO;
+import com.authguard.api.dto.requests.*;
 import com.authguard.service.model.*;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
@@ -19,6 +16,9 @@ public interface RestMapper {
     CredentialsBO toBO(CreateCredentialsRequestDTO createAccountRequestDTO);
     CredentialsBO toBO(CredentialsDTO credentialsDTO);
     CredentialsDTO toDTO(CredentialsBO credentialsBO);
+
+    AuthRequestBO toBO(AuthRequestDTO authRequestDTO);
+    AuthRequestDTO toDO(AuthRequestBO authRequestBO);
 
     TokensBO toBO(TokensDTO tokensDTO);
     TokensDTO toDTO(TokensBO tokensBO);

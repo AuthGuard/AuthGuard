@@ -4,6 +4,7 @@ import com.authguard.config.ConfigContext;
 import com.authguard.service.ExchangeService;
 import com.authguard.service.config.OtpConfig;
 import com.authguard.dal.model.OneTimePasswordDO;
+import com.authguard.service.model.AuthRequestBO;
 import com.authguard.service.model.TokensBO;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
@@ -41,8 +42,11 @@ class OtpServiceImplTest {
         final TokensBO tokens = random.nextObject(TokensBO.class);
 
         final String otpToken = otp.getId() + ":" + otp.getPassword();
+        final AuthRequestBO authRequest = AuthRequestBO.builder()
+                .token(otpToken)
+                .build();
 
-        Mockito.when(mockExchangeService.exchange(otpToken, "otp", otpConfig.getGenerateToken()))
+        Mockito.when(mockExchangeService.exchange(authRequest, "otp", otpConfig.getGenerateToken()))
                 .thenReturn(tokens);
 
         final TokensBO generated = otpService.authenticate(otp.getId(), otp.getPassword());

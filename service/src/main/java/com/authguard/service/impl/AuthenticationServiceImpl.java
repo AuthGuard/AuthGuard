@@ -8,6 +8,7 @@ import com.authguard.service.config.AuthenticationConfig;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.model.AccountLockBO;
+import com.authguard.service.model.AuthRequestBO;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -41,8 +42,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public Optional<TokensBO> authenticate(final String header) {
-        final TokensBO tokens = exchangeService.exchange(header, FROM_TOKEN_TYPE, generateTokenType);
+    public Optional<TokensBO> authenticate(final AuthRequestBO authRequest) {
+        final TokensBO tokens = exchangeService.exchange(authRequest, FROM_TOKEN_TYPE, generateTokenType);
         final Collection<AccountLockBO> locks = accountLocksService.getActiveLocksByAccountId(tokens.getEntityId());
 
         if (locks == null || locks.isEmpty()) {

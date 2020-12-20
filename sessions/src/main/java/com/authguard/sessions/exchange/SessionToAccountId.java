@@ -2,12 +2,11 @@ package com.authguard.sessions.exchange;
 
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
+import com.authguard.service.model.AuthRequestBO;
 import com.authguard.service.model.TokensBO;
 import com.authguard.sessions.SessionVerifier;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
-
-import java.util.Optional;
 
 @TokenExchange(from = "session", to = "accountId")
 public class SessionToAccountId implements Exchange {
@@ -19,8 +18,8 @@ public class SessionToAccountId implements Exchange {
     }
 
     @Override
-    public Either<Exception, TokensBO> exchangeToken(final String sessionId) {
-        return sessionVerifier.verifyAccountToken(sessionId)
+    public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
+        return sessionVerifier.verifyAccountToken(request.getToken())
                 .map(accountId -> TokensBO.builder()
                         .type("accountId")
                         .token(accountId)

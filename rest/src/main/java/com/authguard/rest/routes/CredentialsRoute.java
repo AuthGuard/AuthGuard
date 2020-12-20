@@ -1,6 +1,7 @@
 package com.authguard.rest.routes;
 
 import com.authguard.api.dto.entities.CredentialsDTO;
+import com.authguard.api.dto.entities.Error;
 import com.authguard.api.dto.entities.UserIdentifierDTO;
 import com.authguard.api.dto.requests.CreateCredentialsRequestDTO;
 import com.authguard.api.dto.requests.UserIdentifiersRequestDTO;
@@ -53,7 +54,7 @@ public class CredentialsRoute extends CredentialsApi {
         if (created.isPresent()) {
             context.status(201).json(created.get());
         } else {
-            context.status(400).result("Failed to create account");
+            context.status(400).json(new Error("400", "Failed to create credentials"));
         }
     }
 
@@ -61,7 +62,7 @@ public class CredentialsRoute extends CredentialsApi {
         final CredentialsDTO credentials = RestJsonMapper.asClass(context.body(), CredentialsDTO.class);
 
         if (credentials.getPlainPassword() != null) {
-            context.status(400).result("Password cannot be updated using regular update");
+            context.status(400).json(new Error("400", "Password cannot be updated using regular update"));
             return;
         }
 

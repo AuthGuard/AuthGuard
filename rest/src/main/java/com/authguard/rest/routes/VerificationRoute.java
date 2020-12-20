@@ -1,10 +1,15 @@
 package com.authguard.rest.routes;
 
 import com.authguard.api.annotations.DependsOnConfiguration;
+import com.authguard.api.dto.entities.RequestValidationError;
+import com.authguard.api.dto.validation.violations.Violation;
+import com.authguard.api.dto.validation.violations.ViolationType;
 import com.authguard.api.routes.VerificationApi;
 import com.authguard.service.VerificationService;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
+
+import java.util.Collections;
 
 @DependsOnConfiguration("verification")
 public class VerificationRoute extends VerificationApi {
@@ -19,7 +24,9 @@ public class VerificationRoute extends VerificationApi {
         final String token = context.queryParam("token");
 
         if (token == null) {
-            context.status(400).result("Missing query parameter 'token'");
+            context.status(400).json(new RequestValidationError(Collections.singletonList(
+                    new Violation("token", ViolationType.MISSING_REQUIRED_VALUE)
+            )));
         }
 
         verificationService.verifyEmail(token);

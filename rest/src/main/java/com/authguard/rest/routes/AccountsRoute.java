@@ -67,7 +67,7 @@ public class AccountsRoute extends AccountsApi {
         if (createdAccount.isPresent()) {
             context.status(201).json(createdAccount.get());
         } else {
-            context.status(400).result("Failed to create account");
+            context.status(400).json(new Error("400", "Failed to create account"));
         }
     }
 

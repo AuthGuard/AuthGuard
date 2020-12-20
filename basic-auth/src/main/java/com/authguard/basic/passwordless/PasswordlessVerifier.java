@@ -2,7 +2,7 @@ package com.authguard.basic.passwordless;
 
 import com.authguard.dal.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
-import com.authguard.service.auth.AuthTokenVerfier;
+import com.authguard.service.auth.AuthVerifier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.model.EntityType;
@@ -11,7 +11,7 @@ import io.vavr.control.Either;
 
 import java.time.ZonedDateTime;
 
-public class PasswordlessVerifier implements AuthTokenVerfier {
+public class PasswordlessVerifier implements AuthVerifier {
     private final AccountTokensRepository accountTokensRepository;
 
     @Inject

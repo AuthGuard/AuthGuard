@@ -4,12 +4,11 @@ import com.authguard.basic.BasicAuthProvider;
 import com.authguard.jwt.AccessTokenProvider;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
+import com.authguard.service.model.AuthRequestBO;
 import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
-
-import java.util.Optional;
 
 @TokenExchange(from = "basic", to = "accessToken")
 public class BasicToAccessToken implements Exchange {
@@ -23,14 +22,14 @@ public class BasicToAccessToken implements Exchange {
     }
 
     @Override
-    public Either<Exception, TokensBO> exchangeToken(final String basicToken) {
-        return basicAuth.authenticateAndGetAccount(basicToken)
+    public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
+        return basicAuth.authenticateAndGetAccount(request)
                 .map(accessTokenProvider::generateToken);
     }
 
     @Override
-    public Either<Exception, TokensBO> exchangeToken(final String basicToken, final TokenRestrictionsBO restrictions) {
-        return basicAuth.authenticateAndGetAccount(basicToken)
+    public Either<Exception, TokensBO> exchange(final AuthRequestBO request, final TokenRestrictionsBO restrictions) {
+        return basicAuth.authenticateAndGetAccount(request)
                 .map(account -> accessTokenProvider.generateToken(account, restrictions));
     }
 }
