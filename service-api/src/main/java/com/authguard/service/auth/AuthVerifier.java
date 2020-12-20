@@ -3,7 +3,7 @@ package com.authguard.service.auth;
 import com.authguard.dal.model.AccountTokenDO;
 import io.vavr.control.Either;
 
-public interface AuthTokenVerfier {
+public interface AuthVerifier {
     /**
      * Verify a given token.
      * @return The associated account ID or empty if the token was invalid.

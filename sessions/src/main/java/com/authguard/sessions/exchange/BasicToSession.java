@@ -3,6 +3,7 @@ package com.authguard.sessions.exchange;
 import com.authguard.basic.BasicAuthProvider;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
+import com.authguard.service.model.AuthRequestBO;
 import com.authguard.service.model.TokensBO;
 import com.authguard.sessions.SessionProvider;
 import com.google.inject.Inject;
@@ -20,8 +21,8 @@ public class BasicToSession implements Exchange {
     }
 
     @Override
-    public Either<Exception, TokensBO> exchangeToken(final String basicToken) {
-        return basicAuth.authenticateAndGetAccount(basicToken)
+    public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
+        return basicAuth.authenticateAndGetAccount(request)
                 .map(sessionProvider::generateToken);
     }
 }

@@ -42,7 +42,7 @@ public class AuthRoute extends AuthApi {
     public void authenticate(final Context context) {
         final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
 
-        final Optional<TokensDTO> tokens = authenticationService.authenticate(authenticationRequest.getAuthorization())
+        final Optional<TokensDTO> tokens = authenticationService.authenticate(restMapper.toBO(authenticationRequest))
                 .map(restMapper::toDTO);
 
         if (tokens.isPresent()) {
@@ -60,9 +60,9 @@ public class AuthRoute extends AuthApi {
         final TokensBO tokens;
 
         if (authenticationRequest.getRestrictions() == null) {
-            tokens = exchangeService.exchange(authenticationRequest.getAuthorization(), from, to);
+            tokens = exchangeService.exchange(restMapper.toBO(authenticationRequest), from, to);
         } else {
-            tokens = exchangeService.exchange(authenticationRequest.getAuthorization(),
+            tokens = exchangeService.exchange(restMapper.toBO(authenticationRequest),
                     restMapper.toBO(authenticationRequest.getRestrictions()), from, to);
         }
 

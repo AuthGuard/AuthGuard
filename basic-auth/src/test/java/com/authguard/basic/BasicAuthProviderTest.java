@@ -52,7 +52,7 @@ class BasicAuthProviderTest {
     void authenticate() {
         final String username = "username";
         final String password = "password";
-        final String authorization = "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
         final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class)
@@ -78,7 +78,7 @@ class BasicAuthProviderTest {
     void authenticateNotFound() {
         final String username = "username";
         final String password = "password";
-        final String authorization = "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
         Mockito.when(credentialsService.getByUsername(username)).thenReturn(Optional.empty());
 
@@ -89,7 +89,7 @@ class BasicAuthProviderTest {
     void authenticateWrongPassword() {
         final String username = "username";
         final String password = "password";
-        final String authorization = "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
         final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class)
                 .withIdentifiers(UserIdentifierBO.builder()
@@ -117,17 +117,8 @@ class BasicAuthProviderTest {
     }
 
     @Test
-    void authenticateUnsupportedScheme() {
-        final String authorization = "Unsupported " + RandomStringUtils.randomAlphanumeric(20);
-        final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
-
-        assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(ServiceException.class);
-    }
-
-    @Test
     void authenticateBadBasicScheme() {
-        final String authorization = "Basic dGhpc2RvbmVzbid0Zmx5aW5vdXJjaXR5";
+        final String authorization = "dGhpc2RvbmVzbid0Zmx5aW5vdXJjaXR5";
         assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization)).isInstanceOf(ServiceException.class);
     }
 }

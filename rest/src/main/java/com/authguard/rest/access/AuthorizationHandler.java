@@ -62,7 +62,7 @@ public class AuthorizationHandler implements Handler {
     }
 
     private void populateBasicActor(final Context context, final String base64Credentials) {
-        final Either<Exception, AccountBO> actorAccount = basicAuth.authenticateAndGetAccount("Basic " + base64Credentials);
+        final Either<Exception, AccountBO> actorAccount = basicAuth.authenticateAndGetAccount(base64Credentials);
 
         if (actorAccount.isRight()) {
             LOG.info("Authenticated actor {} with basic credentials", actorAccount.get().getId());

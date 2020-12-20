@@ -6,16 +6,14 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Payload;
-import com.authguard.service.auth.AuthTokenVerfier;
+import com.authguard.service.auth.AuthVerifier;
 import com.authguard.service.config.StrategyConfig;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.model.EntityType;
 import io.vavr.control.Either;
 
-import java.util.Optional;
-
-public class JwtTokenVerifier implements AuthTokenVerfier {
+public class JwtTokenVerifier implements AuthVerifier {
     private final StrategyConfig strategy;
     private final JtiProvider jti;
     private final JWTVerifier verifier;

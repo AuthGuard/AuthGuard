@@ -1,7 +1,7 @@
 package com.authguard.basic.otp;
 
 import com.authguard.dal.OtpRepository;
-import com.authguard.service.auth.AuthTokenVerfier;
+import com.authguard.service.auth.AuthVerifier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
@@ -13,7 +13,7 @@ import io.vavr.control.Either;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
-public class OtpVerifier implements AuthTokenVerfier {
+public class OtpVerifier implements AuthVerifier {
     private final OtpRepository otpRepository;
     private final ServiceMapper serviceMapper;
 
@@ -25,6 +25,7 @@ public class OtpVerifier implements AuthTokenVerfier {
 
     @Override
     public Either<Exception, String> verifyAccountToken(final String token) {
+        // TODO: no need to have a special format for the token, just receive the two parts in the request
         final String[] parts = token.split(":");
 
         if (parts.length != 2) {

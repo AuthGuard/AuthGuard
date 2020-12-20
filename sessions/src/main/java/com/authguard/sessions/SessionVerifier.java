@@ -1,7 +1,7 @@
 package com.authguard.sessions;
 
 import com.authguard.service.SessionsService;
-import com.authguard.service.auth.AuthTokenVerfier;
+import com.authguard.service.auth.AuthVerifier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.model.EntityType;
@@ -11,7 +11,7 @@ import io.vavr.control.Either;
 
 import java.time.ZonedDateTime;
 
-public class SessionVerifier implements AuthTokenVerfier {
+public class SessionVerifier implements AuthVerifier {
     private final SessionsService sessionsService;
 
     @Inject

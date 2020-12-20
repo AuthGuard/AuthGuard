@@ -3,6 +3,7 @@ package com.authguard.bindings;
 import com.authguard.config.ConfigContext;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
+import com.authguard.service.model.AuthRequestBO;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.CreationException;
 import com.google.inject.Guice;
@@ -32,7 +33,7 @@ class ExchangesBinderTest {
     @TokenExchange(from = "basic", to = "random")
     public static class FirstExchange implements Exchange {
         @Override
-        public Either<Exception, TokensBO> exchangeToken(final String fromToken) {
+        public Either<Exception, TokensBO> exchange(final AuthRequestBO request)  {
             return Either.right(null);
         }
     }
@@ -40,7 +41,7 @@ class ExchangesBinderTest {
     @TokenExchange(from = "random", to = "chaos")
     public static class SecondExchange implements Exchange {
         @Override
-        public Either<Exception, TokensBO> exchangeToken(final String fromToken) {
+        public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
             return Either.right(null);
         }
     }

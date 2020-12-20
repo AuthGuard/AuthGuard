@@ -2,11 +2,17 @@ package com.authguard.rest;
 
 import com.authguard.api.dto.entities.TokensDTO;
 import com.authguard.api.dto.requests.AuthRequestDTO;
+import com.authguard.rest.mappers.RestMapper;
+import com.authguard.rest.mappers.RestMapperImpl;
+import com.authguard.service.AuthenticationService;
+import com.authguard.service.model.AuthRequestBO;
+import com.authguard.service.model.TokensBO;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
-import com.authguard.service.AuthenticationService;
-import com.authguard.service.model.TokensBO;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 
 import java.util.Optional;
@@ -22,10 +28,12 @@ class AuthRouteTest extends AbstractRouteTest {
         super(ENDPOINT);
     }
 
+    private RestMapper restMapper;
     private AuthenticationService authenticationService;
 
     @BeforeAll
     void setup() {
+        restMapper = new RestMapperImpl();
         authenticationService = mockService(AuthenticationService.class);
     }
 
@@ -35,13 +43,15 @@ class AuthRouteTest extends AbstractRouteTest {
     }
 
     @Test
-    @Disabled
     void authenticate() {
         final AuthRequestDTO requestDTO = randomObject(AuthRequestDTO.class);
-        final TokensBO tokensBO = randomObject(TokensBO.class);
+        final AuthRequestBO requestBO = restMapper.toBO(requestDTO);
+        final TokensBO tokensBO = TokensBO.builder()
+                .token("token")
+                .build();
         final TokensDTO tokensDTO = mapper().toDTO(tokensBO);
 
-        Mockito.when(authenticationService.authenticate(requestDTO.getAuthorization())).thenReturn(Optional.of(tokensBO));
+        Mockito.when(authenticationService.authenticate(requestBO)).thenReturn(Optional.of(tokensBO));
 
         final ValidatableResponse httpResponse = given()
                 .body(requestDTO)
@@ -59,11 +69,11 @@ class AuthRouteTest extends AbstractRouteTest {
     }
 
     @Test
-    @Disabled
     void authenticateUnsuccessful() {
         final AuthRequestDTO requestDTO = randomObject(AuthRequestDTO.class);
+        final AuthRequestBO requestBO = restMapper.toBO(requestDTO);
 
-        Mockito.when(authenticationService.authenticate(requestDTO.getAuthorization())).thenReturn(Optional.empty());
+        Mockito.when(authenticationService.authenticate(requestBO)).thenReturn(Optional.empty());
 
         given()
                 .body(requestDTO)

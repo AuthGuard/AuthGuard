@@ -4,11 +4,10 @@ import com.authguard.basic.BasicAuthProvider;
 import com.authguard.jwt.IdTokenProvider;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
+import com.authguard.service.model.AuthRequestBO;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
-
-import java.util.Optional;
 
 @TokenExchange(from = "basic", to = "idToken")
 public class BasicToIdToken implements Exchange {
@@ -22,8 +21,8 @@ public class BasicToIdToken implements Exchange {
     }
 
     @Override
-    public Either<Exception, TokensBO> exchangeToken(String basicToken) {
-        return basicAuth.authenticateAndGetAccount(basicToken)
+    public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
+        return basicAuth.authenticateAndGetAccount(request)
                 .map(idTokenProvider::generateToken);
     }
 }

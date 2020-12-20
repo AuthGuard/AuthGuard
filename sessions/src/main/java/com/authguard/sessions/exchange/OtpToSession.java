@@ -7,6 +7,7 @@ import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.model.AccountBO;
+import com.authguard.service.model.AuthRequestBO;
 import com.authguard.service.model.TokensBO;
 import com.authguard.sessions.SessionProvider;
 import com.google.inject.Inject;
@@ -27,8 +28,8 @@ public class OtpToSession implements Exchange {
     }
 
     @Override
-    public Either<Exception, TokensBO> exchangeToken(final String otp) {
-        return otpVerifier.verifyAccountToken(otp)
+    public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
+        return otpVerifier.verifyAccountToken(request.getToken())
                 .flatMap(this::getAccount)
                 .map(sessionProvider::generateToken);
     }

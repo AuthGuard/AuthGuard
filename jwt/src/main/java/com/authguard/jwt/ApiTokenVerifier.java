@@ -2,14 +2,14 @@ package com.authguard.jwt;
 
 import com.auth0.jwt.algorithms.Algorithm;
 import com.authguard.config.ConfigContext;
-import com.authguard.service.auth.AuthTokenVerfier;
+import com.authguard.service.auth.AuthVerifier;
 import com.authguard.service.config.JwtConfig;
 import com.authguard.service.config.StrategyConfig;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.vavr.control.Either;
 
-public class ApiTokenVerifier implements AuthTokenVerfier {
+public class ApiTokenVerifier implements AuthVerifier {
     private final JwtTokenVerifier jwtVerifier;
 
     @Inject

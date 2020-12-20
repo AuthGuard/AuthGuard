@@ -11,6 +11,7 @@ import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.messaging.AuthMessage;
+import com.authguard.service.model.AuthRequestBO;
 import com.authguard.service.model.EntityType;
 import com.authguard.service.model.TokenRestrictionsBO;
 import com.authguard.service.model.TokensBO;
@@ -39,13 +40,12 @@ public class ExchangeServiceImpl implements ExchangeService {
     }
 
     @Override
-    public TokensBO exchange(final String token, final String fromTokenType, final String toTokenType) {
-        return exchange(token, null, fromTokenType, toTokenType);
+    public TokensBO exchange(final AuthRequestBO authRequest, final String fromTokenType, final String toTokenType) {
+        return exchange(authRequest, null, fromTokenType, toTokenType);
     }
 
     @Override
-    public TokensBO exchange(final String token, final TokenRestrictionsBO restrictions,
-                             final String fromTokenType, final String toTokenType) {
+    public TokensBO exchange(final AuthRequestBO authRequest, final TokenRestrictionsBO restrictions, final String fromTokenType, final String toTokenType) {
         final String key = exchangeKey(fromTokenType, toTokenType);
         final Exchange exchange = exchanges.get(key);
 
@@ -54,8 +54,8 @@ public class ExchangeServiceImpl implements ExchangeService {
         }
 
         final Either<Exception, TokensBO> result = restrictions == null ?
-                exchange.exchangeToken(token) :
-                exchange.exchangeToken(token, restrictions);
+                exchange.exchange(authRequest) :
+                exchange.exchange(authRequest, restrictions);
 
         if (result.isRight()) {
             final TokensBO tokens = result.get();

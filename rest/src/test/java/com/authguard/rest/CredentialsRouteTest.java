@@ -1,12 +1,15 @@
 package com.authguard.rest;
 
 import com.authguard.api.dto.entities.CredentialsDTO;
-import com.authguard.service.model.RequestContextBO;
-import io.restassured.http.ContentType;
-import io.restassured.response.ValidatableResponse;
+import com.authguard.api.dto.requests.CreateCredentialsRequestDTO;
 import com.authguard.service.CredentialsService;
 import com.authguard.service.model.CredentialsBO;
-import org.junit.jupiter.api.*;
+import io.restassured.http.ContentType;
+import io.restassured.response.ValidatableResponse;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 
 import java.util.UUID;
@@ -35,21 +38,18 @@ class CredentialsRouteTest extends AbstractRouteTest {
     }
 
     @Test
-    @Disabled
     void create() {
-        final CredentialsDTO credentialsDTO = randomObject(CredentialsDTO.class);
-        final CredentialsBO credentialsBO = mapper().toBO(credentialsDTO);
+        final CreateCredentialsRequestDTO credentialsRequest = randomObject(CreateCredentialsRequestDTO.class);
+        final CredentialsBO credentialsBO = mapper().toBO(credentialsRequest);
         final CredentialsBO serviceResponse = credentialsBO
                 .withPlainPassword(null)
                 .withId(UUID.randomUUID().toString());
-        final RequestContextBO requestContext = RequestContextBO.builder()
-                .idempotentKey(UUID.randomUUID().toString())
-                .build();
 
-        Mockito.when(credentialsService.create(credentialsBO, requestContext)).thenReturn(serviceResponse);
+        Mockito.when(credentialsService.create(Mockito.eq(credentialsBO), Mockito.any())).thenReturn(serviceResponse);
 
-        final ValidatableResponse httpResponse = given().body(credentialsDTO)
+        final ValidatableResponse httpResponse = given().body(credentialsRequest)
                 .contentType(ContentType.JSON)
+                .header("X-IdempotentKey", "key")
                 .post(url())
                 .then()
                 .statusCode(201)
@@ -61,7 +61,7 @@ class CredentialsRouteTest extends AbstractRouteTest {
                 .getBody()
                 .as(CredentialsDTO.class);
 
-        assertThat(responseBody).isEqualToIgnoringGivenFields(credentialsDTO, "id", "plainPassword");
+        assertThat(responseBody).isEqualToIgnoringGivenFields(credentialsRequest, "id", "plainPassword");
         assertThat(responseBody.getPlainPassword()).isNull();
         assertThat(responseBody.getId()).isEqualTo(serviceResponse.getId());
     }

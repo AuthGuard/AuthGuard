@@ -11,6 +11,8 @@ import org.immutables.value.Value;
 @JsonSerialize(as = AuthRequestDTO.class)
 @JsonDeserialize(as = AuthRequestDTO.class)
 public interface AuthRequest {
-    String getAuthorization();
+    String getIdentifier();
+    String getPassword();
+    String getToken();
     TokenRestrictionsDTO getRestrictions();
 }

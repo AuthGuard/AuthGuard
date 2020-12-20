@@ -9,10 +9,7 @@ import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.mappers.ServiceMapper;
-import com.authguard.service.model.AccountBO;
-import com.authguard.service.model.EntityType;
-import com.authguard.service.model.TokenRestrictionsBO;
-import com.authguard.service.model.TokensBO;
+import com.authguard.service.model.*;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
 import org.slf4j.Logger;
@@ -39,14 +36,14 @@ public class AuthorizationCodeToAccessToken implements Exchange {
     }
 
     @Override
-    public Either<Exception, TokensBO> exchangeToken(final String authorizationCode) {
-        return authorizationCodeVerifier.verifyAndGetAccountToken(authorizationCode)
+    public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
+        return authorizationCodeVerifier.verifyAndGetAccountToken(request.getToken())
                 .flatMap(this::generateToken);
     }
 
     @Override
-    public Either<Exception, TokensBO> exchangeToken(final String authorizationCode, final TokenRestrictionsBO restrictions) {
-        return authorizationCodeVerifier.verifyAccountToken(authorizationCode)
+    public Either<Exception, TokensBO> exchange(final AuthRequestBO request, final TokenRestrictionsBO restrictions) {
+        return authorizationCodeVerifier.verifyAccountToken(request.getToken())
                 .flatMap(this::getAccount)
                 .map(account -> accessTokenProvider.generateToken(account, restrictions));
     }
