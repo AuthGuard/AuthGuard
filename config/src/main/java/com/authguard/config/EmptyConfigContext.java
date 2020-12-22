@@ -1,6 +1,7 @@
 package com.authguard.config;
 
 import java.util.Collection;
+import java.util.Properties;
 
 public class EmptyConfigContext implements ConfigContext {
     @Override
@@ -35,6 +36,11 @@ public class EmptyConfigContext implements ConfigContext {
 
     @Override
     public <T> T asConfigBean(Class<T> clazz) {
+        return null;
+    }
+
+    @Override
+    public Properties asProperties() {
         return null;
     }
 
