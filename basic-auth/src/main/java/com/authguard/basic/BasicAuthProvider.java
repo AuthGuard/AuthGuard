@@ -1,6 +1,7 @@
 package com.authguard.basic;
 
 import com.authguard.basic.passwords.SecurePassword;
+import com.authguard.basic.passwords.SecurePasswordProvider;
 import com.authguard.service.AccountsService;
 import com.authguard.service.CredentialsService;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
@@ -12,21 +13,27 @@ import com.authguard.service.model.CredentialsBO;
 import com.authguard.service.model.EntityType;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Base64;
 import java.util.Optional;
 
 public class BasicAuthProvider {
+    private final Logger LOG = LoggerFactory.getLogger(BasicAuthProvider.class);
+
     private final CredentialsService credentialsService;
     private final AccountsService accountsService;
     private final SecurePassword securePassword;
 
     @Inject
     public BasicAuthProvider(final CredentialsService credentialsService, final AccountsService accountsService,
-                             final SecurePassword securePassword) {
+                             final SecurePasswordProvider securePasswordProvider) {
         this.credentialsService = credentialsService;
-        this.securePassword = securePassword;
+        this.securePassword = securePasswordProvider.get();
         this.accountsService = accountsService;
+
+        LOG.debug("Initialized with password implementation {}", this.securePassword.getClass());
     }
 
     public Either<Exception, AccountBO> authenticateAndGetAccount(final AuthRequestBO authRequest) {

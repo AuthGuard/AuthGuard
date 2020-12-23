@@ -34,7 +34,6 @@ public class ServerRunner {
                 new ExchangesBinder(configContext, searchPackages),
                 new ApiKeysExchangeBinder(configContext, searchPackages),
                 new ApiRoutesBinder(searchPackages, configContext),
-                new PasswordsBinder(configContext),
                 new ServicesBinder(configContext),
                 new JwtBinder(configContext),
                 new DalBinder(configContext, searchPackages),

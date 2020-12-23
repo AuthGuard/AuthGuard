@@ -2,6 +2,7 @@ package com.authguard.basic;
 
 
 import com.authguard.basic.passwords.SecurePassword;
+import com.authguard.basic.passwords.SecurePasswordProvider;
 import com.authguard.service.AccountsService;
 import com.authguard.service.CredentialsService;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
@@ -39,7 +40,11 @@ class BasicAuthProviderTest {
         credentialsService = Mockito.mock(CredentialsService.class);
         securePassword = Mockito.mock(SecurePassword.class);
 
-        basicAuth = new BasicAuthProvider(credentialsService, accountsService, securePassword);
+        final SecurePasswordProvider securePasswordProvider = Mockito.mock(SecurePasswordProvider.class);
+
+        Mockito.when(securePasswordProvider.get()).thenReturn(securePassword);
+
+        basicAuth = new BasicAuthProvider(credentialsService, accountsService, securePasswordProvider);
     }
 
     @AfterEach
