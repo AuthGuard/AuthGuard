@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.javaprop.JavaPropsFactory;
+import com.fasterxml.jackson.dataformat.javaprop.JavaPropsFactoryBuilder;
+import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
 
 import java.io.File;
 import java.io.IOException;
@@ -93,6 +96,15 @@ public class JacksonConfigContext implements ConfigContext {
     public <T> T asConfigBean(final Class<T> clazz) {
         try {
             return objectMapper.treeToValue(rootNode, clazz);
+        } catch (final JsonProcessingException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public Properties asProperties() {
+        try {
+            return objectMapper.treeToValue(rootNode, Properties.class);
         } catch (final JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }

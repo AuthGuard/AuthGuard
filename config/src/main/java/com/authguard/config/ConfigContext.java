@@ -1,6 +1,7 @@
 package com.authguard.config;
 
 import java.util.Collection;
+import java.util.Properties;
 
 public interface ConfigContext {
     String ROOT_CONFIG_PROPERTY = "authguard";
@@ -15,6 +16,8 @@ public interface ConfigContext {
     <T> T getAsConfigBean(String key, Class<T> clazz);
 
     <T> T asConfigBean(Class<T> clazz);
+
+    Properties asProperties();
 
     Iterable<String> subContexts();
 }
