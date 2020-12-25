@@ -10,6 +10,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>dal</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>persistence</module>
+        <module>cache</module>
+        <module>dal-common</module>
+    </modules>
 
     <properties>
         <lombok.version>1.18.12</lombok.version>

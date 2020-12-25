@@ -1,6 +1,6 @@
 package com.authguard.extensions;
 
-import com.authguard.dal.ExchangeAttemptsRepository;
+import com.authguard.dal.persistence.ExchangeAttemptsRepository;
 import com.authguard.dal.model.ExchangeAttemptDO;
 import com.authguard.emb.model.EventType;
 import com.authguard.emb.model.Message;

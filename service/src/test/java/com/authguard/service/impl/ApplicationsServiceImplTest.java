@@ -1,6 +1,6 @@
 package com.authguard.service.impl;
 
-import com.authguard.dal.ApplicationsRepository;
+import com.authguard.dal.persistence.ApplicationsRepository;
 import com.authguard.emb.MessageBus;
 import com.authguard.service.AccountsService;
 import com.authguard.service.ApplicationsService;

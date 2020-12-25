@@ -1,7 +1,7 @@
 package com.authguard.service.impl;
 
-import com.authguard.dal.CredentialsAuditRepository;
-import com.authguard.dal.CredentialsRepository;
+import com.authguard.dal.persistence.CredentialsAuditRepository;
+import com.authguard.dal.persistence.CredentialsRepository;
 import com.authguard.dal.model.CredentialsAuditDO;
 import com.authguard.dal.model.CredentialsDO;
 import com.authguard.emb.MessageBus;

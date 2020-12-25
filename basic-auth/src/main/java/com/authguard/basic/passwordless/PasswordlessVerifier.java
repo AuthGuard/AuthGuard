@@ -1,6 +1,6 @@
 package com.authguard.basic.passwordless;
 
-import com.authguard.dal.AccountTokensRepository;
+import com.authguard.dal.cache.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.service.auth.AuthVerifier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;

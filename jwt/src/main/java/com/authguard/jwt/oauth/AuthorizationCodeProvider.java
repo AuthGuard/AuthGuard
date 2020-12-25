@@ -1,7 +1,7 @@
 package com.authguard.jwt.oauth;
 
 import com.authguard.config.ConfigContext;
-import com.authguard.dal.AccountTokensRepository;
+import com.authguard.dal.cache.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.config.AuthorizationCodeConfig;

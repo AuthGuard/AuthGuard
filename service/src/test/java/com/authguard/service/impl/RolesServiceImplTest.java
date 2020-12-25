@@ -1,11 +1,10 @@
 package com.authguard.service.impl;
 
-import com.authguard.dal.RolesRepository;
+import com.authguard.dal.persistence.RolesRepository;
 import com.authguard.dal.model.RoleDO;
 import com.authguard.service.PermissionsService;
 import com.authguard.service.RolesService;
 import com.authguard.service.mappers.ServiceMapperImpl;
-import com.authguard.service.model.PermissionBO;
 import com.authguard.service.model.RoleBO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

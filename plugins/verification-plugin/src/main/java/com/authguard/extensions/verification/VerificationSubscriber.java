@@ -1,7 +1,7 @@
 package com.authguard.extensions.verification;
 
 import com.authguard.config.ConfigContext;
-import com.authguard.dal.AccountTokensRepository;
+import com.authguard.dal.cache.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.emb.MessageSubscriber;
 import com.authguard.emb.annotations.Channel;

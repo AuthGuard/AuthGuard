@@ -1,7 +1,7 @@
 package com.authguard.extensions;
 
 import com.authguard.config.ConfigContext;
-import com.authguard.dal.ExchangeAttemptsRepository;
+import com.authguard.dal.persistence.ExchangeAttemptsRepository;
 import com.authguard.emb.MessageSubscriber;
 import com.authguard.emb.annotations.Channel;
 import com.authguard.emb.model.EventType;

@@ -1,6 +1,6 @@
 package com.authguard.service.impl;
 
-import com.authguard.dal.SessionsRepository;
+import com.authguard.dal.cache.SessionsRepository;
 import com.authguard.dal.model.SessionDO;
 import com.authguard.emb.MessageBus;
 import com.authguard.service.SessionsService;

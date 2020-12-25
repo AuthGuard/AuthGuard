@@ -1,6 +1,6 @@
 package com.authguard.jwt.exchange;
 
-import com.authguard.dal.AccountTokensRepository;
+import com.authguard.dal.cache.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.jwt.AccessTokenProvider;
 import com.authguard.service.AccountsService;
