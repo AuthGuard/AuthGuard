@@ -1,6 +1,6 @@
 package com.authguard.service.impl;
 
-import com.authguard.dal.ExchangeAttemptsRepository;
+import com.authguard.dal.persistence.ExchangeAttemptsRepository;
 import com.authguard.service.ExchangeAttemptsService;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.ExchangeAttemptBO;

@@ -3,7 +3,7 @@ package com.authguard.jwt;
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.authguard.config.ConfigContext;
-import com.authguard.dal.AccountTokensRepository;
+import com.authguard.dal.cache.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.service.auth.AuthProvider;
 import com.authguard.service.config.ConfigParser;

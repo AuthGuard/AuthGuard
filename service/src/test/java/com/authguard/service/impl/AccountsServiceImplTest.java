@@ -1,7 +1,7 @@
 package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
-import com.authguard.dal.AccountsRepository;
+import com.authguard.dal.persistence.AccountsRepository;
 import com.authguard.dal.model.AccountDO;
 import com.authguard.emb.MessageBus;
 import com.authguard.service.IdempotencyService;

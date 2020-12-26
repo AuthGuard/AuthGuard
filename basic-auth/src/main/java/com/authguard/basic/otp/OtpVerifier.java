@@ -1,6 +1,6 @@
 package com.authguard.basic.otp;
 
-import com.authguard.dal.OtpRepository;
+import com.authguard.dal.cache.OtpRepository;
 import com.authguard.service.auth.AuthVerifier;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.codes.ErrorCode;

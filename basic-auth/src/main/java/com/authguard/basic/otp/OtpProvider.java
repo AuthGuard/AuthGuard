@@ -1,7 +1,7 @@
 package com.authguard.basic.otp;
 
 import com.authguard.config.ConfigContext;
-import com.authguard.dal.OtpRepository;
+import com.authguard.dal.cache.OtpRepository;
 import com.authguard.emb.MessageBus;
 import com.authguard.emb.Messages;
 import com.authguard.service.auth.AuthProvider;

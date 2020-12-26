@@ -7,7 +7,7 @@ import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.google.inject.Inject;
-import com.authguard.dal.RolesRepository;
+import com.authguard.dal.persistence.RolesRepository;
 import com.authguard.service.RolesService;
 import com.authguard.service.model.PermissionBO;
 import com.authguard.service.model.RoleBO;

@@ -1,6 +1,6 @@
 package com.authguard.service.impl;
 
-import com.authguard.dal.AccountLocksRepository;
+import com.authguard.dal.cache.AccountLocksRepository;
 import com.authguard.dal.model.AccountLockDO;
 import com.authguard.service.AccountLocksService;
 import com.authguard.service.mappers.ServiceMapperImpl;

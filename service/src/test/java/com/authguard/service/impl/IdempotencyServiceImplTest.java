@@ -1,6 +1,6 @@
 package com.authguard.service.impl;
 
-import com.authguard.dal.IdempotentRecordsRepository;
+import com.authguard.dal.persistence.IdempotentRecordsRepository;
 import com.authguard.dal.model.IdempotentRecordDO;
 import com.authguard.service.IdempotencyService;
 import com.authguard.service.exceptions.IdempotencyException;

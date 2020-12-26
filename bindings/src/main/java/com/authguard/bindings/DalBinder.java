@@ -1,9 +1,14 @@
 package com.authguard.bindings;
 
 import com.authguard.config.ConfigContext;
-import com.authguard.dal.*;
 
 import java.util.Collection;
+
+import com.authguard.dal.cache.AccountLocksRepository;
+import com.authguard.dal.cache.AccountTokensRepository;
+import com.authguard.dal.cache.OtpRepository;
+import com.authguard.dal.cache.SessionsRepository;
+import com.authguard.dal.persistence.*;
 import com.authguard.injection.ClassSearch;
 import com.google.inject.AbstractModule;
 

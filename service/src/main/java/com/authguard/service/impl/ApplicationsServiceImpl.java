@@ -9,7 +9,7 @@ import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.RequestContextBO;
 import com.google.inject.Inject;
-import com.authguard.dal.ApplicationsRepository;
+import com.authguard.dal.persistence.ApplicationsRepository;
 import com.authguard.service.AccountsService;
 import com.authguard.service.ApplicationsService;
 import com.authguard.service.model.AppBO;

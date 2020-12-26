@@ -1,6 +1,6 @@
 package com.authguard.service.impl;
 
-import com.authguard.dal.AccountTokensRepository;
+import com.authguard.dal.cache.AccountTokensRepository;
 import com.authguard.dal.model.AccountTokenDO;
 import com.authguard.service.AccountsService;
 import com.authguard.service.VerificationService;

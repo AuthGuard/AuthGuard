@@ -42,7 +42,14 @@
 
         <dependency>
             <groupId>com.authguard</groupId>
-            <artifactId>dal</artifactId>
+            <artifactId>persistence</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.authguard</groupId>
+            <artifactId>cache</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
