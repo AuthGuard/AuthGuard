@@ -11,7 +11,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "f1c3b094-a41e-4ab7-8eec-ab9288831cec",
 						"exec": [
 							"pm.test(\"Status code is 201\", function () {",
 							"    pm.response.to.have.status(201);",
@@ -68,7 +67,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "1f544133-eff4-4251-beee-707c5271db7e",
 						"exec": [
 							"pm.test(\"Status code is 409\", function () {",
 							"    pm.response.to.have.status(409);",
@@ -121,7 +119,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "a71a133d-9522-4f8f-8cc8-210cfd039c84",
 						"exec": [
 							"pm.test(\"Status code is 201\", function () {",
 							"    pm.response.to.have.status(201);",
@@ -173,7 +170,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "2c498302-452c-4813-b612-407126060c6a",
 						"exec": [
 							"pm.test(\"Status code is 400\", function () {",
 							"    pm.response.to.have.status(400);",
@@ -226,7 +222,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "ca5374a8-6de2-46cf-badd-46bc01db61c6",
 						"exec": [
 							"pm.test(\"Status code is 400\", function () {",
 							"    pm.response.to.have.status(400);",
@@ -278,12 +273,64 @@
 			"response": []
 		},
 		{
+			"name": "create account with credentials",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					},
+					{
+						"key": "X-IdempotentKey",
+						"type": "text",
+						"value": "idemp:accounts-complete"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"account\": {\n        \"externalId\": \"external\"\n    },\n    \"credentials\": {\n        \"identifiers\": [\n\t\t{\n\t\t\t\"identifier\": \"complete\",\n\t\t\t\"type\": \"USERNAME\"\n\t\t}\n\t],\n\t\"plainPassword\": \"password\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{authguard}}/accounts/complete",
+					"host": [
+						"{{authguard}}"
+					],
+					"path": [
+						"accounts",
+						"complete"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "deactivate account",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "0e87ff6b-b3bc-4a94-9803-2e0b0dcc9b73",
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -338,7 +385,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "3aa9fce5-f26b-48d8-9a16-7ab33bdaa297",
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -393,7 +439,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "82ee9b66-6185-424a-a563-0b155f45107b",
 						"exec": [
 							"pm.test(\"Status code is 200\", () => {",
 							"    pm.response.to.have.status(200);",
@@ -448,7 +493,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "516b058d-0c9c-40e6-818a-4ecec1463634",
 						"exec": [
 							"pm.test(\"Status code is 200\", () => {",
 							"    pm.response.to.have.status(200);",
@@ -512,7 +556,6 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "31a2d613-3f15-4192-9b69-b93699f854bb",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -522,13 +565,11 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "f5e358cd-ec14-4f3b-a373-31c95116c0c3",
 				"type": "text/javascript",
 				"exec": [
 					""
 				]
 			}
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }

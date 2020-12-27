@@ -12,6 +12,10 @@ import com.authguard.rest.util.IdempotencyHeader;
 import com.authguard.service.AccountLocksService;
 import com.authguard.service.AccountsService;
 import com.authguard.service.ApplicationsService;
+import com.authguard.service.CredentialsService;
+import com.authguard.service.exceptions.IdempotencyException;
+import com.authguard.service.model.AccountBO;
+import com.authguard.service.model.CredentialsBO;
 import com.authguard.service.model.PermissionBO;
 import com.authguard.service.model.RequestContextBO;
 import com.google.inject.Inject;
@@ -20,28 +24,37 @@ import io.javalin.http.Context;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 public class AccountsRoute extends AccountsApi {
     private final AccountsService accountsService;
+    private final CredentialsService credentialsService;
     private final ApplicationsService applicationsService;
     private final AccountLocksService accountLocksService;
     private final RestMapper restMapper;
 
     private final BodyHandler<CreateAccountRequestDTO> accountRequestBodyHandler;
+    private final BodyHandler<CreateCompleteAccountRequestDTO> completeAccountRequestBodyHandler;
     private final BodyHandler<PermissionsRequestDTO> permissionsRequestBodyHandler;
     private final BodyHandler<RolesRequestDTO> rolesRequestBodyHandler;
     private final BodyHandler<AccountEmailsRequestDTO> accountEmailsRequestBodyHandler;
 
     @Inject
-    AccountsRoute(final AccountsService accountsService, final ApplicationsService applicationsService,
-                  final AccountLocksService accountLocksService, final RestMapper restMapper) {
+    AccountsRoute(final AccountsService accountsService,
+                  final CredentialsService credentialsService,
+                  final ApplicationsService applicationsService,
+                  final AccountLocksService accountLocksService,
+                  final RestMapper restMapper) {
         this.accountsService = accountsService;
+        this.credentialsService = credentialsService;
         this.applicationsService = applicationsService;
         this.accountLocksService = accountLocksService;
         this.restMapper = restMapper;
 
         this.accountRequestBodyHandler = new BodyHandler.Builder<>(CreateAccountRequestDTO.class)
+                .build();
+        this.completeAccountRequestBodyHandler = new BodyHandler.Builder<>(CreateCompleteAccountRequestDTO.class)
                 .build();
         this.permissionsRequestBodyHandler = new BodyHandler.Builder<>(PermissionsRequestDTO.class)
                 .build();
@@ -69,6 +82,50 @@ public class AccountsRoute extends AccountsApi {
         } else {
             context.status(400).json(new Error("400", "Failed to create account"));
         }
+    }
+
+    @Override
+    public void createComplete(final Context context) {
+        final String idempotentKey = IdempotencyHeader.getKeyOrFail(context);
+        final CreateCompleteAccountRequestDTO request = completeAccountRequestBodyHandler.getValidated(context);
+
+        final RequestContextBO requestContext = RequestContextBO.builder()
+                .idempotentKey(idempotentKey)
+                .source(context.ip())
+                .build();
+
+        final AccountBO accountBO = restMapper.toBO(request.getAccount());
+        final CredentialsBO credentialsBO = restMapper.toBO(request.getCredentials());
+
+        String accountId;
+        String credentialsId;
+
+        try {
+            accountId = accountsService.create(accountBO, requestContext).getId();
+        } catch (final CompletionException e) {
+            if (e.getCause() instanceof IdempotencyException) {
+                accountId = ((IdempotencyException) e.getCause()).getIdempotentRecord().getEntityId();
+            } else {
+                throw e;
+            }
+        }
+
+        try {
+            credentialsId = credentialsService.create(credentialsBO.withAccountId(accountId), requestContext).getId();
+        } catch (final CompletionException e) {
+            if (e.getCause() instanceof IdempotencyException) {
+                credentialsId = ((IdempotencyException) e.getCause()).getIdempotentRecord().getEntityId();
+            } else {
+                throw e;
+            }
+        }
+
+        final CreateCompleteAccountResponseDTO response = CreateCompleteAccountResponseDTO.builder()
+                .accountId(accountId)
+                .credentialsId(credentialsId)
+                .build();
+
+        context.status(201).json(response);
     }
 
     public void getById(final Context context) {
