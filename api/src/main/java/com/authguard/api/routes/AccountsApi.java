@@ -14,6 +14,7 @@ public abstract class AccountsApi implements ApiRoute {
 
     public void addEndpoints() {
         post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin"));
+        post("/complete", this::createComplete, ActorRoles.of("authguard_admin_client", "one_time_admin"));
 
         get("/:id", this::getById, ActorRoles.adminClient());
         delete("/:id", this::deleteAccount, ActorRoles.adminClient());
@@ -33,6 +34,8 @@ public abstract class AccountsApi implements ApiRoute {
     }
 
     public abstract void create(final Context context);
+
+    public abstract void createComplete(final Context context);
 
     public abstract void getById(final Context context);
 
