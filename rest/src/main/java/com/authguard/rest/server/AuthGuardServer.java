@@ -1,8 +1,11 @@
 package com.authguard.rest.server;
 
 import com.authguard.emb.AutoSubscribers;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.inject.Injector;
 import io.javalin.Javalin;
+import io.javalin.plugin.json.JavalinJackson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +42,9 @@ public class AuthGuardServer {
         exceptions.configure(app);
 
         routes.configure(app);
+
+        JavalinJackson.getObjectMapper().registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         // initialize subscribers
         injector.getInstance(AutoSubscribers.class).subscribe();
