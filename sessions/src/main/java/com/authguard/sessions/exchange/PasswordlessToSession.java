@@ -13,7 +13,7 @@ import com.authguard.sessions.SessionProvider;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
 
-@TokenExchange(from = "passwordless", to = "session")
+@TokenExchange(from = "passwordless", to = "sessionToken")
 public class PasswordlessToSession implements Exchange {
     private final AccountsService accountsService;
     private final PasswordlessVerifier passwordlessVerifier;

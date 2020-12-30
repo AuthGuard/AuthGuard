@@ -10,6 +10,8 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 import java.time.ZonedDateTime;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SessionProvider implements AuthProvider {
     private final SessionsService sessionsService;
@@ -27,7 +29,13 @@ public class SessionProvider implements AuthProvider {
         final SessionBO session = SessionBO.builder()
                 .accountId(account.getId())
                 .expiresAt(ZonedDateTime.now().plus(ConfigParser.parseDuration(sessionsConfig.getLifeTime())))
-                .build();
+                .data(Map.ofEntries(
+                        Map.entry(SessionKeys.ACCOUNT_ID, account.getId()),
+                        Map.entry(SessionKeys.ROLES, String.join(",", account.getRoles())),
+                        Map.entry(SessionKeys.PERMISSIONS, account.getPermissions().stream()
+                                .map(Permission::getFullName)
+                                .collect(Collectors.joining(",")))
+                )).build();
 
         final SessionBO created = sessionsService.create(session);
 
