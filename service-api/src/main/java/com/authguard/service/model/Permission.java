@@ -19,4 +19,8 @@ public interface Permission {
     default boolean isWildCard() {
         return getName().equals("*");
     }
+
+    default String getFullName() {
+        return getGroup() + ":" + getName();
+    }
 }

@@ -13,7 +13,7 @@ import com.authguard.sessions.SessionProvider;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
 
-@TokenExchange(from = "otp", to = "session")
+@TokenExchange(from = "otp", to = "sessionToken")
 public class OtpToSession implements Exchange {
     private final AccountsService accountsService;
     private final OtpVerifier otpVerifier;

@@ -8,7 +8,7 @@ import com.authguard.sessions.SessionVerifier;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
 
-@TokenExchange(from = "session", to = "accountId")
+@TokenExchange(from = "sessionToken", to = "accountId")
 public class SessionToAccountId implements Exchange {
     private final SessionVerifier sessionVerifier;
 

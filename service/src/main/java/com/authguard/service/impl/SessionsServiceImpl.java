@@ -50,7 +50,7 @@ public class SessionsServiceImpl implements SessionsService {
         final SessionDO sessionDO = serviceMapper.toDO(session);
 
         sessionDO.setId(ID.generate());
-        sessionDO.setSessionToken(cryptographicRandom.base64(config.getRandomSize()));
+        sessionDO.setSessionToken(cryptographicRandom.base64Url(config.getRandomSize()));
 
         return sessionsRepository.save(sessionDO)
                 .thenApply(created -> {

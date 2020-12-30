@@ -9,7 +9,7 @@ import com.authguard.sessions.SessionProvider;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
 
-@TokenExchange(from = "basic", to = "session")
+@TokenExchange(from = "basic", to = "sessionToken")
 public class BasicToSession implements Exchange {
     private final BasicAuthProvider basicAuth;
     private final SessionProvider sessionProvider;

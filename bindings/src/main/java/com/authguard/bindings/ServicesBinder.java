@@ -25,6 +25,7 @@ public class ServicesBinder extends AbstractModule {
         bind(ApiKeysService.class).to(ApiKeysServiceImpl.class);
         bind(PermissionsService.class).to(PermissionsServiceImpl.class);
         bind(RolesService.class).to(RolesServiceImpl.class);
+        bind(SessionsService.class).to(SessionsServiceImpl.class);
         bind(IdempotencyService.class).to(IdempotencyServiceImpl.class);
         bind(ExchangeAttemptsService.class).to(ExchangeAttemptsServiceImpl.class);
         bind(AccountLocksService.class).to(AccountLocksServiceImpl.class);
