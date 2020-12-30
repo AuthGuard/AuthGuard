@@ -32,6 +32,7 @@ public class DalBinder extends AbstractModule {
         bind(PermissionsRepository.class).to(dynamicBinder.findBindingsFor(PermissionsRepository.class));
         bind(RolesRepository.class).to(dynamicBinder.findBindingsFor(RolesRepository.class));
         bind(AccountTokensRepository.class).to(dynamicBinder.findBindingsFor(AccountTokensRepository.class));
+        bind(SessionsRepository.class).to(dynamicBinder.findBindingsFor(SessionsRepository.class));
         bind(IdempotentRecordsRepository.class).to(dynamicBinder.findBindingsFor(IdempotentRecordsRepository.class));
         bind(ExchangeAttemptsRepository.class).to(dynamicBinder.findBindingsFor(ExchangeAttemptsRepository.class));
         bind(AccountLocksRepository.class).to(dynamicBinder.findBindingsFor(AccountLocksRepository.class));
