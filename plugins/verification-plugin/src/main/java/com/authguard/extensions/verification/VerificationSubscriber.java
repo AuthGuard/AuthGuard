@@ -17,6 +17,7 @@ import com.google.inject.name.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.Collections;
@@ -33,6 +34,8 @@ public class VerificationSubscriber implements MessageSubscriber {
     private final AccountTokensRepository accountTokensRepository;
     private final ImmutableVerificationConfig verificationConfig;
 
+    private final Duration tokenTtl;
+
     @Inject
     public VerificationSubscriber(final EmailProvider emailProvider,
                                   final AccountTokensRepository accountTokensRepository,
@@ -40,6 +43,8 @@ public class VerificationSubscriber implements MessageSubscriber {
         this.emailProvider = emailProvider;
         this.accountTokensRepository = accountTokensRepository;
         this.verificationConfig = verificationConfig.asConfigBean(ImmutableVerificationConfig.class);
+
+        this.tokenTtl = ConfigParser.parseDuration(this.verificationConfig.getEmailVerificationLife());
     }
 
     @Override
@@ -75,11 +80,8 @@ public class VerificationSubscriber implements MessageSubscriber {
             } else {
                 final String token = generateVerificationString();
 
-                final ZonedDateTime expiration = ZonedDateTime.now()
-                        .plus(ConfigParser.parseDuration(verificationConfig.getEmailVerificationLife()));
-
                 final AccountTokenDO accountToken = AccountTokenDO.builder()
-                        .expiresAt(expiration)
+                        .expiresAt(ZonedDateTime.now().plus(tokenTtl))
                         .associatedAccountId(account.getId())
                         .token(token)
                         .additionalInformation(Collections.singletonMap("email", email.getEmail()))

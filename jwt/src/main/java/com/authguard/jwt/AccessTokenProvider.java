@@ -13,6 +13,7 @@ import com.authguard.service.model.*;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -23,6 +24,8 @@ public class AccessTokenProvider implements AuthProvider {
     private final Algorithm algorithm;
     private final JwtGenerator jwtGenerator;
     private final StrategyConfig strategy;
+    private final Duration tokenTtl;
+    private final Duration refreshTokenTtl;
 
     @Inject
     public AccessTokenProvider(final AccountTokensRepository accountTokensRepository,
@@ -39,6 +42,8 @@ public class AccessTokenProvider implements AuthProvider {
         this.jwtGenerator = new JwtGenerator(jwtConfig);
 
         this.strategy = accessTokenConfigContext.asConfigBean(StrategyConfig.class);
+        this.tokenTtl = ConfigParser.parseDuration(strategy.getTokenLife());
+        this.refreshTokenTtl = ConfigParser.parseDuration(strategy.getRefreshTokenLife());
     }
 
     @Override
@@ -82,8 +87,7 @@ public class AccessTokenProvider implements AuthProvider {
 
     private JwtTokenBuilder generateAccessToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
         final JwtTokenBuilder.Builder tokenBuilder = JwtTokenBuilder.builder();
-        final JWTCreator.Builder jwtBuilder = jwtGenerator.generateUnsignedToken(account,
-                ConfigParser.parseDuration(strategy.getTokenLife()));
+        final JWTCreator.Builder jwtBuilder = jwtGenerator.generateUnsignedToken(account, tokenTtl);
 
         if (strategy.useJti()) {
             final String id = jti.next();
@@ -107,8 +111,7 @@ public class AccessTokenProvider implements AuthProvider {
     }
 
     private ZonedDateTime refreshTokenExpiry() {
-        return ZonedDateTime.now()
-                .plus(ConfigParser.parseDuration(strategy.getRefreshTokenLife()));
+        return ZonedDateTime.now().plus(refreshTokenTtl);
     }
 
     private String[] jwtPermissions(final AccountBO account, final TokenRestrictionsBO restrictions) {

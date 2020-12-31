@@ -16,6 +16,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.UUID;
@@ -27,6 +28,7 @@ public class PasswordlessProvider implements AuthProvider {
     private final MessageBus messageBus;
     private final PasswordlessConfig passwordlessConfig;
     private final SecureRandom secureRandom;
+    private final Duration tokenTtl;
 
     @Inject
     public PasswordlessProvider(final AccountTokensRepository accountTokensRepository,
@@ -37,6 +39,7 @@ public class PasswordlessProvider implements AuthProvider {
         this.passwordlessConfig = configContext.asConfigBean(PasswordlessConfig.class);
 
         this.secureRandom = new SecureRandom();
+        this.tokenTtl = ConfigParser.parseDuration(this.passwordlessConfig.getTokenLife());
     }
 
     @Override
@@ -47,7 +50,7 @@ public class PasswordlessProvider implements AuthProvider {
                 .id(UUID.randomUUID().toString())
                 .associatedAccountId(account.getId())
                 .token(token)
-                .expiresAt(ZonedDateTime.now().plus(ConfigParser.parseDuration(passwordlessConfig.getTokenLife())))
+                .expiresAt(ZonedDateTime.now().plus(tokenTtl))
                 .build();
 
         accountTokensRepository.save(accountToken);

@@ -14,10 +14,13 @@ import com.authguard.service.model.AppBO;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.name.Named;
 
+import java.time.Duration;
+
 public class IdTokenProvider implements AuthProvider {
     private final Algorithm algorithm;
     private final JwtGenerator jwtGenerator;
     private final StrategyConfig strategy;
+    private final Duration tokenTtl;
 
     @Inject
     public IdTokenProvider(final @Named("jwt") ConfigContext jwtConfigContext,
@@ -27,6 +30,7 @@ public class IdTokenProvider implements AuthProvider {
         this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getPublicKey(), jwtConfig.getPrivateKey());
         this.jwtGenerator = new JwtGenerator(jwtConfig);
         this.strategy = idTokenConfigContext.asConfigBean(StrategyConfig.class);
+        this.tokenTtl = ConfigParser.parseDuration(strategy.getTokenLife());
     }
 
     @Override
@@ -49,8 +53,7 @@ public class IdTokenProvider implements AuthProvider {
     }
 
     private JwtTokenBuilder generateIdToke(final AccountBO account) {
-        final JWTCreator.Builder jwtBuilder = jwtGenerator
-                .generateUnsignedToken(account, ConfigParser.parseDuration(strategy.getTokenLife()));
+        final JWTCreator.Builder jwtBuilder = jwtGenerator.generateUnsignedToken(account, tokenTtl);
 
         if (account.getExternalId() != null) {
             jwtBuilder.withClaim("eid", account.getExternalId());
