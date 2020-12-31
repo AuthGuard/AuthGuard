@@ -20,7 +20,7 @@ public class JwtConfigParser {
             return parseHmac(algorithmName, privateKey);
         } else if (algorithmName.startsWith("RSA")) {
             return parseRsa(algorithmName, publicKey, privateKey);
-        } else if (algorithmName.startsWith("ECDSA")) {
+        } else if (algorithmName.startsWith("EC")) {
             return parseEc(algorithmName, publicKey, privateKey);
         } else {
             throw new ServiceException(ErrorCode.UNSUPPORTED_JWT_ALGORITHM, "Unsupported algorithm " + algorithmName);
@@ -61,11 +61,14 @@ public class JwtConfigParser {
         final KeyPair keyPair = readEcKeys(publicKey, privateKey);
 
         switch (algorithmName) {
-            case "RSA256":
+            case "EC256":
                 return Algorithm.ECDSA256((ECPublicKey) keyPair.getPublic(), (ECPrivateKey) keyPair.getPrivate());
 
-            case "RSA512":
+            case "EC512":
                 return Algorithm.ECDSA512((ECPublicKey) keyPair.getPublic(), (ECPrivateKey) keyPair.getPrivate());
+
+            case "EC256K":
+                return Algorithm.ECDSA256K((ECPublicKey) keyPair.getPublic(), (ECPrivateKey) keyPair.getPrivate());
 
             default:
                 throw new ServiceException(ErrorCode.UNSUPPORTED_JWT_ALGORITHM, "Unsupported algorithm " + algorithmName);
