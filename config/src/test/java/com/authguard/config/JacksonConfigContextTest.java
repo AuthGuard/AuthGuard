@@ -12,6 +12,22 @@ class JacksonConfigContextTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
+    void missingProperties() {
+        final ObjectNode rootNode = objectMapper.createObjectNode();
+
+        final JacksonConfigContext configContext = new JacksonConfigContext(rootNode);
+
+        assertThat(configContext.get("missing")).isNull();
+
+        assertThat(configContext.getAsString("missing")).isNull();
+        assertThat(configContext.getAsBoolean("missing")).isNull();
+
+        assertThat(configContext.getAsConfigBean("missing", String.class)).isNull();
+
+        assertThat(configContext.getSubContext("missing")).isNull();
+    }
+
+    @Test
     void asProperties() {
         final ObjectNode rootNode = objectMapper.createObjectNode();
 

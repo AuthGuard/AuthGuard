@@ -12,6 +12,7 @@ import com.authguard.service.random.CryptographicRandom;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
@@ -21,6 +22,7 @@ public class AuthorizationCodeProvider implements AuthProvider {
     private final AuthorizationCodeConfig config;
 
     private final CryptographicRandom random;
+    private final Duration tokenTtl;
 
     @Inject
     public AuthorizationCodeProvider(final AccountTokensRepository accountTokensRepository,
@@ -31,6 +33,7 @@ public class AuthorizationCodeProvider implements AuthProvider {
         this.config = config.asConfigBean(AuthorizationCodeConfig.class);
 
         this.random = new CryptographicRandom();
+        this.tokenTtl = ConfigParser.parseDuration(this.config.getLifeTime());
     }
 
     @Override
@@ -46,7 +49,7 @@ public class AuthorizationCodeProvider implements AuthProvider {
                 .id(UUID.randomUUID().toString())
                 .token(code)
                 .associatedAccountId(account.getId())
-                .expiresAt(ZonedDateTime.now().plus(ConfigParser.parseDuration(config.getLifeTime())))
+                .expiresAt(ZonedDateTime.now().plus(tokenTtl))
                 .tokenRestrictions(serviceMapper.toDO(restrictions))
                 .build();
 

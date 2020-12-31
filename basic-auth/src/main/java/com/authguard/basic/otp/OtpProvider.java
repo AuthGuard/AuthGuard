@@ -13,6 +13,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.commons.lang3.RandomStringUtils;
 
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
@@ -24,6 +25,8 @@ public class OtpProvider implements AuthProvider {
     private final MessageBus messageBus;
     private final OtpConfig otpConfig;
 
+    private final Duration tokenTtl;
+
     @Inject
     public OtpProvider(final OtpRepository otpRepository, final ServiceMapper serviceMapper,
                        final MessageBus messageBus, final @Named("otp") ConfigContext otpConfig) {
@@ -31,6 +34,7 @@ public class OtpProvider implements AuthProvider {
         this.serviceMapper = serviceMapper;
         this.messageBus = messageBus;
         this.otpConfig = otpConfig.asConfigBean(OtpConfig.class);
+        this.tokenTtl = ConfigParser.parseDuration(this.otpConfig.getLifeTime());
     }
 
     @Override
@@ -43,7 +47,7 @@ public class OtpProvider implements AuthProvider {
         final OneTimePasswordBO oneTimePassword = OneTimePasswordBO.builder()
                 .id(passwordId)
                 .accountId(account.getId())
-                .expiresAt(ZonedDateTime.now().plus(ConfigParser.parseDuration(otpConfig.getLifeTime())))
+                .expiresAt(ZonedDateTime.now().plus(tokenTtl))
                 .password(password)
                 .build();
 

@@ -8,7 +8,7 @@ public interface ConfigContext {
 
     Object get(String key);
     String getAsString(String key);
-    boolean getAsBoolean(String key);
+    Boolean getAsBoolean(String key);
     <T> Collection<T> getAsCollection(String key, Class<T> targetClass);
 
     ConfigContext getSubContext(String key);
