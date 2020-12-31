@@ -58,29 +58,39 @@ public class JacksonConfigContext implements ConfigContext {
 
     @Override
     public String getAsString(final String key) {
-        return rootNode.get(key).asText();
+        final JsonNode child = rootNode.get(key);
+
+        return child == null ? null : child.asText();
     }
 
     @Override
-    public boolean getAsBoolean(final String key) {
-        return rootNode.get(key).asBoolean();
+    public Boolean getAsBoolean(final String key) {
+        final JsonNode child = rootNode.get(key);
+
+        return child == null ? null : child.asBoolean();
     }
 
     @Override
     public <T> Collection<T> getAsCollection(final String key, final Class<T> targetClass) {
         final JsonNode child = rootNode.get(key);
 
-        if (child.isArray()) {
-            return objectMapper.convertValue(child,
-                    objectMapper.getTypeFactory().constructCollectionType(ArrayList.class, targetClass));
-        } else {
-            throw new RuntimeException("Field " + key + " does not represent a JSON array");
+        if (child != null) {
+            if (child.isArray()) {
+                return objectMapper.convertValue(child,
+                        objectMapper.getTypeFactory().constructCollectionType(ArrayList.class, targetClass));
+            } else {
+                throw new RuntimeException("Field " + key + " does not represent a JSON array");
+            }
         }
+
+        return null;
     }
 
     @Override
     public ConfigContext getSubContext(final String key) {
-        return new JacksonConfigContext(rootNode.get(key));
+        final JsonNode child = rootNode.get(key);
+
+        return child == null ? null : new JacksonConfigContext(rootNode.get(key));
     }
 
     @Override
