@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class JwtApiKeyProviderTest {
     private static final String ALGORITHM = "HMAC256";
-    private static final String KEY = "this secret is only for testing purposes";
+    private static final String KEY = "src/test/resources/hmac256.pem";
 
     private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
 
@@ -60,7 +60,7 @@ class JwtApiKeyProviderTest {
     }
 
     private void verifyToken(final String token, final String subject, final String jti) {
-        final JWTVerifier verifier = JWT.require(Algorithm.HMAC256(KEY))
+        final JWTVerifier verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
                 .withSubject(subject)
                 .withJWTId(jti)
                 .build();
@@ -71,7 +71,7 @@ class JwtApiKeyProviderTest {
     }
 
     private void verifyToken(final DecodedJWT decodedJWT, final String subject, final String jti) {
-        final JWTVerifier verifier = JWT.require(Algorithm.HMAC256(KEY))
+        final JWTVerifier verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
                 .build();
 
         verifier.verify(decodedJWT);

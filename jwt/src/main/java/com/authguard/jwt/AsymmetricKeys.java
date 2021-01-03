@@ -16,18 +16,35 @@ public class AsymmetricKeys {
     }
 
     public static KeyPair ecdsaFromBase64Keys(final String base64Public, final String base64Private) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        final KeyFactory keyFactory = KeyFactory.getInstance("ECDSA");
+        final KeyFactory keyFactory = KeyFactory.getInstance("EC");
+
+        return fromBase64Keys(keyFactory, base64Public, base64Private);
+    }
+
+    public static KeyPair rsaFromBase64Keys(final byte[] base64Public, final byte[] base64Private) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+
+        return fromBase64Keys(keyFactory, base64Public, base64Private);
+    }
+
+    public static KeyPair ecdsaFromBase64Keys(final byte[] base64Public, final byte[] base64Private) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        final KeyFactory keyFactory = KeyFactory.getInstance("EC");
 
         return fromBase64Keys(keyFactory, base64Public, base64Private);
     }
 
     public static KeyPair fromBase64Keys(final KeyFactory keyFactory, final String base64Public,
                                          final String base64Private) throws InvalidKeySpecException {
-        final byte[] privateKey = Base64.getDecoder().decode(base64Private);
-        final PKCS8EncodedKeySpec privateKeySpecs = new PKCS8EncodedKeySpec(privateKey);
-
         final byte[] publicKey = Base64.getDecoder().decode(base64Public);
-        final X509EncodedKeySpec publicKeySpecs = new X509EncodedKeySpec(publicKey);
+        final byte[] privateKey = Base64.getDecoder().decode(base64Private);
+
+        return fromBase64Keys(keyFactory, publicKey, privateKey);
+    }
+
+    public static KeyPair fromBase64Keys(final KeyFactory keyFactory, final byte[] base64Public,
+                                         final byte[] base64Private) throws InvalidKeySpecException {
+        final X509EncodedKeySpec publicKeySpecs = new X509EncodedKeySpec(base64Public);
+        final PKCS8EncodedKeySpec privateKeySpecs = new PKCS8EncodedKeySpec(base64Private);
 
         return new KeyPair(keyFactory.generatePublic(publicKeySpecs), keyFactory.generatePrivate(privateKeySpecs));
     }

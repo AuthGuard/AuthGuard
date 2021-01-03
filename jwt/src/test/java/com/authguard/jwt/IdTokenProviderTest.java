@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class IdTokenProviderTest {
     private static final String ALGORITHM = "HMAC256";
-    private static final String KEY = "this secret is only for testing purposes";
+    private static final String KEY = "src/test/resources/hmac256.pem";
     private static final String ISSUER = "test";
 
     private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
@@ -70,7 +70,7 @@ class IdTokenProviderTest {
 
     private void verifyToken(final String token, final String subject, final String jti,
                              final List<PermissionBO> permissions, final List<String> scopes) {
-        final Verification verifier = JWT.require(Algorithm.HMAC256(KEY))
+        final Verification verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
                 .withIssuer(ISSUER)
                 .withSubject(subject);
 
@@ -90,7 +90,7 @@ class IdTokenProviderTest {
     }
 
     private void verifyToken(final DecodedJWT decodedJWT, final String subject) {
-        final JWTVerifier verifier = JWT.require(Algorithm.HMAC256(KEY))
+        final JWTVerifier verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
                 .build();
 
         verifier.verify(decodedJWT);

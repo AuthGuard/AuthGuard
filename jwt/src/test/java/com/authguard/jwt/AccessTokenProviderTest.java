@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AccessTokenProviderTest {
     private static final String ALGORITHM = "HMAC256";
-    private static final String KEY = "this secret is only for testing purposes";
+    private static final String KEY = "src/test/resources/hmac256.pem";
     private static final String ISSUER = "test";
 
     private AccountTokensRepository accountTokensRepository;
@@ -161,7 +161,7 @@ class AccessTokenProviderTest {
     }
 
     private void verifyToken(final String token, final String subject, final String jti, final List<String> permissions) {
-        final Verification verifier = JWT.require(Algorithm.HMAC256(KEY))
+        final Verification verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
                 .withIssuer(ISSUER)
                 .withSubject(subject);
 
