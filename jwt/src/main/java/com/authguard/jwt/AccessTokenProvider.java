@@ -46,6 +46,22 @@ public class AccessTokenProvider implements AuthProvider {
         this.refreshTokenTtl = ConfigParser.parseDuration(strategy.getRefreshTokenLife());
     }
 
+    public AccessTokenProvider(final AccountTokensRepository accountTokensRepository,
+                               final JwtConfig jwtConfig,
+                               final StrategyConfig accessTokenConfig,
+                               final JtiProvider jti) {
+        this.accountTokensRepository = accountTokensRepository;
+        this.jti = jti;
+
+        this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getPublicKey(),
+                jwtConfig.getPrivateKey());
+        this.jwtGenerator = new JwtGenerator(jwtConfig);
+
+        this.strategy = accessTokenConfig;
+        this.tokenTtl = ConfigParser.parseDuration(strategy.getTokenLife());
+        this.refreshTokenTtl = ConfigParser.parseDuration(strategy.getRefreshTokenLife());
+    }
+
     @Override
     public TokensBO generateToken(final AccountBO account) {
         return generateToken(account, null);
