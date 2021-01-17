@@ -25,6 +25,47 @@ There are two ways to create a distribution:
 1. Using a build system (Maven, Gradle, SBT...etc) by adding them as dependencies
 2. Running the `rest` jar and setting the classpath manually
 
+## Plugins
+There are some standard plugins created and support by the AuthGuard team. Some are considered core parts and exist as 
+modules in the main project, while the others get their own repository.
+
+### JWT
+A plugin which provides JWT exchanges and other features around JWTs:
+1. JWT auth exchanges
+2. JWT API keys
+3. OAuth and OpenID Connect support
+
+### Sessions
+A plugin to add support for sessions. Requires a session store to be provided by a DAL implementation.
+
+### Verification
+The verification plugin will send a verification email to an email which needs to be verified. Requires an email provider 
+implementation.
+
+### Account Lock
+Adds support for locking accounts after a number of failed logins within a period.
+
+### LDAP (experimental)
+Adds support for LDAP-based authentication by using an LDAP server as an identity provider.
+
+### JavaMail
+An email provider implementation which uses JavaMail to send emails to users.
+
+### Kafka Bridge
+A plugin which connected AuthGuard's internal event system to Kafka. It can be configured to publish all or only specific 
+events to Kafka for external systems to process.
+
+### Mongo DAL
+A data access implementation which uses Mongo for persistence, and a complementary module to use it for caching as well.
+
+### Hibernate DAL
+A data access implementation for SQL databases using Hibernate.
+
+### Local Testing Plugins
+You can use some basic implementation which are mainly used to test AuthGuard, those include:
+* Memory DAL: A DAL implementation (both persistence and cache which stores things in memory)
+* Log EMB: A plugin which prints all events published to any channel in the event system 
+
 ## Documentation
 You can see the full documentation on the official website [here](https://authguard.github.io/), and the OpenAPI 
 documentation is available under the `api` module.
