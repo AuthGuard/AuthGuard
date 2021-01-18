@@ -1,0 +1,1085 @@
+openapi: 3.0.3
+
+info:
+  title: AuthGuard API
+  version: 1.0.0
+
+security:
+  - apiKey: []
+
+paths:
+  # ----------------- accounts -----------------
+  /accounts:
+    post:
+      operationId: createAccount
+      description: Create an account
+      tags:
+        - accounts
+      parameters:
+        - $ref:  "#/components/parameters/IdempotentKeyHeader"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccountRequest" 
+      responses:
+        201:
+          description: Success
+          $ref: "#/components/responses/AccountResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
+        409:
+          description: Conflict - if the idempotent key header was used to create an account before
+          $ref: "#/components/responses/ErrorResponse"
+
+  /accounts/{id}:
+    get:
+      operationId: getAccountById
+      description: Get an account by ID
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/AccountResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+    delete:
+      operationId: deleteAccount
+      description: Delet an account
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/AccountResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /accounts/externalId/{id}:
+    get:
+      operationId: getAccountByExternalId
+      description: Get an account by an external ID
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/AccountResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /accounts/{id}/permissions:
+    patch:
+      operationId: updateAccountPermissions
+      description: Update the permissions of an account
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PermissionsRequest" 
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApplicationResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /accounts/{id}/roles:
+    patch:
+      operationId: updateAccountRoles
+      description: Update the roles of an account
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RolesRequest"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApplicationResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /accounts/{id}/email:
+    patch:
+      operationId: updateAccountEmails
+      description: Update main or backup emails of an account
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountEmailRequest"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApplicationResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /accounts/{id}/activate:
+    patch:
+      operationId: activateAnAccount
+      description: Activate an account if not already active
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/AccountResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /accounts/{id}/deactivate:
+    patch:
+      operationId: deactivateAnAccount
+      description: Deactivate an account if it's active
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/AccountResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /accounts/{id}/apps:
+    get:
+      operationId: getApplicationsByAccountId
+      description: Get a list of applications associated with an account
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApplicationsArrayResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /accounts/{id}/locks:
+    get:
+      operationId: getLocksByAccountId
+      description: Get a list of active locks placed on an account
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/AccountLocksArrayResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /accounts/complete:
+    post:
+      operationId: createAccountWithCredentials
+      description: Create an account as well as its credentials
+      tags:
+        - accounts
+      parameters:
+        - $ref:  "#/components/parameters/IdempotentKeyHeader"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCompleteAccountRequest" 
+      responses:
+        201:
+          description: Success
+          $ref: "#/components/responses/CompleteAccountResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
+        409:
+          description: Conflict - if the idempotent key header was used to create an account before
+          $ref: "#/components/responses/ErrorResponse"
+
+  # ----------------- credentials -----------------
+  /credentials:
+    post:
+      operationId: createCredentials
+      description: Create credentials
+      tags:
+        - credentials
+      parameters:
+        - $ref:  "#/components/parameters/IdempotentKeyHeader"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref:  "#/components/schemas/CreateCredentialsRequest"
+      responses:
+        201:
+          description: Success
+          $ref:  "#/components/responses/CredentialsResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
+        409:
+          description: Conflict - if the idempotent key header was used to create credentials before
+          $ref: "#/components/responses/ErrorResponse"
+
+  /credentials/{id}:
+    get:
+      operationId: getCredentialsById
+      description: Get credentials by ID
+      tags:
+        - credentials
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/CredentialsResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      operationId: deleteCredentials
+      description: Delete credentials by ID
+      tags:
+        - credentials
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/CredentialsResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /credentials/{id}/password:
+    patch:
+      operationId: updatePassword
+      description: Update the password in a credentials entity
+      tags:
+        - credentials
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCredentialsPasswordRequest"
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/CredentialsResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /credentials/{id}/identifiers:
+    patch:
+      operationId: addIdentifier
+      description: Add new identifiers to credentials
+      tags:
+        - credentials
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref:  "#/components/schemas/UserIdentifiersRequest"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/CredentialsResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
+
+    delete:
+      operationId: deleteIdentifier
+      description: Delete identifiers from credentials
+      tags:
+        - credentials
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref:  "#/components/schemas/UserIdentifiersRequest"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/CredentialsResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
+
+  # ----------------- applications -----------------
+  /apps:
+    post:
+      operationId: createApp
+      description: Create an application
+      tags:
+        - applications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApplicationRequest" 
+      responses:
+        201:
+          description: Success
+          $ref: "#/components/responses/ApplicationResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
+
+  /apps/{id}:
+    get:
+      operationId: getAppById
+      description: Get an application by ID
+      tags:
+        - applications
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApplicationResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+    delete:
+      operationId: deleteApp
+      description: Delet an application
+      tags:
+        - applications
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApplicationResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /apps/externalId/{id}:
+    get:
+      operationId: getAppsByExternalId
+      description: Get an application by an external ID
+      tags:
+        - applications
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApplicationResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /apps/{id}/activate:
+    patch:
+      operationId: activateAnApp
+      description: Activate an application if not already active
+      tags:
+        - applications
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApplicationResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /apps/{id}/deactivate:
+    patch:
+      operationId: deactivateAnApp
+      description: Deactivate an application if it's active
+      tags:
+        - applications
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApplicationResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  # ----------------- roles -----------------
+  /roles:
+    post:
+      operationId: createRole
+      description: Create a role
+      tags:
+        - roles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoleRequest" 
+      responses:
+        201:
+          description: Success
+          $ref: "#/components/responses/RoleResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
+
+  /roles/{name}:
+    get:
+      operationId: getRoleByName
+      description: Get a role by its name
+      tags:
+        - roles
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/RoleResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  # ----------------- permissions -----------------
+  /permissions:
+    post:
+      operationId: createPermission
+      description: Create a permission
+      tags:
+        - permissions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePermissionRequest" 
+      responses:
+        201:
+          description: Success
+          $ref: "#/components/responses/PermissionResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
+    get:
+      operationId: getPermissions
+      description: Get all permissions, or filter them by group
+      tags:
+        - permissions
+      parameters:
+        - name: group
+          in: query
+          schema: 
+            type: string
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/PermissionsArrayResponse"
+
+  # ----------------- auth -----------------
+  /auth/exchange:
+    post:
+      operationId: exchange
+      description: Perform an auth exchange
+      tags:
+        - auth
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref:  "#/components/schemas/AuthRequest"
+      responses:
+        200:
+          description: Success
+          $ref:  "#/components/responses/SuccessfulAuthRespons"
+        400:
+          description: Bad request
+          $ref:  "#/components/responses/ErrorResponse"
+
+  /auth/authenticate:
+    post:
+      operationId: authenticate
+      description: Perform an auth exchange from 'basic' to what is specified in the configuration
+      tags:
+        - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref:  "#/components/schemas/AuthRequest"
+      responses:
+        200:
+          description: Success
+          $ref:  "#/components/responses/SuccessfulAuthRespons"
+        400:
+          description: Bad request
+          $ref:  "#/components/responses/ErrorResponse"
+
+  /auth/attempts:
+    get:
+      operationId: getExchangeAttempts
+      description: Get a list of attempts performed for an entity
+      tags:
+        - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref:  "#/components/schemas/ExchangeAttemptsRequest"
+      responses:
+        200:
+          description: Success
+          $ref:  "#/components/responses/ExchangeAttemptsArrayResponse"
+        400:
+          description: Bad request
+          $ref:  "#/components/responses/ErrorResponse"
+
+  /passwordless/verify:
+    post:
+      operationId: Verify a passwordless token
+      tags:
+        - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref:  "#/components/schemas/PasswordlessRequest"
+      responses:
+        200:
+          description: Success
+          $ref:  "#/components/responses/SuccessfulAuthRespons"
+        400:
+          description: Bad request
+          $ref:  "#/components/responses/ErrorResponse"
+
+  /otp/verify:
+    post:
+      operationId: Verify a one-time password
+      tags:
+        - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref:  "#/components/schemas/OtpRequest"
+      responses:
+        200:
+          description: Success
+          $ref:  "#/components/responses/SuccessfulAuthRespons"
+        400:
+          description: Bad request
+          $ref:  "#/components/responses/ErrorResponse"
+
+  /verification/email:
+    post:
+      operationId: Verify an email
+      tags:
+        - verification
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Success
+        400:
+          description: Bad request
+          $ref:  "#/components/responses/ErrorResponse"
+
+components:
+  securitySchemes:
+    apiKey:
+      name: Authorization
+      type: apiKey
+      in: header
+
+  parameters:
+    IdParameter:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+
+    IdempotentKeyHeader:
+      name: X-IdempotentKey
+      in: header
+      required: true
+      schema:
+        type: string
+
+  responses:
+    ErrorResponse:
+      description: _
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    
+    SuccessfulAuthRespons:
+      description: _
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AuthResult"
+
+    AccountResponse:
+      description: _
+      content:
+        application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+
+    CredentialsResponse:
+      description: _
+      content:
+        application/json:
+              schema:
+                $ref: "#/components/schemas/Credentials"
+
+    CompleteAccountResponse:
+      description: _
+      content:
+        application/json:
+              schema:
+                $ref: "#/components/schemas/AccountWithCredentials"
+
+    ApplicationResponse:
+      description: _
+      content:
+        application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+
+    RoleResponse:
+      description: _
+      content:
+        application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+
+    PermissionResponse:
+      description: _
+      content:
+        application/json:
+              schema:
+                $ref: "#/components/schemas/Permission"
+
+    ApplicationsArrayResponse:
+      description: _
+      content:
+        application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Application"
+
+    AccountLocksArrayResponse:
+      description: _
+      content:
+        application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountLock"
+
+    PermissionsArrayResponse:
+      description: _
+      content:
+        application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Permission"
+
+    ExchangeAttemptsArrayResponse:
+      description: _
+      content:
+        application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExchangeAttempt"
+
+  schemas:
+    AccountWithCredentials:
+      type: object
+      properties:
+        account:
+          type: object
+          $ref: "#/components/schemas/Account"
+        credentials:
+          type: object
+          $ref: "#/components/schemas/Credentials"
+
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+        externalId:
+          type: string
+        email:
+          type: object
+          $ref: "#/components/schemas/Email"
+        backupEmail:
+          type: object
+          $ref: "#/components/schemas/Email"
+        permissions:
+          type: array
+          items:
+            type: object
+            $ref: "#/components/schemas/Permission"
+        roles:
+          type: array
+          items:
+            type: string
+        active:
+          type: boolean
+
+    Credentials:
+      type: object
+      properties:
+        accountId:
+          type: string
+        identifiers:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserIdentifier"
+
+    UserIdentifier:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - USERNAME
+            - EMAIL
+            - PHONE_NUMBER
+        identifier:
+          type: string
+
+    Application:
+      type: object
+      properties:
+        id:
+          type: string
+        externalId:
+          type: string
+        accountId:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: object
+            $ref: "#/components/schemas/Permission"
+        roles:
+          type: array
+          items:
+            type: string
+        active:
+          type: boolean
+    
+    Email:
+      type: object
+      properties:
+        email: 
+          type: string
+        verified:
+          type: boolean
+ 
+    Permission:
+      type: object
+      properties:
+        group:
+          type: string
+        name:
+          type: string
+
+    Role:
+      type: object
+      properties:
+        name:
+          type: string
+
+    AccountLock:
+      type: object
+      properties:
+        accountId:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    ExchangeAttempt:
+      type: object
+      properties:
+        entityId:
+          type: string
+        fromExchange:
+          type: string
+        toExchange:
+          type: string
+        successful:
+          type: boolean
+
+    AuthRequest:
+      type: object
+      properties:
+        identifier:
+          type: string
+        password:
+          type: string
+        token:
+          type: string
+  
+    AuthResult:
+      type: object
+      properties:
+        type:
+          type: string
+        token:
+          type: string
+        refreshToken:
+          type: string
+
+    CreateAccountRequest:
+      type: object
+      properties:
+        externalId:
+          type: string
+        email:
+          type: object
+          $ref: "#/components/schemas/Email"
+        backupEmail:
+          type: object
+          $ref: "#/components/schemas/Email"
+        permissions:
+          type: array
+          items:
+            type: object
+            $ref: "#/components/schemas/Permission"
+        roles:
+          type: array
+          items:
+            type: string
+        active:
+          type: boolean
+
+    CreateApplicationRequest:
+      type: object
+      properties:
+        externalId:
+          type: string
+        accountId:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: object
+            $ref: "#/components/schemas/Permission"
+        roles:
+          type: array
+          items:
+            type: string
+        active:
+          type: boolean
+
+    CreateCredentialsRequest:
+      type: object
+      properties:
+        accountId:
+          type: string
+        identifiers:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserIdentifier"
+        plainPassword:
+          type: string
+
+    UpdateCredentialsPasswordRequest:
+      type: object
+      properties:
+        plainPassword:
+          type: string
+
+    CreateCompleteAccountRequest:
+      type: object
+      properties:
+        account:
+          type: object
+          $ref: "#/components/schemas/CreateAccountRequest"
+        credentials:
+          type: object
+          $ref: "#/components/schemas/CreateCredentialsRequest"
+
+    CreateRoleRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+    CreatePermissionRequest:
+      type: object
+      required:
+        - group
+        - name
+      properties:
+        group:
+          type: string
+        name:
+          type: string
+
+    AccountEmailRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: boolean
+        backup:
+          type: boolean
+          default: false
+
+    PermissionsRequest:
+      type: object
+      required:
+        - action
+        - permissions
+      properties:
+        action:
+          type: string
+          enum:
+            - GRANT
+            - REVOKE
+        permissions:
+          type: array
+          items:
+            $ref:  "#/components/schemas/Permission"
+
+    RolesRequest:
+      type: object
+      required:
+        - action
+        - roles
+      properties:
+        action:
+          type: string
+          enum:
+            - GRANT
+            - REVOKE
+        roles:
+          type: array
+          items:
+            type: string
+
+    UserIdentifiersRequest:
+      type: object
+      required:
+        - identifiers
+      properties:
+        identifiers:
+          type: array
+          items:
+            $ref:  "#/components/schemas/UserIdentifier"
+
+    ExchangeAttemptsRequest:
+      type: object
+      required:
+        - entityId
+        - fromExchange
+        - toExchange
+      properties:
+        entityId:
+          type: string
+        fromExchange:
+          type: string
+        toExchange:
+          type: string
+
+    PasswordlessRequest:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+
+    OtpRequest:
+      type: object
+      required:
+        - passwordId
+        - password
+      properties:
+        passwordId:
+          type: string
+        password:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
