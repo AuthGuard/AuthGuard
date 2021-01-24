@@ -27,6 +27,6 @@ public class SessionDO extends AbstractDO {
     private String accountId;
     private ZonedDateTime expiresAt;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private Map<String, String> data;
 }
