@@ -571,17 +571,27 @@ paths:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
 
-  /auth/attempts:
+  /auth/exchange/attempts:
     get:
       operationId: getExchangeAttempts
       description: Get a list of attempts performed for an entity
       tags:
         - auth
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref:  "#/components/schemas/ExchangeAttemptsRequest"
+      parameters:
+        - name: entityId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: fromTimestamp
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: fromExchange
+          in: query
+          schema:
+            type: string
       responses:
         200:
           description: Success
@@ -1042,20 +1052,6 @@ components:
           type: array
           items:
             $ref:  "#/components/schemas/UserIdentifier"
-
-    ExchangeAttemptsRequest:
-      type: object
-      required:
-        - entityId
-        - fromExchange
-        - toExchange
-      properties:
-        entityId:
-          type: string
-        fromExchange:
-          type: string
-        toExchange:
-          type: string
 
     PasswordlessRequest:
       type: object

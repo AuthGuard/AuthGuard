@@ -81,4 +81,18 @@ class AuthRouteTest extends AbstractRouteTest {
                 .then()
                 .statusCode(400);
     }
+
+    @Test
+    void getExchangeAttemptsNoEntityId() {
+        given().get(url("exchange", "attempts"))
+                .then()
+                .statusCode(400);
+    }
+
+    @Test
+    void getExchangeAttemptsWithExchangeWithoutTimestamp() {
+        given().get(url("exchange", "attempts?entityId=entity&fromExchange=basic"))
+                .then()
+                .statusCode(400);
+    }
 }

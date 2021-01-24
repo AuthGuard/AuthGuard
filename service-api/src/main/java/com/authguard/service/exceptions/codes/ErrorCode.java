@@ -36,7 +36,10 @@ public enum ErrorCode {
     INVALID_PASSWORD("PW.022"),
 
     LDAP_MULTIPLE_PASSWORD_ENTRIES("LD.021"),
-    LDAP_ERROR("LD.031");
+    LDAP_ERROR("LD.031"),
+
+    MISSING_REQUEST_QUERY("RQ.011"),
+    INVALID_REQUEST_QUERY("RQ.012");
 
     private final String code;
 
