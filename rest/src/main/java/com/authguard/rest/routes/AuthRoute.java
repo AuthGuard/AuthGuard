@@ -4,19 +4,25 @@ import com.authguard.api.dto.entities.Error;
 import com.authguard.api.dto.entities.ExchangeAttemptDTO;
 import com.authguard.api.dto.entities.TokensDTO;
 import com.authguard.api.dto.requests.AuthRequestDTO;
-import com.authguard.api.dto.requests.ExchangeAttemptsRequestDTO;
+import com.authguard.api.dto.validation.violations.Violation;
+import com.authguard.api.dto.validation.violations.ViolationType;
 import com.authguard.api.routes.AuthApi;
-import com.authguard.rest.mappers.RestJsonMapper;
+import com.authguard.rest.exceptions.RequestValidationException;
 import com.authguard.rest.mappers.RestMapper;
 import com.authguard.rest.util.BodyHandler;
 import com.authguard.service.AuthenticationService;
 import com.authguard.service.ExchangeAttemptsService;
 import com.authguard.service.ExchangeService;
+import com.authguard.service.exceptions.codes.ErrorCode;
+import com.authguard.service.model.ExchangeAttemptsQueryBO;
 import com.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
 
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -72,12 +78,49 @@ public class AuthRoute extends AuthApi {
 
     @Override
     public void getExchangeAttempts(final Context context) {
-        final ExchangeAttemptsRequestDTO exchangeAttemptsRequest = RestJsonMapper.asClass(context.body(),
-                ExchangeAttemptsRequestDTO.class);
+        final String entityId = context.queryParam("entityId");
+        final OffsetDateTime fromTimestamp = parseOffsetDateTime(context.queryParam("fromTimestamp"));
+        final String fromExchange = context.queryParam("fromExchange");
 
-        final Collection<ExchangeAttemptDTO> attempts = exchangeAttemptsService.get(exchangeAttemptsRequest.getEntityId())
+        // take care of checking the parameters
+        if (entityId == null) {
+            context.status(400)
+                    .json(new Error(ErrorCode.MISSING_REQUEST_QUERY.getCode(),
+                            "Query parameter entityId is required"));
+
+            return;
+        }
+
+        if (fromExchange != null && fromTimestamp == null) {
+            context.status(400)
+                    .json(new Error(ErrorCode.MISSING_REQUEST_QUERY.getCode(),
+                            "Query parameter fromTimestamp is required when fromExchange is set"));
+
+            return;
+        }
+
+        // do the real work
+        final ExchangeAttemptsQueryBO query = ExchangeAttemptsQueryBO.builder()
+                .entityId(entityId)
+                .fromTimestamp(fromTimestamp)
+                .fromExchange(fromExchange)
+                .build();
+
+        final Collection<ExchangeAttemptDTO> attempts = exchangeAttemptsService.find(query)
                 .stream()
                 .map(restMapper::toDTO)
                 .collect(Collectors.toList());
+
+        context.json(attempts);
+    }
+
+    private OffsetDateTime parseOffsetDateTime(final String str) {
+        try {
+            return str == null ? null : OffsetDateTime.parse(str);
+        } catch (final DateTimeParseException e) {
+            throw new RequestValidationException(Collections.singletonList(
+                    new Violation("fromTimestamp", ViolationType.INVALID_VALUE)
+            ));
+        }
     }
 }
