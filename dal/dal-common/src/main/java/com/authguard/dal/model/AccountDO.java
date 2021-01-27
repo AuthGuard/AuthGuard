@@ -18,22 +18,22 @@ import java.util.Set;
 @NamedQuery(
         name = "accounts.getById",
         query = "SELECT account FROM AccountDO account " +
-                "JOIN FETCH account.roles " +
-                "JOIN FETCH account.permissions " +
+                "LEFT JOIN FETCH account.roles " +
+                "LEFT JOIN FETCH account.permissions " +
                 "WHERE account.id = :id"
 )
 @NamedQuery(
         name = "accounts.getByExternalId",
         query = "SELECT account FROM AccountDO account " +
-                "JOIN FETCH account.roles " +
-                "JOIN FETCH account.permissions " +
+                "LEFT JOIN FETCH account.roles " +
+                "LEFT JOIN FETCH account.permissions " +
                 "WHERE account.externalId = :externalId"
 )
 @NamedQuery(
         name = "accounts.getByRole",
         query = "SELECT account FROM AccountDO account " +
-                "JOIN FETCH account.permissions " +
-                "JOIN FETCH account.roles role " +
+                "LEFT JOIN FETCH account.permissions " +
+                "LEFT JOIN FETCH account.roles role " +
                 "WHERE role = :role"
 )
 public class AccountDO extends AbstractDO {
