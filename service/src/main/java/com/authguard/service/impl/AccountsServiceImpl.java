@@ -71,9 +71,19 @@ public class AccountsServiceImpl implements AccountsService {
                     messageBus.publish(ACCOUNTS_CHANNEL, Messages.created(created));
 
                     if (accountConfig.verifyEmail()) {
+                        final List<AccountEmailBO> toVerify = new ArrayList<>(2);
+
+                        if (account.getEmail() != null) {
+                            toVerify.add(account.getEmail());
+                        }
+
+                        if (account.getBackupEmail() != null) {
+                            toVerify.add(account.getBackupEmail());
+                        }
+
                         messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(VerificationRequestBO.builder()
                                 .account(created)
-                                .emails(Arrays.asList(account.getEmail(), account.getBackupEmail()))
+                                .emails(toVerify)
                                 .build()));
                     }
 
