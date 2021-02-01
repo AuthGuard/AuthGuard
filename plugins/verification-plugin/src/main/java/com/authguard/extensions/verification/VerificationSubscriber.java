@@ -75,7 +75,9 @@ public class VerificationSubscriber implements MessageSubscriber {
         final AccountBO account = verificationRequest.getAccount();
 
         verificationRequest.getEmails().forEach(email -> {
-            if (email.isVerified()) {
+            if (email == null) {
+                LOG.warn("Email is null. Skipping.");
+            } else if (email.isVerified()) {
                 LOG.warn("Email is already verified. Skipping.");
             } else {
                 final String token = generateVerificationString();
@@ -96,6 +98,8 @@ public class VerificationSubscriber implements MessageSubscriber {
                         .build();
 
                 emailProvider.send(email1);
+
+                LOG.info("Sent a verification email");
             }
         });
     }
