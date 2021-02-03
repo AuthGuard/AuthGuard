@@ -4,7 +4,7 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @BOStyle
-public interface Permission {
+public interface Permission extends Entity {
     String getGroup();
     String getName();
 

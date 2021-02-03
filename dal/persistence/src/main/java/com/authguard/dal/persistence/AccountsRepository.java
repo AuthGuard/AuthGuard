@@ -1,16 +1,13 @@
 package com.authguard.dal.persistence;
 
 import com.authguard.dal.model.AccountDO;
+import com.authguard.dal.repository.Repository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-public interface AccountsRepository {
-    CompletableFuture<AccountDO> save(AccountDO account);
-    CompletableFuture<Optional<AccountDO>> getById(String accountId);
+public interface AccountsRepository extends Repository<AccountDO> {
     CompletableFuture<Optional<AccountDO>> getByExternalId(String externalId);
-    CompletableFuture<Optional<AccountDO>> update(AccountDO account);
-    CompletableFuture<Optional<AccountDO>> delete(String accountId);
     CompletableFuture<List<AccountDO>> getByRole(String role);
 }

@@ -96,9 +96,13 @@ class AccountsServiceImplTest {
                 });
 
         final AccountBO persisted = accountService.create(account, requestContext);
+        final List<PermissionBO> expectedPermissions = account.getPermissions().stream()
+                .map(permission -> permission.withEntityType(null))
+                .collect(Collectors.toList());
 
         assertThat(persisted).isNotNull();
-        assertThat(persisted).isEqualToIgnoringGivenFields(account, "id");
+        assertThat(persisted)
+                .isEqualToIgnoringGivenFields(account.withPermissions(expectedPermissions), "id");
 
         // need better assertion
         Mockito.verify(messageBus, Mockito.times(1))
@@ -118,9 +122,12 @@ class AccountsServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
 
         final Optional<AccountBO> retrieved = accountService.getById("");
+        final List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
+                .map(permission -> permission.withEntityType(null))
+                .collect(Collectors.toList());
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualTo(accountBO);
+        assertThat(retrieved.get()).isEqualTo(accountBO.withPermissions(expectedPermissions));
     }
 
     @Test
@@ -263,8 +270,11 @@ class AccountsServiceImplTest {
 
         final Optional<AccountBO> updated = accountService.updateEmail(accountDO.getId(), email, false);
         final AccountBO expected = accountBO.withEmail(email);
+        final List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
+                .map(permission -> permission.withEntityType(null))
+                .collect(Collectors.toList());
 
-        assertThat(updated).contains(expected);
+        assertThat(updated).contains(expected.withPermissions(expectedPermissions));
 
         // need better assertion
         Mockito.verify(messageBus, Mockito.times(1))
@@ -288,8 +298,11 @@ class AccountsServiceImplTest {
 
         final Optional<AccountBO> updated = accountService.updateEmail(accountDO.getId(), email, true);
         final AccountBO expected = accountBO.withBackupEmail(email);
+        final List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
+                .map(permission -> permission.withEntityType(null))
+                .collect(Collectors.toList());
 
-        assertThat(updated).contains(expected);
+        assertThat(updated).contains(expected.withPermissions(expectedPermissions));
 
         // need better assertion
         Mockito.verify(messageBus, Mockito.times(1))
@@ -311,9 +324,13 @@ class AccountsServiceImplTest {
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
         final AccountBO updated = accountService.activate(accountDO.getId()).orElse(null);
+        final List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
+                .map(permission -> permission.withEntityType(null))
+                .collect(Collectors.toList());
 
         assertThat(updated).isNotNull();
-        assertThat(updated).isEqualToIgnoringGivenFields(accountBO, "active");
+        assertThat(updated)
+                .isEqualToIgnoringGivenFields(accountBO.withPermissions(expectedPermissions), "active");
         assertThat(updated.isActive()).isTrue();
     }
 
@@ -323,6 +340,9 @@ class AccountsServiceImplTest {
                 .withActive(true)
                 .withDeleted(false);
         final AccountDO accountDO = serviceMapper.toDO(accountBO);
+        final List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
+                .map(permission -> permission.withEntityType(null))
+                .collect(Collectors.toList());
 
         Mockito.when(accountsRepository.getById(accountDO.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
@@ -332,7 +352,8 @@ class AccountsServiceImplTest {
         final AccountBO updated = accountService.deactivate(accountDO.getId()).orElse(null);
 
         assertThat(updated).isNotNull();
-        assertThat(updated).isEqualToIgnoringGivenFields(accountBO, "active");
+        assertThat(updated)
+                .isEqualToIgnoringGivenFields(accountBO.withPermissions(expectedPermissions), "active");
         assertThat(updated.isActive()).isFalse();
     }
 }

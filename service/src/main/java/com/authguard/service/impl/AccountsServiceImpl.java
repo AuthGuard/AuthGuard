@@ -1,8 +1,8 @@
 package com.authguard.service.impl;
 
 import com.authguard.config.ConfigContext;
-import com.authguard.dal.persistence.AccountsRepository;
 import com.authguard.dal.model.AccountDO;
+import com.authguard.dal.persistence.AccountsRepository;
 import com.authguard.emb.MessageBus;
 import com.authguard.emb.Messages;
 import com.authguard.service.AccountsService;
@@ -15,10 +15,14 @@ import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.*;
+import com.authguard.service.util.ID;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,8 +37,7 @@ public class AccountsServiceImpl implements AccountsService {
     private final AccountConfig accountConfig;
     private final ServiceMapper serviceMapper;
     private final MessageBus messageBus;
-
-    private final PermissionsAggregator permissionsAggregator;
+    private final PersistenceService<AccountBO, AccountDO, AccountsRepository> persistenceService;
 
     @Inject
     public AccountsServiceImpl(final AccountsRepository accountsRepository,
@@ -52,7 +55,8 @@ public class AccountsServiceImpl implements AccountsService {
         this.messageBus = messageBus;
         this.accountConfig = accountConfigContext.asConfigBean(AccountConfig.class);
 
-        this.permissionsAggregator = new PermissionsAggregator(rolesService, permissionsService);
+        this.persistenceService = new PersistenceService<>(accountsRepository, messageBus,
+                serviceMapper::toDO, serviceMapper::toBO, ACCOUNTS_CHANNEL);
     }
 
     @Override
@@ -63,39 +67,31 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     private AccountBO doCreate(final AccountBO account) {
-        final AccountDO accountDO = serviceMapper.toDO(account.withId(UUID.randomUUID().toString()));
+        final AccountBO created = persistenceService.create(account.withId(ID.generate()));
 
-        return accountsRepository.save(accountDO)
-                .thenApply(serviceMapper::toBO)
-                .thenApply(created -> {
-                    messageBus.publish(ACCOUNTS_CHANNEL, Messages.created(created));
+        if (accountConfig.verifyEmail()) {
+            final List<AccountEmailBO> toVerify = new ArrayList<>(2);
 
-                    if (accountConfig.verifyEmail()) {
-                        final List<AccountEmailBO> toVerify = new ArrayList<>(2);
+            if (account.getEmail() != null) {
+                toVerify.add(account.getEmail());
+            }
 
-                        if (account.getEmail() != null) {
-                            toVerify.add(account.getEmail());
-                        }
+            if (account.getBackupEmail() != null) {
+                toVerify.add(account.getBackupEmail());
+            }
 
-                        if (account.getBackupEmail() != null) {
-                            toVerify.add(account.getBackupEmail());
-                        }
+            messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(VerificationRequestBO.builder()
+                    .account(created)
+                    .emails(toVerify)
+                    .build()));
+        }
 
-                        messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(VerificationRequestBO.builder()
-                                .account(created)
-                                .emails(toVerify)
-                                .build()));
-                    }
-
-                    return created;
-                }).join();
+        return created;
     }
 
     @Override
     public Optional<AccountBO> getById(final String accountId) {
-        return accountsRepository.getById(accountId)
-                .join()
-                .map(serviceMapper::toBO);
+        return persistenceService.getById(accountId);
     }
 
     @Override
@@ -107,20 +103,12 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public Optional<AccountBO> update(final AccountBO account) {
-        return accountsRepository.update(serviceMapper.toDO(account))
-                .join()
-                .map(serviceMapper::toBO)
-                .map(updated -> {
-                    messageBus.publish(ACCOUNTS_CHANNEL, Messages.updated(updated));
-                    return updated;
-                });
+        return persistenceService.update(account);
     }
 
     @Override
     public Optional<AccountBO> delete(final String accountId) {
-        return accountsRepository.delete(accountId)
-                .join()
-                .map(serviceMapper::toBO);
+        return persistenceService.delete(accountId);
     }
 
     @Override
@@ -139,9 +127,7 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public Optional<AccountBO> updateEmail(final String accountId, final AccountEmailBO email, final boolean backup) {
-        final AccountBO existing = accountsRepository.getById(accountId)
-                .join()
-                .map(serviceMapper::toBO)
+        final AccountBO existing = getById(accountId)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID "
                         + accountId + " was found"));
 
@@ -166,15 +152,6 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public List<PermissionBO> getPermissions(final String accountId) {
-        final AccountBO account = getById(accountId)
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
-                        + accountId + " was found"));
-
-        return permissionsAggregator.aggregate(account.getRoles(), account.getPermissions());
-    }
-
-    @Override
     public AccountBO grantPermissions(final String accountId, final List<PermissionBO> permissions) {
         final List<PermissionBO> verifiedPermissions = permissionsService.validate(permissions);
 
@@ -186,9 +163,7 @@ public class AccountsServiceImpl implements AccountsService {
             throw new ServiceException(ErrorCode.PERMISSION_DOES_NOT_EXIST, "The following permissions are not valid" + difference);
         }
 
-        final AccountBO account = accountsRepository.getById(accountId)
-                .join()
-                .map(serviceMapper::toBO)
+        final AccountBO account = getById(accountId)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
                         + accountId + " was found"));
 

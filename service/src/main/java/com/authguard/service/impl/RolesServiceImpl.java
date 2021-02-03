@@ -1,34 +1,34 @@
 package com.authguard.service.impl;
 
 import com.authguard.dal.model.RoleDO;
-import com.authguard.service.PermissionsService;
-import com.authguard.service.exceptions.ServiceException;
-import com.authguard.service.exceptions.ServiceNotFoundException;
-import com.authguard.service.exceptions.codes.ErrorCode;
-import com.authguard.service.mappers.ServiceMapper;
-import com.google.inject.Inject;
 import com.authguard.dal.persistence.RolesRepository;
+import com.authguard.emb.MessageBus;
 import com.authguard.service.RolesService;
-import com.authguard.service.model.PermissionBO;
+import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.RoleBO;
+import com.authguard.service.util.ID;
+import com.google.inject.Inject;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class RolesServiceImpl implements RolesService {
+    private static final String ROLES_CHANNEL = "roles";
+
     private final RolesRepository rolesRepository;
-    private final PermissionsService permissionsService;
     private final ServiceMapper serviceMapper;
+    private final PersistenceService<RoleBO, RoleDO, RolesRepository> persistenceService;
 
     @Inject
-    public RolesServiceImpl(final RolesRepository rolesRepository, final PermissionsService permissionsService,
-                            final ServiceMapper serviceMapper) {
+    public RolesServiceImpl(final RolesRepository rolesRepository,
+                            final ServiceMapper serviceMapper,
+                            final MessageBus messageBus) {
         this.rolesRepository = rolesRepository;
-        this.permissionsService = permissionsService;
         this.serviceMapper = serviceMapper;
+
+        this.persistenceService = new PersistenceService<>(rolesRepository, messageBus,
+                serviceMapper::toDO, serviceMapper::toBO, ROLES_CHANNEL);
     }
 
     @Override
@@ -42,13 +42,22 @@ public class RolesServiceImpl implements RolesService {
 
     @Override
     public RoleBO create(final RoleBO role) {
-        final RoleDO roleDO = serviceMapper.toDO(role);
+        return persistenceService.create(role.withId(ID.generate()));
+    }
 
-        roleDO.setId(UUID.randomUUID().toString());
+    @Override
+    public Optional<RoleBO> getById(final String id) {
+        return persistenceService.getById(id);
+    }
 
-        return rolesRepository.save(roleDO)
-                .thenApply(serviceMapper::toBO)
-                .join();
+    @Override
+    public Optional<RoleBO> update(final RoleBO entity) {
+        throw new UnsupportedOperationException("Roles cannot be updated");
+    }
+
+    @Override
+    public Optional<RoleBO> delete(final String id) {
+        return persistenceService.delete(id);
     }
 
     @Override
@@ -65,58 +74,5 @@ public class RolesServiceImpl implements RolesService {
                         .map(RoleDO::getName)
                         .collect(Collectors.toList())
                 ).join();
-    }
-
-    @Override
-    public List<PermissionBO> getPermissions(final String name) {
-        return getRoleByName(name)
-                .map(RoleBO::getPermissions)
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ROLE_DOES_NOT_EXIST, "Role " + name + " doesn't exist"));
-    }
-
-    @Override
-    public Optional<RoleBO> grantPermissions(final String name, final List<PermissionBO> permissions) {
-        final List<PermissionBO> verifiedPermissions = permissionsService.validate(permissions);
-
-        if (verifiedPermissions.size() != permissions.size()) {
-            final List<PermissionBO> difference = permissions.stream()
-                    .filter(permission -> !verifiedPermissions.contains(permission))
-                    .collect(Collectors.toList());
-
-            throw new ServiceException(ErrorCode.PERMISSION_DOES_NOT_EXIST, "The following permissions are not valid" + difference);
-        }
-
-        return rolesRepository.getByName(name)
-                .thenApply(optional -> optional.map(serviceMapper::toBO)
-                        .map(role -> role.withPermissions(
-                                Stream.concat(role.getPermissions().stream(), permissions.stream())
-                                        .distinct().collect(Collectors.toList()))
-                        ).map(serviceMapper::toDO)
-                )
-                .thenApply(optional -> {
-                    if (optional.isPresent()) {
-                        return rolesRepository.update(optional.get())
-                                .thenApply(opt -> opt.map(serviceMapper::toBO))
-                                .join();
-                    } else {
-                        return Optional.<RoleBO>empty();
-                    }
-                }).join();
-    }
-
-    @Override
-    public Optional<RoleBO> revokePermissions(final String name, final List<PermissionBO> permissions) {
-        final RoleBO role = rolesRepository.getByName(name)
-                .join()
-                .map(serviceMapper::toBO)
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ROLE_DOES_NOT_EXIST, "Role " + name + " doesn't exist"));
-
-        final List<PermissionBO> updatedPermissions = role.getPermissions().stream()
-                .filter(permission -> !permissions.contains(permission))
-                .collect(Collectors.toList());
-
-        return rolesRepository.update(serviceMapper.toDO(role.withPermissions(updatedPermissions)))
-                .thenApply(optional -> optional.map(serviceMapper::toBO))
-                .join();
     }
 }

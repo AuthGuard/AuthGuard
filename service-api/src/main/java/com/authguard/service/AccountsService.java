@@ -4,7 +4,6 @@ import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.model.AccountBO;
 import com.authguard.service.model.AccountEmailBO;
 import com.authguard.service.model.PermissionBO;
-import com.authguard.service.model.RequestContextBO;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,38 +11,13 @@ import java.util.Optional;
 /**
  * AccountDO service interface.
  */
-public interface AccountsService {
-    /**
-     * Create an account. The returned object of this method
-     * is not necessarily the same as the argument. Fields
-     * like 'id' and 'deleted' will be overwritten by any
-     * implementation.
-     */
-    AccountBO create(AccountBO account, RequestContextBO requestContext);
-
-    /**
-     * Find an account by ID.
-     */
-    Optional<AccountBO> getById(String accountId);
+public interface AccountsService extends IdempotentCrudService<AccountBO> {
 
     Optional<AccountBO> getByExternalId(String externalId);
-
-    Optional<AccountBO> update(AccountBO account);
-
-    Optional<AccountBO> delete(String accountId);
 
     Optional<AccountBO> activate(String accountId);
 
     Optional<AccountBO> deactivate(String accountId);
-
-    /**
-     * Get all permissions of an account. Implementations of
-     * this method should aggregate permissions granted to the
-     * account directly and permissions granted by roles.
-     * @throws ServiceNotFoundException
-     *         if no account was found.
-     */
-    List<PermissionBO> getPermissions(String accountId);
 
     Optional<AccountBO> updateEmail(String accountId, AccountEmailBO email, boolean backup);
 

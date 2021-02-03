@@ -1,11 +1,13 @@
 package com.authguard.service.impl;
 
 import com.authguard.dal.model.PermissionDO;
-import com.authguard.service.mappers.ServiceMapper;
-import com.google.inject.Inject;
 import com.authguard.dal.persistence.PermissionsRepository;
+import com.authguard.emb.MessageBus;
 import com.authguard.service.PermissionsService;
+import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.PermissionBO;
+import com.authguard.service.util.ID;
+import com.google.inject.Inject;
 
 import java.util.Collection;
 import java.util.List;
@@ -13,22 +15,36 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class PermissionsServiceImpl implements PermissionsService {
+    private static final String PERMISSIONS_CHANNEL = "permissions";
+
     private final PermissionsRepository permissionsRepository;
     private final ServiceMapper serviceMapper;
+    private final PersistenceService<PermissionBO, PermissionDO, PermissionsRepository> persistenceService;
 
     @Inject
-    public PermissionsServiceImpl(final PermissionsRepository permissionsRepository, final ServiceMapper serviceMapper) {
+    public PermissionsServiceImpl(final PermissionsRepository permissionsRepository,
+                                  final ServiceMapper serviceMapper,
+                                  final MessageBus messageBus) {
         this.permissionsRepository = permissionsRepository;
         this.serviceMapper = serviceMapper;
+
+        this.persistenceService = new PersistenceService<>(permissionsRepository, messageBus,
+                serviceMapper::toDO, serviceMapper::toBO, PERMISSIONS_CHANNEL);
     }
 
     @Override
     public PermissionBO create(final PermissionBO permission) {
-        final PermissionDO permissionDO = serviceMapper.toDO(permission);
+        return persistenceService.create(permission.withId(ID.generate()));
+    }
 
-        return permissionsRepository.save(permissionDO)
-                .thenApply(serviceMapper::toBO)
-                .join();
+    @Override
+    public Optional<PermissionBO> getById(final String id) {
+        return persistenceService.getById(id);
+    }
+
+    @Override
+    public Optional<PermissionBO> update(final PermissionBO entity) {
+        throw new UnsupportedOperationException("Permissions cannot be updated");
     }
 
     @Override
@@ -57,8 +73,6 @@ public class PermissionsServiceImpl implements PermissionsService {
 
     @Override
     public Optional<PermissionBO> delete(final String id) {
-        return permissionsRepository.delete(id)
-                .thenApply(optional -> optional.map(serviceMapper::toBO))
-                .join();
+        return persistenceService.delete(id);
     }
 }

@@ -1,16 +1,13 @@
 package com.authguard.dal.persistence;
 
 import com.authguard.dal.model.AppDO;
+import com.authguard.dal.repository.Repository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-public interface ApplicationsRepository {
-    CompletableFuture<AppDO> save(AppDO app);
-    CompletableFuture<Optional<AppDO>> getById(String appId);
+public interface ApplicationsRepository extends Repository<AppDO> {
     CompletableFuture<Optional<AppDO>> getByExternalId(String externalId);
-    CompletableFuture<Optional<AppDO>> update(AppDO app);
-    CompletableFuture<Optional<AppDO>> delete(String appId);
     CompletableFuture<List<AppDO>> getAllForAccount(String accountId);
 }

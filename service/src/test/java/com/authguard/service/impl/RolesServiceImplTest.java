@@ -1,8 +1,8 @@
 package com.authguard.service.impl;
 
-import com.authguard.dal.persistence.RolesRepository;
 import com.authguard.dal.model.RoleDO;
-import com.authguard.service.PermissionsService;
+import com.authguard.dal.persistence.RolesRepository;
+import com.authguard.emb.MessageBus;
 import com.authguard.service.RolesService;
 import com.authguard.service.mappers.ServiceMapperImpl;
 import com.authguard.service.model.RoleBO;
@@ -22,16 +22,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class RolesServiceImplTest {
     private RolesRepository rolesRepository;
-    private PermissionsService permissionsService;
+    private MessageBus messageBus;
 
     private RolesService rolesService;
 
     @BeforeEach
     void setup() {
         rolesRepository = Mockito.mock(RolesRepository.class);
-        permissionsService = Mockito.mock(PermissionsService.class);
+        messageBus = Mockito.mock(MessageBus.class);
 
-        rolesService = new RolesServiceImpl(rolesRepository, permissionsService, new ServiceMapperImpl()) ;
+        rolesService = new RolesServiceImpl(rolesRepository, new ServiceMapperImpl(), messageBus) ;
     }
 
     @Test
@@ -64,7 +64,7 @@ class RolesServiceImplTest {
 
         final RoleBO actual = rolesService.create(request);
 
-        assertThat(actual).isEqualTo(request);
+        assertThat(actual).isEqualToIgnoringGivenFields(request, "id");
     }
 
     @Test

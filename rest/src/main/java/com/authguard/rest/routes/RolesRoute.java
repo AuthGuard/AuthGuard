@@ -2,27 +2,20 @@ package com.authguard.rest.routes;
 
 import com.authguard.api.dto.entities.RoleDTO;
 import com.authguard.api.dto.requests.CreateRoleRequestDTO;
-import com.authguard.api.dto.requests.PermissionsRequest;
-import com.authguard.api.dto.requests.PermissionsRequestDTO;
 import com.authguard.api.routes.RolesApi;
 import com.authguard.rest.mappers.RestMapper;
 import com.authguard.rest.util.BodyHandler;
 import com.authguard.service.RolesService;
-import com.authguard.service.model.PermissionBO;
-import com.authguard.service.model.RoleBO;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class RolesRoute extends RolesApi {
     private final RolesService rolesService;
     private final RestMapper restMapper;
 
     private final BodyHandler<CreateRoleRequestDTO> createRoleRequestBodyHandler;
-    private final BodyHandler<PermissionsRequestDTO> permissionsRequestBodyHandler;
 
     @Inject
     public RolesRoute(final RolesService rolesService, final RestMapper restMapper) {
@@ -30,8 +23,6 @@ public class RolesRoute extends RolesApi {
         this.restMapper = restMapper;
 
         this.createRoleRequestBodyHandler = new BodyHandler.Builder<>(CreateRoleRequestDTO.class)
-                .build();
-        this.permissionsRequestBodyHandler = new BodyHandler.Builder<>(PermissionsRequestDTO.class)
                 .build();
     }
 
@@ -57,29 +48,6 @@ public class RolesRoute extends RolesApi {
             context.status(200).json(role.get());
         } else {
             context.status(404);
-        }
-    }
-
-    public void updatePermissions(final Context context) {
-        final String roleName = context.pathParam("name");
-        final PermissionsRequestDTO request = permissionsRequestBodyHandler.getValidated(context);
-
-        final List<PermissionBO> permissions = request.getPermissions().stream()
-                .map(restMapper::toBO)
-                .collect(Collectors.toList());
-
-        final Optional<RoleBO> updated;
-
-        if (request.getAction() == PermissionsRequest.Action.GRANT) {
-             updated = rolesService.grantPermissions(roleName, permissions);
-        } else {
-            updated = rolesService.revokePermissions(roleName, permissions);
-        }
-
-        if (updated.isPresent()) {
-            context.status(200).json(updated.get());
-        } else {
-            context.status(400);
         }
     }
 }
