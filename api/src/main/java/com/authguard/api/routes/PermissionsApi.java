@@ -1,11 +1,9 @@
 package com.authguard.api.routes;
 
 import com.authguard.api.access.ActorRoles;
-import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.post;
+import static io.javalin.apibuilder.ApiBuilder.*;
 
 public abstract class PermissionsApi implements ApiRoute {
 
@@ -16,11 +14,20 @@ public abstract class PermissionsApi implements ApiRoute {
 
     @Override
     public void addEndpoints() {
-        post("/", this::createPermission, ActorRoles.adminClient());
-        get("/", this::getPermissions, ActorRoles.adminClient());
+        post("/", this::create, ActorRoles.adminClient());
+        get("/:id", this::getById, ActorRoles.adminClient());
+        delete("/:id", this::getById, ActorRoles.adminClient());
+        get("/group/:group", this::getByGroup, ActorRoles.adminClient());
+        get("/", this::getAll, ActorRoles.adminClient());
     }
 
-    public abstract void createPermission(final Context context);
+    public abstract void create(final Context context);
 
-    public abstract void getPermissions(final Context context);
+    public abstract void getById(final Context context);
+
+    public abstract void deleteById(final Context context);
+
+    public abstract void getByGroup(final Context context);
+
+    public abstract void getAll(final Context context);
 }
