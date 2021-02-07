@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
@@ -102,7 +103,7 @@ class AccountsServiceImplTest {
 
         assertThat(persisted).isNotNull();
         assertThat(persisted)
-                .isEqualToIgnoringGivenFields(account.withPermissions(expectedPermissions), "id");
+                .isEqualToIgnoringGivenFields(account.withPermissions(expectedPermissions), "id", "createdAt", "lastModified");
 
         // need better assertion
         Mockito.verify(messageBus, Mockito.times(1))
@@ -257,7 +258,9 @@ class AccountsServiceImplTest {
 
     @Test
     void updatePrimaryEmail() {
-        final AccountBO accountBO = RANDOM.nextObject(AccountBO.class);
+        final AccountBO accountBO = RANDOM.nextObject(AccountBO.class)
+                .withCreatedAt(OffsetDateTime.now())
+                .withLastModified(OffsetDateTime.now());
         final AccountDO accountDO = serviceMapper.toDO(accountBO);
         final AccountEmailBO email = RANDOM.nextObject(AccountEmailBO.class);
 
@@ -274,7 +277,9 @@ class AccountsServiceImplTest {
                 .map(permission -> permission.withEntityType(null))
                 .collect(Collectors.toList());
 
-        assertThat(updated).contains(expected.withPermissions(expectedPermissions));
+        assertThat(updated).isPresent();
+        assertThat(updated.get()).isEqualToIgnoringGivenFields(expected.withPermissions(expectedPermissions), "lastModified");
+        assertThat(updated.get().getLastModified()).isAfter(expected.getLastModified());
 
         // need better assertion
         Mockito.verify(messageBus, Mockito.times(1))
@@ -285,7 +290,9 @@ class AccountsServiceImplTest {
 
     @Test
     void updateBackupEmail() {
-        final AccountBO accountBO = RANDOM.nextObject(AccountBO.class);
+        final AccountBO accountBO = RANDOM.nextObject(AccountBO.class)
+                .withCreatedAt(OffsetDateTime.now())
+                .withLastModified(OffsetDateTime.now());
         final AccountDO accountDO = serviceMapper.toDO(accountBO);
         final AccountEmailBO email = RANDOM.nextObject(AccountEmailBO.class);
 
@@ -302,7 +309,9 @@ class AccountsServiceImplTest {
                 .map(permission -> permission.withEntityType(null))
                 .collect(Collectors.toList());
 
-        assertThat(updated).contains(expected.withPermissions(expectedPermissions));
+        assertThat(updated).isPresent();
+        assertThat(updated.get()).isEqualToIgnoringGivenFields(expected.withPermissions(expectedPermissions), "lastModified");
+        assertThat(updated.get().getLastModified()).isAfter(expected.getLastModified());
 
         // need better assertion
         Mockito.verify(messageBus, Mockito.times(1))
@@ -330,7 +339,7 @@ class AccountsServiceImplTest {
 
         assertThat(updated).isNotNull();
         assertThat(updated)
-                .isEqualToIgnoringGivenFields(accountBO.withPermissions(expectedPermissions), "active");
+                .isEqualToIgnoringGivenFields(accountBO.withPermissions(expectedPermissions), "id", "createdAt", "lastModified", "active");
         assertThat(updated.isActive()).isTrue();
     }
 
@@ -353,7 +362,7 @@ class AccountsServiceImplTest {
 
         assertThat(updated).isNotNull();
         assertThat(updated)
-                .isEqualToIgnoringGivenFields(accountBO.withPermissions(expectedPermissions), "active");
+                .isEqualToIgnoringGivenFields(accountBO.withPermissions(expectedPermissions), "id", "createdAt", "lastModified", "active");
         assertThat(updated.isActive()).isFalse();
     }
 }

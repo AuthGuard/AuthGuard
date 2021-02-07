@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Value.Immutable
@@ -13,6 +14,8 @@ import java.util.List;
 @JsonDeserialize(as = AppDTO.class)
 public interface App {
     String getId();
+    OffsetDateTime getCreatedAt();
+    OffsetDateTime getLastModified();
     String getExternalId();
     String getName();
     String getAccountId();

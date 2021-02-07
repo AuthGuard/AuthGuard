@@ -5,7 +5,9 @@ import com.authguard.dal.repository.Repository;
 import com.authguard.emb.MessageBus;
 import com.authguard.emb.Messages;
 import com.authguard.service.model.Entity;
+import com.authguard.service.util.ID;
 
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -29,7 +31,15 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
     }
 
     public BO create(final BO entity) {
-        return repository.save(boToDo.apply(entity))
+        final OffsetDateTime now = OffsetDateTime.now();
+        final DO mappedDo = boToDo.apply(entity);
+
+        mappedDo.setId(ID.generate());
+        mappedDo.setDeleted(false);
+        mappedDo.setCreatedAt(now);
+        mappedDo.setLastModified(now);
+
+        return repository.save(mappedDo)
                 .thenApply(persisted -> {
                     final BO persistedBo = doToBo.apply(persisted);
 
@@ -47,7 +57,12 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
     }
 
     public Optional<BO> update(final BO entity) {
-        return repository.update(boToDo.apply(entity))
+        final OffsetDateTime now = OffsetDateTime.now();
+        final DO mappedDo = boToDo.apply(entity);
+
+        mappedDo.setLastModified(now);
+
+        return repository.update(mappedDo)
                 .thenApply(opt -> {
                     final Optional<BO> boOpt = opt.map(doToBo);
 

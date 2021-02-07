@@ -1,9 +1,8 @@
 package com.authguard.service.impl;
 
-import com.authguard.dal.persistence.ExchangeAttemptsRepository;
-import com.authguard.dal.model.ExchangeAttemptDO;
 import com.authguard.emb.MessageBus;
 import com.authguard.emb.Messages;
+import com.authguard.service.ExchangeAttemptsService;
 import com.authguard.service.ExchangeService;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.ServiceException;
@@ -11,11 +10,7 @@ import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.messaging.AuthMessage;
-import com.authguard.service.model.AuthRequestBO;
-import com.authguard.service.model.EntityType;
-import com.authguard.service.model.TokenRestrictionsBO;
-import com.authguard.service.model.TokensBO;
-import com.authguard.service.util.ID;
+import com.authguard.service.model.*;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
 
@@ -28,14 +23,14 @@ public class ExchangeServiceImpl implements ExchangeService {
     static final String CHANNEL = "auth";
 
     private final Map<String, Exchange> exchanges;
-    private final ExchangeAttemptsRepository exchangeAttemptsRepository;
+    private final ExchangeAttemptsService exchangeAttemptsService;
     private final MessageBus emb;
 
     @Inject
-    public ExchangeServiceImpl(final List<Exchange> exchanges, final ExchangeAttemptsRepository exchangeAttemptsRepository,
+    public ExchangeServiceImpl(final List<Exchange> exchanges, final ExchangeAttemptsService exchangeAttemptsService,
                                final MessageBus emb) {
         this.exchanges = mapExchanges(exchanges);
-        this.exchangeAttemptsRepository = exchangeAttemptsRepository;
+        this.exchangeAttemptsService = exchangeAttemptsService;
         this.emb = emb;
     }
 
@@ -87,8 +82,7 @@ public class ExchangeServiceImpl implements ExchangeService {
         final AuthMessage authMessage = AuthMessage.success(fromTokenType, toTokenType,
                 tokens.getEntityType(), tokens.getEntityId());
 
-        exchangeAttemptsRepository.save(ExchangeAttemptDO.builder()
-                .id(ID.generate())
+        exchangeAttemptsService.create(ExchangeAttemptBO.builder()
                 .entityId(tokens.getEntityId())
                 .exchangeFrom(fromTokenType)
                 .exchangeTo(toTokenType)
@@ -108,8 +102,7 @@ public class ExchangeServiceImpl implements ExchangeService {
                     sae.getEntityType(), sae.getEntityId(), sae);
 
             if (sae.getEntityType() == EntityType.ACCOUNT) {
-                exchangeAttemptsRepository.save(ExchangeAttemptDO.builder()
-                        .id(ID.generate())
+                exchangeAttemptsService.create(ExchangeAttemptBO.builder()
                         .entityId(sae.getEntityId())
                         .exchangeFrom(fromTokenType)
                         .exchangeTo(toTokenType)

@@ -64,7 +64,7 @@ class RolesServiceImplTest {
 
         final RoleBO actual = rolesService.create(request);
 
-        assertThat(actual).isEqualToIgnoringGivenFields(request, "id");
+        assertThat(actual).isEqualToIgnoringGivenFields(request, "id", "createdAt", "lastModified");
     }
 
     @Test

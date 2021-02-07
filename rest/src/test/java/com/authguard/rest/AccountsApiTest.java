@@ -90,7 +90,7 @@ class AccountsApiTest extends AbstractRouteTest {
                 .getBody()
                 .as(AccountDTO.class);
 
-        assertThat(response).isEqualToIgnoringGivenFields(requestDTO, "id", "deleted");
+        assertThat(response).isEqualToIgnoringGivenFields(requestDTO, "id", "deleted", "createdAt", "lastModified");
         assertThat(response.getId()).isEqualTo(serviceResponse.getId());
     }
 

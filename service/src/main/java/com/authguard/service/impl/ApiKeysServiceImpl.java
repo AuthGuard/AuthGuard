@@ -1,7 +1,7 @@
 package com.authguard.service.impl;
 
-import com.authguard.dal.persistence.ApiKeysRepository;
 import com.authguard.dal.model.ApiKeyDO;
+import com.authguard.dal.persistence.ApiKeysRepository;
 import com.authguard.service.ApiKeysService;
 import com.authguard.service.ApplicationsService;
 import com.authguard.service.exceptions.ServiceNotFoundException;
