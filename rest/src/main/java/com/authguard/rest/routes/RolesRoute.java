@@ -1,15 +1,13 @@
 package com.authguard.rest.routes;
 
+import com.authguard.api.dto.entities.Error;
 import com.authguard.api.dto.entities.RoleDTO;
 import com.authguard.api.dto.requests.CreateRoleRequestDTO;
-import com.authguard.api.dto.requests.PermissionsRequest;
-import com.authguard.api.dto.requests.PermissionsRequestDTO;
 import com.authguard.api.routes.RolesApi;
 import com.authguard.rest.mappers.RestMapper;
 import com.authguard.rest.util.BodyHandler;
 import com.authguard.service.RolesService;
-import com.authguard.service.model.PermissionBO;
-import com.authguard.service.model.RoleBO;
+import com.authguard.service.exceptions.codes.ErrorCode;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
 
@@ -22,7 +20,6 @@ public class RolesRoute extends RolesApi {
     private final RestMapper restMapper;
 
     private final BodyHandler<CreateRoleRequestDTO> createRoleRequestBodyHandler;
-    private final BodyHandler<PermissionsRequestDTO> permissionsRequestBodyHandler;
 
     @Inject
     public RolesRoute(final RolesService rolesService, final RestMapper restMapper) {
@@ -30,8 +27,6 @@ public class RolesRoute extends RolesApi {
         this.restMapper = restMapper;
 
         this.createRoleRequestBodyHandler = new BodyHandler.Builder<>(CreateRoleRequestDTO.class)
-                .build();
-        this.permissionsRequestBodyHandler = new BodyHandler.Builder<>(PermissionsRequestDTO.class)
                 .build();
     }
 
@@ -47,39 +42,56 @@ public class RolesRoute extends RolesApi {
         context.status(201).json(created);
     }
 
+    @Override
+    public void getById(final Context context) {
+        final String id = context.pathParam("id");
+
+        rolesService.getById(id)
+                .map(restMapper::toDTO)
+                .ifPresentOrElse(
+                        role -> context.status(200).json(role),
+                        // or else
+                        () -> context.status(404)
+                                .json(new Error(ErrorCode.ROLE_DOES_NOT_EXIST.getCode(),
+                                        "No role with ID " + id + " exists"))
+                );
+    }
+
+    @Override
+    public void deleteById(final Context context) {
+        final String id = context.pathParam("id");
+
+        rolesService.getById(id)
+                .map(restMapper::toDTO)
+                .ifPresentOrElse(
+                        role -> context.status(200).json(role),
+                        // or else
+                        () -> context.status(404)
+                                .json(new Error(ErrorCode.ROLE_DOES_NOT_EXIST.getCode(),
+                                        "No role with ID " + id + " exists"))
+                );
+    }
+
     public void getByName(final Context context) {
         final String name = context.pathParam("name");
 
-        final Optional<RoleDTO> role = rolesService.getRoleByName(name)
-                .map(restMapper::toDTO);
-
-        if (role.isPresent()) {
-            context.status(200).json(role.get());
-        } else {
-            context.status(404);
-        }
+        rolesService.getRoleByName(name)
+                .map(restMapper::toDTO)
+                .ifPresentOrElse(
+                        role -> context.status(200).json(role),
+                        // or else
+                        () -> context.status(404)
+                                .json(new Error(ErrorCode.ROLE_DOES_NOT_EXIST.getCode(),
+                                        "No role with name " + name + " exists"))
+                );
     }
 
-    public void updatePermissions(final Context context) {
-        final String roleName = context.pathParam("name");
-        final PermissionsRequestDTO request = permissionsRequestBodyHandler.getValidated(context);
-
-        final List<PermissionBO> permissions = request.getPermissions().stream()
-                .map(restMapper::toBO)
+    @Override
+    public void getAll(final Context context) {
+        final List<RoleDTO> roles = rolesService.getAll().stream()
+                .map(restMapper::toDTO)
                 .collect(Collectors.toList());
 
-        final Optional<RoleBO> updated;
-
-        if (request.getAction() == PermissionsRequest.Action.GRANT) {
-             updated = rolesService.grantPermissions(roleName, permissions);
-        } else {
-            updated = rolesService.revokePermissions(roleName, permissions);
-        }
-
-        if (updated.isPresent()) {
-            context.status(200).json(updated.get());
-        } else {
-            context.status(400);
-        }
+        context.json(roles);
     }
 }

@@ -2,11 +2,8 @@ package com.authguard.service.model;
 
 import org.immutables.value.Value;
 
-import java.util.List;
-
 @Value.Immutable
 @BOStyle
-public interface Role {
+public interface Role extends Entity {
     String getName();
-    List<PermissionBO> getPermissions();
 }

@@ -472,8 +472,48 @@ paths:
         400:
           description: Bad request
           $ref: "#/components/responses/ErrorResponse"
+    
+    get:
+      operationId: getAllRoles
+      description: Get all roles
+      tags:
+        - roles
+      responses:
+        201:
+          description: Success
+          $ref: "#/components/responses/RolesArrayResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
 
-  /roles/{name}:
+  /roles/{id}:
+    get:
+      operationId: getRoleById
+      description: Get role by ID
+      tags:
+        - roles
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/RoleResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+    delete:
+      operationId: deleteRole
+      description: Delete a role
+      tags:
+        - roles
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/RoleResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /roles/name/{name}:
     get:
       operationId: getRoleByName
       description: Get a role by its name
@@ -508,7 +548,7 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
     get:
       operationId: getPermissions
-      description: Get all permissions, or filter them by group
+      description: Get all permissions
       tags:
         - permissions
       parameters:
@@ -516,6 +556,43 @@ paths:
           in: query
           schema: 
             type: string
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/PermissionsArrayResponse"
+
+  /permissions/{id}:
+    get:
+      operationId: getPermissionById
+      description: Get a permission by ID
+      tags:
+        - permissions
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/PermissionResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      operationId: deletePermission
+      description: Delete a permission by ID
+      tags:
+        - permissions
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/PermissionResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /permissions/group/{group}:
+    get:
+      operationId: getPermissionsByGroupName
+      description: Get a permissions by group name
+      tags:
+        - permissions
       responses:
         200:
           description: Success
@@ -726,12 +803,21 @@ components:
               schema:
                 $ref: "#/components/schemas/Role"
 
+    RolesArrayResponse:
+      description: _
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/Role"
+
     PermissionResponse:
       description: _
       content:
         application/json:
-              schema:
-                $ref: "#/components/schemas/Permission"
+          schema:
+            $ref: "#/components/schemas/Permission"
 
     ApplicationsArrayResponse:
       description: _
@@ -755,10 +841,10 @@ components:
       description: _
       content:
         application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Permission"
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/Permission"
 
     ExchangeAttemptsArrayResponse:
       description: _
@@ -864,11 +950,29 @@ components:
         name:
           type: string
 
+    PermissionssArray:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            $ref: "#/components/schemas/Permission"
+
     Role:
       type: object
       properties:
         name:
           type: string
+
+    RolesArray:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            $ref: "#/components/schemas/Role"
 
     AccountLock:
       type: object

@@ -18,6 +18,7 @@ import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.*;
+import com.authguard.service.util.ID;
 import com.google.inject.Inject;
 
 import java.util.*;
@@ -229,7 +230,7 @@ public class CredentialsServiceImpl implements CredentialsService {
     private void storeAuditRecord(final CredentialsBO credentials, final CredentialsBO update,
                                   final CredentialsAudit.Action action) {
         final CredentialsAuditBO audit = CredentialsAuditBO.builder()
-                .id("")
+                .id(ID.generate())
                 .credentialsId(credentials.getId())
                 .action(action)
                 .before(credentials)

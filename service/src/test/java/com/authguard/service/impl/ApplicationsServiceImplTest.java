@@ -6,20 +6,20 @@ import com.authguard.service.AccountsService;
 import com.authguard.service.ApplicationsService;
 import com.authguard.dal.model.AppDO;
 import com.authguard.service.IdempotencyService;
+import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.mappers.ServiceMapperImpl;
-import com.authguard.service.model.AccountBO;
-import com.authguard.service.model.AppBO;
-import com.authguard.service.model.PermissionBO;
-import com.authguard.service.model.RequestContextBO;
+import com.authguard.service.model.*;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,6 +34,7 @@ class ApplicationsServiceImplTest {
     private AccountsService accountsService;
     private IdempotencyService idempotencyService;
     private MessageBus messageBus;
+    private ServiceMapper serviceMapper;
 
     @BeforeEach
     void setup() {
@@ -42,8 +43,10 @@ class ApplicationsServiceImplTest {
         idempotencyService = Mockito.mock(IdempotencyService.class);
         messageBus = Mockito.mock(MessageBus.class);
 
+        serviceMapper = new ServiceMapperImpl();
+
         applicationsService = new ApplicationsServiceImpl(applicationsRepository, accountsService,
-                idempotencyService, new ServiceMapperImpl(), messageBus);
+                idempotencyService, serviceMapper, messageBus);
     }
 
     @Test
@@ -67,8 +70,12 @@ class ApplicationsServiceImplTest {
                 });
 
         final AppBO created = applicationsService.create(app, requestContext);
+        final List<PermissionBO> expectedPermissions = app.getPermissions().stream()
+                .map(permission -> permission.withEntityType(null))
+                .collect(Collectors.toList());
 
-        assertThat(created).isEqualToIgnoringGivenFields(app, "id", "entityType");
+        assertThat(created).isEqualToIgnoringGivenFields(app.withPermissions(expectedPermissions),
+                "id", "entityType");
 
         Mockito.verify(messageBus, Mockito.times(1))
                 .publish(eq("apps"), any());
@@ -76,23 +83,20 @@ class ApplicationsServiceImplTest {
 
     @Test
     void getById() {
-        final AppDO app = random.nextObject(AppDO.class);
+        final AppBO app = random.nextObject(AppBO.class)
+                .withDeleted(false);
 
-        app.setDeleted(false);
-
-        Mockito.when(applicationsRepository.getById(any())).thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
+        Mockito.when(applicationsRepository.getById(any()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(serviceMapper.toDO(app))));
 
         final Optional<AppBO> retrieved = applicationsService.getById("");
+        final List<PermissionBO> expectedPermissions = app.getPermissions().stream()
+                .map(permission -> permission.withEntityType(null))
+                .collect(Collectors.toList());
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(app,
+        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(app.withPermissions(expectedPermissions),
                 "permissions", "entityType");
-        assertThat(retrieved.get().getPermissions()).containsExactly(app.getPermissions().stream()
-                .map(permissionDO -> PermissionBO.builder()
-                        .group(permissionDO.getGroup())
-                        .name(permissionDO.getName())
-                        .build()
-                ).toArray(PermissionBO[]::new));
     }
 
     @Test

@@ -10,6 +10,7 @@ import org.immutables.value.Value;
 @JsonSerialize(as = PermissionDTO.class)
 @JsonDeserialize(as = PermissionDTO.class)
 public interface Permission {
+    String getId();
     String getGroup();
     String getName();
 }

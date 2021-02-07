@@ -1,22 +1,21 @@
 package com.authguard.service.impl;
 
 import com.authguard.dal.model.AppDO;
+import com.authguard.dal.persistence.ApplicationsRepository;
 import com.authguard.emb.MessageBus;
-import com.authguard.emb.Messages;
+import com.authguard.service.AccountsService;
+import com.authguard.service.ApplicationsService;
 import com.authguard.service.IdempotencyService;
 import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
-import com.authguard.service.model.RequestContextBO;
-import com.google.inject.Inject;
-import com.authguard.dal.persistence.ApplicationsRepository;
-import com.authguard.service.AccountsService;
-import com.authguard.service.ApplicationsService;
 import com.authguard.service.model.AppBO;
+import com.authguard.service.model.RequestContextBO;
+import com.authguard.service.util.ID;
+import com.google.inject.Inject;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class ApplicationsServiceImpl implements ApplicationsService {
@@ -26,7 +25,7 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     private final AccountsService accountsService;
     private final IdempotencyService idempotencyService;
     private final ServiceMapper serviceMapper;
-    private final MessageBus messageBus;
+    private final PersistenceService<AppBO, AppDO, ApplicationsRepository> persistenceService;
 
     @Inject
     public ApplicationsServiceImpl(final ApplicationsRepository applicationsRepository,
@@ -38,7 +37,9 @@ public class ApplicationsServiceImpl implements ApplicationsService {
         this.accountsService = accountsService;
         this.idempotencyService = idempotencyService;
         this.serviceMapper = serviceMapper;
-        this.messageBus = messageBus;
+
+        this.persistenceService = new PersistenceService<>(applicationsRepository, messageBus,
+                serviceMapper::toDO, serviceMapper::toBO, APPS_CHANNEL);
     }
 
     @Override
@@ -57,22 +58,12 @@ public class ApplicationsServiceImpl implements ApplicationsService {
             throw new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " + app.getParentAccountId() + " exists");
         }
 
-        final AppDO appDO = serviceMapper.toDO(app.withId(UUID.randomUUID().toString()));
-
-        return applicationsRepository.save(appDO)
-                .thenApply(serviceMapper::toBO)
-                .thenApply(created -> {
-                    messageBus.publish(APPS_CHANNEL, Messages.created(created));
-                    return created;
-                })
-                .join();
+        return persistenceService.create(app.withId(ID.generate()));
     }
 
     @Override
     public Optional<AppBO> getById(final String id) {
-        return applicationsRepository.getById(id)
-                .thenApply(optional -> optional.map(serviceMapper::toBO))
-                .join();
+        return persistenceService.getById(id);
     }
 
     @Override
@@ -84,30 +75,13 @@ public class ApplicationsServiceImpl implements ApplicationsService {
 
     @Override
     public Optional<AppBO> update(final AppBO app) {
-        final AppDO appDO = serviceMapper.toDO(app);
-
-        return applicationsRepository.update(appDO)
-                .thenApply(optional -> optional
-                        .map(serviceMapper::toBO)
-                        .map(updated -> {
-                            messageBus.publish(APPS_CHANNEL, Messages.updated(updated));
-                            return updated;
-                        })
-                )
-                .join();
+        // FIXME accountId cannot be updated
+        return persistenceService.update(app);
     }
 
     @Override
     public Optional<AppBO> delete(final String id) {
-        return applicationsRepository.delete(id)
-                .thenApply(optional -> optional
-                        .map(serviceMapper::toBO)
-                        .map(deleted -> {
-                            messageBus.publish(APPS_CHANNEL, Messages.deleted(deleted));
-                            return deleted;
-                        })
-                )
-                .join();
+        return persistenceService.delete(id);
     }
 
     @Override
