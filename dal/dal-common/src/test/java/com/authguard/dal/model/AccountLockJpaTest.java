@@ -10,8 +10,6 @@ import javax.persistence.TypedQuery;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AccountLockJpaTest {
     private EntityManager entityManager;

@@ -10,13 +10,12 @@ import javax.persistence.TypedQuery;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class RolesJpaTest {
     private EntityManager entityManager;
     private RoleDO first;
     private RoleDO second;
+    private RoleDO deleted;
 
     @BeforeAll
     void setup() {
@@ -37,19 +36,28 @@ public class RolesJpaTest {
                 .name("role-2")
                 .build();
 
+        deleted = RoleDO.builder()
+                .id("deleted-role")
+                .deleted(true)
+                .name("role-3")
+                .build();
+
         entityManager.getTransaction().begin();
 
         entityManager.persist(first);
         entityManager.persist(second);
+        entityManager.persist(deleted);
 
         entityManager.getTransaction().commit();
     }
 
     @Test
     void getById() {
-        final RoleDO retrieved = entityManager.find(RoleDO.class, first.getId());
+        final TypedQuery<RoleDO> query = entityManager.createNamedQuery("roles.getById", RoleDO.class)
+                .setParameter("id", first.getId());
 
-        assertThat(retrieved).isEqualTo(first);
+        final List<RoleDO> retrieved = query.getResultList();
+        Assertions.assertThat(retrieved).containsExactly(first);
     }
 
     @Test
@@ -76,5 +84,14 @@ public class RolesJpaTest {
 
         final List<RoleDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(first, second);
+    }
+
+    @Test
+    void getDeletedById() {
+        final TypedQuery<RoleDO> query = entityManager.createNamedQuery("roles.getById", RoleDO.class)
+                .setParameter("id", deleted.getId());
+
+        final List<RoleDO> retrieved = query.getResultList();
+        Assertions.assertThat(retrieved).isEmpty();
     }
 }

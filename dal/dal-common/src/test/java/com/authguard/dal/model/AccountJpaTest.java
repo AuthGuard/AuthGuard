@@ -10,12 +10,11 @@ import javax.persistence.TypedQuery;
 import java.util.Collections;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AccountJpaTest {
     private EntityManager entityManager;
     private AccountDO createdAccount;
+    private AccountDO deletedAccount;
 
     @BeforeAll
     void setup() {
@@ -52,7 +51,21 @@ class AccountJpaTest {
                         .build()
                 ).build();
 
+        deletedAccount = AccountDO.builder()
+                .id("deleted-account")
+                .deleted(true)
+                .roles(Collections.singleton("test"))
+                .externalId("test-account-external")
+                .permissions(Collections.singleton(PermissionDO.builder()
+                        .id("read-posts-permission")
+                        .build()))
+                .email(EmailDO.builder()
+                        .email("deleted@emails.com")
+                        .build()
+                ).build();
+
         entityManager.persist(createdAccount);
+        entityManager.persist(deletedAccount);
 
         entityManager.getTransaction().commit();
     }
@@ -88,6 +101,15 @@ class AccountJpaTest {
     void getByWrongRole() {
         final TypedQuery<AccountDO> query = entityManager.createNamedQuery("accounts.getByRole", AccountDO.class)
                 .setParameter("role", "nonexistent");
+
+        final List<AccountDO> retrieved = query.getResultList();
+        Assertions.assertThat(retrieved).isEmpty();
+    }
+
+    @Test
+    void getDeletedById() {
+        final TypedQuery<AccountDO> query = entityManager.createNamedQuery("accounts.getById", AccountDO.class)
+                .setParameter("id", deletedAccount.getId());
 
         final List<AccountDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).isEmpty();

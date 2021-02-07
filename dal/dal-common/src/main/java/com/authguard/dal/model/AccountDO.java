@@ -20,21 +20,21 @@ import java.util.Set;
         query = "SELECT account FROM AccountDO account " +
                 "LEFT JOIN FETCH account.roles " +
                 "LEFT JOIN FETCH account.permissions " +
-                "WHERE account.id = :id"
+                "WHERE account.id = :id AND account.deleted = false"
 )
 @NamedQuery(
         name = "accounts.getByExternalId",
         query = "SELECT account FROM AccountDO account " +
                 "LEFT JOIN FETCH account.roles " +
                 "LEFT JOIN FETCH account.permissions " +
-                "WHERE account.externalId = :externalId"
+                "WHERE account.externalId = :externalId AND account.deleted = false"
 )
 @NamedQuery(
         name = "accounts.getByRole",
         query = "SELECT account FROM AccountDO account " +
                 "LEFT JOIN FETCH account.permissions " +
                 "LEFT JOIN FETCH account.roles role " +
-                "WHERE role = :role"
+                "WHERE role = :role AND account.deleted = false "
 )
 public class AccountDO extends AbstractDO {
     private String externalId;

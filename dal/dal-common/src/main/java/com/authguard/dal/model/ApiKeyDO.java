@@ -22,12 +22,19 @@ import javax.persistence.UniqueConstraint;
         @UniqueConstraint(columnNames = { "key" })
 })
 @NamedQuery(
+        name = "api_keys.getById",
+        query = "SELECT api_key FROM ApiKeyDO api_key " +
+                "WHERE api_key.id = :id AND api_key.deleted = false"
+)
+@NamedQuery(
         name = "api_keys.getByAppId",
-        query = "SELECT api_key FROM ApiKeyDO api_key WHERE api_key.appId = :appId"
+        query = "SELECT api_key FROM ApiKeyDO api_key " +
+                "WHERE api_key.appId = :appId AND api_key.deleted = false"
 )
 @NamedQuery(
         name = "api_keys.getByKey",
-        query = "SELECT api_key FROM ApiKeyDO api_key WHERE api_key.key = :key"
+        query = "SELECT api_key FROM ApiKeyDO api_key " +
+                "WHERE api_key.key = :key AND api_key.deleted = false"
 )
 public class ApiKeyDO extends AbstractDO {
     private String key;
