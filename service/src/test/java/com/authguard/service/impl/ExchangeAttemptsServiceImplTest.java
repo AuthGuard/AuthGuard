@@ -2,6 +2,7 @@ package com.authguard.service.impl;
 
 import com.authguard.dal.model.ExchangeAttemptDO;
 import com.authguard.dal.persistence.ExchangeAttemptsRepository;
+import com.authguard.emb.MessageBus;
 import com.authguard.service.ExchangeAttemptsService;
 import com.authguard.service.mappers.ServiceMapperImpl;
 import com.authguard.service.model.ExchangeAttemptBO;
@@ -20,11 +21,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ExchangeAttemptsServiceImplTest {
     private ExchangeAttemptsRepository repository;
     private ExchangeAttemptsService service;
+    private MessageBus messageBus;
 
     @BeforeEach
     void setup() {
         repository = Mockito.mock(ExchangeAttemptsRepository.class);
-        service = new ExchangeAttemptsServiceImpl(repository, new ServiceMapperImpl());
+        messageBus = Mockito.mock(MessageBus.class);
+
+        service = new ExchangeAttemptsServiceImpl(repository, new ServiceMapperImpl(), messageBus);
     }
 
     @Test

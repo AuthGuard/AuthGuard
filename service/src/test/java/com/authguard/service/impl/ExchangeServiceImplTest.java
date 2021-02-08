@@ -1,8 +1,7 @@
 package com.authguard.service.impl;
 
-import com.authguard.dal.persistence.ExchangeAttemptsRepository;
-import com.authguard.dal.model.ExchangeAttemptDO;
 import com.authguard.emb.MessageBus;
+import com.authguard.service.ExchangeAttemptsService;
 import com.authguard.service.ExchangeService;
 import com.authguard.service.exceptions.ServiceAuthorizationException;
 import com.authguard.service.exceptions.ServiceException;
@@ -11,6 +10,7 @@ import com.authguard.service.exchange.Exchange;
 import com.authguard.service.exchange.TokenExchange;
 import com.authguard.service.model.AuthRequestBO;
 import com.authguard.service.model.EntityType;
+import com.authguard.service.model.ExchangeAttemptBO;
 import com.authguard.service.model.TokensBO;
 import io.vavr.control.Either;
 import org.junit.jupiter.api.Test;
@@ -64,14 +64,14 @@ class ExchangeServiceImplTest {
     @Test
     void exchange() {
         final MessageBus emb = Mockito.mock(MessageBus.class);
-        final ExchangeAttemptsRepository exchangeAttemptsRepository = Mockito.mock(ExchangeAttemptsRepository.class);
+        final ExchangeAttemptsService exchangeAttemptsService = Mockito.mock(ExchangeAttemptsService.class);
 
         final ExchangeService exchangeService = new ExchangeServiceImpl(
                 Arrays.asList(
                         new ValidExchange(),
                         new InvalidExchange(),
                         new ExceptionExchange()),
-                exchangeAttemptsRepository, emb);
+                exchangeAttemptsService, emb);
 
         final String basic = "Basic the-rest";
         final AuthRequestBO authRequest = AuthRequestBO.builder()
@@ -87,7 +87,7 @@ class ExchangeServiceImplTest {
 
         assertThat(exchangeService.exchange(authRequest, "basic", "basic")).isEqualTo(expected);
 
-        Mockito.verify(exchangeAttemptsRepository).save(ExchangeAttemptDO.builder()
+        Mockito.verify(exchangeAttemptsService).create(ExchangeAttemptBO.builder()
                 .successful(true)
                 .exchangeFrom("basic")
                 .exchangeTo("basic")
@@ -100,14 +100,14 @@ class ExchangeServiceImplTest {
     @Test
     void exchangeUnknownTokenTypes() {
         final MessageBus emb = Mockito.mock(MessageBus.class);
-        final ExchangeAttemptsRepository exchangeAttemptsRepository = Mockito.mock(ExchangeAttemptsRepository.class);
+        final ExchangeAttemptsService exchangeAttemptsService = Mockito.mock(ExchangeAttemptsService.class);
 
         final ExchangeService exchangeService = new ExchangeServiceImpl(
                 Arrays.asList(
                         new ValidExchange(),
                         new InvalidExchange(),
                         new ExceptionExchange()),
-                exchangeAttemptsRepository, emb);
+                exchangeAttemptsService, emb);
 
         final String basic = "Basic the-rest";
         final AuthRequestBO authRequest = AuthRequestBO.builder()
@@ -121,10 +121,10 @@ class ExchangeServiceImplTest {
     @Test
     void exchangeNoTokensGenerated() {
         final MessageBus emb = Mockito.mock(MessageBus.class);
-        final ExchangeAttemptsRepository exchangeAttemptsRepository = Mockito.mock(ExchangeAttemptsRepository.class);
+        final ExchangeAttemptsService exchangeAttemptsService = Mockito.mock(ExchangeAttemptsService.class);
 
         final ExchangeService exchangeService = new ExchangeServiceImpl(Collections.singletonList(new EmptyExchange()),
-                exchangeAttemptsRepository, emb);
+                exchangeAttemptsService, emb);
 
         final String basic = "Basic the-rest";
         final AuthRequestBO authRequest = AuthRequestBO.builder()
@@ -140,10 +140,10 @@ class ExchangeServiceImplTest {
     @Test
     void exchangeServiceAuthorizationException() {
         final MessageBus emb = Mockito.mock(MessageBus.class);
-        final ExchangeAttemptsRepository exchangeAttemptsRepository = Mockito.mock(ExchangeAttemptsRepository.class);
+        final ExchangeAttemptsService exchangeAttemptsService = Mockito.mock(ExchangeAttemptsService.class);
 
         final ExchangeService exchangeService = new ExchangeServiceImpl(Collections.singletonList(new ExceptionExchange()),
-                exchangeAttemptsRepository, emb);
+                exchangeAttemptsService, emb);
 
         final String basic = "Basic the-rest";
         final AuthRequestBO authRequest = AuthRequestBO.builder()
@@ -153,7 +153,7 @@ class ExchangeServiceImplTest {
         assertThatThrownBy(() -> exchangeService.exchange(authRequest, "basic", "exception"))
                 .isInstanceOf(ServiceAuthorizationException.class);
 
-        Mockito.verify(exchangeAttemptsRepository).save(ExchangeAttemptDO.builder()
+        Mockito.verify(exchangeAttemptsService).create(ExchangeAttemptBO.builder()
                 .successful(false)
                 .exchangeFrom("basic")
                 .exchangeTo("exception")

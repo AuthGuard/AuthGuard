@@ -11,7 +11,6 @@ import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.AppBO;
 import com.authguard.service.model.RequestContextBO;
-import com.authguard.service.util.ID;
 import com.google.inject.Inject;
 
 import java.util.List;
@@ -58,7 +57,7 @@ public class ApplicationsServiceImpl implements ApplicationsService {
             throw new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " + app.getParentAccountId() + " exists");
         }
 
-        return persistenceService.create(app.withId(ID.generate()));
+        return persistenceService.create(app);
     }
 
     @Override

@@ -6,7 +6,6 @@ import com.authguard.emb.MessageBus;
 import com.authguard.service.RolesService;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.RoleBO;
-import com.authguard.service.util.ID;
 import com.google.inject.Inject;
 
 import java.util.List;
@@ -42,7 +41,7 @@ public class RolesServiceImpl implements RolesService {
 
     @Override
     public RoleBO create(final RoleBO role) {
-        return persistenceService.create(role.withId(ID.generate()));
+        return persistenceService.create(role);
     }
 
     @Override

@@ -6,7 +6,6 @@ import com.authguard.emb.MessageBus;
 import com.authguard.service.PermissionsService;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.PermissionBO;
-import com.authguard.service.util.ID;
 import com.google.inject.Inject;
 
 import java.util.Collection;
@@ -34,7 +33,7 @@ public class PermissionsServiceImpl implements PermissionsService {
 
     @Override
     public PermissionBO create(final PermissionBO permission) {
-        return persistenceService.create(permission.withId(ID.generate()));
+        return persistenceService.create(permission);
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.authguard.service.exchange.apps;
 
-import com.authguard.dal.persistence.ApiKeysRepository;
 import com.authguard.dal.model.ApiKeyDO;
+import com.authguard.dal.persistence.ApiKeysRepository;
 import com.authguard.service.exchange.ApiKeyExchange;
 import com.authguard.service.exchange.KeyExchange;
 import com.authguard.service.keys.DefaultApiKeysProvider;

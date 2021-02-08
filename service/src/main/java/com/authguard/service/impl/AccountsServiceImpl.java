@@ -15,7 +15,6 @@ import com.authguard.service.exceptions.ServiceNotFoundException;
 import com.authguard.service.exceptions.codes.ErrorCode;
 import com.authguard.service.mappers.ServiceMapper;
 import com.authguard.service.model.*;
-import com.authguard.service.util.ID;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
@@ -67,7 +66,7 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     private AccountBO doCreate(final AccountBO account) {
-        final AccountBO created = persistenceService.create(account.withId(ID.generate()));
+        final AccountBO created = persistenceService.create(account);
 
         if (accountConfig.verifyEmail()) {
             final List<AccountEmailBO> toVerify = new ArrayList<>(2);

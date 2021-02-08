@@ -61,7 +61,8 @@ class CredentialsRouteTest extends AbstractRouteTest {
                 .getBody()
                 .as(CredentialsDTO.class);
 
-        assertThat(responseBody).isEqualToIgnoringGivenFields(credentialsRequest, "id", "plainPassword");
+        assertThat(responseBody).isEqualToIgnoringGivenFields(credentialsRequest,
+                "id", "plainPassword", "createdAt", "lastModified");
         assertThat(responseBody.getPlainPassword()).isNull();
         assertThat(responseBody.getId()).isEqualTo(serviceResponse.getId());
     }

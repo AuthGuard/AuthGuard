@@ -75,7 +75,7 @@ class ApplicationsServiceImplTest {
                 .collect(Collectors.toList());
 
         assertThat(created).isEqualToIgnoringGivenFields(app.withPermissions(expectedPermissions),
-                "id", "entityType");
+                "id", "createdAt", "lastModified", "entityType");
 
         Mockito.verify(messageBus, Mockito.times(1))
                 .publish(eq("apps"), any());

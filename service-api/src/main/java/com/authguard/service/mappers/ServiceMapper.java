@@ -45,5 +45,6 @@ public interface ServiceMapper {
     AccountLockDO toDO(AccountLockBO accountLockBO);
     AccountLockBO toBO(AccountLockDO accountLockDO);
 
+    ExchangeAttemptDO toDO(ExchangeAttemptBO exchangeAttemptBO);
     ExchangeAttemptBO toBO(ExchangeAttemptDO exchangeAttemptDO);
 }
