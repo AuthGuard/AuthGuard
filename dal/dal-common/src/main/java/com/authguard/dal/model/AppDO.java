@@ -16,12 +16,16 @@ import java.util.Set;
 @Entity
 @Table(name = "apps")
 @NamedQuery(
+        name = "apps.getById",
+        query = "SELECT app FROM AppDO app WHERE app.id = :id AND app.deleted = false"
+)
+@NamedQuery(
         name = "apps.getByExternalId",
-        query = "SELECT app FROM AppDO app WHERE app.externalId = :externalId"
+        query = "SELECT app FROM AppDO app WHERE app.externalId = :externalId AND app.deleted = false"
 )
 @NamedQuery(
         name = "apps.getByAccountId",
-        query = "SELECT app FROM AppDO app WHERE app.parentAccountId = :parentAccountId"
+        query = "SELECT app FROM AppDO app WHERE app.parentAccountId = :parentAccountId AND app.deleted = false"
 )
 public class AppDO extends AbstractDO {
     private String externalId;

@@ -20,7 +20,8 @@ import java.util.Map;
 })
 @NamedQuery(
         name = "account_tokens.getByToken",
-        query = "SELECT account_token FROM AccountTokenDO account_token WHERE account_token.token = :token"
+        query = "SELECT account_token FROM AccountTokenDO account_token " +
+                "WHERE account_token.token = :token AND account_token.deleted = false"
 )
 public class AccountTokenDO extends AbstractDO {
     private String token;

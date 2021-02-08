@@ -16,12 +16,20 @@ import java.util.Set;
 @Entity
 @Table(name = "credentials")
 @NamedQuery(
+        name = "credentials.getById",
+        query = "SELECT credentials FROM CredentialsDO credentials " +
+                "WHERE credentials.id = :id AND credentials.deleted = false"
+)
+@NamedQuery(
         name = "credentials.getByAccountId",
-        query = "SELECT credentials FROM CredentialsDO credentials WHERE credentials.accountId = :accountId"
+        query = "SELECT credentials FROM CredentialsDO credentials " +
+                "WHERE credentials.accountId = :accountId AND credentials.deleted = false"
 )
 @NamedQuery(
         name = "credentials.getByIdentifier",
-        query = "SELECT credentials FROM CredentialsDO credentials JOIN credentials.identifiers identifier WHERE identifier.identifier = :identifier"
+        query = "SELECT credentials FROM CredentialsDO credentials " +
+                "JOIN credentials.identifiers identifier " +
+                "WHERE identifier.identifier = :identifier AND credentials.deleted = false"
 )
 public class CredentialsDO extends AbstractDO {
     private String accountId;

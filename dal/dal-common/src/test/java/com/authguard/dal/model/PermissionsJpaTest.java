@@ -9,13 +9,12 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class PermissionsJpaTest {
     private EntityManager entityManager;
     private PermissionDO first;
     private PermissionDO second;
+    private PermissionDO deleted;
 
     @BeforeAll
     void setup() {
@@ -38,19 +37,29 @@ public class PermissionsJpaTest {
                 .name("write")
                 .build();
 
+        deleted = PermissionDO.builder()
+                .id("deleted-permission")
+                .deleted(true)
+                .group("test")
+                .name("delete")
+                .build();
+
         entityManager.getTransaction().begin();
 
         entityManager.persist(first);
         entityManager.persist(second);
+        entityManager.persist(deleted);
 
         entityManager.getTransaction().commit();
     }
 
     @Test
     void getById() {
-        final PermissionDO retrieved = entityManager.find(PermissionDO.class, first.getId());
+        final TypedQuery<PermissionDO> query = entityManager.createNamedQuery("permissions.getById", PermissionDO.class)
+                .setParameter("id", first.getId());
 
-        assertThat(retrieved).isEqualTo(first);
+        final List<PermissionDO> retrieved = query.getResultList();
+        Assertions.assertThat(retrieved).containsExactly(first);
     }
 
     @Test
@@ -78,5 +87,14 @@ public class PermissionsJpaTest {
 
         final List<PermissionDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(first, second);
+    }
+
+    @Test
+    void getDeletedById() {
+        final TypedQuery<PermissionDO> query = entityManager.createNamedQuery("permissions.getById", PermissionDO.class)
+                .setParameter("id", deleted.getId());
+
+        final List<PermissionDO> retrieved = query.getResultList();
+        Assertions.assertThat(retrieved).isEmpty();
     }
 }

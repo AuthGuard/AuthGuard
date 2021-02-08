@@ -20,7 +20,7 @@ import java.time.OffsetDateTime;
 @NamedQuery(
         name = "account_locks.getByAccountId",
         query = "SELECT lock FROM AccountLockDO lock " +
-                "WHERE lock.accountId = :accountId"
+                "WHERE lock.accountId = :accountId AND lock.deleted = false"
 )
 public class AccountLockDO extends AbstractDO {
     private String accountId;

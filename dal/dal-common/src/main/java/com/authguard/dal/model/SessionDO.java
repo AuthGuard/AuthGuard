@@ -20,7 +20,7 @@ import java.util.Map;
 })
 @NamedQuery(
         name = "sessions.getByToken",
-        query = "SELECT session FROM SessionDO session WHERE session.sessionToken = :token"
+        query = "SELECT session FROM SessionDO session WHERE session.sessionToken = :token AND session.deleted = false"
 )
 public class SessionDO extends AbstractDO {
     private String sessionToken;

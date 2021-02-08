@@ -9,12 +9,11 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ApiKeyJpaTest {
     private EntityManager entityManager;
     private ApiKeyDO createdApiKey;
+    private ApiKeyDO deletedAPiKey;
 
     @BeforeAll
     void setup() {
@@ -30,6 +29,13 @@ public class ApiKeyJpaTest {
                 .key("key")
                 .build();
 
+        deletedAPiKey = ApiKeyDO.builder()
+                .id("deleted-api-key-id")
+                .deleted(true)
+                .appId("app-id")
+                .key("deleted-key")
+                .build();
+
         entityManager.getTransaction().begin();
 
         entityManager.persist(createdApiKey);
@@ -39,9 +45,11 @@ public class ApiKeyJpaTest {
 
     @Test
     void getById() {
-        final ApiKeyDO retrieved = entityManager.find(ApiKeyDO.class, createdApiKey.getId());
+        final TypedQuery<ApiKeyDO> query = entityManager.createNamedQuery("api_keys.getById", ApiKeyDO.class)
+                .setParameter("id", createdApiKey.getId());
 
-        assertThat(retrieved).isEqualTo(createdApiKey);
+        final List<ApiKeyDO> retrieved = query.getResultList();
+        Assertions.assertThat(retrieved).containsExactly(createdApiKey);
     }
 
     @Test
@@ -51,5 +59,23 @@ public class ApiKeyJpaTest {
 
         final List<ApiKeyDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(createdApiKey);
+    }
+
+    @Test
+    void getByAppId() {
+        final TypedQuery<ApiKeyDO> query = entityManager.createNamedQuery("api_keys.getByAppId", ApiKeyDO.class)
+                .setParameter("appId", createdApiKey.getAppId());
+
+        final List<ApiKeyDO> retrieved = query.getResultList();
+        Assertions.assertThat(retrieved).containsExactly(createdApiKey);
+    }
+
+    @Test
+    void getDeletedById() {
+        final TypedQuery<ApiKeyDO> query = entityManager.createNamedQuery("api_keys.getById", ApiKeyDO.class)
+                .setParameter("id", deletedAPiKey.getId());
+
+        final List<ApiKeyDO> retrieved = query.getResultList();
+        Assertions.assertThat(retrieved).isEmpty();
     }
 }
