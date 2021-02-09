@@ -1,0 +1,20 @@
+package com.nexblocks.authguard.emb.model;
+
+public enum EventType {
+    ENTITY_CREATED,
+    ENTITY_UPDATED,
+    ENTITY_DELETED,
+
+    ADMIN,
+
+    AUTHENTICATION,
+
+    OTP_GENERATED,
+    OTP_VERIFIED,
+
+    PASSWORDLESS_GENERATED,
+    PASSWORDLESS_VERIFIED,
+
+    EMAIL_VERIFICATION,
+    PHONE_NUMBER_VERIFICATION
+}
