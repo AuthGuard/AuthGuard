@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>plugins</artifactId>
-        <groupId>com.authguard</groupId>
+        <groupId>com.nexblocks.authguard</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -13,42 +13,42 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.authguard</groupId>
+            <groupId>com.nexblocks.authguard</groupId>
             <artifactId>emb</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
-            <groupId>com.authguard</groupId>
+            <groupId>com.nexblocks.authguard</groupId>
             <artifactId>config</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
-            <groupId>com.authguard</groupId>
+            <groupId>com.nexblocks.authguard</groupId>
             <artifactId>email</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
-            <groupId>com.authguard</groupId>
+            <groupId>com.nexblocks.authguard</groupId>
             <artifactId>service-api</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
-            <groupId>com.authguard</groupId>
+            <groupId>com.nexblocks.authguard</groupId>
             <artifactId>persistence</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
-            <groupId>com.authguard</groupId>
+            <groupId>com.nexblocks.authguard</groupId>
             <artifactId>cache</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
