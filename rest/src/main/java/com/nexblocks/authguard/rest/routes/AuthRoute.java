@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.ExchangeAttemptDTO;
 import com.nexblocks.authguard.api.dto.entities.TokensDTO;
@@ -16,7 +17,6 @@ import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.ExchangeAttemptsQueryBO;
 import com.nexblocks.authguard.service.model.TokensBO;
-import com.google.inject.Inject;
 import io.javalin.http.Context;
 
 import java.time.OffsetDateTime;
@@ -59,6 +59,17 @@ public class AuthRoute extends AuthApi {
         }
     }
 
+    @Override
+    public void logout(final Context context) {
+        final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
+
+        authenticationService.logout(restMapper.toBO(authenticationRequest))
+                .ifPresentOrElse(
+                        tokens -> context.json(restMapper.toDTO(tokens)),
+                        () -> context.status(400).json(new Error("400", "Failed to log user out"))
+                );
+    }
+
     public void exchange(final Context context) {
         final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
         final String from = context.queryParam("from");
@@ -74,6 +85,21 @@ public class AuthRoute extends AuthApi {
         }
 
         context.json(restMapper.toDTO(tokens));
+    }
+
+    @Override
+    public void clearToken(final Context context) {
+        final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
+        final String tokenType = context.queryParam("tokenType");
+
+        if (tokenType == null) {
+            context.status(400)
+                    .json(new Error("400", "Missing 'tokenType' query parameter"));
+        } else {
+            final TokensBO tokens = exchangeService.delete(restMapper.toBO(authenticationRequest), tokenType);
+
+            context.json(restMapper.toDTO(tokens));
+        }
     }
 
     @Override
