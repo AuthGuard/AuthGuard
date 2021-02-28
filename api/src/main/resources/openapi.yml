@@ -624,7 +624,32 @@ paths:
       responses:
         200:
           description: Success
-          $ref:  "#/components/responses/SuccessfulAuthRespons"
+          $ref:  "#/components/responses/SuccessfulAuthResponse"
+        400:
+          description: Bad request
+          $ref:  "#/components/responses/ErrorResponse"
+
+  /auth/exchange/clear:
+    post:
+      operationId: clear
+      description: Clear (delete) a token
+      tags:
+        - auth
+      parameters:
+        - name: tokenType
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref:  "#/components/schemas/AuthRequest"
+      responses:
+        200:
+          description: Success
+          $ref:  "#/components/responses/SuccessfulAuthResponse"
         400:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
@@ -643,7 +668,26 @@ paths:
       responses:
         200:
           description: Success
-          $ref:  "#/components/responses/SuccessfulAuthRespons"
+          $ref:  "#/components/responses/SuccessfulAuthResponse"
+        400:
+          description: Bad request
+          $ref:  "#/components/responses/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      description: Clear (delete) a token based on whatever is specified in the configuration
+      tags:
+        - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref:  "#/components/schemas/AuthRequest"
+      responses:
+        200:
+          description: Success
+          $ref:  "#/components/responses/SuccessfulAuthResponse"
         400:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
@@ -690,7 +734,7 @@ paths:
       responses:
         200:
           description: Success
-          $ref:  "#/components/responses/SuccessfulAuthRespons"
+          $ref:  "#/components/responses/SuccessfulAuthResponse"
         400:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
@@ -708,7 +752,7 @@ paths:
       responses:
         200:
           description: Success
-          $ref:  "#/components/responses/SuccessfulAuthRespons"
+          $ref:  "#/components/responses/SuccessfulAuthResponse"
         400:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
@@ -761,7 +805,7 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
     
-    SuccessfulAuthRespons:
+    SuccessfulAuthResponse:
       description: _
       content:
         application/json:

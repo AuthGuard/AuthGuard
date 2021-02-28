@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.model.ApiKeyDO;
 import com.nexblocks.authguard.dal.persistence.ApiKeysRepository;
 import com.nexblocks.authguard.service.ApiKeysService;
@@ -10,10 +11,9 @@ import com.nexblocks.authguard.service.exchange.ApiKeyExchange;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.TokensBO;
-import com.google.inject.Inject;
+import com.nexblocks.authguard.service.util.ID;
 
 import java.util.Optional;
-import java.util.UUID;
 
 public class ApiKeysServiceImpl implements ApiKeysService {
     private final ApplicationsService applicationsService;
@@ -46,7 +46,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
         final TokensBO token = apiKeyExchange.generateKey(app);
         final ApiKeyDO keyDO = serviceMapper.toDO(token, app);
 
-        keyDO.setId(UUID.randomUUID().toString());
+        keyDO.setId(ID.generate());
 
         keysRepository.save(serviceMapper.toDO(token, app));
 

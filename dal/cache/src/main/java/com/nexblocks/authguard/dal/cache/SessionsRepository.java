@@ -11,4 +11,6 @@ public interface SessionsRepository {
     CompletableFuture<Optional<SessionDO>> getById(final String sessionId);
 
     CompletableFuture<Optional<SessionDO>> getByToken(final String sessionToken);
+
+    CompletableFuture<Optional<SessionDO>> deleteByToken(final String sessionToken);
 }

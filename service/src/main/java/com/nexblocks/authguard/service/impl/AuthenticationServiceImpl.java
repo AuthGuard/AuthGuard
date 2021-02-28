@@ -1,5 +1,7 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.AccountLocksService;
 import com.nexblocks.authguard.service.AuthenticationService;
@@ -10,8 +12,6 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountLockBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.TokensBO;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -22,6 +22,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final ExchangeService exchangeService;
     private final AccountLocksService accountLocksService;
     private final String generateTokenType;
+    private final String logoutTokenType;
 
     @Inject
     public AuthenticationServiceImpl(final ExchangeService exchangeService,
@@ -32,6 +33,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         final AuthenticationConfig authenticationConfig = configContext.asConfigBean(AuthenticationConfig.class);
 
         this.generateTokenType = authenticationConfig.getGenerateToken();
+        this.logoutTokenType = authenticationConfig.getLogoutToken();
 
         if (!exchangeService.supportsExchange(FROM_TOKEN_TYPE, this.generateTokenType)) {
             throw new IllegalArgumentException("Unsupported exchange basic to "
@@ -52,6 +54,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_IS_LOCKED,
                     "There is an active lock on account " + tokens.getEntityId());
         }
+    }
+
+    @Override
+    public Optional<TokensBO> logout(final AuthRequestBO authRequest) {
+        return Optional.of(exchangeService.delete(authRequest, logoutTokenType));
     }
 
 }

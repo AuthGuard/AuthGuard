@@ -8,4 +8,5 @@ import java.util.concurrent.CompletableFuture;
 public interface AccountTokensRepository {
     CompletableFuture<AccountTokenDO> save(AccountTokenDO tokenDO);
     CompletableFuture<Optional<AccountTokenDO>> getByToken(String token);
+    CompletableFuture<Optional<AccountTokenDO>> deleteToken(String token);
 }

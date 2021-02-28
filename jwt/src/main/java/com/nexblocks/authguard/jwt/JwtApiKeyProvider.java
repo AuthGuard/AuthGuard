@@ -3,6 +3,7 @@ package com.nexblocks.authguard.jwt;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.service.auth.AuthProvider;
@@ -11,7 +12,7 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.TokensBO;
 
-
+@ProvidesToken("jwtApiKey")
 public class JwtApiKeyProvider implements AuthProvider {
     private final Algorithm algorithm;
     private final JtiProvider jti;

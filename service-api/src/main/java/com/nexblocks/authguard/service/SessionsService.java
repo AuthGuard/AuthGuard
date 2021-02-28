@@ -10,4 +10,6 @@ public interface SessionsService {
     Optional<SessionBO> getById(String id);
 
     Optional<SessionBO> getByToken(String token);
+
+    Optional<SessionBO> deleteByToken(String token);
 }

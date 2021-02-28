@@ -1,9 +1,6 @@
 package com.nexblocks.authguard.service.auth;
 
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AppBO;
-import com.nexblocks.authguard.service.model.TokenRestrictionsBO;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.model.*;
 
 public interface AuthProvider {
     /**
@@ -16,4 +13,8 @@ public interface AuthProvider {
     }
 
     TokensBO generateToken(AppBO app);
+
+    default TokensBO delete(AuthRequestBO authRequest) {
+        throw new UnsupportedOperationException("Token cannot be deleted");
+    }
 }

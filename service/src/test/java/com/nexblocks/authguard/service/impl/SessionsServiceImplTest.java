@@ -88,4 +88,22 @@ class SessionsServiceImplTest {
 
         assertThat(actual).contains(expected);
     }
+
+    @Test
+    void deleteByToken() {
+        final SessionDO sessionDO = SessionDO.builder()
+                .id("session-id")
+                .accountId("account")
+                .sessionToken("token")
+                .data(Collections.singletonMap("key", "value"))
+                .build();
+
+        Mockito.when(repository.deleteByToken(sessionDO.getSessionToken()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(sessionDO)));
+
+        final SessionBO expected = serviceMapper.toBO(sessionDO);
+        final Optional<SessionBO> actual = service.deleteByToken(sessionDO.getSessionToken());
+
+        assertThat(actual).contains(expected);
+    }
 }

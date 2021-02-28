@@ -10,4 +10,6 @@ public interface ExchangeService {
     TokensBO exchange(AuthRequestBO authRequest, TokenRestrictionsBO restrictions, String fromTokenType, String toTokenType) ;
 
     boolean supportsExchange(String fromTokenType, String toTokenType);
+
+    TokensBO delete(AuthRequestBO authRequest, String tokenType);
 }

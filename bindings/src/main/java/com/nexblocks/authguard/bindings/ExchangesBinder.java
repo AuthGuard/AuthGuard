@@ -1,18 +1,23 @@
 package com.nexblocks.authguard.bindings;
 
-import com.nexblocks.authguard.config.ConfigContext;
-import com.nexblocks.authguard.injection.ClassSearch;
-import com.nexblocks.authguard.service.exchange.Exchange;
-import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.multibindings.Multibinder;
+import com.nexblocks.authguard.config.ConfigContext;
+import com.nexblocks.authguard.injection.ClassSearch;
+import com.nexblocks.authguard.service.auth.AuthProvider;
+import com.nexblocks.authguard.service.exchange.Exchange;
+import com.nexblocks.authguard.service.exchange.TokenExchange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ExchangesBinder extends AbstractModule {
+    private Logger LOG = LoggerFactory.getLogger(ExchangesBinder.class);
+
     private final ConfigContext configContext;
     private final DynamicBinder dynamicBinder;
 
@@ -23,9 +28,32 @@ public class ExchangesBinder extends AbstractModule {
 
     @Override
     protected void configure() {
+        configureExchanges();
+        configureProviders();
+    }
+
+    @Provides
+    List<Exchange> exchangeList(final Set<Exchange> exchangeSet) {
+        return new ArrayList<>(exchangeSet);
+    }
+
+    @Provides
+    List<AuthProvider> providersList(final Set<AuthProvider> authProviderSet) {
+        return new ArrayList<>(authProviderSet);
+    }
+
+    private void configureExchanges() {
         final Map<String, Class<? extends Exchange>> available = dynamicBinder.findAllBindingsFor(Exchange.class)
                 .stream()
-                .filter(this::hasTokenExchangeAnnotation)
+                .peek(clazz -> LOG.debug("Found exchange {}", clazz.getCanonicalName()))
+                .filter(clazz -> {
+                    if (!hasTokenExchangeAnnotation(clazz)) {
+                        LOG.debug("Exchange {} will be ignored since it is not annotated with TokenExchange", clazz.getCanonicalName());
+                        return false;
+                    }
+
+                    return true;
+                })
                 .collect(Collectors.toMap(clazz -> exchangeKey(clazz.getAnnotation(TokenExchange.class)), Function.identity()));
 
         final Collection<ExchangeConfig> allowed = getAllowedExchanges(configContext);
@@ -45,9 +73,14 @@ public class ExchangesBinder extends AbstractModule {
         }
     }
 
-    @Provides
-    List<Exchange> exchangeList(final Set<Exchange> exchangeSet) {
-        return new ArrayList<>(exchangeSet);
+    private void configureProviders() {
+        final Multibinder<AuthProvider> authProvidersMultibinder = Multibinder.newSetBinder(binder(), AuthProvider.class);
+
+        dynamicBinder.findAllBindingsFor(AuthProvider.class)
+                .forEach(clazz -> {
+                    LOG.debug("Found auth provider {}", clazz.getCanonicalName());
+                    authProvidersMultibinder.addBinding().to(clazz);
+                });
     }
 
     private boolean hasTokenExchangeAnnotation(final Class<? extends Exchange> exchangeClass) {

@@ -20,7 +20,6 @@ import org.mockito.Mockito;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ExchangeServiceImplTest {
@@ -72,6 +71,7 @@ class ExchangeServiceImplTest {
                         new ValidExchange(),
                         new InvalidExchange(),
                         new ExceptionExchange()),
+                Collections.emptyList(),
                 exchangeAttemptsService, emb);
 
         final String basic = "Basic the-rest";
@@ -108,6 +108,7 @@ class ExchangeServiceImplTest {
                         new ValidExchange(),
                         new InvalidExchange(),
                         new ExceptionExchange()),
+                Collections.emptyList(),
                 exchangeAttemptsService, emb);
 
         final String basic = "Basic the-rest";
@@ -124,7 +125,9 @@ class ExchangeServiceImplTest {
         final MessageBus emb = Mockito.mock(MessageBus.class);
         final ExchangeAttemptsService exchangeAttemptsService = Mockito.mock(ExchangeAttemptsService.class);
 
-        final ExchangeService exchangeService = new ExchangeServiceImpl(Collections.singletonList(new EmptyExchange()),
+        final ExchangeService exchangeService = new ExchangeServiceImpl(
+                Collections.singletonList(new EmptyExchange()),
+                Collections.emptyList(),
                 exchangeAttemptsService, emb);
 
         final String basic = "Basic the-rest";
@@ -143,7 +146,9 @@ class ExchangeServiceImplTest {
         final MessageBus emb = Mockito.mock(MessageBus.class);
         final ExchangeAttemptsService exchangeAttemptsService = Mockito.mock(ExchangeAttemptsService.class);
 
-        final ExchangeService exchangeService = new ExchangeServiceImpl(Collections.singletonList(new ExceptionExchange()),
+        final ExchangeService exchangeService = new ExchangeServiceImpl(
+                Collections.singletonList(new ExceptionExchange()),
+                Collections.emptyList(),
                 exchangeAttemptsService, emb);
 
         final String basic = "Basic the-rest";
