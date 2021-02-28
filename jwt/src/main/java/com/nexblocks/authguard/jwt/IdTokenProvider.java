@@ -3,6 +3,7 @@ package com.nexblocks.authguard.jwt;
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.nexblocks.authguard.config.ConfigContext;
+import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ConfigParser;
 import com.nexblocks.authguard.service.config.StrategyConfig;
 import com.nexblocks.authguard.service.model.EntityType;
@@ -16,6 +17,7 @@ import com.google.inject.name.Named;
 
 import java.time.Duration;
 
+@ProvidesToken("idToken")
 public class IdTokenProvider implements AuthProvider {
     private final Algorithm algorithm;
     private final JwtGenerator jwtGenerator;

@@ -2,22 +2,27 @@ package com.nexblocks.authguard.jwt;
 
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.service.auth.AuthProvider;
+import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ConfigParser;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
+import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+@ProvidesToken("accessToken")
 public class AccessTokenProvider implements AuthProvider {
     private final AccountTokensRepository accountTokensRepository;
     private final JtiProvider jti;
@@ -89,6 +94,17 @@ public class AccessTokenProvider implements AuthProvider {
         throw new UnsupportedOperationException("Access tokens cannot be generated for an application");
     }
 
+    @Override
+    public TokensBO delete(final AuthRequestBO authRequest) {
+        return deleteRefreshToken(authRequest.getToken())
+                .map(accountToken -> TokensBO.builder()
+                        .entityId(accountToken.getAssociatedAccountId())
+                        .entityType(EntityType.ACCOUNT)
+                        .refreshToken(authRequest.getToken())
+                        .build())
+                .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid refresh token"));
+    }
+
     private void storeRefreshToken(final String accountId, final String refreshToken) {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
                 .id(UUID.randomUUID().toString())
@@ -99,6 +115,10 @@ public class AccessTokenProvider implements AuthProvider {
 
         accountTokensRepository.save(accountToken)
                 .join();
+    }
+
+    private Optional<AccountTokenDO> deleteRefreshToken(final String refreshToken) {
+        return accountTokensRepository.deleteToken(refreshToken).join();
     }
 
     private JwtTokenBuilder generateAccessToken(final AccountBO account, final TokenRestrictionsBO restrictions) {

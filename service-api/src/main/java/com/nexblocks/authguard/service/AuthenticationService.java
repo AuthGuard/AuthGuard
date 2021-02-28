@@ -10,4 +10,6 @@ import java.util.Optional;
  */
 public interface AuthenticationService {
     Optional<TokensBO> authenticate(AuthRequestBO authRequest);
+
+    Optional<TokensBO> logout(AuthRequestBO authRequest);
 }

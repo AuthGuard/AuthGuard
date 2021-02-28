@@ -6,6 +6,7 @@ import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.service.auth.AuthProvider;
+import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ConfigParser;
 import com.nexblocks.authguard.service.config.PasswordlessConfig;
 import com.nexblocks.authguard.service.model.AccountBO;
@@ -21,6 +22,7 @@ import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.UUID;
 
+@ProvidesToken("passwordless")
 public class PasswordlessProvider implements AuthProvider {
     private static final String PASSWORDLESS_CHANNEL = "passwordless";
 

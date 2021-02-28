@@ -5,6 +5,7 @@ import com.nexblocks.authguard.dal.cache.OtpRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.service.auth.AuthProvider;
+import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ConfigParser;
 import com.nexblocks.authguard.service.config.OtpConfig;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
@@ -17,6 +18,7 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
+@ProvidesToken("otp")
 public class OtpProvider implements AuthProvider {
     private static final String OTP_CHANNEL = "otp";
 

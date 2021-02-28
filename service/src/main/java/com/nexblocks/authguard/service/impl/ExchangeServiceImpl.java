@@ -4,6 +4,8 @@ import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.service.ExchangeAttemptsService;
 import com.nexblocks.authguard.service.ExchangeService;
+import com.nexblocks.authguard.service.auth.AuthProvider;
+import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
@@ -23,13 +25,16 @@ public class ExchangeServiceImpl implements ExchangeService {
     static final String CHANNEL = "auth";
 
     private final Map<String, Exchange> exchanges;
+    private final Map<String, AuthProvider> authProviders;
     private final ExchangeAttemptsService exchangeAttemptsService;
     private final MessageBus emb;
 
     @Inject
-    public ExchangeServiceImpl(final List<Exchange> exchanges, final ExchangeAttemptsService exchangeAttemptsService,
+    public ExchangeServiceImpl(final List<Exchange> exchanges, final List<AuthProvider> authProviders,
+                               final ExchangeAttemptsService exchangeAttemptsService,
                                final MessageBus emb) {
         this.exchanges = mapExchanges(exchanges);
+        this.authProviders = mapProviders(authProviders);
         this.exchangeAttemptsService = exchangeAttemptsService;
         this.emb = emb;
     }
@@ -75,6 +80,17 @@ public class ExchangeServiceImpl implements ExchangeService {
     @Override
     public boolean supportsExchange(final String fromTokenType, final String toTokenType) {
         return exchanges.containsKey(exchangeKey(fromTokenType, toTokenType));
+    }
+
+    @Override
+    public TokensBO delete(final AuthRequestBO authRequest, final String tokenType) {
+        final AuthProvider provider = authProviders.get(tokenType);
+
+        if (provider == null) {
+            throw new ServiceException(ErrorCode.UNKNOWN_EXCHANGE, "Unknown token type " + tokenType);
+        }
+
+        return provider.delete(authRequest);
     }
 
     private void exchangeSuccess(final TokensBO tokens, final String fromTokenType,
@@ -128,6 +144,15 @@ public class ExchangeServiceImpl implements ExchangeService {
                 ));
     }
 
+    private Map<String, AuthProvider> mapProviders(final List<AuthProvider> providers) {
+        return providers.stream()
+                .filter(provider -> provider.getClass().getAnnotation(ProvidesToken.class) != null)
+                .collect(Collectors.toMap(
+                        this::authProviderTokenType,
+                        Function.identity()
+                ));
+    }
+
     private String tokenExchangeToString(final Exchange exchange) {
         final TokenExchange tokenExchange = exchange.getClass().getAnnotation(TokenExchange.class);
         return exchangeKey(tokenExchange.from(), tokenExchange.to());
@@ -135,5 +160,9 @@ public class ExchangeServiceImpl implements ExchangeService {
 
     private String exchangeKey(final String fromTokenType, final String toTokenType) {
         return fromTokenType + "-" + toTokenType;
+    }
+
+    private String authProviderTokenType(final AuthProvider authProvider) {
+        return authProvider.getClass().getAnnotation(ProvidesToken.class).value();
     }
 }

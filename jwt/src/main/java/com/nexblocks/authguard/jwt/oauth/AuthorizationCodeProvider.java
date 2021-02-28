@@ -4,6 +4,7 @@ import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.service.auth.AuthProvider;
+import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.AuthorizationCodeConfig;
 import com.nexblocks.authguard.service.config.ConfigParser;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
@@ -16,6 +17,7 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
+@ProvidesToken("authorizationCode")
 public class AuthorizationCodeProvider implements AuthProvider {
     private final AccountTokensRepository accountTokensRepository;
     private final ServiceMapper serviceMapper;

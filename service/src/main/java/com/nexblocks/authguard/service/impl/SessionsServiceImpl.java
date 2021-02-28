@@ -72,4 +72,11 @@ public class SessionsServiceImpl implements SessionsService {
                 .thenApply(opt -> opt.map(serviceMapper::toBO))
                 .join();
     }
+
+    @Override
+    public Optional<SessionBO> deleteByToken(final String token) {
+        return sessionsRepository.deleteByToken(token)
+                .thenApply(opt -> opt.map(serviceMapper::toBO))
+                .join();
+    }
 }
