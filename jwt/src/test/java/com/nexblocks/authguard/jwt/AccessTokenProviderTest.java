@@ -173,6 +173,7 @@ class AccessTokenProviderTest {
                 )));
 
         final TokensBO expected = TokensBO.builder()
+                .type("access_token")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(accountId)
                 .refreshToken(refreshToken)

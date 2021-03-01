@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
 
 @ProvidesToken("sessionToken")
 public class SessionProvider implements AuthProvider {
+    private static final String TOKEN_TYPE = "session_token";
+
     private final SessionsService sessionsService;
     private final SessionsConfig sessionsConfig;
 
@@ -49,7 +51,7 @@ public class SessionProvider implements AuthProvider {
         final SessionBO created = sessionsService.create(session);
 
         return TokensBO.builder()
-                .type("session")
+                .type(TOKEN_TYPE)
                 .token(created.getSessionToken())
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
@@ -65,7 +67,7 @@ public class SessionProvider implements AuthProvider {
     public TokensBO delete(final AuthRequestBO authRequest) {
         return sessionsService.deleteByToken(authRequest.getToken())
                 .map(session -> TokensBO.builder()
-                        .type("session")
+                        .type(TOKEN_TYPE)
                         .entityType(EntityType.ACCOUNT)
                         .entityId(session.getAccountId())
                         .token(session.getSessionToken())

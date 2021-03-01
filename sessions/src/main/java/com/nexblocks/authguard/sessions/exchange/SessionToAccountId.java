@@ -10,6 +10,8 @@ import io.vavr.control.Either;
 
 @TokenExchange(from = "sessionToken", to = "accountId")
 public class SessionToAccountId implements Exchange {
+    private static final String TOKEN_TYPE = "account_id";
+
     private final SessionVerifier sessionVerifier;
 
     @Inject
@@ -21,7 +23,7 @@ public class SessionToAccountId implements Exchange {
     public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
         return sessionVerifier.verifyAccountToken(request.getToken())
                 .map(accountId -> TokensBO.builder()
-                        .type("accountId")
+                        .type(TOKEN_TYPE)
                         .token(accountId)
                         .build());
     }

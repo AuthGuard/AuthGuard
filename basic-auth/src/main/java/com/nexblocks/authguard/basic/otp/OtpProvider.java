@@ -20,6 +20,7 @@ import java.util.UUID;
 
 @ProvidesToken("otp")
 public class OtpProvider implements AuthProvider {
+    private static final String TOKEN_TYPE = "otp";
     private static final String OTP_CHANNEL = "otp";
 
     private final OtpRepository otpRepository;
@@ -67,7 +68,7 @@ public class OtpProvider implements AuthProvider {
 
     private TokensBO createToken(final String passwordId, final String accountId) {
         return TokensBO.builder()
-                .type("OTP")
+                .type(TOKEN_TYPE)
                 .token(passwordId)
                 .entityType(EntityType.ACCOUNT)
                 .entityId(accountId)

@@ -1,10 +1,11 @@
 package com.nexblocks.authguard.service.exchange.apps;
 
-import com.nexblocks.authguard.dal.persistence.ApiKeysRepository;
 import com.nexblocks.authguard.dal.model.ApiKeyDO;
+import com.nexblocks.authguard.dal.persistence.ApiKeysRepository;
 import com.nexblocks.authguard.service.config.ApiKeysConfig;
 import com.nexblocks.authguard.service.keys.DefaultApiKeysProvider;
 import com.nexblocks.authguard.service.model.AppBO;
+import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.TokensBO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,10 +32,20 @@ class DefaultApiKeyExchangeTest {
 
     @Test
     void generateKey() {
-        final TokensBO token = exchange.generateKey(AppBO.builder().build());
+        final AppBO app = AppBO.builder()
+                .id("app")
+                .build();
 
-        assertThat(token.getType()).isEqualTo("API key");
-        assertThat(token.getToken()).isNotNull();
+        final TokensBO expected = TokensBO.builder()
+                .type("api_key")
+                .entityType(EntityType.APPLICATION)
+                .entityId(app.getId())
+                .build();
+
+        final TokensBO actual = exchange.generateKey(app);
+
+        assertThat(actual).isEqualToIgnoringGivenFields(expected, "token");
+        assertThat(actual.getToken()).isNotNull();
     }
 
     @Test

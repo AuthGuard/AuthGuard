@@ -19,6 +19,8 @@ import java.time.Duration;
 
 @ProvidesToken("idToken")
 public class IdTokenProvider implements AuthProvider {
+    private static final String TOKEN_TYPE = "id_token";
+
     private final Algorithm algorithm;
     private final JwtGenerator jwtGenerator;
     private final StrategyConfig strategy;
@@ -42,6 +44,7 @@ public class IdTokenProvider implements AuthProvider {
         final String refreshToken = jwtGenerator.generateRandomRefreshToken();
 
         return TokensBO.builder()
+                .type(TOKEN_TYPE)
                 .token(token)
                 .refreshToken(refreshToken)
                 .entityType(EntityType.ACCOUNT)

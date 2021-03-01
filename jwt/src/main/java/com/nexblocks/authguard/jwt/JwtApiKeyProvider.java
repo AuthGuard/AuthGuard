@@ -14,6 +14,8 @@ import com.nexblocks.authguard.service.model.TokensBO;
 
 @ProvidesToken("jwtApiKey")
 public class JwtApiKeyProvider implements AuthProvider {
+    private final String TOKEN_TYPE = "jwt_api_key";
+
     private final Algorithm algorithm;
     private final JtiProvider jti;
 
@@ -37,6 +39,7 @@ public class JwtApiKeyProvider implements AuthProvider {
         final String token = tokenBuilder.getBuilder().sign(algorithm);
 
         return TokensBO.builder()
+                .type(TOKEN_TYPE)
                 .token(token)
                 .entityType(EntityType.APPLICATION)
                 .entityId(app.getId())
