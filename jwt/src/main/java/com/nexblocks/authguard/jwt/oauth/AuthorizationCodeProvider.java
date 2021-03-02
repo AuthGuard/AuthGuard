@@ -19,6 +19,7 @@ import java.util.UUID;
 
 @ProvidesToken("authorizationCode")
 public class AuthorizationCodeProvider implements AuthProvider {
+    private final String TOKEN_TYPE = "authorization_code";
     private final AccountTokensRepository accountTokensRepository;
     private final ServiceMapper serviceMapper;
     private final AuthorizationCodeConfig config;
@@ -48,6 +49,7 @@ public class AuthorizationCodeProvider implements AuthProvider {
         final String code = random.base64(config.getRandomSize());
 
         final AccountTokenDO accountToken = AccountTokenDO.builder()
+                .token(TOKEN_TYPE)
                 .id(UUID.randomUUID().toString())
                 .token(code)
                 .associatedAccountId(account.getId())

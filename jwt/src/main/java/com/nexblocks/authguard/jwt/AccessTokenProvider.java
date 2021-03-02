@@ -24,6 +24,8 @@ import java.util.stream.Stream;
 
 @ProvidesToken("accessToken")
 public class AccessTokenProvider implements AuthProvider {
+    private static final String TOKEN_TYPE = "access_token";
+
     private final AccountTokensRepository accountTokensRepository;
     private final JtiProvider jti;
     private final Algorithm algorithm;
@@ -82,6 +84,7 @@ public class AccessTokenProvider implements AuthProvider {
 
         return TokensBO.builder()
                 .id(tokenBuilder.getId().orElse(null))
+                .type(TOKEN_TYPE)
                 .token(token)
                 .refreshToken(refreshToken)
                 .entityType(EntityType.ACCOUNT)
@@ -98,6 +101,7 @@ public class AccessTokenProvider implements AuthProvider {
     public TokensBO delete(final AuthRequestBO authRequest) {
         return deleteRefreshToken(authRequest.getToken())
                 .map(accountToken -> TokensBO.builder()
+                        .type(TOKEN_TYPE)
                         .entityId(accountToken.getAssociatedAccountId())
                         .entityType(EntityType.ACCOUNT)
                         .refreshToken(authRequest.getToken())

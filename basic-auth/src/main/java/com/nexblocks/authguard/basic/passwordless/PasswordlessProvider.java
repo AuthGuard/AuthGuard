@@ -24,6 +24,7 @@ import java.util.UUID;
 
 @ProvidesToken("passwordless")
 public class PasswordlessProvider implements AuthProvider {
+    private static final String TOKEN_TYPE = "passwordless";
     private static final String PASSWORDLESS_CHANNEL = "passwordless";
 
     private final AccountTokensRepository accountTokensRepository;
@@ -60,7 +61,7 @@ public class PasswordlessProvider implements AuthProvider {
         messageBus.publish(PASSWORDLESS_CHANNEL, Messages.passwordlessGenerated(accountToken));
 
         return TokensBO.builder()
-                .type("passwordless")
+                .type(TOKEN_TYPE)
                 .token(accountToken.getId())
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())

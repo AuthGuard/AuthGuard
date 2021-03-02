@@ -8,6 +8,7 @@ import com.nexblocks.authguard.service.config.OtpConfig;
 import com.nexblocks.authguard.service.config.OtpMode;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.AccountBO;
+import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.TokensBO;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
@@ -53,11 +54,16 @@ class OtpProviderTest {
 
         final AccountBO account = random.nextObject(AccountBO.class);
 
+        final TokensBO expected = TokensBO.builder()
+                .type("otp")
+                .entityType(EntityType.ACCOUNT)
+                .entityId(account.getId())
+                .build();
+
         final TokensBO generated = otpProvider.generateToken(account);
 
-        assertThat(generated.getType()).isEqualTo("OTP");
+        assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(generated.getToken()).isNotNull();
-        assertThat(generated.getRefreshToken()).isNull();
 
         final ArgumentCaptor<OneTimePasswordDO> argumentCaptor = ArgumentCaptor.forClass(OneTimePasswordDO.class);
 
@@ -89,11 +95,16 @@ class OtpProviderTest {
 
         final AccountBO account = random.nextObject(AccountBO.class);
 
+        final TokensBO expected = TokensBO.builder()
+                .type("otp")
+                .entityType(EntityType.ACCOUNT)
+                .entityId(account.getId())
+                .build();
+
         final TokensBO generated = otpProvider.generateToken(account);
 
-        assertThat(generated.getType()).isEqualTo("OTP");
+        assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(generated.getToken()).isNotNull();
-        assertThat(generated.getRefreshToken()).isNull();
 
         final ArgumentCaptor<OneTimePasswordDO> argumentCaptor = ArgumentCaptor.forClass(OneTimePasswordDO.class);
 
@@ -129,11 +140,16 @@ class OtpProviderTest {
 
         final AccountBO account = random.nextObject(AccountBO.class);
 
+        final TokensBO expected = TokensBO.builder()
+                .type("otp")
+                .entityType(EntityType.ACCOUNT)
+                .entityId(account.getId())
+                .build();
+
         final TokensBO generated = otpProvider.generateToken(account);
 
-        assertThat(generated.getType()).isEqualTo("OTP");
+        assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(generated.getToken()).isNotNull();
-        assertThat(generated.getRefreshToken()).isNull();
 
         final ArgumentCaptor<OneTimePasswordDO> argumentCaptor = ArgumentCaptor.forClass(OneTimePasswordDO.class);
 

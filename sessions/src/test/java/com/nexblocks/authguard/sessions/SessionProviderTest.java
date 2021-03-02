@@ -39,10 +39,16 @@ class SessionProviderTest {
                 .id("account-id")
                 .build();
 
-        final TokensBO generated = sessionProvider.generateToken(account);
+        final TokensBO expected = TokensBO.builder()
+                .type("session_token")
+                .entityType(EntityType.ACCOUNT)
+                .entityId(account.getId())
+                .build();
 
-        assertThat(generated.getType()).isEqualTo("session");
-        assertThat(generated.getToken()).isNotNull().isInstanceOf(String.class);
+        final TokensBO actual = sessionProvider.generateToken(account);
+
+        assertThat(actual).isEqualToIgnoringGivenFields(expected, "token");
+        assertThat(actual.getToken()).isNotNull().isInstanceOf(String.class);
     }
 
     @Test
@@ -60,7 +66,7 @@ class SessionProviderTest {
                         .build()));
 
         final TokensBO expected = TokensBO.builder()
-                .type("session")
+                .type("session_token")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(accountId)
                 .token(sessionToken)
