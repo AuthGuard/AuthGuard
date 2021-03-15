@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.basic.otp;
 
+import com.nexblocks.authguard.basic.config.OtpConfig;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.OtpRepository;
 import com.nexblocks.authguard.emb.MessageBus;
@@ -7,7 +8,6 @@ import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.service.auth.AuthProvider;
 import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ConfigParser;
-import com.nexblocks.authguard.service.config.OtpConfig;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;

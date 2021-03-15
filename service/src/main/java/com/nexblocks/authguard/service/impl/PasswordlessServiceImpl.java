@@ -1,9 +1,9 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.nexblocks.authguard.basic.config.PasswordlessConfig;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.PasswordlessService;
-import com.nexblocks.authguard.service.config.PasswordlessConfig;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.TokensBO;
 import com.google.inject.Inject;

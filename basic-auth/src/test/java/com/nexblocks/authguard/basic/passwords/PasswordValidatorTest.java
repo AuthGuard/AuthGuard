@@ -1,7 +1,7 @@
 package com.nexblocks.authguard.basic.passwords;
 
-import com.nexblocks.authguard.service.config.PasswordConditions;
-import com.nexblocks.authguard.service.config.PasswordsConfig;
+import com.nexblocks.authguard.basic.config.PasswordConditions;
+import com.nexblocks.authguard.basic.config.PasswordsConfig;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 

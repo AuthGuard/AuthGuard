@@ -1,5 +1,7 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.nexblocks.authguard.basic.config.PasswordConditions;
+import com.nexblocks.authguard.basic.config.PasswordsConfig;
 import com.nexblocks.authguard.dal.persistence.CredentialsAuditRepository;
 import com.nexblocks.authguard.dal.persistence.CredentialsRepository;
 import com.nexblocks.authguard.dal.model.CredentialsAuditDO;
@@ -7,8 +9,6 @@ import com.nexblocks.authguard.dal.model.CredentialsDO;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.IdempotencyService;
-import com.nexblocks.authguard.service.config.PasswordConditions;
-import com.nexblocks.authguard.service.config.PasswordsConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.basic.passwords.ServiceInvalidPasswordException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;

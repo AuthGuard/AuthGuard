@@ -6,6 +6,7 @@ import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.CredentialsService;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.nexblocks.authguard.service.exceptions.ConfigurationException;
 import com.nexblocks.authguard.service.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,8 +57,23 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
     }
 
     private CredentialsBO oneTimeAdminCredentials(final String accountId) {
-        final String username = System.getenv(oneTimeAdminConfig.getAsString("usernameVariable"));
-        final String password = System.getenv(oneTimeAdminConfig.getAsString("passwordVariable"));
+        final String otaUsernameEnvVariable = oneTimeAdminConfig.getAsString("usernameVariable");
+        final String otaPasswordEnvVariable = oneTimeAdminConfig.getAsString("passwordVariable");
+
+        if (otaUsernameEnvVariable == null || otaPasswordEnvVariable == null) {
+            throw new ConfigurationException("Missing either 'usernameVariable' or 'passwordVariable' in one-time admin configuration");
+        }
+
+        final String username = System.getenv(otaUsernameEnvVariable);
+        final String password = System.getenv(otaPasswordEnvVariable);
+
+        if (username == null) {
+            throw new ConfigurationException("No value was provided for " + otaUsernameEnvVariable);
+        }
+
+        if (password == null) {
+            throw new ConfigurationException("No value was provided for " + otaPasswordEnvVariable);
+        }
 
         return CredentialsBO.builder()
                 .accountId(accountId)
