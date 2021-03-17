@@ -1,6 +1,7 @@
 package com.nexblocks.authguard.config;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Properties;
 
 public interface ConfigContext {
@@ -18,6 +19,8 @@ public interface ConfigContext {
     <T> T asConfigBean(Class<T> clazz);
 
     Properties asProperties();
+
+    Map<String, Object> asMap();
 
     Iterable<String> subContexts();
 }

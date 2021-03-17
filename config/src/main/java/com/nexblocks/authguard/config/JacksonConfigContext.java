@@ -1,6 +1,7 @@
 package com.nexblocks.authguard.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -115,6 +116,11 @@ public class JacksonConfigContext implements ConfigContext {
         } catch (final JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Override
+    public Map<String, Object> asMap() {
+        return objectMapper.convertValue(rootNode, new TypeReference<>(){});
     }
 
     @Override

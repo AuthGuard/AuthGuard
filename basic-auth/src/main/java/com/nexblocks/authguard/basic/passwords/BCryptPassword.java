@@ -1,8 +1,8 @@
 package com.nexblocks.authguard.basic.passwords;
 
+import com.nexblocks.authguard.basic.config.BCryptConfig;
+import com.nexblocks.authguard.basic.config.PasswordsConfig;
 import com.nexblocks.authguard.config.ConfigContext;
-import com.nexblocks.authguard.service.config.BCryptConfig;
-import com.nexblocks.authguard.service.config.PasswordsConfig;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.bouncycastle.crypto.generators.BCrypt;

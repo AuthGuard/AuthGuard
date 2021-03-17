@@ -1,10 +1,10 @@
 package com.nexblocks.authguard.bindings;
 
+import com.google.inject.AbstractModule;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.injection.ClassSearch;
 import com.nexblocks.authguard.service.exchange.ApiKeyExchange;
 import com.nexblocks.authguard.service.exchange.KeyExchange;
-import com.google.inject.AbstractModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +38,8 @@ public class ApiKeysExchangeBinder extends AbstractModule {
                 .orElseThrow(() -> new IllegalStateException("No exchange was found for API key type " + targetApiKey.get()));
 
         LOG.info("Will bind API key exchange {}", exchangeClass);
+
+        PluginsRegistry.register(exchangeClass);
 
         bind(ApiKeyExchange.class).to(exchangeClass);
     }

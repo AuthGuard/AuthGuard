@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.service.config;
+package com.nexblocks.authguard.basic.config;
 
 public enum OtpMode {
     ALPHANUMERIC,

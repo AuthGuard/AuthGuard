@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.basic.passwordless;
 
+import com.nexblocks.authguard.basic.config.PasswordlessConfig;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
@@ -8,7 +9,6 @@ import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.service.auth.AuthProvider;
 import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ConfigParser;
-import com.nexblocks.authguard.service.config.PasswordlessConfig;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.EntityType;

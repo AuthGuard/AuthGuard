@@ -6,6 +6,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.injection.ClassSearch;
 import com.nexblocks.authguard.service.auth.AuthProvider;
+import com.nexblocks.authguard.service.exceptions.ConfigurationException;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import org.slf4j.Logger;
@@ -65,9 +66,11 @@ public class ExchangesBinder extends AbstractModule {
             final Class<? extends Exchange> exchange = available.get(key);
 
             if (exchange == null) {
-                throw new UnsupportedOperationException("Token exchange " + exchangeConfig.from + " to "
-                        + exchangeConfig.to + " is not supported");
+                throw new ConfigurationException("Token exchange " + exchangeConfig.from + " to "
+                        + exchangeConfig.to + " is not available");
             }
+
+            PluginsRegistry.register(exchange);
 
             exchangeMultibinder.addBinding().to(available.get(key));
         }
@@ -79,6 +82,8 @@ public class ExchangesBinder extends AbstractModule {
         dynamicBinder.findAllBindingsFor(AuthProvider.class)
                 .forEach(clazz -> {
                     LOG.debug("Found auth provider {}", clazz.getCanonicalName());
+
+                    PluginsRegistry.register(clazz);
                     authProvidersMultibinder.addBinding().to(clazz);
                 });
     }

@@ -28,6 +28,10 @@ public class EmbBinder extends AbstractModule {
         final Multibinder<MessageSubscriber> subscribersMultibinder = Multibinder.newSetBinder(binder(),
                 MessageSubscriber.class);
 
-        subscribersClasses.forEach(subscriber -> subscribersMultibinder.addBinding().to(subscriber));
+        subscribersClasses
+                .forEach(subscriber -> {
+                    PluginsRegistry.register(subscriber);
+                    subscribersMultibinder.addBinding().to(subscriber);
+                });
     }
 }
