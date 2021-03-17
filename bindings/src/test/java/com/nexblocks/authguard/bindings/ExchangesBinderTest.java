@@ -1,14 +1,15 @@
 package com.nexblocks.authguard.bindings;
 
-import com.nexblocks.authguard.config.ConfigContext;
-import com.nexblocks.authguard.service.exchange.Exchange;
-import com.nexblocks.authguard.service.exchange.TokenExchange;
-import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.service.model.TokensBO;
 import com.google.inject.CreationException;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.nexblocks.authguard.config.ConfigContext;
+import com.nexblocks.authguard.service.exceptions.ConfigurationException;
+import com.nexblocks.authguard.service.exchange.Exchange;
+import com.nexblocks.authguard.service.exchange.TokenExchange;
+import com.nexblocks.authguard.service.model.AuthRequestBO;
+import com.nexblocks.authguard.service.model.TokensBO;
 import io.vavr.control.Either;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -89,6 +90,6 @@ class ExchangesBinderTest {
         assertThatThrownBy(() -> Guice.createInjector(new ExchangesBinder(rootContext, searchPackages)))
                 .isInstanceOf(CreationException.class)
                 .extracting("cause")
-                .isInstanceOf(UnsupportedOperationException.class);
+                .isInstanceOf(ConfigurationException.class);
     }
 }
