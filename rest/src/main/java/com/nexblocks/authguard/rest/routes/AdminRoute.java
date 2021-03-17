@@ -16,7 +16,7 @@ public class AdminRoute extends AdminApi {
 
     public void getConfig(final Context context) {
         context.status(200)
-                .json(this.configContext);
+                .json(this.configContext.asMap());
     }
 
     @Override

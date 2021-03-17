@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
 
 public class EmptyConfigContext implements ConfigContext {
@@ -54,6 +55,11 @@ public class EmptyConfigContext implements ConfigContext {
     @Override
     public Properties asProperties() {
         return new Properties();
+    }
+
+    @Override
+    public Map<String, Object> asMap() {
+        return null;
     }
 
     @Override
