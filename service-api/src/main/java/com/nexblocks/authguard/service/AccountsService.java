@@ -15,6 +15,8 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
 
     Optional<AccountBO> getByExternalId(String externalId);
 
+    Optional<AccountBO> getByEmail(String email);
+
     Optional<AccountBO> activate(String accountId);
 
     Optional<AccountBO> deactivate(String accountId);

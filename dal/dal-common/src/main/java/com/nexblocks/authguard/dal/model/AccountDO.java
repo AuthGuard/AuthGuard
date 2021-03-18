@@ -30,6 +30,13 @@ import java.util.Set;
                 "WHERE account.externalId = :externalId AND account.deleted = false"
 )
 @NamedQuery(
+        name = "accounts.getByEmail",
+        query = "SELECT account FROM AccountDO account " +
+                "LEFT JOIN FETCH account.roles " +
+                "LEFT JOIN FETCH account.permissions " +
+                "WHERE (account.email.email = :email OR account.backupEmail.email = :email) AND account.deleted = false"
+)
+@NamedQuery(
         name = "accounts.getByRole",
         query = "SELECT account FROM AccountDO account " +
                 "LEFT JOIN FETCH account.permissions " +
@@ -49,7 +56,7 @@ public class AccountDO extends AbstractDO {
 
     @Embedded
     @AttributeOverrides({
-            @AttributeOverride(name = "email", column = @Column(name = "email")),
+            @AttributeOverride(name = "email", column = @Column(name = "email", unique = true)),
             @AttributeOverride(name = "verified", column = @Column(name = "email_verified")),
             @AttributeOverride(name = "active", column = @Column(name = "email_active"))
     })
@@ -57,7 +64,7 @@ public class AccountDO extends AbstractDO {
 
     @Embedded
     @AttributeOverrides({
-            @AttributeOverride(name = "email", column = @Column(name = "backup_email")),
+            @AttributeOverride(name = "email", column = @Column(name = "backup_email", unique = true)),
             @AttributeOverride(name = "verified", column = @Column(name = "backup_email_verified")),
             @AttributeOverride(name = "active", column = @Column(name = "backup_email_active"))
     })

@@ -1,5 +1,7 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.model.AccountDO;
 import com.nexblocks.authguard.dal.persistence.AccountsRepository;
@@ -14,8 +16,6 @@ import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.nexblocks.authguard.service.model.*;
 
 import java.util.ArrayList;
@@ -96,6 +96,13 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public Optional<AccountBO> getByExternalId(final String externalId) {
         return accountsRepository.getByExternalId(externalId)
+                .join()
+                .map(serviceMapper::toBO);
+    }
+
+    @Override
+    public Optional<AccountBO> getByEmail(final String email) {
+        return accountsRepository.getByEmail(email)
                 .join()
                 .map(serviceMapper::toBO);
     }

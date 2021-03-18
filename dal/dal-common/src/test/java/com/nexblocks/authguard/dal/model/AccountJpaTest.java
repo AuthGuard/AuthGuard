@@ -1,11 +1,13 @@
 package com.nexblocks.authguard.dal.model;
 
 import org.assertj.core.api.Assertions;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceException;
 import javax.persistence.TypedQuery;
 import java.util.Collections;
 import java.util.List;
@@ -48,8 +50,11 @@ class AccountJpaTest {
                         .build()))
                 .email(EmailDO.builder()
                         .email("primary@emails.com")
-                        .build()
-                ).build();
+                        .build())
+                .backupEmail(EmailDO.builder()
+                        .email("backup@emails.com")
+                        .build())
+                .build();
 
         deletedAccount = AccountDO.builder()
                 .id("deleted-account")
@@ -61,8 +66,8 @@ class AccountJpaTest {
                         .build()))
                 .email(EmailDO.builder()
                         .email("deleted@emails.com")
-                        .build()
-                ).build();
+                        .build())
+                .build();
 
         entityManager.persist(createdAccount);
         entityManager.persist(deletedAccount);
@@ -86,6 +91,54 @@ class AccountJpaTest {
 
         final List<AccountDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(createdAccount);
+    }
+
+    @Test
+    void getByEmail() {
+        final TypedQuery<AccountDO> query = entityManager.createNamedQuery("accounts.getByEmail", AccountDO.class)
+                .setParameter("email", createdAccount.getEmail().getEmail());
+
+        final List<AccountDO> retrieved = query.getResultList();
+        Assertions.assertThat(retrieved).containsExactly(createdAccount);
+    }
+
+    @Test
+    void getByBackupEmail() {
+        final TypedQuery<AccountDO> query = entityManager.createNamedQuery("accounts.getByEmail", AccountDO.class)
+                .setParameter("email", createdAccount.getBackupEmail().getEmail());
+
+        final List<AccountDO> retrieved = query.getResultList();
+        Assertions.assertThat(retrieved).containsExactly(createdAccount);
+    }
+
+    @Test
+    void getByWrongEmail() {
+        final TypedQuery<AccountDO> query = entityManager.createNamedQuery("accounts.getByEmail", AccountDO.class)
+                .setParameter("email", "nonexistent");
+
+        final List<AccountDO> retrieved = query.getResultList();
+        Assertions.assertThat(retrieved).isEmpty();
+    }
+
+    @Test
+    void insertDuplicateEmail() {
+
+        entityManager.getTransaction().begin();
+
+        entityManager.persist(AccountDO.builder()
+                .id("not-to-be-inserted")
+                .roles(Collections.singleton("test"))
+                .permissions(Collections.singleton(PermissionDO.builder()
+                        .id("read-posts-permission")
+                        .build()))
+                .email(EmailDO.builder()
+                        .email("primary@emails.com")
+                        .build())
+                .build());
+
+        Assertions.assertThatThrownBy(() -> entityManager.getTransaction().commit())
+                .isInstanceOf(PersistenceException.class)
+                .hasCauseInstanceOf(ConstraintViolationException.class);
     }
 
     @Test

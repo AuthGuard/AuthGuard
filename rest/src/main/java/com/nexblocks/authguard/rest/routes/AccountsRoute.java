@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.api.dto.entities.AccountDTO;
 import com.nexblocks.authguard.api.dto.entities.AccountLockDTO;
 import com.nexblocks.authguard.api.dto.entities.AppDTO;
@@ -14,11 +15,11 @@ import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.ApplicationsService;
 import com.nexblocks.authguard.service.CredentialsService;
 import com.nexblocks.authguard.service.exceptions.IdempotencyException;
+import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.CredentialsBO;
 import com.nexblocks.authguard.service.model.PermissionBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
-import com.google.inject.Inject;
 import io.javalin.http.Context;
 
 import java.util.Collection;
@@ -137,7 +138,8 @@ public class AccountsRoute extends AccountsApi {
         if (account.isPresent()) {
             context.status(200).json(account.get());
         } else {
-            context.status(404);
+            context.status(404)
+                    .json(new Error(ErrorCode.ACCOUNT_DOES_NOT_EXIST.getCode(), "Account not found"));
         }
     }
 
@@ -150,7 +152,8 @@ public class AccountsRoute extends AccountsApi {
         if (account.isPresent()) {
             context.status(200).json(account.get());
         } else {
-            context.status(404);
+            context.status(404)
+                    .json(new Error(ErrorCode.ACCOUNT_DOES_NOT_EXIST.getCode(), "Account not found"));
         }
     }
 
@@ -163,7 +166,23 @@ public class AccountsRoute extends AccountsApi {
         if (account.isPresent()) {
             context.status(200).json(account.get());
         } else {
-            context.status(404);
+            context.status(404)
+                    .json(new Error(ErrorCode.ACCOUNT_DOES_NOT_EXIST.getCode(), "Account not found"));
+        }
+    }
+
+    @Override
+    public void getByEmail(final Context context) {
+        final String email = context.pathParam("email");
+
+        final Optional<AccountDTO> account = accountsService.getByEmail(email)
+                .map(restMapper::toDTO);
+
+        if (account.isPresent()) {
+            context.status(200).json(account.get());
+        } else {
+            context.status(404)
+                    .json(new Error(ErrorCode.ACCOUNT_DOES_NOT_EXIST.getCode(), "Account not found"));
         }
     }
 

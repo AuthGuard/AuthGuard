@@ -80,6 +80,22 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
+  /accounts/email/{email}:
+    get:
+      operationId: getAccountByEmail
+      description: Get an account by email, regardless of whether it's the primary email or not
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/components/parameters/EmailParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/AccountResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
   /accounts/{id}/permissions:
     patch:
       operationId: updateAccountPermissions
@@ -785,6 +801,13 @@ components:
   parameters:
     IdParameter:
       name: id
+      in: path
+      required: true
+      schema:
+        type: string
+
+    EmailParameter:
+      name: email
       in: path
       required: true
       schema:

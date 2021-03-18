@@ -9,5 +9,6 @@ import java.util.concurrent.CompletableFuture;
 
 public interface AccountsRepository extends Repository<AccountDO> {
     CompletableFuture<Optional<AccountDO>> getByExternalId(String externalId);
+    CompletableFuture<Optional<AccountDO>> getByEmail(String email);
     CompletableFuture<List<AccountDO>> getByRole(String role);
 }
