@@ -132,6 +132,25 @@ class AccountsServiceImplTest {
     }
 
     @Test
+    void getByEmail() {
+        final AccountBO accountBO = RANDOM.nextObject(AccountBO.class)
+                .withActive(true)
+                .withDeleted(false);
+        final AccountDO accountDO = serviceMapper.toDO(accountBO);
+
+        Mockito.when(accountsRepository.getByEmail(accountBO.getEmail().getEmail()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
+
+        final Optional<AccountBO> retrieved = accountService.getByEmail(accountBO.getEmail().getEmail());
+        final List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
+                .map(permission -> permission.withEntityType(null))
+                .collect(Collectors.toList());
+
+        assertThat(retrieved).isPresent();
+        assertThat(retrieved.get()).isEqualTo(accountBO.withPermissions(expectedPermissions));
+    }
+
+    @Test
     void grantPermissions() {
         final AccountDO account = RANDOM.nextObject(AccountDO.class);
 
