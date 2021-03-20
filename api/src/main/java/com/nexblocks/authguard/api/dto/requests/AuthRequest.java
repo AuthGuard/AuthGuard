@@ -1,9 +1,9 @@
 package com.nexblocks.authguard.api.dto.requests;
 
-import com.nexblocks.authguard.api.dto.entities.TokenRestrictionsDTO;
-import com.nexblocks.authguard.api.dto.style.DTOStyle;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.nexblocks.authguard.api.dto.entities.TokenRestrictionsDTO;
+import com.nexblocks.authguard.api.dto.style.DTOStyle;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -15,4 +15,6 @@ public interface AuthRequest {
     String getPassword();
     String getToken();
     TokenRestrictionsDTO getRestrictions();
+    String getDeviceId();
+    String getExternalSessionId();
 }

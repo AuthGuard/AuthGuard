@@ -8,10 +8,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
-import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.service.model.EntityType;
-import com.nexblocks.authguard.service.model.ExchangeAttemptBO;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.model.*;
 import io.vavr.control.Either;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -77,6 +74,12 @@ class ExchangeServiceImplTest {
         final String basic = "Basic the-rest";
         final AuthRequestBO authRequest = AuthRequestBO.builder()
                 .token(basic)
+                .deviceId("user-device")
+                .externalSessionId("external-session")
+                .build();
+        final RequestContextBO requestContext = RequestContextBO.builder()
+                .clientId("client")
+                .source("10.0.0.2")
                 .build();
 
         final TokensBO expected = TokensBO.builder()
@@ -86,13 +89,18 @@ class ExchangeServiceImplTest {
                 .entityId("account")
                 .build();
 
-        Assertions.assertThat(exchangeService.exchange(authRequest, "basic", "basic")).isEqualTo(expected);
+        Assertions.assertThat(exchangeService.exchange(authRequest, "basic", "basic", requestContext))
+                .isEqualTo(expected);
 
         Mockito.verify(exchangeAttemptsService).create(ExchangeAttemptBO.builder()
                 .successful(true)
                 .exchangeFrom("basic")
                 .exchangeTo("basic")
                 .entityId("account")
+                .clientId("client")
+                .sourceIp("10.0.0.2")
+                .deviceId("user-device")
+                .externalSessionId("external-session")
                 .build());
 
         Mockito.verify(emb).publish(Mockito.eq(ExchangeServiceImpl.CHANNEL), Mockito.any());
@@ -115,8 +123,9 @@ class ExchangeServiceImplTest {
         final AuthRequestBO authRequest = AuthRequestBO.builder()
                 .token(basic)
                 .build();
+        final RequestContextBO requestContext = RequestContextBO.builder().build();
 
-        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "unknown", "unknown"))
+        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "unknown", "unknown", requestContext))
                 .isInstanceOf(ServiceException.class);
     }
 
@@ -134,8 +143,9 @@ class ExchangeServiceImplTest {
         final AuthRequestBO authRequest = AuthRequestBO.builder()
                 .token(basic)
                 .build();
+        final RequestContextBO requestContext = RequestContextBO.builder().build();
 
-        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "basic", "empty"))
+        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "basic", "empty", requestContext))
                 .isInstanceOf(ServiceException.class);
 
         Mockito.verify(emb).publish(Mockito.eq(ExchangeServiceImpl.CHANNEL), Mockito.any());
@@ -155,8 +165,9 @@ class ExchangeServiceImplTest {
         final AuthRequestBO authRequest = AuthRequestBO.builder()
                 .token(basic)
                 .build();
+        final RequestContextBO requestContext = RequestContextBO.builder().build();
 
-        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "basic", "exception"))
+        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "basic", "exception", requestContext))
                 .isInstanceOf(ServiceAuthorizationException.class);
 
         Mockito.verify(exchangeAttemptsService).create(ExchangeAttemptBO.builder()

@@ -7,4 +7,6 @@ import org.immutables.value.Value;
 public interface RequestContext {
     String getIdempotentKey();
     String getSource();
+    String getClientId();
+    String getAccountId();
 }

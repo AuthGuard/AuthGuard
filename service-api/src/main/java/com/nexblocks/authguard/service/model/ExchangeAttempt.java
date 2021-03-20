@@ -9,6 +9,10 @@ public interface ExchangeAttempt extends Entity {
      String getExchangeFrom();
      String getExchangeTo();
      boolean isSuccessful();
+     String getDeviceId();
+     String getClientId();
+     String getExternalSessionId();
+     String getSourceIp();
 
      @Override
      @Value.Derived

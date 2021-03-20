@@ -9,6 +9,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountLockBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
+import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.nexblocks.authguard.service.model.TokensBO;
 import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.AfterEach;
@@ -63,14 +64,15 @@ class AuthenticationServiceImplTest {
                 .build();
 
         final TokensBO tokens = RANDOM.nextObject(TokensBO.class);
+        final RequestContextBO requestContext = RequestContextBO.builder().build();
 
-        Mockito.when(exchangeService.exchange(authRequest, "basic", "accessToken"))
+        Mockito.when(exchangeService.exchange(authRequest, "basic", "accessToken", requestContext))
                 .thenReturn(tokens);
 
         Mockito.when(accountLocksService.getActiveLocksByAccountId(tokens.getEntityId()))
                 .thenReturn(Collections.emptyList());
 
-        final Optional<TokensBO> result = authenticationService.authenticate(authRequest);
+        final Optional<TokensBO> result = authenticationService.authenticate(authRequest, requestContext);
 
         assertThat(result).isPresent().contains(tokens);
     }
@@ -85,14 +87,15 @@ class AuthenticationServiceImplTest {
                 .build();
 
         final TokensBO tokens = RANDOM.nextObject(TokensBO.class);
+        final RequestContextBO requestContext = RequestContextBO.builder().build();
 
-        Mockito.when(exchangeService.exchange(authRequest, "basic", "accessToken"))
+        Mockito.when(exchangeService.exchange(authRequest, "basic", "accessToken", requestContext))
                 .thenReturn(tokens);
 
         Mockito.when(accountLocksService.getActiveLocksByAccountId(tokens.getEntityId()))
                 .thenReturn(Collections.singleton(AccountLockBO.builder().build()));
 
-        assertThatThrownBy(() -> authenticationService.authenticate(authRequest))
+        assertThatThrownBy(() -> authenticationService.authenticate(authRequest, requestContext))
                 .isInstanceOf(ServiceAuthorizationException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCOUNT_IS_LOCKED);
     }

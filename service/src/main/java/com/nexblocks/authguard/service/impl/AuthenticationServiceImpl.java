@@ -11,6 +11,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountLockBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
+import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.nexblocks.authguard.service.model.TokensBO;
 
 import java.util.Collection;
@@ -44,8 +45,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public Optional<TokensBO> authenticate(final AuthRequestBO authRequest) {
-        final TokensBO tokens = exchangeService.exchange(authRequest, FROM_TOKEN_TYPE, generateTokenType);
+    public Optional<TokensBO> authenticate(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
+        final TokensBO tokens = exchangeService.exchange(authRequest, FROM_TOKEN_TYPE, generateTokenType, requestContext);
         final Collection<AccountLockBO> locks = accountLocksService.getActiveLocksByAccountId(tokens.getEntityId());
 
         if (locks == null || locks.isEmpty()) {
@@ -57,7 +58,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public Optional<TokensBO> logout(final AuthRequestBO authRequest) {
+    public Optional<TokensBO> logout(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
         return Optional.of(exchangeService.delete(authRequest, logoutTokenType));
     }
 

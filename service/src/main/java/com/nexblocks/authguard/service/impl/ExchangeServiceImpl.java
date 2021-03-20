@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.service.ExchangeAttemptsService;
@@ -12,7 +13,6 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.messaging.AuthMessage;
-import com.google.inject.Inject;
 import com.nexblocks.authguard.service.model.*;
 import io.vavr.control.Either;
 
@@ -40,12 +40,14 @@ public class ExchangeServiceImpl implements ExchangeService {
     }
 
     @Override
-    public TokensBO exchange(final AuthRequestBO authRequest, final String fromTokenType, final String toTokenType) {
-        return exchange(authRequest, null, fromTokenType, toTokenType);
+    public TokensBO exchange(final AuthRequestBO authRequest, final String fromTokenType, final String toTokenType,
+                             final RequestContextBO requestContext) {
+        return exchange(authRequest, null, fromTokenType, toTokenType, requestContext);
     }
 
     @Override
-    public TokensBO exchange(final AuthRequestBO authRequest, final TokenRestrictionsBO restrictions, final String fromTokenType, final String toTokenType) {
+    public TokensBO exchange(final AuthRequestBO authRequest, final TokenRestrictionsBO restrictions,
+                             final String fromTokenType, final String toTokenType, final RequestContextBO requestContext) {
         final String key = exchangeKey(fromTokenType, toTokenType);
         final Exchange exchange = exchanges.get(key);
 
@@ -60,13 +62,13 @@ public class ExchangeServiceImpl implements ExchangeService {
         if (result.isRight()) {
             final TokensBO tokens = result.get();
 
-            exchangeSuccess(tokens, fromTokenType, toTokenType);
+            exchangeSuccess(authRequest, requestContext, tokens, fromTokenType, toTokenType);
 
             return tokens;
         } else {
             final Exception e = result.getLeft();
 
-            exchangeFailure(e, fromTokenType, toTokenType);
+            exchangeFailure(authRequest, requestContext, e, fromTokenType, toTokenType);
 
             // TODO remove this
             if (ServiceException.class.isAssignableFrom(e.getClass())) {
@@ -93,23 +95,25 @@ public class ExchangeServiceImpl implements ExchangeService {
         return provider.delete(authRequest);
     }
 
-    private void exchangeSuccess(final TokensBO tokens, final String fromTokenType,
-                                 final String toTokenType) {
+    private void exchangeSuccess(final AuthRequestBO authRequest, final RequestContextBO requestContext,
+                                 final TokensBO tokens, final String fromTokenType, final String toTokenType) {
         final AuthMessage authMessage = AuthMessage.success(fromTokenType, toTokenType,
                 tokens.getEntityType(), tokens.getEntityId());
 
-        exchangeAttemptsService.create(ExchangeAttemptBO.builder()
-                .entityId(tokens.getEntityId())
+        final ExchangeAttemptBO attempt = createBaseAttempt(authRequest, requestContext)
                 .exchangeFrom(fromTokenType)
                 .exchangeTo(toTokenType)
                 .successful(true)
-                .build());
+                .entityId(tokens.getEntityId())
+                .build();
+
+        exchangeAttemptsService.create(attempt);
 
         emb.publish(CHANNEL, Messages.auth(authMessage));
     }
 
-    private void exchangeFailure(final Exception e, final String fromTokenType,
-                                 final String toTokenType) {
+    private void exchangeFailure(final AuthRequestBO authRequest, final RequestContextBO requestContext,
+                                 final Exception e, final String fromTokenType, final String toTokenType) {
 
         if (ServiceAuthorizationException.class.isAssignableFrom(e.getClass())) {
             final ServiceAuthorizationException sae = (ServiceAuthorizationException) e;
@@ -118,12 +122,14 @@ public class ExchangeServiceImpl implements ExchangeService {
                     sae.getEntityType(), sae.getEntityId(), sae);
 
             if (sae.getEntityType() == EntityType.ACCOUNT) {
-                exchangeAttemptsService.create(ExchangeAttemptBO.builder()
-                        .entityId(sae.getEntityId())
+                final ExchangeAttemptBO attempt = createBaseAttempt(authRequest, requestContext)
                         .exchangeFrom(fromTokenType)
                         .exchangeTo(toTokenType)
                         .successful(false)
-                        .build());
+                        .entityId(sae.getEntityId())
+                        .build();
+
+                exchangeAttemptsService.create(attempt);
             }
 
             emb.publish(CHANNEL, Messages.auth(authMessage));
@@ -132,7 +138,15 @@ public class ExchangeServiceImpl implements ExchangeService {
 
             emb.publish(CHANNEL, Messages.auth(authMessage));
         }
+    }
 
+    private ExchangeAttemptBO.Builder createBaseAttempt(final AuthRequestBO authRequest,
+                                                        final RequestContextBO requestContext) {
+        return ExchangeAttemptBO.builder()
+                .clientId(requestContext.getClientId())
+                .sourceIp(requestContext.getSource())
+                .deviceId(authRequest.getDeviceId())
+                .externalSessionId(authRequest.getExternalSessionId());
     }
 
     private Map<String, Exchange> mapExchanges(final List<Exchange> exchanges) {

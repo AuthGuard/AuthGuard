@@ -37,4 +37,8 @@ public class ExchangeAttemptDO extends AbstractDO {
     private String exchangeFrom;
     private String exchangeTo;
     private boolean successful;
+    private String deviceId;
+    private String clientId;
+    private String externalSessionId;
+    private String sourceIp;
 }

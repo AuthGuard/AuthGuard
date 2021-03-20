@@ -6,6 +6,7 @@ import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.mappers.RestMapperImpl;
 import com.nexblocks.authguard.service.AuthenticationService;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
+import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.nexblocks.authguard.service.model.TokensBO;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
@@ -51,7 +52,8 @@ class AuthRouteTest extends AbstractRouteTest {
                 .build();
         final TokensDTO tokensDTO = mapper().toDTO(tokensBO);
 
-        Mockito.when(authenticationService.authenticate(requestBO)).thenReturn(Optional.of(tokensBO));
+        Mockito.when(authenticationService.authenticate(Mockito.eq(requestBO), Mockito.any()))
+                .thenReturn(Optional.of(tokensBO));
 
         final ValidatableResponse httpResponse = given()
                 .body(requestDTO)
@@ -72,8 +74,9 @@ class AuthRouteTest extends AbstractRouteTest {
     void authenticateUnsuccessful() {
         final AuthRequestDTO requestDTO = randomObject(AuthRequestDTO.class);
         final AuthRequestBO requestBO = restMapper.toBO(requestDTO);
+        final RequestContextBO requestContext = RequestContextBO.builder().build();
 
-        Mockito.when(authenticationService.authenticate(requestBO)).thenReturn(Optional.empty());
+        Mockito.when(authenticationService.authenticate(requestBO, requestContext)).thenReturn(Optional.empty());
 
         given()
                 .body(requestDTO)

@@ -10,6 +10,7 @@ import java.util.Optional;
 
 public class IdempotencyHeader {
     public static final String HEADER_NAME = "X-IdempotentKey";
+
     public static String getKeyOrFail(final Context context) {
         return Optional.ofNullable(context.header(HEADER_NAME))
                 .orElseThrow(() -> new RequestValidationException(Collections.singletonList(
