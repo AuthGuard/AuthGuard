@@ -46,6 +46,7 @@ public interface RestMapper {
     @InheritInverseConfiguration
     AppDTO toDTO(AppBO appBO);
 
+    AccountLockBO toBO(AccountLockDTO accountLockDTO);
     AccountLockDTO toDTO(AccountLockBO accountLockBO);
 
     ExchangeAttemptDTO toDTO(ExchangeAttemptBO exchangeAttemptBO);
