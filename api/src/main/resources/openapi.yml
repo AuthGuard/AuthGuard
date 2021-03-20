@@ -1061,6 +1061,14 @@ components:
           type: string
         successful:
           type: boolean
+        deviceId:
+          type: string
+        externalSessionId:
+          type: string
+        clientId:
+          type: string
+        sourceIp:
+          type: string
 
     AuthRequest:
       type: object
@@ -1070,6 +1078,10 @@ components:
         password:
           type: string
         token:
+          type: string
+        deviceId:
+          type: string
+        externalSessionId:
           type: string
   
     AuthResult:

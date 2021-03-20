@@ -1,13 +1,14 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.nexblocks.authguard.basic.config.PasswordlessConfig;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.PasswordlessService;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
+import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.nexblocks.authguard.service.model.TokensBO;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 
 public class PasswordlessServiceImpl implements PasswordlessService {
     private final ExchangeService exchangeService;
@@ -21,12 +22,12 @@ public class PasswordlessServiceImpl implements PasswordlessService {
     }
 
     @Override
-    public TokensBO authenticate(final AuthRequestBO authRequest) {
-        return exchangeService.exchange(authRequest, "passwordless", passwordlessConfig.getGenerateToken());
+    public TokensBO authenticate(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
+        return exchangeService.exchange(authRequest, "passwordless", passwordlessConfig.getGenerateToken(), requestContext);
     }
 
     @Override
-    public TokensBO authenticate(final String passwordlessToken) {
-        return authenticate(AuthRequestBO.builder().token(passwordlessToken).build());
+    public TokensBO authenticate(final String passwordlessToken, final RequestContextBO requestContext) {
+        return authenticate(AuthRequestBO.builder().token(passwordlessToken).build(), requestContext);
     }
 }

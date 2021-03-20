@@ -1,13 +1,14 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.nexblocks.authguard.basic.config.OtpConfig;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.OtpService;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
+import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.nexblocks.authguard.service.model.TokensBO;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 
 public class OtpServiceImpl implements OtpService {
     private final ExchangeService exchangeService;
@@ -21,14 +22,14 @@ public class OtpServiceImpl implements OtpService {
     }
 
     @Override
-    public TokensBO authenticate(final AuthRequestBO authRequest) {
-        return exchangeService.exchange(authRequest, "otp", otpConfig.getGenerateToken());
+    public TokensBO authenticate(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
+        return exchangeService.exchange(authRequest, "otp", otpConfig.getGenerateToken(), requestContext);
     }
 
     @Override
-    public TokensBO authenticate(final String passwordId, final String otp) {
+    public TokensBO authenticate(final String passwordId, final String otp, final RequestContextBO requestContext) {
         final String token = passwordId + ":" + otp;
 
-        return authenticate(AuthRequestBO.builder().token(token).build());
+        return authenticate(AuthRequestBO.builder().token(token).build(), requestContext);
     }
 }

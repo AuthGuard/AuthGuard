@@ -9,4 +9,6 @@ public interface AuthRequest {
     String getPassword();
     String getToken();
     TokenRestrictionsBO getRestrictions();
+    String getDeviceId();
+    String getExternalSessionId();
 }

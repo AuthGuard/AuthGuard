@@ -11,11 +11,13 @@ import com.nexblocks.authguard.api.routes.AuthApi;
 import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
+import com.nexblocks.authguard.rest.util.RequestContextExtractor;
 import com.nexblocks.authguard.service.AuthenticationService;
 import com.nexblocks.authguard.service.ExchangeAttemptsService;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.ExchangeAttemptsQueryBO;
+import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.nexblocks.authguard.service.model.TokensBO;
 import io.javalin.http.Context;
 
@@ -48,8 +50,9 @@ public class AuthRoute extends AuthApi {
 
     public void authenticate(final Context context) {
         final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
+        final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        final Optional<TokensDTO> tokens = authenticationService.authenticate(restMapper.toBO(authenticationRequest))
+        final Optional<TokensDTO> tokens = authenticationService.authenticate(restMapper.toBO(authenticationRequest), requestContext)
                 .map(restMapper::toDTO);
 
         if (tokens.isPresent()) {
@@ -62,8 +65,9 @@ public class AuthRoute extends AuthApi {
     @Override
     public void logout(final Context context) {
         final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
+        final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        authenticationService.logout(restMapper.toBO(authenticationRequest))
+        authenticationService.logout(restMapper.toBO(authenticationRequest), requestContext)
                 .ifPresentOrElse(
                         tokens -> context.json(restMapper.toDTO(tokens)),
                         () -> context.status(400).json(new Error("400", "Failed to log user out"))
@@ -75,13 +79,15 @@ public class AuthRoute extends AuthApi {
         final String from = context.queryParam("from");
         final String to = context.queryParam("to");
 
+        final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
+
         final TokensBO tokens;
 
         if (authenticationRequest.getRestrictions() == null) {
-            tokens = exchangeService.exchange(restMapper.toBO(authenticationRequest), from, to);
+            tokens = exchangeService.exchange(restMapper.toBO(authenticationRequest), from, to, requestContext);
         } else {
             tokens = exchangeService.exchange(restMapper.toBO(authenticationRequest),
-                    restMapper.toBO(authenticationRequest.getRestrictions()), from, to);
+                    restMapper.toBO(authenticationRequest.getRestrictions()), from, to, requestContext);
         }
 
         context.json(restMapper.toDTO(tokens));

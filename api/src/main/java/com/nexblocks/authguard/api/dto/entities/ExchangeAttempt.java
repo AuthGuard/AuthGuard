@@ -15,4 +15,8 @@ public interface ExchangeAttempt {
     String getExchangeFrom();
     String getExchangeTo();
     boolean isSuccessful();
+    String getDeviceId();
+    String getClientId();
+    String getExternalSessionId();
+    String getSourceIp();
 }
