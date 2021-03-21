@@ -81,14 +81,7 @@ public class AuthRoute extends AuthApi {
 
         final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        final TokensBO tokens;
-
-        if (authenticationRequest.getRestrictions() == null) {
-            tokens = exchangeService.exchange(restMapper.toBO(authenticationRequest), from, to, requestContext);
-        } else {
-            tokens = exchangeService.exchange(restMapper.toBO(authenticationRequest),
-                    restMapper.toBO(authenticationRequest.getRestrictions()), from, to, requestContext);
-        }
+        final TokensBO tokens = exchangeService.exchange(restMapper.toBO(authenticationRequest), from, to, requestContext);
 
         context.json(restMapper.toDTO(tokens));
     }

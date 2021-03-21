@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.jwt.exchange;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.jwt.AccessTokenProvider;
 import com.nexblocks.authguard.jwt.oauth.AuthorizationCodeVerifier;
@@ -9,7 +10,6 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
-import com.google.inject.Inject;
 import com.nexblocks.authguard.service.model.*;
 import io.vavr.control.Either;
 import org.slf4j.Logger;
@@ -39,13 +39,6 @@ public class AuthorizationCodeToAccessToken implements Exchange {
     public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
         return authorizationCodeVerifier.verifyAndGetAccountToken(request.getToken())
                 .flatMap(this::generateToken);
-    }
-
-    @Override
-    public Either<Exception, TokensBO> exchange(final AuthRequestBO request, final TokenRestrictionsBO restrictions) {
-        return authorizationCodeVerifier.verifyAccountToken(request.getToken())
-                .flatMap(this::getAccount)
-                .map(account -> accessTokenProvider.generateToken(account, restrictions));
     }
 
     private Either<Exception, TokensBO> generateToken(final AccountTokenDO accountToken) {

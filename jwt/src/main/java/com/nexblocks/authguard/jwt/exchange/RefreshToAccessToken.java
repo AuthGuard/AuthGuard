@@ -9,10 +9,8 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.service.model.EntityType;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.mappers.ServiceMapper;
+import com.nexblocks.authguard.service.model.*;
 import io.vavr.control.Either;
 
 import java.time.ZonedDateTime;
@@ -22,14 +20,17 @@ public class RefreshToAccessToken implements Exchange {
     private final AccountTokensRepository accountTokensRepository;
     private final AccountsService accountsService;
     private final AccessTokenProvider accessTokenProvider;
+    private final ServiceMapper serviceMapper;
 
     @Inject
     public RefreshToAccessToken(final AccountTokensRepository accountTokensRepository,
                                 final AccountsService accountsService,
-                                final AccessTokenProvider accessTokenProvider) {
+                                final AccessTokenProvider accessTokenProvider,
+                                final ServiceMapper serviceMapper) {
         this.accountTokensRepository = accountTokensRepository;
         this.accountsService = accountsService;
         this.accessTokenProvider = accessTokenProvider;
+        this.serviceMapper = serviceMapper;
     }
 
     @Override
@@ -57,11 +58,14 @@ public class RefreshToAccessToken implements Exchange {
                     EntityType.ACCOUNT, accountToken.getAssociatedAccountId()));
         }
 
-        return generateTokenForAccount(accountToken.getAssociatedAccountId());
+        return generateNewTokens(accountToken);
     }
 
-    private Either<Exception, TokensBO> generateTokenForAccount(final String accountId) {
-        return getAccount(accountId).map(accessTokenProvider::generateToken);
+    private Either<Exception, TokensBO> generateNewTokens(final AccountTokenDO accountToken) {
+        final String accountId = accountToken.getAssociatedAccountId();
+        final TokenRestrictionsBO tokenRestrictions = serviceMapper.toBO(accountToken.getTokenRestrictions());
+
+        return getAccount(accountId).map(account -> accessTokenProvider.generateToken(account, tokenRestrictions));
     }
 
     private Either<Exception, AccountBO> getAccount(final String accountId) {

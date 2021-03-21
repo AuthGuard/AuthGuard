@@ -10,6 +10,7 @@ import com.nexblocks.authguard.config.JacksonConfigContext;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
+import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.*;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
@@ -70,7 +71,8 @@ class AccessTokenProviderTest {
             return CompletableFuture.completedFuture(arg);
         });
 
-        return new AccessTokenProvider(accountTokensRepository, jwtConfig(), strategyConfig, jtiProvider);
+        return new AccessTokenProvider(accountTokensRepository, jwtConfig(), strategyConfig, jtiProvider,
+                new ServiceMapperImpl());
     }
 
     @Test
@@ -112,7 +114,7 @@ class AccessTokenProviderTest {
                 );
 
         final TokenRestrictionsBO restrictions = TokenRestrictionsBO.builder()
-                .addPermissions("super.permission-1")
+                .addPermissions("super:permission-1")
                 .build();
 
         final TokensBO tokens = accessTokenProvider.generateToken(account, restrictions);
@@ -130,6 +132,8 @@ class AccessTokenProviderTest {
         assertThat(accountTokenCaptor.getValue().getToken()).isEqualTo(tokens.getRefreshToken());
         assertThat(accountTokenCaptor.getValue().getExpiresAt()).isNotNull()
                 .isAfter(ZonedDateTime.now());
+        assertThat(accountTokenCaptor.getValue().getTokenRestrictions())
+                .isEqualToComparingFieldByField(restrictions);
 
         verifyToken(tokens.getToken().toString(), account.getId(), null, Collections.singletonList("permission-1"));
     }

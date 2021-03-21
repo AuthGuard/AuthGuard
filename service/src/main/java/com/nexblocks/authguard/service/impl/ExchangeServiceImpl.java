@@ -42,12 +42,6 @@ public class ExchangeServiceImpl implements ExchangeService {
     @Override
     public TokensBO exchange(final AuthRequestBO authRequest, final String fromTokenType, final String toTokenType,
                              final RequestContextBO requestContext) {
-        return exchange(authRequest, null, fromTokenType, toTokenType, requestContext);
-    }
-
-    @Override
-    public TokensBO exchange(final AuthRequestBO authRequest, final TokenRestrictionsBO restrictions,
-                             final String fromTokenType, final String toTokenType, final RequestContextBO requestContext) {
         final String key = exchangeKey(fromTokenType, toTokenType);
         final Exchange exchange = exchanges.get(key);
 
@@ -55,9 +49,7 @@ public class ExchangeServiceImpl implements ExchangeService {
             throw new ServiceException(ErrorCode.UNKNOWN_EXCHANGE, "Unknown token exchange " + fromTokenType + " to " + toTokenType);
         }
 
-        final Either<Exception, TokensBO> result = restrictions == null ?
-                exchange.exchange(authRequest) :
-                exchange.exchange(authRequest, restrictions);
+        final Either<Exception, TokensBO> result = exchange.exchange(authRequest);
 
         if (result.isRight()) {
             final TokensBO tokens = result.get();

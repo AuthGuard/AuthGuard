@@ -2,11 +2,14 @@ package com.nexblocks.authguard.jwt.exchange;
 
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
+import com.nexblocks.authguard.dal.model.TokenRestrictionsDO;
 import com.nexblocks.authguard.jwt.AccessTokenProvider;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
+import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
+import com.nexblocks.authguard.service.model.TokenRestrictionsBO;
 import com.nexblocks.authguard.service.model.TokensBO;
 import io.vavr.control.Either;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -32,7 +36,8 @@ class RefreshToAccessTokenTest {
         accountsService = Mockito.mock(AccountsService.class);
         accessTokenProvider = Mockito.mock(AccessTokenProvider.class);
 
-        refreshToAccessToken = new RefreshToAccessToken(accountTokensRepository, accountsService, accessTokenProvider);
+        refreshToAccessToken = new RefreshToAccessToken(accountTokensRepository, accountsService,
+                accessTokenProvider, new ServiceMapperImpl());
     }
 
     @Test
@@ -67,8 +72,59 @@ class RefreshToAccessTokenTest {
         Mockito.when(accountsService.getById(accountId))
                 .thenReturn(Optional.of(account));
 
-        Mockito.when(accessTokenProvider.generateToken(account))
+        Mockito.when(accessTokenProvider.generateToken(account, null))
                 .thenReturn(newTokens);
+
+        // do
+        final Either<Exception, TokensBO> actual = refreshToAccessToken.exchange(authRequest);
+
+        // assert
+        assertThat(actual.isRight()).isTrue();
+        assertThat(actual.right().get()).isEqualTo(newTokens);
+
+        Mockito.verify(accountTokensRepository).deleteToken(refreshToken);
+    }
+
+    @Test
+    void exchangeWithRestrictions() {
+        // data
+        final String accountId = "account";
+        final String refreshToken = "refresh_token";
+        final String restrictionPermission = "permission.read";
+
+        final AuthRequestBO authRequest = AuthRequestBO.builder()
+                .token(refreshToken)
+                .build();
+
+        final AccountTokenDO accountToken = AccountTokenDO.builder()
+                .token(refreshToken)
+                .associatedAccountId(accountId)
+                .expiresAt(ZonedDateTime.now().plusMinutes(1))
+                .tokenRestrictions(TokenRestrictionsDO.builder()
+                        .permissions(Collections.singleton(restrictionPermission))
+                        .scopes(Collections.emptySet())
+                        .build())
+                .build();
+
+        final AccountBO account = AccountBO.builder()
+                .id(accountId)
+                .build();
+
+        final TokensBO newTokens = TokensBO.builder()
+                .token("new_token")
+                .refreshToken("new_refresh_token")
+                .build();
+
+        // mock
+        Mockito.when(accountTokensRepository.getByToken(authRequest.getToken()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+
+        Mockito.when(accountsService.getById(accountId))
+                .thenReturn(Optional.of(account));
+
+        Mockito.when(accessTokenProvider.generateToken(account, TokenRestrictionsBO.builder()
+                .addPermissions(restrictionPermission)
+                .build())).thenReturn(newTokens);
 
         // do
         final Either<Exception, TokensBO> actual = refreshToAccessToken.exchange(authRequest);
