@@ -14,13 +14,13 @@ import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
+import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 @ProvidesToken("accessToken")
 public class AccessTokenProvider implements AuthProvider {
@@ -28,6 +28,8 @@ public class AccessTokenProvider implements AuthProvider {
 
     private final AccountTokensRepository accountTokensRepository;
     private final JtiProvider jti;
+    private final ServiceMapper serviceMapper;
+
     private final Algorithm algorithm;
     private final JwtGenerator jwtGenerator;
     private final StrategyConfig strategy;
@@ -38,25 +40,19 @@ public class AccessTokenProvider implements AuthProvider {
     public AccessTokenProvider(final AccountTokensRepository accountTokensRepository,
                                final @Named("jwt") ConfigContext jwtConfigContext,
                                final @Named("accessToken") ConfigContext accessTokenConfigContext,
-                               final JtiProvider jti) {
-        this.accountTokensRepository = accountTokensRepository;
-        this.jti = jti;
-
-        final JwtConfig jwtConfig = jwtConfigContext.asConfigBean(JwtConfig.class);
-
-        this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getPublicKey(),
-                jwtConfig.getPrivateKey());
-        this.jwtGenerator = new JwtGenerator(jwtConfig);
-
-        this.strategy = accessTokenConfigContext.asConfigBean(StrategyConfig.class);
-        this.tokenTtl = ConfigParser.parseDuration(strategy.getTokenLife());
-        this.refreshTokenTtl = ConfigParser.parseDuration(strategy.getRefreshTokenLife());
+                               final JtiProvider jti,
+                               final ServiceMapper serviceMapper) {
+        this(accountTokensRepository,
+                jwtConfigContext.asConfigBean(JwtConfig.class),
+                accessTokenConfigContext.asConfigBean(StrategyConfig.class),
+                jti, serviceMapper);
     }
 
     public AccessTokenProvider(final AccountTokensRepository accountTokensRepository,
                                final JwtConfig jwtConfig,
                                final StrategyConfig accessTokenConfig,
-                               final JtiProvider jti) {
+                               final JtiProvider jti,
+                               final ServiceMapper serviceMapper) {
         this.accountTokensRepository = accountTokensRepository;
         this.jti = jti;
 
@@ -65,6 +61,7 @@ public class AccessTokenProvider implements AuthProvider {
         this.jwtGenerator = new JwtGenerator(jwtConfig);
 
         this.strategy = accessTokenConfig;
+        this.serviceMapper = serviceMapper;
         this.tokenTtl = ConfigParser.parseDuration(strategy.getTokenLife());
         this.refreshTokenTtl = ConfigParser.parseDuration(strategy.getRefreshTokenLife());
     }
@@ -80,7 +77,7 @@ public class AccessTokenProvider implements AuthProvider {
         final String token = tokenBuilder.getBuilder().sign(algorithm);
         final String refreshToken = jwtGenerator.generateRandomRefreshToken();
 
-        storeRefreshToken(account.getId(), refreshToken);
+        storeRefreshToken(account.getId(), refreshToken, restrictions);
 
         return TokensBO.builder()
                 .id(tokenBuilder.getId().orElse(null))
@@ -109,12 +106,13 @@ public class AccessTokenProvider implements AuthProvider {
                 .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid refresh token"));
     }
 
-    private void storeRefreshToken(final String accountId, final String refreshToken) {
+    private void storeRefreshToken(final String accountId, final String refreshToken, final TokenRestrictionsBO tokenRestrictions) {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
                 .id(UUID.randomUUID().toString())
                 .token(refreshToken)
                 .associatedAccountId(accountId)
                 .expiresAt(refreshTokenExpiry())
+                .tokenRestrictions(serviceMapper.toDO(tokenRestrictions)) // Mapstruct already checks for null
                 .build();
 
         accountTokensRepository.save(accountToken)
@@ -136,32 +134,21 @@ public class AccessTokenProvider implements AuthProvider {
         }
 
         if (strategy.includePermissions()) {
-            jwtBuilder.withArrayClaim("permissions", jwtPermissions(account, restrictions));
+            jwtBuilder.withArrayClaim("permissions", JwtPermissionsMapper.map(account, restrictions));
         }
 
         if (strategy.includeExternalId()) {
             jwtBuilder.withClaim("eid", account.getExternalId());
         }
 
-        return tokenBuilder.builder(jwtBuilder).build();
-    }
+        if (strategy.includeRoles()) {
+            jwtBuilder.withArrayClaim("roles", account.getRoles().toArray(new String[] {}));
+        }
 
-    private String permissionToString(final PermissionBO permission) {
-        return permission.getGroup() + "." + permission.getName();
+        return tokenBuilder.builder(jwtBuilder).build();
     }
 
     private ZonedDateTime refreshTokenExpiry() {
         return ZonedDateTime.now().plus(refreshTokenTtl);
-    }
-
-    private String[] jwtPermissions(final AccountBO account, final TokenRestrictionsBO restrictions) {
-        Stream<String> mappedPermissions =  account.getPermissions().stream()
-                .map(this::permissionToString);
-
-        if (restrictions != null && !restrictions.getPermissions().isEmpty()) {
-            mappedPermissions = mappedPermissions.filter(restrictions.getPermissions()::contains);
-        }
-
-        return mappedPermissions.toArray(String[]::new);
     }
 }

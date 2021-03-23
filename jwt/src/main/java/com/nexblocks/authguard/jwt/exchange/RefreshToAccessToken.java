@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.jwt.exchange;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.jwt.AccessTokenProvider;
@@ -8,11 +9,8 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.service.model.EntityType;
-import com.nexblocks.authguard.service.model.TokensBO;
-import com.google.inject.Inject;
+import com.nexblocks.authguard.service.mappers.ServiceMapper;
+import com.nexblocks.authguard.service.model.*;
 import io.vavr.control.Either;
 
 import java.time.ZonedDateTime;
@@ -22,22 +20,36 @@ public class RefreshToAccessToken implements Exchange {
     private final AccountTokensRepository accountTokensRepository;
     private final AccountsService accountsService;
     private final AccessTokenProvider accessTokenProvider;
+    private final ServiceMapper serviceMapper;
 
     @Inject
     public RefreshToAccessToken(final AccountTokensRepository accountTokensRepository,
                                 final AccountsService accountsService,
-                                final AccessTokenProvider accessTokenProvider) {
+                                final AccessTokenProvider accessTokenProvider,
+                                final ServiceMapper serviceMapper) {
         this.accountTokensRepository = accountTokensRepository;
         this.accountsService = accountsService;
         this.accessTokenProvider = accessTokenProvider;
+        this.serviceMapper = serviceMapper;
     }
 
     @Override
     public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
         return accountTokensRepository.getByToken(request.getToken())
                 .join()
-                .map(this::generate)
+                .map(this::generateAndClear)
                 .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid refresh token")));
+    }
+
+    private Either<Exception, TokensBO> generateAndClear(final AccountTokenDO accountToken) {
+        final Either<Exception, TokensBO> result = generate(accountToken);
+
+        /*
+         * The refresh token cannot be reused, so we need to remove it.
+         */
+        accountTokensRepository.deleteToken(accountToken.getToken());
+
+        return result;
     }
 
     private Either<Exception, TokensBO> generate(final AccountTokenDO accountToken) {
@@ -46,11 +58,14 @@ public class RefreshToAccessToken implements Exchange {
                     EntityType.ACCOUNT, accountToken.getAssociatedAccountId()));
         }
 
-        return generateTokenForAccount(accountToken.getAssociatedAccountId());
+        return generateNewTokens(accountToken);
     }
 
-    private Either<Exception, TokensBO> generateTokenForAccount(final String accountId) {
-        return getAccount(accountId).map(accessTokenProvider::generateToken);
+    private Either<Exception, TokensBO> generateNewTokens(final AccountTokenDO accountToken) {
+        final String accountId = accountToken.getAssociatedAccountId();
+        final TokenRestrictionsBO tokenRestrictions = serviceMapper.toBO(accountToken.getTokenRestrictions());
+
+        return getAccount(accountId).map(account -> accessTokenProvider.generateToken(account, tokenRestrictions));
     }
 
     private Either<Exception, AccountBO> getAccount(final String accountId) {
@@ -63,11 +78,6 @@ public class RefreshToAccessToken implements Exchange {
     private boolean validateExpirationDateTime(final AccountTokenDO accountToken) {
         final ZonedDateTime now = ZonedDateTime.now();
 
-        if (now.isAfter(accountToken.getExpiresAt())) {
-            throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Refresh token " + accountToken.getToken()
-                    + " has expired", EntityType.ACCOUNT, accountToken.getAssociatedAccountId());
-        }
-
-        return true;
+        return now.isBefore(accountToken.getExpiresAt());
     }
 }
