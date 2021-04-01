@@ -940,12 +940,23 @@ components:
           type: string
         externalId:
           type: string
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        fullName:
+          type: string
         email:
           type: object
           $ref: "#/components/schemas/Email"
         backupEmail:
           type: object
           $ref: "#/components/schemas/Email"
+        phoneNumber:
+          type: object
+          $ref: "#/components/schemas/PhoneNumber"
         permissions:
           type: array
           items:
@@ -1007,6 +1018,18 @@ components:
         email: 
           type: string
         verified:
+          type: boolean
+        active:
+          type: boolean
+
+    PhoneNumber:
+      type: object
+      properties:
+        number:
+          type: string
+        verified:
+          type: boolean
+        active:
           type: boolean
  
     Permission:
@@ -1099,12 +1122,23 @@ components:
       properties:
         externalId:
           type: string
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        fullName:
+          type: string
         email:
           type: object
           $ref: "#/components/schemas/Email"
         backupEmail:
           type: object
           $ref: "#/components/schemas/Email"
+        phoneNumber:
+          type: object
+          $ref: "#/components/schemas/PhoneNumber"
         permissions:
           type: array
           items:

@@ -46,6 +46,11 @@ import java.util.Set;
 public class AccountDO extends AbstractDO {
     private String externalId;
 
+    private String firstName;
+    private String middleName;
+    private String lastName;
+    private String fullName;
+
     @ElementCollection(fetch = FetchType.LAZY)
     @JoinTable(name = "account_roles")
     private Set<String> roles;
@@ -69,6 +74,14 @@ public class AccountDO extends AbstractDO {
             @AttributeOverride(name = "active", column = @Column(name = "backup_email_active"))
     })
     private EmailDO backupEmail;
+
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "number", column = @Column(name = "phone_number", unique = true)),
+            @AttributeOverride(name = "verified", column = @Column(name = "phone_number_verified")),
+            @AttributeOverride(name = "active", column = @Column(name = "phone_number_active"))
+    })
+    private PhoneNumberDO phoneNumber;
 
     private boolean active;
 }
