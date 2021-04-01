@@ -123,8 +123,13 @@ class RestMapperTest {
         final CreateAccountRequestDTO requestDTO = easyRandom.nextObject(CreateAccountRequestDTO.class);
         final AccountDTO accountDTO = AccountDTO.builder()
                 .externalId(requestDTO.getExternalId())
+                .firstName(requestDTO.getFirstName())
+                .lastName(requestDTO.getLastName())
+                .middleName(requestDTO.getMiddleName())
+                .fullName(requestDTO.getFullName())
                 .email(requestDTO.getEmail())
                 .backupEmail(requestDTO.getBackupEmail())
+                .phoneNumber(requestDTO.getPhoneNumber())
                 .permissions(requestDTO.getPermissions())
                 .roles(requestDTO.getRoles())
                 .active(requestDTO.isActive())
