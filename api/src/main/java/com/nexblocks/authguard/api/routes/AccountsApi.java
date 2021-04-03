@@ -25,10 +25,6 @@ public abstract class AccountsApi implements ApiRoute {
 
         patch("/:id/permissions", this::updatePermissions, ActorRoles.adminClient());
         patch("/:id/roles", this::updateRoles, ActorRoles.adminClient());
-
-        patch("/:id/email", this::updateEmail, ActorRoles.adminClient());
-        patch("/:id/phoneNumber", this::updateEmail, ActorRoles.adminClient());
-
         get("/:id/apps", this::getApps, ActorRoles.adminClient());
 
         patch("/:id/activate", this::activate, ActorRoles.adminClient());
@@ -54,8 +50,6 @@ public abstract class AccountsApi implements ApiRoute {
     public abstract void updatePermissions(final Context context);
 
     public abstract void updateRoles(final Context context);
-
-    public abstract void updateEmail(final Context context);
 
     public abstract void getApps(final Context context);
 

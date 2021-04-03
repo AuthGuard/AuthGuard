@@ -187,49 +187,6 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public Optional<AccountBO> updateEmail(final String accountId, final AccountEmailBO email, final boolean backup) {
-        final AccountBO existing = getById(accountId)
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID "
-                        + accountId + " was found"));
-
-        if (backup) {
-            return doUpdateEmail(existing.withBackupEmail(email), email);
-        } else {
-            return doUpdateEmail(existing.withEmail(email), email);
-        }
-    }
-
-    @Override
-    public Optional<AccountBO> updatePhoneNumber(final String accountId, final PhoneNumberBO phoneNumber) {
-        final AccountBO existing = getById(accountId)
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID "
-                        + accountId + " was found"));
-
-        final Optional<AccountBO> updated = update(existing.withPhoneNumber(phoneNumber));
-
-        updated.ifPresent(updatedAccount -> messageBus.publish(VERIFICATION_CHANNEL, Messages.phoneNumberVerification(
-                VerificationRequestBO.builder()
-                        .account(updatedAccount)
-                        .build()
-        )));
-
-        return updated;
-    }
-
-    private Optional<AccountBO> doUpdateEmail(final AccountBO withNewEmail, final AccountEmailBO email) {
-        final Optional<AccountBO> updated = update(withNewEmail);
-
-        updated.ifPresent(updatedAccount -> messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(
-                VerificationRequestBO.builder()
-                        .account(updatedAccount)
-                        .emails(Collections.singletonList(email))
-                        .build()
-        )));
-
-        return updated;
-    }
-
-    @Override
     public AccountBO grantPermissions(final String accountId, final List<PermissionBO> permissions) {
         final List<PermissionBO> verifiedPermissions = permissionsService.validate(permissions);
 
