@@ -40,7 +40,6 @@ public class AccountsRoute extends AccountsApi {
     private final BodyHandler<CreateCompleteAccountRequestDTO> completeAccountRequestBodyHandler;
     private final BodyHandler<PermissionsRequestDTO> permissionsRequestBodyHandler;
     private final BodyHandler<RolesRequestDTO> rolesRequestBodyHandler;
-    private final BodyHandler<AccountEmailsRequestDTO> accountEmailsRequestBodyHandler;
 
     @Inject
     AccountsRoute(final AccountsService accountsService,
@@ -63,8 +62,6 @@ public class AccountsRoute extends AccountsApi {
         this.permissionsRequestBodyHandler = new BodyHandler.Builder<>(PermissionsRequestDTO.class)
                 .build();
         this.rolesRequestBodyHandler = new BodyHandler.Builder<>(RolesRequestDTO.class)
-                .build();
-        this.accountEmailsRequestBodyHandler = new BodyHandler.Builder<>(AccountEmailsRequestDTO.class)
                 .build();
     }
 
@@ -237,16 +234,6 @@ public class AccountsRoute extends AccountsApi {
         }
 
         context.json(updatedAccount);
-    }
-
-    @Override
-    public void updateEmail(final Context context) {
-        final String accountId = context.pathParam("id");
-        final AccountEmailsRequestDTO emailsRequest = accountEmailsRequestBodyHandler.getValidated(context);
-
-        accountsService.updateEmail(accountId, restMapper.toBO(emailsRequest.getEmail()), emailsRequest.isBackup())
-                .map(restMapper::toDTO)
-                .ifPresentOrElse(context::json, () -> context.status(404));
     }
 
     public void getApps(final Context context) {

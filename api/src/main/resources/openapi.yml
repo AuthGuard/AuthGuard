@@ -161,27 +161,6 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /accounts/{id}/email:
-    patch:
-      operationId: updateAccountEmails
-      description: Update main or backup emails of an account
-      tags:
-        - accounts
-      parameters:
-        - $ref: "#/components/parameters/IdParameter"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AccountEmailRequest"
-      responses:
-        200:
-          description: Success
-          $ref: "#/components/responses/ApplicationResponse"
-        404:
-          description: Not found
-          $ref: "#/components/responses/ErrorResponse"
-
   /accounts/{id}/activate:
     patch:
       operationId: activateAnAccount
