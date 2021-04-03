@@ -16,6 +16,7 @@ public class Validators {
 
     static {
         classValidators.put(CreateAccountRequestDTO.class, new CreateAccountRequestValidator());
+        classValidators.put(UpdateAccountRequestDTO.class, new UpdateAccountRequestValidator());
         classValidators.put(CreateAppRequestDTO.class, new CreateAppRequestValidator());
         classValidators.put(CreateCredentialsRequestDTO.class, new CreateCredentialsRequestValidator());
         classValidators.put(CreateCompleteAccountRequestDTO.class, new CreateCompleteAccountRequestValidator());

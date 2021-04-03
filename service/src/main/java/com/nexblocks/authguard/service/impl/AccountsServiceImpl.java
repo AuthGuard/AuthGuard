@@ -17,6 +17,8 @@ import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
+import com.nexblocks.authguard.service.util.AccountUpdateMerger;
+import com.nexblocks.authguard.service.util.ValueComparator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -85,6 +87,16 @@ public class AccountsServiceImpl implements AccountsService {
                     .build()));
         }
 
+        if (accountConfig.verifyPhoneNumber()) {
+            /*
+             * Unlike emails, we only have a single phone number. Therefore, we don't
+             * need to specify which ones to verify.
+             */
+            messageBus.publish(VERIFICATION_CHANNEL, Messages.phoneNumberVerification(VerificationRequestBO.builder()
+                    .account(created)
+                    .build()));
+        }
+
         return created;
     }
 
@@ -132,6 +144,49 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
+    public Optional<AccountBO> patch(final String accountId, final AccountBO account) {
+        final AccountBO existing = getById(accountId)
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID "
+                        + accountId + " was found"));
+
+        final AccountBO merged = AccountUpdateMerger.merge(existing, account);
+
+        final boolean emailUpdated = !ValueComparator.emailsEqual(existing.getEmail(), merged.getEmail());
+        final boolean backupEmailUpdated = !ValueComparator.emailsEqual(existing.getBackupEmail(), merged.getBackupEmail());
+        final boolean phoneNumberUpdated = !ValueComparator.phoneNumbersEqual(existing.getPhoneNumber(), merged.getPhoneNumber());
+
+        final Optional<AccountBO> updated = update(merged);
+
+        updated.ifPresent(updatedAccount -> {
+            // we could merge both email and backup email messages, but we kept them separate for now
+            if (emailUpdated) {
+                messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(
+                        VerificationRequestBO.builder()
+                                .account(updatedAccount)
+                                .emails(Collections.singletonList(merged.getEmail()))
+                                .build()));
+            }
+
+            if (backupEmailUpdated) {
+                messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(
+                        VerificationRequestBO.builder()
+                                .account(updatedAccount)
+                                .emails(Collections.singletonList(merged.getBackupEmail()))
+                                .build()));
+            }
+
+            if (phoneNumberUpdated) {
+                messageBus.publish(VERIFICATION_CHANNEL, Messages.phoneNumberVerification(
+                        VerificationRequestBO.builder()
+                                .account(updatedAccount)
+                                .build()));
+            }
+        });
+
+        return updated;
+    }
+
+    @Override
     public Optional<AccountBO> updateEmail(final String accountId, final AccountEmailBO email, final boolean backup) {
         final AccountBO existing = getById(accountId)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID "
@@ -142,6 +197,23 @@ public class AccountsServiceImpl implements AccountsService {
         } else {
             return doUpdateEmail(existing.withEmail(email), email);
         }
+    }
+
+    @Override
+    public Optional<AccountBO> updatePhoneNumber(final String accountId, final PhoneNumberBO phoneNumber) {
+        final AccountBO existing = getById(accountId)
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID "
+                        + accountId + " was found"));
+
+        final Optional<AccountBO> updated = update(existing.withPhoneNumber(phoneNumber));
+
+        updated.ifPresent(updatedAccount -> messageBus.publish(VERIFICATION_CHANNEL, Messages.phoneNumberVerification(
+                VerificationRequestBO.builder()
+                        .account(updatedAccount)
+                        .build()
+        )));
+
+        return updated;
     }
 
     private Optional<AccountBO> doUpdateEmail(final AccountBO withNewEmail, final AccountEmailBO email) {

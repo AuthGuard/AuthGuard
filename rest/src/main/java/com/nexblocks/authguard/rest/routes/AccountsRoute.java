@@ -36,6 +36,7 @@ public class AccountsRoute extends AccountsApi {
     private final RestMapper restMapper;
 
     private final BodyHandler<CreateAccountRequestDTO> accountRequestBodyHandler;
+    private final BodyHandler<UpdateAccountRequestDTO> updateAccountRequestBodyHandler;
     private final BodyHandler<CreateCompleteAccountRequestDTO> completeAccountRequestBodyHandler;
     private final BodyHandler<PermissionsRequestDTO> permissionsRequestBodyHandler;
     private final BodyHandler<RolesRequestDTO> rolesRequestBodyHandler;
@@ -54,6 +55,8 @@ public class AccountsRoute extends AccountsApi {
         this.restMapper = restMapper;
 
         this.accountRequestBodyHandler = new BodyHandler.Builder<>(CreateAccountRequestDTO.class)
+                .build();
+        this.updateAccountRequestBodyHandler = new BodyHandler.Builder<>(UpdateAccountRequestDTO.class)
                 .build();
         this.completeAccountRequestBodyHandler = new BodyHandler.Builder<>(CreateCompleteAccountRequestDTO.class)
                 .build();
@@ -147,6 +150,22 @@ public class AccountsRoute extends AccountsApi {
         final String accountId = context.pathParam("id");
 
         final Optional<AccountDTO> account = accountsService.delete(accountId)
+                .map(restMapper::toDTO);
+
+        if (account.isPresent()) {
+            context.status(200).json(account.get());
+        } else {
+            context.status(404)
+                    .json(new Error(ErrorCode.ACCOUNT_DOES_NOT_EXIST.getCode(), "Account not found"));
+        }
+    }
+
+    @Override
+    public void patchAccount(final Context context) {
+        final String accountId = context.pathParam("id");
+        final UpdateAccountRequestDTO request = updateAccountRequestBodyHandler.getValidated(context);
+
+        final Optional<AccountDTO> account = accountsService.patch(accountId, restMapper.toBO(request))
                 .map(restMapper::toDTO);
 
         if (account.isPresent()) {

@@ -10,6 +10,7 @@ import org.mapstruct.Mapping;
 @Mapper
 public interface RestMapper {
     AccountBO toBO(CreateAccountRequestDTO createAccountRequestDTO);
+    AccountBO toBO(UpdateAccountRequestDTO updateAccountRequestDTO);
     AccountBO toBO(AccountDTO accountDTO);
     AccountDTO toDTO(AccountBO accountBO);
 

@@ -16,6 +16,4 @@ import javax.persistence.Embeddable;
 public class EmailDO {
     private String email;
     private boolean verified;
-
-    private boolean active;
 }

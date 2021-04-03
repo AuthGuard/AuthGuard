@@ -15,7 +15,5 @@ import javax.persistence.Embeddable;
 @Embeddable
 public class PhoneNumberDO {
     private String number;
-
     private boolean verified;
-    private boolean active;
 }

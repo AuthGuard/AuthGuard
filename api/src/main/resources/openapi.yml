@@ -49,6 +49,29 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
+    patch:
+      operationId: patchAccount
+      description: Update account information
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAccountRequest" 
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/AccountResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
     delete:
       operationId: deleteAccount
       description: Delet an account
@@ -1019,8 +1042,6 @@ components:
           type: string
         verified:
           type: boolean
-        active:
-          type: boolean
 
     PhoneNumber:
       type: object
@@ -1028,8 +1049,6 @@ components:
         number:
           type: string
         verified:
-          type: boolean
-        active:
           type: boolean
  
     Permission:
@@ -1150,6 +1169,27 @@ components:
             type: string
         active:
           type: boolean
+
+    UpdateAccountRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: object
+          $ref: "#/components/schemas/Email"
+        backupEmail:
+          type: object
+          $ref: "#/components/schemas/Email"
+        phoneNumber:
+          type: object
+          $ref: "#/components/schemas/PhoneNumber"
 
     CreateApplicationRequest:
       type: object

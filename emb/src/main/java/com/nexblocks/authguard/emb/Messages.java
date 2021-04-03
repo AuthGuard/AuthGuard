@@ -30,6 +30,10 @@ public class Messages {
         return basicMessage(EventType.EMAIL_VERIFICATION, object);
     }
 
+    public static Message phoneNumberVerification(final Object object) {
+        return basicMessage(EventType.PHONE_NUMBER_VERIFICATION, object);
+    }
+
     public static Message auth(final Object object) {
         return basicMessage(EventType.AUTHENTICATION, object);
     }
