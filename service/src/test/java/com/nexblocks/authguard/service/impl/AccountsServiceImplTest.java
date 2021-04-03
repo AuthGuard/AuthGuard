@@ -1,9 +1,11 @@
 package com.nexblocks.authguard.service.impl;
 
 import com.nexblocks.authguard.config.ConfigContext;
-import com.nexblocks.authguard.dal.persistence.AccountsRepository;
 import com.nexblocks.authguard.dal.model.AccountDO;
+import com.nexblocks.authguard.dal.persistence.AccountsRepository;
 import com.nexblocks.authguard.emb.MessageBus;
+import com.nexblocks.authguard.emb.model.EventType;
+import com.nexblocks.authguard.emb.model.Message;
 import com.nexblocks.authguard.service.IdempotencyService;
 import com.nexblocks.authguard.service.PermissionsService;
 import com.nexblocks.authguard.service.RolesService;
@@ -11,16 +13,14 @@ import com.nexblocks.authguard.service.config.AccountConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AccountEmailBO;
-import com.nexblocks.authguard.service.model.PermissionBO;
-import com.nexblocks.authguard.service.model.RequestContextBO;
+import com.nexblocks.authguard.service.model.*;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.time.OffsetDateTime;
@@ -60,6 +60,7 @@ class AccountsServiceImplTest {
 
         final AccountConfig accountConfig = AccountConfig.builder()
                 .verifyEmail(true)
+                .verifyPhoneNumber(true)
                 .build();
 
         Mockito.when(configContext.asConfigBean(AccountConfig.class))
@@ -106,10 +107,18 @@ class AccountsServiceImplTest {
                 .isEqualToIgnoringGivenFields(account.withPermissions(expectedPermissions), "id", "createdAt", "lastModified");
 
         // need better assertion
+        final ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+
         Mockito.verify(messageBus, Mockito.times(1))
                 .publish(eq("accounts"), any());
 
-        Mockito.verify(messageBus).publish(eq("verification"), any());
+        Mockito.verify(messageBus, Mockito.times(2))
+                .publish(Mockito.eq("verification"), messageCaptor.capture());
+
+        assertThat(messageCaptor.getAllValues().stream()
+                .map(Message::getEventType)
+                .collect(Collectors.toList()))
+                .containsExactly(EventType.EMAIL_VERIFICATION, EventType.PHONE_NUMBER_VERIFICATION);
     }
 
     @Test
@@ -276,6 +285,58 @@ class AccountsServiceImplTest {
     }
 
     @Test
+    void patch() {
+        final AccountBO accountBO = RANDOM.nextObject(AccountBO.class)
+                .withCreatedAt(OffsetDateTime.now())
+                .withLastModified(OffsetDateTime.now());
+
+        final AccountBO update = AccountBO.builder()
+                .firstName("first_name")
+                .middleName("middle_name")
+                .lastName("last_name")
+                .phoneNumber(PhoneNumberBO.builder()
+                        .number("new_number")
+                        .build())
+                .email(AccountEmailBO.builder()
+                        .email("new_primary")
+                        .build())
+                .backupEmail(AccountEmailBO.builder()
+                        .email("new_backup")
+                        .build())
+                .build();
+
+        final AccountDO accountDO = serviceMapper.toDO(accountBO);
+
+        Mockito.when(accountsRepository.getById(accountDO.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
+        Mockito.when(accountsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
+
+        final Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update);
+        final AccountBO expected = accountBO
+                .withFirstName(update.getFirstName())
+                .withMiddleName(update.getMiddleName())
+                .withLastName(update.getLastName())
+                .withPhoneNumber(update.getPhoneNumber())
+                .withEmail(update.getEmail())
+                .withBackupEmail(update.getBackupEmail());
+        final List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
+                .map(permission -> permission.withEntityType(null))
+                .collect(Collectors.toList());
+
+        assertThat(updated).isPresent();
+        assertThat(updated.get()).isEqualToIgnoringGivenFields(expected.withPermissions(expectedPermissions), "lastModified");
+        assertThat(updated.get().getLastModified()).isAfter(expected.getLastModified());
+
+        // need better assertion
+        Mockito.verify(messageBus, Mockito.times(1))
+                .publish(eq("accounts"), any());
+
+        Mockito.verify(messageBus, Mockito.times(3))
+                .publish(eq("verification"), any());
+    }
+
+    @Test
     void updatePrimaryEmail() {
         final AccountBO accountBO = RANDOM.nextObject(AccountBO.class)
                 .withCreatedAt(OffsetDateTime.now())
@@ -287,8 +348,6 @@ class AccountsServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
         Mockito.when(accountsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
-
-        RANDOM.nextObject(AccountEmailBO.class);
 
         final Optional<AccountBO> updated = accountService.updateEmail(accountDO.getId(), email, false);
         final AccountBO expected = accountBO.withEmail(email);
@@ -320,10 +379,38 @@ class AccountsServiceImplTest {
         Mockito.when(accountsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
-        RANDOM.nextObject(AccountEmailBO.class);
-
         final Optional<AccountBO> updated = accountService.updateEmail(accountDO.getId(), email, true);
         final AccountBO expected = accountBO.withBackupEmail(email);
+        final List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
+                .map(permission -> permission.withEntityType(null))
+                .collect(Collectors.toList());
+
+        assertThat(updated).isPresent();
+        assertThat(updated.get()).isEqualToIgnoringGivenFields(expected.withPermissions(expectedPermissions), "lastModified");
+        assertThat(updated.get().getLastModified()).isAfter(expected.getLastModified());
+
+        // need better assertion
+        Mockito.verify(messageBus, Mockito.times(1))
+                .publish(eq("accounts"), any());
+
+        Mockito.verify(messageBus).publish(eq("verification"), any());
+    }
+
+    @Test
+    void updatePhoneNumber() {
+        final AccountBO accountBO = RANDOM.nextObject(AccountBO.class)
+                .withCreatedAt(OffsetDateTime.now())
+                .withLastModified(OffsetDateTime.now());
+        final AccountDO accountDO = serviceMapper.toDO(accountBO);
+        final PhoneNumberBO phoneNumber = RANDOM.nextObject(PhoneNumberBO.class);
+
+        Mockito.when(accountsRepository.getById(accountDO.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
+        Mockito.when(accountsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
+
+        final Optional<AccountBO> updated = accountService.updatePhoneNumber(accountDO.getId(), phoneNumber);
+        final AccountBO expected = accountBO.withPhoneNumber(phoneNumber);
         final List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
                 .collect(Collectors.toList());

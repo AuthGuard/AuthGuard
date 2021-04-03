@@ -12,5 +12,4 @@ import org.immutables.value.Value;
 public interface PhoneNumber {
     String getNumber();
     boolean isVerified();
-    boolean isActive();
 }

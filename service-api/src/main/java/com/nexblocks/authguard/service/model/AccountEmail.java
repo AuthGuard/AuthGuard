@@ -7,5 +7,4 @@ import org.immutables.value.Value;
 public interface AccountEmail {
     String getEmail();
     boolean isVerified();
-    boolean isActive();
 }
