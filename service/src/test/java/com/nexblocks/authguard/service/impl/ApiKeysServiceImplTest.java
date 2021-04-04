@@ -5,8 +5,13 @@ import com.nexblocks.authguard.dal.persistence.ApiKeysRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.ApplicationsService;
+import com.nexblocks.authguard.service.config.ApiKeyHashingConfig;
+import com.nexblocks.authguard.service.config.ApiKeysConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exchange.ApiKeyExchange;
+import com.nexblocks.authguard.service.keys.ApiKeyHash;
+import com.nexblocks.authguard.service.keys.ApiKeyHashProvider;
+import com.nexblocks.authguard.service.keys.Blake2bApiKeyHash;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.ApiKeyBO;
@@ -14,6 +19,7 @@ import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.TokensBO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.Collections;
@@ -29,6 +35,8 @@ class ApiKeysServiceImplTest {
     private ApplicationsService applicationsService;
     private ApiKeysRepository apiKeysRepository;
     private ApiKeyExchange apiKeyExchange;
+    private ApiKeyHashProvider apiKeyHashProvider;
+    private ApiKeyHash apiKeyHash;
     private MessageBus messageBus;
     private ServiceMapper serviceMapper;
     private ApiKeysService apiKeysService;
@@ -40,10 +48,20 @@ class ApiKeysServiceImplTest {
         apiKeyExchange = Mockito.mock(ApiKeyExchange.class);
         messageBus = Mockito.mock(MessageBus.class);
 
+        apiKeyHashProvider = new ApiKeyHashProvider(ApiKeysConfig.builder()
+                .hash(ApiKeyHashingConfig.builder()
+                        .algorithm("blake2b")
+                        .digestSize(32)
+                        .key("test-key")
+                        .build())
+                .build());
+
+        apiKeyHash = apiKeyHashProvider.getHash();
+
         serviceMapper = new ServiceMapperImpl();
 
         apiKeysService = new ApiKeysServiceImpl(applicationsService, apiKeyExchange, apiKeysRepository,
-                messageBus, serviceMapper);
+                apiKeyHashProvider, messageBus, serviceMapper);
     }
 
     @Test
@@ -69,6 +87,16 @@ class ApiKeysServiceImplTest {
 
         assertThat(actual.getAppId()).isEqualTo(appId);
         assertThat(actual.getKey()).isEqualTo(key);
+
+        // verify that we persisted the hashed key and not the clear key
+
+        final ArgumentCaptor<ApiKeyDO> argumentCaptor = ArgumentCaptor.forClass(ApiKeyDO.class);
+
+        Mockito.verify(apiKeysRepository).save(argumentCaptor.capture());
+
+        final ApiKeyDO persisted = argumentCaptor.getValue();
+
+        assertThat(persisted.getKey()).isEqualTo(apiKeyHash.hash(key));
     }
 
     @Test
