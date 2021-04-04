@@ -2,7 +2,9 @@ package com.nexblocks.authguard.service.exchange.apps;
 
 import com.nexblocks.authguard.dal.model.ApiKeyDO;
 import com.nexblocks.authguard.dal.persistence.ApiKeysRepository;
+import com.nexblocks.authguard.service.config.ApiKeyHashingConfig;
 import com.nexblocks.authguard.service.config.ApiKeysConfig;
+import com.nexblocks.authguard.service.keys.ApiKeyHashProvider;
 import com.nexblocks.authguard.service.keys.DefaultApiKeysProvider;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.EntityType;
@@ -19,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DefaultApiKeyExchangeTest {
     private DefaultApiKeysProvider provider;
     private ApiKeysRepository repository;
+    private ApiKeyHashProvider apiKeyHashProvider;
 
     private DefaultApiKeyExchange exchange;
 
@@ -27,7 +30,15 @@ class DefaultApiKeyExchangeTest {
         provider = new DefaultApiKeysProvider(ApiKeysConfig.builder().build());
         repository = Mockito.mock(ApiKeysRepository.class);
 
-        exchange = new DefaultApiKeyExchange(provider, repository);
+        apiKeyHashProvider = new ApiKeyHashProvider(ApiKeysConfig.builder()
+                .hash(ApiKeyHashingConfig.builder()
+                        .algorithm("blake2b")
+                        .digestSize(32)
+                        .key("test-key")
+                        .build())
+                .build());
+
+        exchange = new DefaultApiKeyExchange(provider, repository, apiKeyHashProvider);
     }
 
     @Test
@@ -51,18 +62,32 @@ class DefaultApiKeyExchangeTest {
     @Test
     void verifyAndGetAppId() {
         final String key = "key";
+        final String hashedKey = apiKeyHashProvider.getHash().hash(key);
         final String appId = "app";
 
         final ApiKeyDO apiKeyDO = ApiKeyDO.builder()
-                .key(key)
+                .key(hashedKey)
                 .appId(appId)
                 .build();
 
-        Mockito.when(repository.getByKey(key))
+        Mockito.when(repository.getByKey(hashedKey))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
 
         final Optional<String> retrieved = exchange.verifyAndGetAppId(key).join();
 
         assertThat(retrieved).contains(appId);
+    }
+
+    @Test
+    void verifyAndGetAppIdInvalidKey() {
+        final String key = "key";
+        final String hashedKey = apiKeyHashProvider.getHash().hash(key);
+
+        Mockito.when(repository.getByKey(hashedKey))
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+
+        final Optional<String> retrieved = exchange.verifyAndGetAppId(key).join();
+
+        assertThat(retrieved).isEmpty();
     }
 }

@@ -9,11 +9,12 @@ import com.nexblocks.authguard.service.ApplicationsService;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.exchange.ApiKeyExchange;
+import com.nexblocks.authguard.service.keys.ApiKeyHash;
+import com.nexblocks.authguard.service.keys.ApiKeyHashProvider;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.ApiKeyBO;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.TokensBO;
-import com.nexblocks.authguard.service.util.ID;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +26,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     private final ApplicationsService applicationsService;
     private final ApiKeyExchange apiKeyExchange;
     private final ApiKeysRepository apiKeysRepository;
+    private final ApiKeyHash apiKeyHash;
     private final ServiceMapper serviceMapper;
     private final PersistenceService<ApiKeyBO, ApiKeyDO, ApiKeysRepository> persistenceService;
 
@@ -32,11 +34,13 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     public ApiKeysServiceImpl(final ApplicationsService applicationsService,
                               final ApiKeyExchange apiKeyExchange,
                               final ApiKeysRepository apiKeysRepository,
+                              final ApiKeyHashProvider apiKeyHashProvider,
                               final MessageBus messageBus,
                               final ServiceMapper serviceMapper) {
         this.applicationsService = applicationsService;
         this.apiKeyExchange = apiKeyExchange;
         this.apiKeysRepository = apiKeysRepository;
+        this.apiKeyHash = apiKeyHashProvider.getHash();
         this.serviceMapper = serviceMapper;
 
         this.persistenceService = new PersistenceService<>(apiKeysRepository, messageBus,
@@ -75,12 +79,14 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     @Override
     public ApiKeyBO generateApiKey(final AppBO app) {
         final TokensBO token = apiKeyExchange.generateKey(app);
-        final ApiKeyBO apiKey = ApiKeyBO.builder()
-                .appId(app.getId())
-                .key((String) token.getToken())
-                .build();
+        final String generatedKey = (String) token.getToken();
 
-        return create(apiKey);
+        final ApiKeyBO persisted = create(ApiKeyBO.builder()
+                .appId(app.getId())
+                .key(apiKeyHash.hash(generatedKey))
+                .build());
+
+        return persisted.withKey(generatedKey); // we store the hashed version but we return back the clear version
     }
 
     @Override

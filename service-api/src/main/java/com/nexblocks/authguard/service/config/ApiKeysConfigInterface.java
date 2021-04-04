@@ -13,4 +13,6 @@ public interface ApiKeysConfigInterface {
     default Integer getRandomSize() {
         return 32;
     }
+
+    ApiKeyHashingConfig getHash();
 }
