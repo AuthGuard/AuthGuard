@@ -13,7 +13,7 @@ import javax.persistence.Embeddable;
 @Builder
 // JPA
 @Embeddable
-public class EmailDO {
-    private String email;
+public class PhoneNumberDO {
+    private String number;
     private boolean verified;
 }

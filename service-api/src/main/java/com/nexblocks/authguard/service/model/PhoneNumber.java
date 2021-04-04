@@ -4,7 +4,7 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @BOStyle
-public interface AccountEmail {
-    String getEmail();
+public interface PhoneNumber {
+    String getNumber();
     boolean isVerified();
 }

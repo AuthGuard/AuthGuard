@@ -2,7 +2,6 @@ package com.nexblocks.authguard.service;
 
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AccountEmailBO;
 import com.nexblocks.authguard.service.model.PermissionBO;
 
 import java.util.List;
@@ -21,7 +20,7 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
 
     Optional<AccountBO> deactivate(String accountId);
 
-    Optional<AccountBO> updateEmail(String accountId, AccountEmailBO email, boolean backup);
+    Optional<AccountBO> patch(String accountId, AccountBO account);
 
     /**
      * Grant permissions to an account. This should only updatePatch

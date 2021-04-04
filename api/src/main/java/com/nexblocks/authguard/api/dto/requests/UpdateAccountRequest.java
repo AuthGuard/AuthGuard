@@ -3,20 +3,15 @@ package com.nexblocks.authguard.api.dto.requests;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.nexblocks.authguard.api.dto.entities.AccountEmailDTO;
-import com.nexblocks.authguard.api.dto.entities.PermissionDTO;
 import com.nexblocks.authguard.api.dto.entities.PhoneNumberDTO;
 import com.nexblocks.authguard.api.dto.style.DTOStyle;
 import org.immutables.value.Value;
 
-import java.util.List;
-
 @Value.Immutable
 @DTOStyle
-@JsonDeserialize(as = CreateAccountRequestDTO.class)
-@JsonSerialize(as = CreateAccountRequestDTO.class)
-public interface CreateAccountRequest {
-    String getExternalId();
-
+@JsonDeserialize(as = UpdateAccountRequestDTO.class)
+@JsonSerialize(as = UpdateAccountRequestDTO.class)
+public interface UpdateAccountRequest {
     String getFirstName();
     String getMiddleName();
     String getLastName();
@@ -26,8 +21,4 @@ public interface CreateAccountRequest {
     AccountEmailDTO getBackupEmail();
     PhoneNumberDTO getPhoneNumber();
 
-    List<PermissionDTO> getPermissions();
-    List<String> getRoles();
-
-    boolean isActive();
 }

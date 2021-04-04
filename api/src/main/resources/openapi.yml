@@ -49,6 +49,29 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
+    patch:
+      operationId: patchAccount
+      description: Update account information
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAccountRequest" 
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/AccountResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
     delete:
       operationId: deleteAccount
       description: Delet an account
@@ -130,27 +153,6 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RolesRequest"
-      responses:
-        200:
-          description: Success
-          $ref: "#/components/responses/ApplicationResponse"
-        404:
-          description: Not found
-          $ref: "#/components/responses/ErrorResponse"
-
-  /accounts/{id}/email:
-    patch:
-      operationId: updateAccountEmails
-      description: Update main or backup emails of an account
-      tags:
-        - accounts
-      parameters:
-        - $ref: "#/components/parameters/IdParameter"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AccountEmailRequest"
       responses:
         200:
           description: Success
@@ -940,12 +942,23 @@ components:
           type: string
         externalId:
           type: string
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        fullName:
+          type: string
         email:
           type: object
           $ref: "#/components/schemas/Email"
         backupEmail:
           type: object
           $ref: "#/components/schemas/Email"
+        phoneNumber:
+          type: object
+          $ref: "#/components/schemas/PhoneNumber"
         permissions:
           type: array
           items:
@@ -1005,6 +1018,14 @@ components:
       type: object
       properties:
         email: 
+          type: string
+        verified:
+          type: boolean
+
+    PhoneNumber:
+      type: object
+      properties:
+        number:
           type: string
         verified:
           type: boolean
@@ -1099,12 +1120,23 @@ components:
       properties:
         externalId:
           type: string
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        fullName:
+          type: string
         email:
           type: object
           $ref: "#/components/schemas/Email"
         backupEmail:
           type: object
           $ref: "#/components/schemas/Email"
+        phoneNumber:
+          type: object
+          $ref: "#/components/schemas/PhoneNumber"
         permissions:
           type: array
           items:
@@ -1116,6 +1148,27 @@ components:
             type: string
         active:
           type: boolean
+
+    UpdateAccountRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: object
+          $ref: "#/components/schemas/Email"
+        backupEmail:
+          type: object
+          $ref: "#/components/schemas/Email"
+        phoneNumber:
+          type: object
+          $ref: "#/components/schemas/PhoneNumber"
 
     CreateApplicationRequest:
       type: object
