@@ -14,7 +14,7 @@ public abstract class ApiKeysApi implements ApiRoute {
 
     @Override
     public void addEndpoints() {
-        post("/:id", this::generate, ActorRoles.anyAdmin());
+        post("/", this::generate, ActorRoles.anyAdmin());
     }
 
     public abstract void generate(final Context context);
