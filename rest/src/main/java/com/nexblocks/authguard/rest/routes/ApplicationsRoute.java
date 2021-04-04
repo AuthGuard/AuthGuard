@@ -1,5 +1,7 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.google.inject.Inject;
+import com.nexblocks.authguard.api.dto.entities.ApiKeyDTO;
 import com.nexblocks.authguard.api.dto.entities.AppDTO;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.requests.CreateAppRequestDTO;
@@ -8,22 +10,28 @@ import com.nexblocks.authguard.rest.mappers.RestJsonMapper;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.rest.util.IdempotencyHeader;
+import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.ApplicationsService;
 import com.nexblocks.authguard.service.model.RequestContextBO;
-import com.google.inject.Inject;
 import io.javalin.http.Context;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class ApplicationsRoute extends ApplicationsApi {
     private final ApplicationsService applicationsService;
+    private final ApiKeysService apiKeysService;
     private final RestMapper restMapper;
 
     private final BodyHandler<CreateAppRequestDTO> appRequestRequestBodyHandler;
 
     @Inject
-    public ApplicationsRoute(final ApplicationsService applicationsService, final RestMapper restMapper) {
+    public ApplicationsRoute(final ApplicationsService applicationsService,
+                             final ApiKeysService apiKeysService,
+                             final RestMapper restMapper) {
         this.applicationsService = applicationsService;
+        this.apiKeysService = apiKeysService;
         this.restMapper = restMapper;
 
         this.appRequestRequestBodyHandler = new BodyHandler.Builder<>(CreateAppRequestDTO.class)
@@ -128,5 +136,17 @@ public class ApplicationsRoute extends ApplicationsApi {
         } else {
             context.status(404);
         }
+    }
+
+    @Override
+    public void getApiKeys(final Context context) {
+        final String applicationId = context.pathParam("id");
+
+        final List<ApiKeyDTO> keys = apiKeysService.getByAppId(applicationId)
+                .stream()
+                .map(restMapper::toDTO)
+                .collect(Collectors.toList());
+
+        context.status(200).json(keys);
     }
 }

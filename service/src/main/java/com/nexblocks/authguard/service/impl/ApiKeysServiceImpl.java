@@ -15,26 +15,52 @@ import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.TokensBO;
 import com.nexblocks.authguard.service.util.ID;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class ApiKeysServiceImpl implements ApiKeysService {
     private static final String API_KEYS_CHANNELS = "api_keys";
 
     private final ApplicationsService applicationsService;
     private final ApiKeyExchange apiKeyExchange;
+    private final ApiKeysRepository apiKeysRepository;
+    private final ServiceMapper serviceMapper;
     private final PersistenceService<ApiKeyBO, ApiKeyDO, ApiKeysRepository> persistenceService;
 
     @Inject
     public ApiKeysServiceImpl(final ApplicationsService applicationsService,
                               final ApiKeyExchange apiKeyExchange,
-                              final ApiKeysRepository keysRepository,
+                              final ApiKeysRepository apiKeysRepository,
                               final MessageBus messageBus,
                               final ServiceMapper serviceMapper) {
         this.applicationsService = applicationsService;
         this.apiKeyExchange = apiKeyExchange;
+        this.apiKeysRepository = apiKeysRepository;
+        this.serviceMapper = serviceMapper;
 
-        this.persistenceService = new PersistenceService<>(keysRepository, messageBus,
+        this.persistenceService = new PersistenceService<>(apiKeysRepository, messageBus,
                 serviceMapper::toDO, serviceMapper::toBO, API_KEYS_CHANNELS);
+    }
+
+    @Override
+    public ApiKeyBO create(final ApiKeyBO apiKey) {
+        return persistenceService.create(apiKey);
+    }
+
+    @Override
+    public Optional<ApiKeyBO> getById(final String apiKeyId) {
+        return persistenceService.getById(apiKeyId);
+    }
+
+    @Override
+    public Optional<ApiKeyBO> update(final ApiKeyBO entity) {
+        throw new UnsupportedOperationException("API keys cannot be updated");
+    }
+
+    @Override
+    public Optional<ApiKeyBO> delete(final String id) {
+        return persistenceService.delete(id);
     }
 
     @Override
@@ -50,12 +76,20 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     public ApiKeyBO generateApiKey(final AppBO app) {
         final TokensBO token = apiKeyExchange.generateKey(app);
         final ApiKeyBO apiKey = ApiKeyBO.builder()
-                .id(ID.generate())
                 .appId(app.getId())
                 .key((String) token.getToken())
                 .build();
 
-        return persistenceService.create(apiKey);
+        return create(apiKey);
+    }
+
+    @Override
+    public List<ApiKeyBO> getByAppId(final String appId) {
+        return apiKeysRepository.getByAppId(appId)
+                .thenApply(list -> list.stream()
+                        .map(serviceMapper::toBO)
+                        .collect(Collectors.toList()))
+                .join();
     }
 
     @Override
