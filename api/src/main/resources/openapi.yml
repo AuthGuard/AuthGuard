@@ -2,7 +2,7 @@ openapi: 3.0.3
 
 info:
   title: AuthGuard API
-  version: 1.0.0
+  version: 0.4.0
 
 security:
   - apiKey: []
@@ -423,6 +423,23 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
+  /apps/{id}/keys:
+    get:
+      operationId: getApiKeysByAppId
+      description: Get all API keys associated with an application
+      tags:
+        - applications
+        - api_keys
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApiKeysArrayResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
   /apps/externalId/{id}:
     get:
       operationId: getAppsByExternalId
@@ -477,13 +494,48 @@ paths:
       operationId: generateApiKey
       description: Generate a new API key for an application
       tags:
-        - applications
         - api_keys
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/ApiKeyRequest" 
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApiKeyResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /keys/{id}:
+    get:
+      operationId: getApiKeyById
+      description: Get an API key by ID
+      tags:
+        - api_keys
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyRequest"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApiKeyResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      operationId: deleteApiKey
+      description: Delete an API key by ID
+      tags:
+        - api_keys
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyRequest"
       responses:
         200:
           description: Success
@@ -952,6 +1004,15 @@ components:
                 type: array
                 items:
                   $ref: "#/components/schemas/ExchangeAttempt"
+
+    ApiKeysArrayResponse:
+      description: _
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/ApiKey"
 
   schemas:
     AccountWithCredentials:
