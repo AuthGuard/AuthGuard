@@ -32,19 +32,18 @@ public class AuthorizationHandler implements Handler {
     @Override
     public void handle(@NotNull final Context context) {
         Optional.ofNullable(context.header("Authorization"))
-                .map(this::parseAuthorization)
-                .filter(parts -> parts.length == 2)
-                .ifPresent(parts -> populateActor(context, parts));
+                .map(this::splitAuthorization)
+                .ifPresent(parts -> {
+                    if (parts.length == 2) {
+                        populateActor(context, parts);
+                    } else {
+                        context.status(401).json(new Error("401", "Invalid authorization header"));
+                    }
+                });
     }
 
-    private String[] parseAuthorization(final String authorization) {
-        final String[] parts = authorization.split("\\s");
-
-        if (parts.length != 2) {
-            throw new ServiceException(ErrorCode.INVALID_AUTHORIZATION_FORMAT, "Invalid format for authorization value");
-        }
-
-        return parts;
+    private String[] splitAuthorization(final String authorization) {
+        return authorization.split("\\s");
     }
 
     private void populateActor(final Context context, final String[] authorization) {
@@ -70,7 +69,7 @@ public class AuthorizationHandler implements Handler {
             context.attribute("actor", actorAccount.get());
         } else {
             LOG.info("Failed to authenticate actor with basic credentials");
-            context.status(401).result("");
+            context.status(401).json(new Error("401", "Failed to authenticate with basic scheme"));
         }
     }
 
@@ -82,7 +81,7 @@ public class AuthorizationHandler implements Handler {
             context.attribute("actor", actorApp.get());
         } else {
             LOG.info("Failed to authenticate actor with bearer token");
-            context.status(401).result("");
+            context.status(401).json(new Error("401", "Failed to authenticate with bearer scheme"));
         }
     }
 }
