@@ -84,9 +84,9 @@ public class CredentialsRoute extends CredentialsApi {
         final CredentialsDTO credentials = RestJsonMapper.asClass(context.body(), CredentialsDTO.class);
         final String credentialsId = context.pathParam("id");
 
-        final Optional<CredentialsDTO> updated = Optional.of(credentials.withId(credentialsId))
-                .map(restMapper::toBO)
-                .flatMap(credentialsService::updatePassword)
+        credentialsService.updatePassword(credentialsId, credentials.getPlainPassword());
+
+        final Optional<CredentialsDTO> updated = credentialsService.updatePassword(credentialsId, credentials.getPlainPassword())
                 .map(restMapper::toDTO);
 
         if (updated.isPresent()) {
