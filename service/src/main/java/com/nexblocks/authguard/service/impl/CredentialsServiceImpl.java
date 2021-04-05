@@ -38,6 +38,7 @@ public class CredentialsServiceImpl implements CredentialsService {
     private final PasswordValidator passwordValidator;
     private final MessageBus messageBus;
     private final ServiceMapper serviceMapper;
+    private final PersistenceService<CredentialsBO, CredentialsDO, CredentialsRepository> persistenceService;
 
     @Inject
     public CredentialsServiceImpl(final AccountsService accountsService,
@@ -56,6 +57,9 @@ public class CredentialsServiceImpl implements CredentialsService {
         this.passwordValidator = passwordValidator;
         this.messageBus = messageBus;
         this.serviceMapper = serviceMapper;
+
+        this.persistenceService = new PersistenceService<>(credentialsRepository, messageBus,
+                serviceMapper::toDO, serviceMapper::toBO, CREDENTIALS_CHANNEL);
     }
 
     @Override
@@ -74,23 +78,13 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .id(ID.generate())
                 .build();
 
-        final CredentialsDO credentialsDO = serviceMapper.toDO(credentialsHashedPassword);
-
-        return credentialsRepository.save(credentialsDO)
-                .thenApply(serviceMapper::toBO)
-                .thenApply(this::removeSensitiveInformation)
-                .thenApply(created -> {
-                    messageBus.publish(CREDENTIALS_CHANNEL, Messages.created(created));
-                    return created;
-                })
-                .join();
+        return removeSensitiveInformation(persistenceService.create(credentialsHashedPassword));
     }
 
     @Override
     public Optional<CredentialsBO> getById(final String id) {
-        return credentialsRepository.getById(id)
-                .thenApply(optional -> optional.map(serviceMapper::toBO).map(this::removeSensitiveInformation))
-                .join();
+        return persistenceService.getById(id)
+                .map(this::removeSensitiveInformation);
     }
 
     @Override
@@ -109,15 +103,18 @@ public class CredentialsServiceImpl implements CredentialsService {
 
     @Override
     public Optional<CredentialsBO> update(final CredentialsBO credentials) {
-        return doUpdate(credentials.withPlainPassword(null).withHashedPassword(null), false);
+        throw new UnsupportedOperationException("Regular updates are not supported for credentials. Use updatePassword, addIdentifiers, or removeIdentifiers");
     }
 
     @Override
-    public Optional<CredentialsBO> updatePassword(final CredentialsBO credentials) {
-        final HashedPasswordBO newPassword = verifyAndHashPassword(credentials.getPlainPassword());
-        final CredentialsBO update = credentials.withHashedPassword(newPassword);
+    public Optional<CredentialsBO> updatePassword(final String id, final String plainPassword) {
+        final CredentialsBO existing = persistenceService.getById(id)
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
 
-        return doUpdate(update, true);
+        final HashedPasswordBO newPassword = verifyAndHashPassword(plainPassword);
+        final CredentialsBO update = existing.withHashedPassword(newPassword);
+
+        return doUpdate(existing, update, true);
     }
 
     @Override
@@ -143,7 +140,7 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .identifiers(combined)
                 .build();
 
-        return update(updated);
+        return doUpdate(existing, updated, false);
     }
 
     @Override
@@ -165,40 +162,24 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .identifiers(updatedIdentifiers)
                 .build();
 
-        return update(updated);
+        return doUpdate(existing, updated, false);
     }
 
-    private Optional<CredentialsBO> doUpdate(final CredentialsBO credentials, boolean storePasswordAudit) {
-        final CredentialsBO existing = credentialsRepository.getById(credentials.getId())
-                .thenApply(optional -> optional.map(serviceMapper::toBO))
-                .join()
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST, "No credentials with ID "
-                        + credentials.getId() + " was found"));
-
-        final CredentialsBO update = credentials.getHashedPassword() == null ?
-                credentials.withHashedPassword(existing.getHashedPassword()) : credentials;
-
-        // regardless of whether storePasswordAudit is true or not, we don't need the password in attempt stage
-        storeAuditRecord(removeSensitiveInformation(existing), removeSensitiveInformation(credentials),
+    private Optional<CredentialsBO> doUpdate(final CredentialsBO existing, final CredentialsBO updated, boolean storePasswordAudit) {
+        storeAuditRecord(removeSensitiveInformation(existing), removeSensitiveInformation(updated),
                 CredentialsAudit.Action.ATTEMPT);
 
-        return credentialsRepository.update(serviceMapper.toDO(update))
-                .thenApply(optional -> optional.map(serviceMapper::toBO))
-                .join()
+        return persistenceService.update(updated)
                 .map(c -> {
                     if (storePasswordAudit) {
-                        storeAuditRecord(existing, credentials, CredentialsAudit.Action.UPDATED);
+                        storeAuditRecord(existing, updated, CredentialsAudit.Action.UPDATED);
                     } else {
-                        storeAuditRecord(removeSensitiveInformation(existing), removeSensitiveInformation(credentials),
+                        storeAuditRecord(removeSensitiveInformation(existing), removeSensitiveInformation(updated),
                                 CredentialsAudit.Action.UPDATED);
                     }
                     return c;
                 })
-                .map(this::removeSensitiveInformation)
-                .map(updated -> {
-                    messageBus.publish(CREDENTIALS_CHANNEL, Messages.updated(updated));
-                    return updated;
-                });
+                .map(this::removeSensitiveInformation);
     }
 
     @Override
