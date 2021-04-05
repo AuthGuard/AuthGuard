@@ -12,6 +12,7 @@ import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.nexblocks.authguard.service.model.*;
+import com.nexblocks.authguard.service.util.ID;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.time.Duration;
@@ -42,7 +43,7 @@ public class OtpProvider implements AuthProvider {
 
     @Override
     public TokensBO generateToken(final AccountBO account) {
-        final String passwordId = UUID.randomUUID().toString();
+        final String passwordId = ID.generate();
         final String password = generatePassword();
 
         final TokensBO token = createToken(passwordId, account.getId());

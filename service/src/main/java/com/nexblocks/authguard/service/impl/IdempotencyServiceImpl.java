@@ -1,15 +1,15 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.persistence.IdempotentRecordsRepository;
 import com.nexblocks.authguard.service.IdempotencyService;
 import com.nexblocks.authguard.service.exceptions.IdempotencyException;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.Entity;
 import com.nexblocks.authguard.service.model.IdempotentRecordBO;
-import com.google.inject.Inject;
+import com.nexblocks.authguard.service.util.ID;
 
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
@@ -51,7 +51,7 @@ public class IdempotencyServiceImpl implements IdempotencyService {
                 })
                 .thenApply(result -> {
                     final IdempotentRecordBO record = IdempotentRecordBO.builder()
-                            .id(UUID.randomUUID().toString())
+                            .id(ID.generate())
                             .entityId(result.getId())
                             .entityType(result.getEntityType())
                             .idempotentKey(idempotentKey)
