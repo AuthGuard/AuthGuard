@@ -32,6 +32,7 @@ public class Validators {
         classValidators.put(PermissionDTO.class, new PermissionValidator());
         classValidators.put(UserIdentifiersRequestDTO.class, new UserIdentifiersRequestValidator());
         classValidators.put(UserIdentifierDTO.class, new UserIdentifierValidator());
+        classValidators.put(ApiKeyRequestDTO.class, new ApiKeysRequestValidator());
     }
 
     @SuppressWarnings("unchecked")

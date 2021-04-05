@@ -15,12 +15,16 @@ public abstract class ApplicationsApi implements ApiRoute {
     @Override
     public void addEndpoints() {
         post("/", this::create, ActorRoles.anyAdmin());
+
         get("/:id", this::getById, ActorRoles.adminClient());
         get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
         put("/:id", this::update, ActorRoles.adminClient());
         delete("/:id", this::deleteById, ActorRoles.adminClient());
+
         patch("/:id/activate", this::activate, ActorRoles.adminClient());
         patch("/:id/deactivate", this::deactivate, ActorRoles.adminClient());
+
+        get("/:id/keys", this::getApiKeys, ActorRoles.adminClient());
     }
 
     public abstract void create(final Context context);
@@ -36,4 +40,6 @@ public abstract class ApplicationsApi implements ApiRoute {
     public abstract void activate(final Context context);
 
     public abstract void deactivate(final Context context);
+
+    public abstract void getApiKeys(final Context context);
 }
