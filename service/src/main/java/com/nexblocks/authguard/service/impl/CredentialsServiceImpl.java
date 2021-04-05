@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.basic.passwords.PasswordValidator;
 import com.nexblocks.authguard.basic.passwords.SecurePassword;
 import com.nexblocks.authguard.basic.passwords.ServiceInvalidPasswordException;
@@ -19,9 +20,11 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.ID;
-import com.google.inject.Inject;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class CredentialsServiceImpl implements CredentialsService {
@@ -68,7 +71,7 @@ public class CredentialsServiceImpl implements CredentialsService {
         final CredentialsBO credentialsHashedPassword = CredentialsBO.builder()
                 .from(credentials)
                 .hashedPassword(hashedPassword)
-                .id(UUID.randomUUID().toString())
+                .id(ID.generate())
                 .build();
 
         final CredentialsDO credentialsDO = serviceMapper.toDO(credentialsHashedPassword);

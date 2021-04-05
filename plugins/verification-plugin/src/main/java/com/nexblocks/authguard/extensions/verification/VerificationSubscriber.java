@@ -14,6 +14,7 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.VerificationRequestBO;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.nexblocks.authguard.service.util.ID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,7 +106,7 @@ public class VerificationSubscriber implements MessageSubscriber {
     }
 
     private String generateVerificationString() {
-        final byte[] verificationCode = UUID.randomUUID().toString().getBytes();
+        final byte[] verificationCode = ID.generate().getBytes();
         return Base64.getEncoder().encodeToString(verificationCode);
     }
 }
