@@ -15,6 +15,7 @@ import com.nexblocks.authguard.service.config.StrategyConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
+import com.nexblocks.authguard.service.util.ID;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -111,7 +112,7 @@ public class AccessTokenProvider implements AuthProvider {
 
     private void storeRefreshToken(final String accountId, final String refreshToken) {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
-                .id(UUID.randomUUID().toString())
+                .id(ID.generate())
                 .token(refreshToken)
                 .associatedAccountId(accountId)
                 .expiresAt(refreshTokenExpiry())
