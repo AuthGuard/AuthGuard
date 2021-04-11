@@ -13,7 +13,7 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -39,7 +39,7 @@ public class SessionProvider implements AuthProvider {
     public TokensBO generateToken(final AccountBO account) {
         final SessionBO session = SessionBO.builder()
                 .accountId(account.getId())
-                .expiresAt(ZonedDateTime.now().plus(sessionTtl))
+                .expiresAt(OffsetDateTime.now().plus(sessionTtl))
                 .data(Map.ofEntries(
                         Map.entry(SessionKeys.ACCOUNT_ID, account.getId()),
                         Map.entry(SessionKeys.ROLES, String.join(",", account.getRoles())),

@@ -2,7 +2,7 @@ package com.nexblocks.authguard.service.model;
 
 import org.immutables.value.Value;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.Map;
 
 @Value.Immutable
@@ -11,6 +11,6 @@ public interface Session {
     String getId();
     String getSessionToken();
     String getAccountId();
-    ZonedDateTime getExpiresAt();
+    OffsetDateTime getExpiresAt();
     Map<String, String> getData();
 }

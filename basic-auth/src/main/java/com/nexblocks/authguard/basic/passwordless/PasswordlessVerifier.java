@@ -9,7 +9,7 @@ import com.nexblocks.authguard.service.model.EntityType;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 
 public class PasswordlessVerifier implements AuthVerifier {
     private final AccountTokensRepository accountTokensRepository;
@@ -29,7 +29,7 @@ public class PasswordlessVerifier implements AuthVerifier {
     }
 
     private Either<Exception, String> verifyToken(final AccountTokenDO accountToken) {
-        if (accountToken.getExpiresAt().isBefore(ZonedDateTime.now())) {
+        if (accountToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
             return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Expired passwordless token",
                     EntityType.ACCOUNT, accountToken.getAssociatedAccountId()));
         }

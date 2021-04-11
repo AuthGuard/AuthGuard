@@ -16,7 +16,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,7 +52,7 @@ public class OAuthService {
                 .orElseThrow(() -> new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid identity provider"));
 
         return CompletableFuture.supplyAsync(() -> sessionsService.create(SessionBO.builder()
-                .expiresAt(ZonedDateTime.now().plus(stateTtl))
+                .expiresAt(OffsetDateTime.now().plus(stateTtl))
                 .build()))
                 .thenApply(session -> client.createAuthorizationUrl(session.getSessionToken(), ResponseType.CODE));
     }
@@ -75,7 +75,7 @@ public class OAuthService {
         return CompletableFuture.supplyAsync(() -> sessionsService.getByToken(state))
                 .thenCompose(sessionOptional -> {
                     return sessionOptional.map(session -> {
-                        if (session.getExpiresAt().isAfter(ZonedDateTime.now())) {
+                        if (session.getExpiresAt().isAfter(OffsetDateTime.now())) {
                             return client.authorize(authorizationCode);
                         } else {
                             throw new ServiceAuthorizationException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,

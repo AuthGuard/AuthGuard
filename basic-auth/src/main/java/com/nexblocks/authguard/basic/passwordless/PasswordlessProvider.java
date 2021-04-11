@@ -19,7 +19,7 @@ import com.nexblocks.authguard.service.util.ID;
 
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.UUID;
 
@@ -54,7 +54,7 @@ public class PasswordlessProvider implements AuthProvider {
                 .id(ID.generate())
                 .associatedAccountId(account.getId())
                 .token(token)
-                .expiresAt(ZonedDateTime.now().plus(tokenTtl))
+                .expiresAt(OffsetDateTime.now().plus(tokenTtl))
                 .build();
 
         accountTokensRepository.save(accountToken);

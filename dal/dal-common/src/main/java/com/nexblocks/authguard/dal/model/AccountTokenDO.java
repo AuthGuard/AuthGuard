@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import javax.persistence.*;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.Map;
 
 @Data
@@ -26,7 +26,7 @@ import java.util.Map;
 public class AccountTokenDO extends AbstractDO {
     private String token;
     private String associatedAccountId;
-    private ZonedDateTime expiresAt;
+    private OffsetDateTime expiresAt;
 
     @ElementCollection(fetch = FetchType.EAGER)
     private Map<String, String> additionalInformation;

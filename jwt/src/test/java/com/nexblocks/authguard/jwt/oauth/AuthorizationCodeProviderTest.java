@@ -14,7 +14,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,7 +52,7 @@ class AuthorizationCodeProviderTest {
         assertThat(argCaptor.getValue().getToken()).isEqualTo(tokens.getToken());
         assertThat(argCaptor.getValue().getAssociatedAccountId()).isEqualTo(account.getId());
         assertThat(argCaptor.getValue().getExpiresAt())
-                .isAfter(ZonedDateTime.now())
-                .isBefore(ZonedDateTime.now().plus(Duration.ofMinutes(6)));
+                .isAfter(OffsetDateTime.now())
+                .isBefore(OffsetDateTime.now().plus(Duration.ofMinutes(6)));
     }
 }
