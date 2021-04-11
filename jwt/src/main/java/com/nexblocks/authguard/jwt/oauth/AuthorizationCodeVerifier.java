@@ -9,7 +9,7 @@ import com.nexblocks.authguard.service.model.EntityType;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 
 public class AuthorizationCodeVerifier implements AuthVerifier {
     private final AccountTokensRepository accountTokensRepository;
@@ -34,7 +34,7 @@ public class AuthorizationCodeVerifier implements AuthVerifier {
     }
 
     private Either<Exception, AccountTokenDO> verifyToken(final AccountTokenDO accountToken) {
-        if (accountToken.getExpiresAt().isBefore(ZonedDateTime.now())) {
+        if (accountToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
             throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "The authorization code has expired",
                     EntityType.ACCOUNT, accountToken.getAssociatedAccountId());
         }

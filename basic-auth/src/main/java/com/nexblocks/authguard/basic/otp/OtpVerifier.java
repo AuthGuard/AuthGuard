@@ -10,7 +10,7 @@ import com.nexblocks.authguard.service.model.OneTimePasswordBO;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 public class OtpVerifier implements AuthVerifier {
@@ -43,7 +43,7 @@ public class OtpVerifier implements AuthVerifier {
         if (generatedOpt.isPresent()) {
             final OneTimePasswordBO generated = generatedOpt.get();
 
-            if (generated.getExpiresAt().isBefore(ZonedDateTime.now())) {
+            if (generated.getExpiresAt().isBefore(OffsetDateTime.now())) {
                 return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "OTP " + passwordId + " has expired",
                         EntityType.ACCOUNT, generated.getAccountId()));
             }

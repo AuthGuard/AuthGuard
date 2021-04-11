@@ -15,7 +15,7 @@ import com.nexblocks.authguard.service.model.TokensBO;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 
 @TokenExchange(from = "refresh", to = "accessToken")
 public class RefreshToAccessToken implements Exchange {
@@ -61,7 +61,7 @@ public class RefreshToAccessToken implements Exchange {
     }
 
     private boolean validateExpirationDateTime(final AccountTokenDO accountToken) {
-        final ZonedDateTime now = ZonedDateTime.now();
+        final OffsetDateTime now = OffsetDateTime.now();
 
         if (now.isAfter(accountToken.getExpiresAt())) {
             throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Refresh token " + accountToken.getToken()

@@ -15,7 +15,7 @@ import com.google.inject.name.Named;
 import com.nexblocks.authguard.service.util.ID;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @ProvidesToken("authorizationCode")
@@ -54,7 +54,7 @@ public class AuthorizationCodeProvider implements AuthProvider {
                 .id(ID.generate())
                 .token(code)
                 .associatedAccountId(account.getId())
-                .expiresAt(ZonedDateTime.now().plus(tokenTtl))
+                .expiresAt(OffsetDateTime.now().plus(tokenTtl))
                 .tokenRestrictions(serviceMapper.toDO(restrictions))
                 .build();
 

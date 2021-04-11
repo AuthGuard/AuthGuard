@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Objects;
@@ -84,7 +84,7 @@ public class VerificationSubscriber implements MessageSubscriber {
                 final String token = generateVerificationString();
 
                 final AccountTokenDO accountToken = AccountTokenDO.builder()
-                        .expiresAt(ZonedDateTime.now().plus(tokenTtl))
+                        .expiresAt(OffsetDateTime.now().plus(tokenTtl))
                         .associatedAccountId(account.getId())
                         .token(token)
                         .additionalInformation(Collections.singletonMap("email", email.getEmail()))

@@ -10,7 +10,7 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.google.inject.Inject;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 public class VerificationServiceImpl implements VerificationService {
@@ -34,7 +34,7 @@ public class VerificationServiceImpl implements VerificationService {
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
                         "AccountDO token " + verificationToken + " does not exist"));
 
-        if (accountToken.getExpiresAt().isBefore(ZonedDateTime.now())) {
+        if (accountToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
             throw new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token " + verificationToken + " has expired");
         }
 

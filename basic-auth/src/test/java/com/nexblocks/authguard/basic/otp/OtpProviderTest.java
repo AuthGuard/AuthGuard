@@ -17,7 +17,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -73,8 +73,8 @@ class OtpProviderTest {
 
         assertThat(persisted.getAccountId()).isEqualTo(account.getId());
         assertThat(persisted.getExpiresAt())
-                .isAfter(ZonedDateTime.now())
-                .isBefore(ZonedDateTime.now().plus(Duration.ofMinutes(6)));
+                .isAfter(OffsetDateTime.now())
+                .isBefore(OffsetDateTime.now().plus(Duration.ofMinutes(6)));
         assertThat(persisted.getId()).isNotNull();
         assertThat(persisted.getPassword()).isNotNull();
         assertThat(persisted.getPassword()).hasSize(6);
@@ -114,8 +114,8 @@ class OtpProviderTest {
 
         assertThat(persisted.getAccountId()).isEqualTo(account.getId());
         assertThat(persisted.getExpiresAt())
-                .isAfter(ZonedDateTime.now())
-                .isBefore(ZonedDateTime.now().plus(Duration.ofMinutes(6)));
+                .isAfter(OffsetDateTime.now())
+                .isBefore(OffsetDateTime.now().plus(Duration.ofMinutes(6)));
         assertThat(persisted.getId()).isNotNull();
         assertThat(persisted.getPassword()).isNotNull();
         assertThat(persisted.getPassword()).hasSize(6);
@@ -159,8 +159,8 @@ class OtpProviderTest {
 
         assertThat(persisted.getAccountId()).isEqualTo(account.getId());
         assertThat(persisted.getExpiresAt())
-                .isAfter(ZonedDateTime.now())
-                .isBefore(ZonedDateTime.now().plus(Duration.ofMinutes(6)));
+                .isAfter(OffsetDateTime.now())
+                .isBefore(OffsetDateTime.now().plus(Duration.ofMinutes(6)));
         assertThat(persisted.getId()).isNotNull();
         assertThat(persisted.getPassword()).isNotNull();
         assertThat(persisted.getPassword()).hasSize(6);

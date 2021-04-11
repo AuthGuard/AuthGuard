@@ -12,7 +12,7 @@ import com.nexblocks.authguard.service.model.SessionBO;
 import com.nexblocks.authguard.service.model.TokensBO;
 import io.vavr.control.Either;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 @TokenExchange(from = "sessionToken", to = "session")
@@ -36,7 +36,7 @@ public class SessionTokenToSession implements Exchange {
 
         final SessionBO session = sessionOpt.get();
 
-        if (session.getExpiresAt().isBefore(ZonedDateTime.now())) {
+        if (session.getExpiresAt().isBefore(OffsetDateTime.now())) {
             return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Session token has expired"));
         }
 
