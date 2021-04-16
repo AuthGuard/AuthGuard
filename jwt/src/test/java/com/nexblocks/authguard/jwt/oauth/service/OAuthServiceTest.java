@@ -14,7 +14,7 @@ import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -100,7 +100,7 @@ class OAuthServiceTest {
                 .thenAnswer(invocation -> {
                     final SessionBO session = SessionBO.builder()
                             .sessionToken(invocation.getArgument(0))
-                            .expiresAt(ZonedDateTime.now().plus(Duration.ofMinutes(2)))
+                            .expiresAt(OffsetDateTime.now().plus(Duration.ofMinutes(2)))
                             .build();
 
                     return Optional.of(session);
@@ -128,7 +128,7 @@ class OAuthServiceTest {
                 .thenAnswer(invocation -> {
                     final SessionBO session = SessionBO.builder()
                             .sessionToken(invocation.getArgument(0))
-                            .expiresAt(ZonedDateTime.now().minus(Duration.ofMinutes(2)))
+                            .expiresAt(OffsetDateTime.now().minus(Duration.ofMinutes(2)))
                             .build();
 
                     return Optional.of(session);

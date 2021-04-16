@@ -14,11 +14,12 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.VerificationRequestBO;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.nexblocks.authguard.service.util.ID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Objects;
@@ -83,7 +84,7 @@ public class VerificationSubscriber implements MessageSubscriber {
                 final String token = generateVerificationString();
 
                 final AccountTokenDO accountToken = AccountTokenDO.builder()
-                        .expiresAt(ZonedDateTime.now().plus(tokenTtl))
+                        .expiresAt(OffsetDateTime.now().plus(tokenTtl))
                         .associatedAccountId(account.getId())
                         .token(token)
                         .additionalInformation(Collections.singletonMap("email", email.getEmail()))
@@ -105,7 +106,7 @@ public class VerificationSubscriber implements MessageSubscriber {
     }
 
     private String generateVerificationString() {
-        final byte[] verificationCode = UUID.randomUUID().toString().getBytes();
+        final byte[] verificationCode = ID.generate().getBytes();
         return Base64.getEncoder().encodeToString(verificationCode);
     }
 }

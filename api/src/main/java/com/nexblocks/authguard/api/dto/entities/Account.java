@@ -16,11 +16,20 @@ public interface Account {
     String getId();
     OffsetDateTime getCreatedAt();
     OffsetDateTime getLastModified();
+
     String getExternalId();
+
+    String getFirstName();
+    String getMiddleName();
+    String getLastName();
+    String getFullName();
+
     List<PermissionDTO> getPermissions();
     List<String> getRoles();
     AccountEmailDTO getEmail();
     AccountEmailDTO getBackupEmail();
+    PhoneNumberDTO getPhoneNumber();
+
     boolean isActive();
     boolean isDeleted();
 }

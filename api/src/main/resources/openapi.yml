@@ -2,7 +2,7 @@ openapi: 3.0.3
 
 info:
   title: AuthGuard API
-  version: 1.0.0
+  version: 0.4.0
 
 security:
   - apiKey: []
@@ -45,6 +45,29 @@ paths:
         200:
           description: Success
           $ref: "#/components/responses/AccountResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+    patch:
+      operationId: patchAccount
+      description: Update account information
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAccountRequest" 
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/AccountResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
@@ -130,27 +153,6 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RolesRequest"
-      responses:
-        200:
-          description: Success
-          $ref: "#/components/responses/ApplicationResponse"
-        404:
-          description: Not found
-          $ref: "#/components/responses/ErrorResponse"
-
-  /accounts/{id}/email:
-    patch:
-      operationId: updateAccountEmails
-      description: Update main or backup emails of an account
-      tags:
-        - accounts
-      parameters:
-        - $ref: "#/components/parameters/IdParameter"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AccountEmailRequest"
       responses:
         200:
           description: Success
@@ -421,6 +423,23 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
+  /apps/{id}/keys:
+    get:
+      operationId: getApiKeysByAppId
+      description: Get all API keys associated with an application
+      tags:
+        - applications
+        - api_keys
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApiKeysArrayResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
   /apps/externalId/{id}:
     get:
       operationId: getAppsByExternalId
@@ -468,6 +487,63 @@ paths:
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
+
+  # ---------------- API keys ---------------
+  /keys:
+    post:
+      operationId: generateApiKey
+      description: Generate a new API key for an application
+      tags:
+        - api_keys
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyRequest" 
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApiKeyResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /keys/{id}:
+    get:
+      operationId: getApiKeyById
+      description: Get an API key by ID
+      tags:
+        - api_keys
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyRequest"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApiKeyResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      operationId: deleteApiKey
+      description: Delete an API key by ID
+      tags:
+        - api_keys
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyRequest"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApiKeyResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+      
 
   # ----------------- roles -----------------
   /roles:
@@ -863,6 +939,13 @@ components:
               schema:
                 $ref: "#/components/schemas/Application"
 
+    ApiKeyResponse:
+      description: _
+      content:
+        application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKey"
+
     RoleResponse:
       description: _
       content:
@@ -922,6 +1005,15 @@ components:
                 items:
                   $ref: "#/components/schemas/ExchangeAttempt"
 
+    ApiKeysArrayResponse:
+      description: _
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/ApiKey"
+
   schemas:
     AccountWithCredentials:
       type: object
@@ -940,12 +1032,23 @@ components:
           type: string
         externalId:
           type: string
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        fullName:
+          type: string
         email:
           type: object
           $ref: "#/components/schemas/Email"
         backupEmail:
           type: object
           $ref: "#/components/schemas/Email"
+        phoneNumber:
+          type: object
+          $ref: "#/components/schemas/PhoneNumber"
         permissions:
           type: array
           items:
@@ -1008,6 +1111,14 @@ components:
           type: string
         verified:
           type: boolean
+
+    PhoneNumber:
+      type: object
+      properties:
+        number:
+          type: string
+        verified:
+          type: boolean
  
     Permission:
       type: object
@@ -1049,6 +1160,12 @@ components:
         expiresAt:
           type: string
           format: date-time
+
+    ApiKey:
+      type: object
+      properties:
+        appId:
+          type: string
 
     ExchangeAttempt:
       type: object
@@ -1099,12 +1216,23 @@ components:
       properties:
         externalId:
           type: string
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        fullName:
+          type: string
         email:
           type: object
           $ref: "#/components/schemas/Email"
         backupEmail:
           type: object
           $ref: "#/components/schemas/Email"
+        phoneNumber:
+          type: object
+          $ref: "#/components/schemas/PhoneNumber"
         permissions:
           type: array
           items:
@@ -1116,6 +1244,27 @@ components:
             type: string
         active:
           type: boolean
+
+    UpdateAccountRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: object
+          $ref: "#/components/schemas/Email"
+        backupEmail:
+          type: object
+          $ref: "#/components/schemas/Email"
+        phoneNumber:
+          type: object
+          $ref: "#/components/schemas/PhoneNumber"
 
     CreateApplicationRequest:
       type: object
@@ -1163,6 +1312,14 @@ components:
         credentials:
           type: object
           $ref: "#/components/schemas/CreateCredentialsRequest"
+
+    ApiKeyRequest:
+      type: object
+      required:
+        - appId
+      properties:
+        appId:
+          type: string
 
     CreateRoleRequest:
       type: object

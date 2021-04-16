@@ -16,9 +16,10 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
+import com.nexblocks.authguard.service.util.ID;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -108,7 +109,7 @@ public class AccessTokenProvider implements AuthProvider {
 
     private void storeRefreshToken(final String accountId, final String refreshToken, final TokenRestrictionsBO tokenRestrictions) {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
-                .id(UUID.randomUUID().toString())
+                .id(ID.generate())
                 .token(refreshToken)
                 .associatedAccountId(accountId)
                 .expiresAt(refreshTokenExpiry())
@@ -148,7 +149,7 @@ public class AccessTokenProvider implements AuthProvider {
         return tokenBuilder.builder(jwtBuilder).build();
     }
 
-    private ZonedDateTime refreshTokenExpiry() {
-        return ZonedDateTime.now().plus(refreshTokenTtl);
+    private OffsetDateTime refreshTokenExpiry() {
+        return OffsetDateTime.now().plus(refreshTokenTtl);
     }
 }

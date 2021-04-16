@@ -7,7 +7,7 @@ import lombok.experimental.SuperBuilder;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 
 @Data
 @NoArgsConstructor
@@ -19,5 +19,5 @@ import java.time.ZonedDateTime;
 public class OneTimePasswordDO extends AbstractDO {
     private String accountId;
     private String password;
-    private ZonedDateTime expiresAt;
+    private OffsetDateTime expiresAt;
 }

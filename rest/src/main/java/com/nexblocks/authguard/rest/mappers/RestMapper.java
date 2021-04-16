@@ -10,6 +10,7 @@ import org.mapstruct.Mapping;
 @Mapper
 public interface RestMapper {
     AccountBO toBO(CreateAccountRequestDTO createAccountRequestDTO);
+    AccountBO toBO(UpdateAccountRequestDTO updateAccountRequestDTO);
     AccountBO toBO(AccountDTO accountDTO);
     AccountDTO toDTO(AccountBO accountBO);
 
@@ -45,6 +46,9 @@ public interface RestMapper {
     AppBO toBO(AppDTO appDTO);
     @InheritInverseConfiguration
     AppDTO toDTO(AppBO appBO);
+
+    ApiKeyBO toBO(ApiKeyDTO apiKeyDO);
+    ApiKeyDTO toDTO(ApiKeyBO apiKeyBO);
 
     AccountLockBO toBO(AccountLockDTO accountLockDTO);
     AccountLockDTO toDTO(AccountLockBO accountLockBO);

@@ -16,6 +16,7 @@ public class Validators {
 
     static {
         classValidators.put(CreateAccountRequestDTO.class, new CreateAccountRequestValidator());
+        classValidators.put(UpdateAccountRequestDTO.class, new UpdateAccountRequestValidator());
         classValidators.put(CreateAppRequestDTO.class, new CreateAppRequestValidator());
         classValidators.put(CreateCredentialsRequestDTO.class, new CreateCredentialsRequestValidator());
         classValidators.put(CreateCompleteAccountRequestDTO.class, new CreateCompleteAccountRequestValidator());
@@ -31,6 +32,7 @@ public class Validators {
         classValidators.put(PermissionDTO.class, new PermissionValidator());
         classValidators.put(UserIdentifiersRequestDTO.class, new UserIdentifiersRequestValidator());
         classValidators.put(UserIdentifierDTO.class, new UserIdentifierValidator());
+        classValidators.put(ApiKeyRequestDTO.class, new ApiKeysRequestValidator());
     }
 
     @SuppressWarnings("unchecked")

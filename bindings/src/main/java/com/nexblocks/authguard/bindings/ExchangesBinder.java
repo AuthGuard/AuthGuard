@@ -6,6 +6,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.injection.ClassSearch;
 import com.nexblocks.authguard.service.auth.AuthProvider;
+import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.exceptions.ConfigurationException;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
@@ -49,7 +50,7 @@ public class ExchangesBinder extends AbstractModule {
                 .peek(clazz -> LOG.debug("Found exchange {}", clazz.getCanonicalName()))
                 .filter(clazz -> {
                     if (!hasTokenExchangeAnnotation(clazz)) {
-                        LOG.debug("Exchange {} will be ignored since it is not annotated with TokenExchange", clazz.getCanonicalName());
+                        LOG.warn("Exchange {} will be ignored since it is not annotated with TokenExchange", clazz.getCanonicalName());
                         return false;
                     }
 
@@ -77,14 +78,27 @@ public class ExchangesBinder extends AbstractModule {
     }
 
     private void configureProviders() {
+        final Collection<String> allowed = getAllowedProviders(configContext);
         final Multibinder<AuthProvider> authProvidersMultibinder = Multibinder.newSetBinder(binder(), AuthProvider.class);
 
         dynamicBinder.findAllBindingsFor(AuthProvider.class)
                 .forEach(clazz -> {
-                    LOG.debug("Found auth provider {}", clazz.getCanonicalName());
+                    final Optional<String> tokenType = providedTokenType(clazz);
 
-                    PluginsRegistry.register(clazz);
-                    authProvidersMultibinder.addBinding().to(clazz);
+                    if (tokenType.isPresent()) {
+                        if (allowed.contains(tokenType.get())) {
+                            LOG.debug("Found auth provider {}", clazz.getCanonicalName());
+
+                            PluginsRegistry.register(clazz);
+                            authProvidersMultibinder.addBinding().to(clazz);
+                        } else {
+                            LOG.debug("Skipping auth provider {} since its type ({}) is not allowed",
+                                    clazz.getCanonicalName(), tokenType.get());
+                        }
+                    } else {
+                        LOG.warn("Auth provider {} will be ignored since it is not annotated with ProvidesToken",
+                                clazz.getCanonicalName());
+                    }
                 });
     }
 
@@ -104,9 +118,20 @@ public class ExchangesBinder extends AbstractModule {
         return from + "->" + to;
     }
 
+    private Optional<String> providedTokenType(final Class<? extends AuthProvider> providerClass) {
+        return Optional.ofNullable(providerClass.getAnnotation(ProvidesToken.class))
+                .map(ProvidesToken::value);
+    }
+
     private Collection<ExchangeConfig> getAllowedExchanges(final ConfigContext configContext) {
         return Optional.ofNullable(configContext.getSubContext("exchange"))
                 .map(exchangeContext -> exchangeContext.getAsCollection("allowed", ExchangeConfig.class))
+                .orElseGet(Collections::emptyList);
+    }
+
+    private Collection<String> getAllowedProviders(final ConfigContext configContext) {
+        return Optional.ofNullable(configContext.getSubContext("exchange"))
+                .map(exchangeContext -> exchangeContext.getAsCollection("providers", String.class))
                 .orElseGet(Collections::emptyList);
     }
 

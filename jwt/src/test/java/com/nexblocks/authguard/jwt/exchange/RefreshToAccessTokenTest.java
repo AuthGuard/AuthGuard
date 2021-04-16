@@ -16,7 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -53,7 +53,7 @@ class RefreshToAccessTokenTest {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token(refreshToken)
                 .associatedAccountId(accountId)
-                .expiresAt(ZonedDateTime.now().plusMinutes(1))
+                .expiresAt(OffsetDateTime.now().plusMinutes(1))
                 .build();
 
         final AccountBO account = AccountBO.builder()
@@ -99,7 +99,7 @@ class RefreshToAccessTokenTest {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token(refreshToken)
                 .associatedAccountId(accountId)
-                .expiresAt(ZonedDateTime.now().plusMinutes(1))
+                .expiresAt(OffsetDateTime.now().plusMinutes(1))
                 .tokenRestrictions(TokenRestrictionsDO.builder()
                         .permissions(Collections.singleton(restrictionPermission))
                         .scopes(Collections.emptySet())
@@ -149,7 +149,7 @@ class RefreshToAccessTokenTest {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token(refreshToken)
                 .associatedAccountId(accountId)
-                .expiresAt(ZonedDateTime.now().minusMinutes(1))
+                .expiresAt(OffsetDateTime.now().minusMinutes(1))
                 .build();
 
         // mock
@@ -179,7 +179,7 @@ class RefreshToAccessTokenTest {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token(refreshToken)
                 .associatedAccountId(accountId)
-                .expiresAt(ZonedDateTime.now().plusMinutes(1))
+                .expiresAt(OffsetDateTime.now().plusMinutes(1))
                 .build();
 
         // mock

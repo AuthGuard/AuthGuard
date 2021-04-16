@@ -36,10 +36,10 @@ public class AccountsRoute extends AccountsApi {
     private final RestMapper restMapper;
 
     private final BodyHandler<CreateAccountRequestDTO> accountRequestBodyHandler;
+    private final BodyHandler<UpdateAccountRequestDTO> updateAccountRequestBodyHandler;
     private final BodyHandler<CreateCompleteAccountRequestDTO> completeAccountRequestBodyHandler;
     private final BodyHandler<PermissionsRequestDTO> permissionsRequestBodyHandler;
     private final BodyHandler<RolesRequestDTO> rolesRequestBodyHandler;
-    private final BodyHandler<AccountEmailsRequestDTO> accountEmailsRequestBodyHandler;
 
     @Inject
     AccountsRoute(final AccountsService accountsService,
@@ -55,13 +55,13 @@ public class AccountsRoute extends AccountsApi {
 
         this.accountRequestBodyHandler = new BodyHandler.Builder<>(CreateAccountRequestDTO.class)
                 .build();
+        this.updateAccountRequestBodyHandler = new BodyHandler.Builder<>(UpdateAccountRequestDTO.class)
+                .build();
         this.completeAccountRequestBodyHandler = new BodyHandler.Builder<>(CreateCompleteAccountRequestDTO.class)
                 .build();
         this.permissionsRequestBodyHandler = new BodyHandler.Builder<>(PermissionsRequestDTO.class)
                 .build();
         this.rolesRequestBodyHandler = new BodyHandler.Builder<>(RolesRequestDTO.class)
-                .build();
-        this.accountEmailsRequestBodyHandler = new BodyHandler.Builder<>(AccountEmailsRequestDTO.class)
                 .build();
     }
 
@@ -157,6 +157,22 @@ public class AccountsRoute extends AccountsApi {
         }
     }
 
+    @Override
+    public void patchAccount(final Context context) {
+        final String accountId = context.pathParam("id");
+        final UpdateAccountRequestDTO request = updateAccountRequestBodyHandler.getValidated(context);
+
+        final Optional<AccountDTO> account = accountsService.patch(accountId, restMapper.toBO(request))
+                .map(restMapper::toDTO);
+
+        if (account.isPresent()) {
+            context.status(200).json(account.get());
+        } else {
+            context.status(404)
+                    .json(new Error(ErrorCode.ACCOUNT_DOES_NOT_EXIST.getCode(), "Account not found"));
+        }
+    }
+
     public void getByExternalId(final Context context) {
         final String accountId = context.pathParam("id");
 
@@ -218,16 +234,6 @@ public class AccountsRoute extends AccountsApi {
         }
 
         context.json(updatedAccount);
-    }
-
-    @Override
-    public void updateEmail(final Context context) {
-        final String accountId = context.pathParam("id");
-        final AccountEmailsRequestDTO emailsRequest = accountEmailsRequestBodyHandler.getValidated(context);
-
-        accountsService.updateEmail(accountId, restMapper.toBO(emailsRequest.getEmail()), emailsRequest.isBackup())
-                .map(restMapper::toDTO)
-                .ifPresentOrElse(context::json, () -> context.status(404));
     }
 
     public void getApps(final Context context) {

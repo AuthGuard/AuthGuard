@@ -9,7 +9,7 @@ import com.nexblocks.authguard.service.model.SessionBO;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 
 public class SessionVerifier implements AuthVerifier {
     private final SessionsService sessionsService;
@@ -27,7 +27,7 @@ public class SessionVerifier implements AuthVerifier {
     }
 
     private Either<Exception, String> verifySession(final SessionBO session) {
-        if (session.getExpiresAt().isBefore(ZonedDateTime.now())) {
+        if (session.getExpiresAt().isBefore(OffsetDateTime.now())) {
             return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Session has expired",
                     EntityType.ACCOUNT, session.getAccountId()));
         }
