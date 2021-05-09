@@ -8,7 +8,7 @@ import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.config.JacksonConfigContext;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.PermissionBO;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jeasy.random.EasyRandom;
@@ -57,7 +57,7 @@ class IdTokenProviderTest {
         final IdTokenProvider idTokenProvider = newProviderInstance();
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final TokensBO tokens = idTokenProvider.generateToken(account);
+        final AuthResponseBO tokens = idTokenProvider.generateToken(account);
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();

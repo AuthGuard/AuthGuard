@@ -4,13 +4,13 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.nexblocks.authguard.service.auth.ProvidesToken;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.service.auth.AuthProvider;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AppBO;
-import com.nexblocks.authguard.service.model.TokensBO;
 
 @ProvidesToken("jwtApiKey")
 public class JwtApiKeyProvider implements AuthProvider {
@@ -28,17 +28,17 @@ public class JwtApiKeyProvider implements AuthProvider {
     }
 
     @Override
-    public TokensBO generateToken(final AccountBO account) {
+    public AuthResponseBO generateToken(final AccountBO account) {
         throw new UnsupportedOperationException("API keys cannot be generated for an account");
 
     }
 
     @Override
-    public TokensBO generateToken(final AppBO app) {
+    public AuthResponseBO generateToken(final AppBO app) {
         final JwtTokenBuilder tokenBuilder = generateApiToken(app);
         final String token = tokenBuilder.getBuilder().sign(algorithm);
 
-        return TokensBO.builder()
+        return AuthResponseBO.builder()
                 .type(TOKEN_TYPE)
                 .token(token)
                 .entityType(EntityType.APPLICATION)

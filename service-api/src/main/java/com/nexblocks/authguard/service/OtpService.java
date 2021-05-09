@@ -2,10 +2,10 @@ package com.nexblocks.authguard.service;
 
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 
 public interface OtpService {
-    TokensBO authenticate(AuthRequestBO authRequest, RequestContextBO requestContext);
+    AuthResponseBO authenticate(AuthRequestBO authRequest, RequestContextBO requestContext);
 
-    TokensBO authenticate(String passwordId, String otp, RequestContextBO requestContext);
+    AuthResponseBO authenticate(String passwordId, String otp, RequestContextBO requestContext);
 }

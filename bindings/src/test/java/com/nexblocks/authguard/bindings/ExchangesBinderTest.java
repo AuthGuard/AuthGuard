@@ -9,7 +9,7 @@ import com.nexblocks.authguard.service.exceptions.ConfigurationException;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import io.vavr.control.Either;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -34,7 +34,7 @@ class ExchangesBinderTest {
     @TokenExchange(from = "basic", to = "random")
     public static class FirstExchange implements Exchange {
         @Override
-        public Either<Exception, TokensBO> exchange(final AuthRequestBO request)  {
+        public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request)  {
             return Either.right(null);
         }
     }
@@ -42,7 +42,7 @@ class ExchangesBinderTest {
     @TokenExchange(from = "random", to = "chaos")
     public static class SecondExchange implements Exchange {
         @Override
-        public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
+        public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
             return Either.right(null);
         }
     }

@@ -24,8 +24,8 @@ class ExchangeServiceImplTest {
     @TokenExchange(from = "basic", to = "basic")
     static class ValidExchange implements Exchange {
         @Override
-        public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
-            return Either.right(TokensBO.builder()
+        public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
+            return Either.right(AuthResponseBO.builder()
                     .token(request.getToken())
                     .type("Basic")
                     .entityType(EntityType.ACCOUNT)
@@ -36,7 +36,7 @@ class ExchangeServiceImplTest {
 
     static class InvalidExchange implements Exchange {
         @Override
-        public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
+        public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
             return Either.right(null);
         }
     }
@@ -44,7 +44,7 @@ class ExchangeServiceImplTest {
     @TokenExchange(from = "basic", to = "empty")
     static class EmptyExchange implements Exchange {
         @Override
-        public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
+        public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
             return Either.left(new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "Empty"));
         }
     }
@@ -52,7 +52,7 @@ class ExchangeServiceImplTest {
     @TokenExchange(from = "basic", to = "exception")
     static class ExceptionExchange implements Exchange {
         @Override
-        public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
+        public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
             return Either.left(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE, "Empty",
                     EntityType.ACCOUNT, "account"));
         }
@@ -82,7 +82,7 @@ class ExchangeServiceImplTest {
                 .source("10.0.0.2")
                 .build();
 
-        final TokensBO expected = TokensBO.builder()
+        final AuthResponseBO expected = AuthResponseBO.builder()
                 .type("Basic")
                 .token(basic)
                 .entityType(EntityType.ACCOUNT)

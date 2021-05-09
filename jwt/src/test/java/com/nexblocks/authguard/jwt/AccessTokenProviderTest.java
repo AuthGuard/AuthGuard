@@ -82,7 +82,7 @@ class AccessTokenProviderTest {
         final AccessTokenProvider accessTokenProvider = newProviderInstance(strategyConfig);
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final TokensBO tokens = accessTokenProvider.generateToken(account);
+        final AuthResponseBO tokens = accessTokenProvider.generateToken(account);
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
@@ -117,7 +117,7 @@ class AccessTokenProviderTest {
                 .addPermissions("super:permission-1")
                 .build();
 
-        final TokensBO tokens = accessTokenProvider.generateToken(account, restrictions);
+        final AuthResponseBO tokens = accessTokenProvider.generateToken(account, restrictions);
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
@@ -149,7 +149,7 @@ class AccessTokenProviderTest {
         Mockito.when(jtiProvider.next()).thenReturn(jti);
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final TokensBO tokens = accessTokenProvider.generateToken(account);
+        final AuthResponseBO tokens = accessTokenProvider.generateToken(account);
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
@@ -176,14 +176,14 @@ class AccessTokenProviderTest {
                                 .build()
                 )));
 
-        final TokensBO expected = TokensBO.builder()
+        final AuthResponseBO expected = AuthResponseBO.builder()
                 .type("access_token")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(accountId)
                 .refreshToken(refreshToken)
                 .build();
 
-        final TokensBO actual = accessTokenProvider.delete(deleteRequest);
+        final AuthResponseBO actual = accessTokenProvider.delete(deleteRequest);
 
         assertThat(actual).isEqualTo(expected);
     }

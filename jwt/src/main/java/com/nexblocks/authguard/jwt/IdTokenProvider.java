@@ -6,13 +6,13 @@ import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ConfigParser;
 import com.nexblocks.authguard.service.config.StrategyConfig;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.service.auth.AuthProvider;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AppBO;
-import com.nexblocks.authguard.service.model.TokensBO;
 import com.google.inject.name.Named;
 
 import java.time.Duration;
@@ -38,12 +38,12 @@ public class IdTokenProvider implements AuthProvider {
     }
 
     @Override
-    public TokensBO generateToken(final AccountBO account) {
+    public AuthResponseBO generateToken(final AccountBO account) {
         final JwtTokenBuilder tokenBuilder = generateIdToke(account);
         final String token = tokenBuilder.getBuilder().sign(algorithm);
         final String refreshToken = jwtGenerator.generateRandomRefreshToken();
 
-        return TokensBO.builder()
+        return AuthResponseBO.builder()
                 .type(TOKEN_TYPE)
                 .token(token)
                 .refreshToken(refreshToken)
@@ -53,7 +53,7 @@ public class IdTokenProvider implements AuthProvider {
     }
 
     @Override
-    public TokensBO generateToken(final AppBO app) {
+    public AuthResponseBO generateToken(final AppBO app) {
         throw new UnsupportedOperationException("ID tokens cannot be generated for an application");
     }
 

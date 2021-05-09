@@ -1,7 +1,7 @@
 package com.nexblocks.authguard.rest.routes;
 
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
-import com.nexblocks.authguard.api.dto.entities.TokensDTO;
+import com.nexblocks.authguard.api.dto.entities.AuthResponseDTO;
 import com.nexblocks.authguard.api.dto.requests.OtpRequestDTO;
 import com.nexblocks.authguard.api.routes.OtpApi;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
@@ -30,7 +30,7 @@ public class OtpRoute extends OtpApi {
         final OtpRequestDTO body = otpRequestBodyHandler.getValidated(context);
         final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        final TokensDTO tokens = restMapper.toDTO(otpService.authenticate(body.getPasswordId(), body.getPassword(), requestContext));
+        final AuthResponseDTO tokens = restMapper.toDTO(otpService.authenticate(body.getPasswordId(), body.getPassword(), requestContext));
 
         context.json(tokens);
     }

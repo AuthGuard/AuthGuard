@@ -1,13 +1,15 @@
 package com.nexblocks.authguard.jwt.oauth.route;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
+import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.RequestValidationError;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.ApiRoute;
 import com.nexblocks.authguard.jwt.oauth.service.OAuthService;
-import com.google.inject.Inject;
 import io.javalin.http.Context;
+import io.vavr.control.Either;
 
 import java.util.Collections;
 
@@ -30,8 +32,25 @@ public class OAuthRoute implements ApiRoute {
 
     @Override
     public void addEndpoints() {
+        get("/oidc/auth", this::openIdConnectAuthFlows);
+        post("/oidc/token", this::openIdConnectAuthFlows);
         get("/auth_url", this::getAuthUrl);
         post("/authorize", this::authorize);
+    }
+
+    void openIdConnectAuthFlows(final Context context) {
+        final Either<RequestValidationError, ImmutableOpenIdConnectRequest> request
+                = OpenIdConnectRequestParser.fromContext(context, "code");
+
+        if (request.isLeft()) {
+            context.status(400).json(request.getLeft());
+        } else {
+            context.json(501).json(new Error("501", "Feature not currently supported"));
+        }
+    }
+
+    void openIdConnectToken(final Context context) {
+
     }
 
     void getAuthUrl(final Context context) {

@@ -9,7 +9,7 @@ import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.SessionBO;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import io.vavr.control.Either;
 
 import java.time.OffsetDateTime;
@@ -27,7 +27,7 @@ public class SessionTokenToSession implements Exchange {
     }
 
     @Override
-    public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
+    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
         final Optional<SessionBO> sessionOpt = sessionsService.getByToken(request.getToken());
 
         if (sessionOpt.isEmpty()) {
@@ -40,7 +40,7 @@ public class SessionTokenToSession implements Exchange {
             return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Session token has expired"));
         }
 
-        return Either.right(TokensBO.builder()
+        return Either.right(AuthResponseBO.builder()
                 .type(TOKEN_TYPE)
                 .token(session)
                 .entityType(EntityType.ACCOUNT)

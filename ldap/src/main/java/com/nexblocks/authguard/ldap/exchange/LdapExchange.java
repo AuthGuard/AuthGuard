@@ -5,7 +5,7 @@ import com.nexblocks.authguard.service.auth.AuthProvider;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import io.vavr.control.Either;
 
 import java.util.Base64;
@@ -20,7 +20,7 @@ public abstract class LdapExchange implements Exchange {
     }
 
     @Override
-    public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
+    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
         final AccountBO account = ldapService.authenticate(request.getIdentifier(), request.getPassword());
 
         return Either.right(authProvider.generateToken(account));

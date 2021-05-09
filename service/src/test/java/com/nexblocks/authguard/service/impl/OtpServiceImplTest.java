@@ -5,8 +5,8 @@ import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.dal.model.OneTimePasswordDO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
-import com.nexblocks.authguard.service.model.TokensBO;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,7 @@ class OtpServiceImplTest {
         setup(otpConfig);
 
         final OneTimePasswordDO otp = random.nextObject(OneTimePasswordDO.class);
-        final TokensBO tokens = random.nextObject(TokensBO.class);
+        final AuthResponseBO tokens = random.nextObject(AuthResponseBO.class);
 
         final String otpToken = otp.getId() + ":" + otp.getPassword();
         final AuthRequestBO authRequest = AuthRequestBO.builder()
@@ -51,7 +51,7 @@ class OtpServiceImplTest {
         Mockito.when(mockExchangeService.exchange(authRequest, "otp", otpConfig.getGenerateToken(), requestContext))
                 .thenReturn(tokens);
 
-        final TokensBO generated = otpService.authenticate(otp.getId(), otp.getPassword(), requestContext);
+        final AuthResponseBO generated = otpService.authenticate(otp.getId(), otp.getPassword(), requestContext);
 
         assertThat(generated).isEqualTo(tokens);
     }

@@ -6,15 +6,15 @@ public interface AuthProvider {
     /**
      * Generate a token and (optionally) a refresh token.
      */
-    TokensBO generateToken(AccountBO account);
+    AuthResponseBO generateToken(AccountBO account);
 
-    default TokensBO generateToken(AccountBO account, TokenRestrictionsBO restrictions) {
+    default AuthResponseBO generateToken(AccountBO account, TokenRestrictionsBO restrictions) {
         return generateToken(account);
     }
 
-    TokensBO generateToken(AppBO app);
+    AuthResponseBO generateToken(AppBO app);
 
-    default TokensBO delete(AuthRequestBO authRequest) {
+    default AuthResponseBO delete(AuthRequestBO authRequest) {
         throw new UnsupportedOperationException("Token cannot be deleted");
     }
 }

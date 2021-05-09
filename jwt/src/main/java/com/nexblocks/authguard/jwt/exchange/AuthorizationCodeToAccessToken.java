@@ -36,12 +36,12 @@ public class AuthorizationCodeToAccessToken implements Exchange {
     }
 
     @Override
-    public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
+    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
         return authorizationCodeVerifier.verifyAndGetAccountToken(request.getToken())
                 .flatMap(this::generateToken);
     }
 
-    private Either<Exception, TokensBO> generateToken(final AccountTokenDO accountToken) {
+    private Either<Exception, AuthResponseBO> generateToken(final AccountTokenDO accountToken) {
         if (accountToken.getAdditionalInformation() == null) {
             return generateWithNoRestrictions(accountToken);
         } else {
@@ -57,7 +57,7 @@ public class AuthorizationCodeToAccessToken implements Exchange {
         }
     }
 
-    private Either<Exception, TokensBO> generateWithNoRestrictions(final AccountTokenDO accountToken) {
+    private Either<Exception, AuthResponseBO> generateWithNoRestrictions(final AccountTokenDO accountToken) {
         return getAccount(accountToken.getAssociatedAccountId())
                 .map(accessTokenProvider::generateToken);
     }

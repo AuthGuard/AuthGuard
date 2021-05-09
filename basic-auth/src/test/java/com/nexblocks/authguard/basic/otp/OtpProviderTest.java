@@ -8,8 +8,8 @@ import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.basic.config.OtpMode;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.AccountBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.EntityType;
-import com.nexblocks.authguard.service.model.TokensBO;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
@@ -54,13 +54,13 @@ class OtpProviderTest {
 
         final AccountBO account = random.nextObject(AccountBO.class);
 
-        final TokensBO expected = TokensBO.builder()
+        final AuthResponseBO expected = AuthResponseBO.builder()
                 .type("otp")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .build();
 
-        final TokensBO generated = otpProvider.generateToken(account);
+        final AuthResponseBO generated = otpProvider.generateToken(account);
 
         assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(generated.getToken()).isNotNull();
@@ -95,13 +95,13 @@ class OtpProviderTest {
 
         final AccountBO account = random.nextObject(AccountBO.class);
 
-        final TokensBO expected = TokensBO.builder()
+        final AuthResponseBO expected = AuthResponseBO.builder()
                 .type("otp")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .build();
 
-        final TokensBO generated = otpProvider.generateToken(account);
+        final AuthResponseBO generated = otpProvider.generateToken(account);
 
         assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(generated.getToken()).isNotNull();
@@ -140,13 +140,13 @@ class OtpProviderTest {
 
         final AccountBO account = random.nextObject(AccountBO.class);
 
-        final TokensBO expected = TokensBO.builder()
+        final AuthResponseBO expected = AuthResponseBO.builder()
                 .type("otp")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .build();
 
-        final TokensBO generated = otpProvider.generateToken(account);
+        final AuthResponseBO generated = otpProvider.generateToken(account);
 
         assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(generated.getToken()).isNotNull();

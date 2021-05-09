@@ -21,7 +21,6 @@ import com.nexblocks.authguard.service.util.ID;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 @ProvidesToken("accessToken")
 public class AccessTokenProvider implements AuthProvider {
@@ -68,19 +67,19 @@ public class AccessTokenProvider implements AuthProvider {
     }
 
     @Override
-    public TokensBO generateToken(final AccountBO account) {
+    public AuthResponseBO generateToken(final AccountBO account) {
         return generateToken(account, null);
     }
 
     @Override
-    public TokensBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
+    public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
         final JwtTokenBuilder tokenBuilder = generateAccessToken(account, restrictions);
         final String token = tokenBuilder.getBuilder().sign(algorithm);
         final String refreshToken = jwtGenerator.generateRandomRefreshToken();
 
         storeRefreshToken(account.getId(), refreshToken, restrictions);
 
-        return TokensBO.builder()
+        return AuthResponseBO.builder()
                 .id(tokenBuilder.getId().orElse(null))
                 .type(TOKEN_TYPE)
                 .token(token)
@@ -91,14 +90,14 @@ public class AccessTokenProvider implements AuthProvider {
     }
 
     @Override
-    public TokensBO generateToken(final AppBO app) {
+    public AuthResponseBO generateToken(final AppBO app) {
         throw new UnsupportedOperationException("Access tokens cannot be generated for an application");
     }
 
     @Override
-    public TokensBO delete(final AuthRequestBO authRequest) {
+    public AuthResponseBO delete(final AuthRequestBO authRequest) {
         return deleteRefreshToken(authRequest.getToken())
-                .map(accountToken -> TokensBO.builder()
+                .map(accountToken -> AuthResponseBO.builder()
                         .type(TOKEN_TYPE)
                         .entityId(accountToken.getAssociatedAccountId())
                         .entityType(EntityType.ACCOUNT)

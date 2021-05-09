@@ -5,7 +5,7 @@ import com.nexblocks.authguard.jwt.JwtApiKeyProvider;
 import com.nexblocks.authguard.service.exchange.ApiKeyExchange;
 import com.nexblocks.authguard.service.exchange.KeyExchange;
 import com.nexblocks.authguard.service.model.AppBO;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.google.inject.Inject;
 
 import java.util.Optional;
@@ -24,7 +24,7 @@ public class JwtApiKeyExchange implements ApiKeyExchange {
     }
 
     @Override
-    public TokensBO generateKey(final AppBO app) {
+    public AuthResponseBO generateKey(final AppBO app) {
         return tokenProvider.generateToken(app);
     }
 

@@ -1,11 +1,11 @@
 package com.nexblocks.authguard.service;
 
 import com.nexblocks.authguard.service.model.AuthRequestBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
-import com.nexblocks.authguard.service.model.TokensBO;
 
 public interface PasswordlessService {
-    TokensBO authenticate(AuthRequestBO authRequest, RequestContextBO requestContext);
+    AuthResponseBO authenticate(AuthRequestBO authRequest, RequestContextBO requestContext);
 
-    TokensBO authenticate(String passwordlessToken, RequestContextBO requestContext);
+    AuthResponseBO authenticate(String passwordlessToken, RequestContextBO requestContext);
 }

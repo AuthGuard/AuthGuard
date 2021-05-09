@@ -14,7 +14,7 @@ import com.nexblocks.authguard.service.keys.ApiKeyHashProvider;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.ApiKeyBO;
 import com.nexblocks.authguard.service.model.AppBO;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 
 import java.util.List;
 import java.util.Optional;
@@ -78,7 +78,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
 
     @Override
     public ApiKeyBO generateApiKey(final AppBO app) {
-        final TokensBO token = apiKeyExchange.generateKey(app);
+        final AuthResponseBO token = apiKeyExchange.generateKey(app);
         final String generatedKey = (String) token.getToken();
 
         final ApiKeyBO persisted = create(ApiKeyBO.builder()

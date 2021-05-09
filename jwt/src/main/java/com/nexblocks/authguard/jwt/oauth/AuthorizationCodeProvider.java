@@ -16,7 +16,6 @@ import com.nexblocks.authguard.service.util.ID;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @ProvidesToken("authorizationCode")
 public class AuthorizationCodeProvider implements AuthProvider {
@@ -41,12 +40,12 @@ public class AuthorizationCodeProvider implements AuthProvider {
     }
 
     @Override
-    public TokensBO generateToken(final AccountBO account) {
+    public AuthResponseBO generateToken(final AccountBO account) {
         return generateToken(account, null);
     }
 
     @Override
-    public TokensBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
+    public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
         final String code = random.base64(config.getRandomSize());
 
         final AccountTokenDO accountToken = AccountTokenDO.builder()
@@ -60,7 +59,7 @@ public class AuthorizationCodeProvider implements AuthProvider {
 
         accountTokensRepository.save(accountToken);
 
-        return TokensBO.builder()
+        return AuthResponseBO.builder()
                 .type("authorizationCode")
                 .token(code)
                 .entityType(EntityType.ACCOUNT)
@@ -69,7 +68,7 @@ public class AuthorizationCodeProvider implements AuthProvider {
     }
 
     @Override
-    public TokensBO generateToken(final AppBO app) {
+    public AuthResponseBO generateToken(final AppBO app) {
         throw new UnsupportedOperationException("Authorization code cannot be generated for applications");
     }
 }

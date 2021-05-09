@@ -6,7 +6,7 @@ import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
@@ -38,7 +38,7 @@ class AuthorizationCodeProviderTest {
                 .id("account-id")
                 .build();
 
-        final TokensBO tokens = authorizationCodeProvider.generateToken(account);
+        final AuthResponseBO tokens = authorizationCodeProvider.generateToken(account);
 
         assertThat(tokens.getType()).isEqualTo("authorizationCode");
         assertThat(tokens.getToken()).isNotNull();

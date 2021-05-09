@@ -39,13 +39,13 @@ class SessionProviderTest {
                 .id("account-id")
                 .build();
 
-        final TokensBO expected = TokensBO.builder()
+        final AuthResponseBO expected = AuthResponseBO.builder()
                 .type("session_token")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .build();
 
-        final TokensBO actual = sessionProvider.generateToken(account);
+        final AuthResponseBO actual = sessionProvider.generateToken(account);
 
         assertThat(actual).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(actual.getToken()).isNotNull().isInstanceOf(String.class);
@@ -65,14 +65,14 @@ class SessionProviderTest {
                         .sessionToken(sessionToken)
                         .build()));
 
-        final TokensBO expected = TokensBO.builder()
+        final AuthResponseBO expected = AuthResponseBO.builder()
                 .type("session_token")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(accountId)
                 .token(sessionToken)
                 .build();
 
-        final TokensBO actual = sessionProvider.delete(AuthRequestBO.builder()
+        final AuthResponseBO actual = sessionProvider.delete(AuthRequestBO.builder()
                 .token(sessionToken)
                 .build());
 

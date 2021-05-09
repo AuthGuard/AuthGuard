@@ -7,7 +7,7 @@ import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.rest.util.RequestContextExtractor;
 import com.nexblocks.authguard.service.PasswordlessService;
 import com.nexblocks.authguard.service.model.RequestContextBO;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
 
@@ -27,7 +27,7 @@ public class PasswordlessRoute extends PasswordlessApi {
         final PasswordlessRequestDTO request = passwordlessRequestBodyHandler.getValidated(context);
         final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        final TokensBO generatedTokens = passwordlessService.authenticate(request.getToken(), requestContext);
+        final AuthResponseBO generatedTokens = passwordlessService.authenticate(request.getToken(), requestContext);
 
         context.json(generatedTokens);
     }

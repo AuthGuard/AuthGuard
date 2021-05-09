@@ -9,8 +9,8 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountLockBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
-import com.nexblocks.authguard.service.model.TokensBO;
 import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -63,7 +63,7 @@ class AuthenticationServiceImplTest {
                 .password(password)
                 .build();
 
-        final TokensBO tokens = RANDOM.nextObject(TokensBO.class);
+        final AuthResponseBO tokens = RANDOM.nextObject(AuthResponseBO.class);
         final RequestContextBO requestContext = RequestContextBO.builder().build();
 
         Mockito.when(exchangeService.exchange(authRequest, "basic", "accessToken", requestContext))
@@ -72,7 +72,7 @@ class AuthenticationServiceImplTest {
         Mockito.when(accountLocksService.getActiveLocksByAccountId(tokens.getEntityId()))
                 .thenReturn(Collections.emptyList());
 
-        final Optional<TokensBO> result = authenticationService.authenticate(authRequest, requestContext);
+        final Optional<AuthResponseBO> result = authenticationService.authenticate(authRequest, requestContext);
 
         assertThat(result).isPresent().contains(tokens);
     }
@@ -86,7 +86,7 @@ class AuthenticationServiceImplTest {
                 .password(password)
                 .build();
 
-        final TokensBO tokens = RANDOM.nextObject(TokensBO.class);
+        final AuthResponseBO tokens = RANDOM.nextObject(AuthResponseBO.class);
         final RequestContextBO requestContext = RequestContextBO.builder().build();
 
         Mockito.when(exchangeService.exchange(authRequest, "basic", "accessToken", requestContext))

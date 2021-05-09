@@ -31,7 +31,7 @@ public interface ServiceMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "key", expression = "java(tokensBO.getToken().toString())")
     @Mapping(target = "appId", source = "appBO.id")
-    ApiKeyDO toDO(TokensBO tokensBO, AppBO appBO);
+    ApiKeyDO toDO(AuthResponseBO tokensBO, AppBO appBO);
 
     OneTimePasswordDO toDO(OneTimePasswordBO oneTimePasswordBO);
     OneTimePasswordBO toBO(OneTimePasswordDO oneTimePasswordDO);
