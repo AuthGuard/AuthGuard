@@ -1,8 +1,6 @@
 package com.nexblocks.authguard.jwt;
 
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -60,9 +58,23 @@ public class AsymmetricKeys {
 
     public static KeyPair fromBase64Keys(final KeyFactory keyFactory, final byte[] base64Public,
                                          final byte[] base64Private) throws InvalidKeySpecException {
+        final PublicKey publicKey = publicKeyFromBase64Keys(keyFactory, base64Public);
+        final PrivateKey privateKey = privateKeyFromBase64Keys(keyFactory, base64Private);
+
+        return new KeyPair(publicKey, privateKey);
+    }
+
+    public static PublicKey publicKeyFromBase64Keys(final KeyFactory keyFactory, final byte[] base64Public)
+            throws InvalidKeySpecException {
         final X509EncodedKeySpec publicKeySpecs = new X509EncodedKeySpec(base64Public);
+
+        return keyFactory.generatePublic(publicKeySpecs);
+    }
+
+    public static PrivateKey privateKeyFromBase64Keys(final KeyFactory keyFactory, final byte[] base64Private)
+            throws InvalidKeySpecException {
         final PKCS8EncodedKeySpec privateKeySpecs = new PKCS8EncodedKeySpec(base64Private);
 
-        return new KeyPair(keyFactory.generatePublic(publicKeySpecs), keyFactory.generatePrivate(privateKeySpecs));
+        return keyFactory.generatePrivate(privateKeySpecs);
     }
 }
