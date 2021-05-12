@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.jwt.exchange;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.jwt.IdTokenVerifier;
 import com.nexblocks.authguard.jwt.TokenEncryptor;
 import com.nexblocks.authguard.service.exchange.Exchange;
@@ -15,6 +16,7 @@ public class EncryptedToIdToken implements Exchange {
     private final IdTokenVerifier idTokenVerifier;
     private final TokenEncryptor tokenEncryptor;
 
+    @Inject
     public EncryptedToIdToken(final IdTokenVerifier accessTokenVerifier, final TokenEncryptor tokenEncryptor) {
         this.idTokenVerifier = accessTokenVerifier;
         this.tokenEncryptor = tokenEncryptor;

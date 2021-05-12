@@ -24,24 +24,6 @@ class TokenEncryptorTest {
     }
 
     @Test
-    void encryptAndDecryptRsa() {
-        final JwtConfig jwtConfig = JwtConfig.builder()
-                .encryption(EncryptionConfig.builder()
-                        .algorithm("RSA")
-                        .publicKey("src/test/resources/rsa512-public.pem")
-                        .privateKey("src/test/resources/rsa512-private.pem")
-                        .build())
-                .build();
-
-        final TokenEncryptor encryptor = new TokenEncryptor(jwtConfig);
-
-        final String encrypted = encryptor.encryptAndEncode(TOKEN).get();
-        final String decrypted = encryptor.decryptEncoded(encrypted).get();
-
-        assertThat(decrypted).isEqualTo(TOKEN);
-    }
-
-    @Test
     void encryptAndDecryptEllipticCurve() {
         final JwtConfig jwtConfig = JwtConfig.builder()
                 .encryption(EncryptionConfig.builder()
@@ -84,7 +66,7 @@ class TokenEncryptorTest {
     void initializeWithNonExistingKeys() {
         final JwtConfig jwtConfig = JwtConfig.builder()
                 .encryption(EncryptionConfig.builder()
-                        .algorithm("RSA")
+                        .algorithm("EC")
                         .publicKey("src/test/resources/none.pem")
                         .privateKey("src/test/resources/none.pem")
                         .build())
@@ -97,7 +79,7 @@ class TokenEncryptorTest {
     void initializeWithWrongKeys() {
         final JwtConfig jwtConfig = JwtConfig.builder()
                 .encryption(EncryptionConfig.builder()
-                        .algorithm("RSA")
+                        .algorithm("EC")
                         .publicKey("src/test/resources/hmac256.pem")
                         .privateKey("src/test/resources/hmac256.pem")
                         .build())

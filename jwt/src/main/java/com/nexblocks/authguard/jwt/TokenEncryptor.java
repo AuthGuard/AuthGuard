@@ -98,16 +98,11 @@ public class TokenEncryptor {
     private KeyPair readKeysForFail(final Cryptography.Algorithm algorithm, final byte[] publicKeyBase64,
                                     final byte[] privateKeyBase64) {
         try {
-            switch (algorithm) {
-                case RSA:
-                    return AsymmetricKeys.rsaFromBase64Keys(publicKeyBase64, privateKeyBase64);
-
-                case EC:
-                    return AsymmetricKeys.eciesFromBase64Keys(publicKeyBase64, privateKeyBase64);
-
-                default:
-                    throw new ConfigurationException("Unsupported algorithm " + algorithm);
+            if (algorithm == Cryptography.Algorithm.EC) {
+                return AsymmetricKeys.eciesFromBase64Keys(publicKeyBase64, privateKeyBase64);
             }
+
+            throw new ConfigurationException("Unsupported algorithm " + algorithm);
         } catch (final InvalidKeySpecException | NoSuchAlgorithmException e) {
             throw new ConfigurationException("Failed to read keys", e);
         }

@@ -1,13 +1,12 @@
 package com.nexblocks.authguard.jwt;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
+import java.security.*;
 import java.util.Optional;
 
 /**
@@ -18,8 +17,11 @@ public class Cryptography {
 
     private static final String SECURITY_PROVIDER = "BC";
 
+    static {
+        Security.addProvider(new BouncyCastleProvider());
+    }
+
     enum Algorithm {
-        RSA("RSA"),
         EC("ECIES");
 
         private final String value;
