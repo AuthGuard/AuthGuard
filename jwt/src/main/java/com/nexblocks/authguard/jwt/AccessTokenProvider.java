@@ -24,7 +24,7 @@ import java.util.Optional;
 
 @ProvidesToken("accessToken")
 public class AccessTokenProvider implements AuthProvider {
-    private static final String TOKEN_TYPE = "access_token";
+    private static final String TOKEN_TYPE = "accessToken";
 
     private final AccountTokensRepository accountTokensRepository;
     private final JtiProvider jti;

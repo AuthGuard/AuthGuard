@@ -19,7 +19,7 @@ import java.time.Duration;
 
 @ProvidesToken("idToken")
 public class IdTokenProvider implements AuthProvider {
-    private static final String TOKEN_TYPE = "id_token";
+    private static final String TOKEN_TYPE = "idToken";
 
     private final Algorithm algorithm;
     private final JwtGenerator jwtGenerator;

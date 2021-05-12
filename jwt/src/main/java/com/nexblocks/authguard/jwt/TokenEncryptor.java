@@ -59,7 +59,7 @@ public class TokenEncryptor {
      * @param token The token to encrypt. Must be UTF-8 encoded.
      * @return A base64 encrypted text of the token.
      */
-    public Either<ServiceException, String> encryptAndEncode(final String token) {
+    public Either<Exception, String> encryptAndEncode(final String token) {
         if (this.enabled) {
             final byte[] raw = token.getBytes(StandardCharsets.UTF_8);
             final byte[] encrypted = Cryptography.encrypt(raw, cipher, keyPair.getPublic());
@@ -76,7 +76,7 @@ public class TokenEncryptor {
      * @param encryptedToken Encrypted and base64-encoded string.
      * @return The decrypted token, UTF-8 encoded.
      */
-    public Either<ServiceException, String> decryptEncoded(final String encryptedToken) {
+    public Either<Exception, String> decryptEncoded(final String encryptedToken) {
         if (this.enabled) {
             final byte[] decoded = Base64.getDecoder().decode(encryptedToken);
             final byte[] decrypted = Cryptography.decrypt(decoded, cipher, keyPair.getPrivate());

@@ -7,6 +7,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
+import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.PermissionBO;
@@ -17,6 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -90,6 +93,29 @@ class JwtTokenVerifierTest {
 
         assertThat(validatedToken.isRight()).isTrue();
         verifyToken(validatedToken.get(), account.getId(), null, null, null);
+    }
+
+    @Test
+    void validateExpired() {
+        final StrategyConfig strategyConfig = strategyConfig(false);
+        final JwtConfig jwtConfig = jwtConfig();
+
+        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+
+        final Algorithm algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getPublicKey(),
+                jwtConfig.getPrivateKey());
+        final JwtGenerator jwtGenerator = new JwtGenerator(jwtConfig);
+
+        final String token = jwtGenerator.generateUnsignedToken(account, Duration.ofMinutes(5))
+                .withExpiresAt(Date.from(Instant.now().minusSeconds(60)))
+                .sign(algorithm);
+
+        final JwtTokenVerifier jwtTokenVerifier = newVerifierInstance(strategyConfig);
+
+        final Either<Exception, DecodedJWT> validatedToken = jwtTokenVerifier.verify(token);
+
+        assertThat(validatedToken.isLeft()).isTrue();
+        assertThat(validatedToken.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test

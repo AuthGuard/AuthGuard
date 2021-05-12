@@ -215,7 +215,7 @@ class AccessTokenProviderTest {
                 )));
 
         final AuthResponseBO expected = AuthResponseBO.builder()
-                .type("access_token")
+                .type("accessToken")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(accountId)
                 .refreshToken(refreshToken)
