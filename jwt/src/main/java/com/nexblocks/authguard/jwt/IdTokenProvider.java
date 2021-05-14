@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
+import com.nexblocks.authguard.jwt.crypto.TokenEncryptorAdapter;
 import com.nexblocks.authguard.service.auth.AuthProvider;
 import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ConfigParser;
@@ -23,7 +24,7 @@ public class IdTokenProvider implements AuthProvider {
 
     private final Algorithm algorithm;
     private final JwtGenerator jwtGenerator;
-    private final TokenEncryptor tokenEncryptor;
+    private final TokenEncryptorAdapter tokenEncryptor;
     private final StrategyConfig strategy;
     private final Duration tokenTtl;
     private final boolean encrypt;
@@ -31,7 +32,7 @@ public class IdTokenProvider implements AuthProvider {
     @Inject
     public IdTokenProvider(final @Named("jwt") ConfigContext jwtConfigContext,
                            final @Named("idToken") ConfigContext idTokenConfigContext,
-                           final TokenEncryptor tokenEncryptor) {
+                           final TokenEncryptorAdapter tokenEncryptor) {
         this(jwtConfigContext.asConfigBean(JwtConfig.class),
                 idTokenConfigContext.asConfigBean(StrategyConfig.class),
                 tokenEncryptor);
@@ -39,7 +40,7 @@ public class IdTokenProvider implements AuthProvider {
 
     public IdTokenProvider(final JwtConfig jwtConfig,
                            final StrategyConfig idTokenConfig,
-                           final TokenEncryptor tokenEncryptor) {
+                           final TokenEncryptorAdapter tokenEncryptor) {
         this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getPublicKey(), jwtConfig.getPrivateKey());
 
         this.tokenEncryptor = tokenEncryptor;

@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.jwt;
+package com.nexblocks.authguard.jwt.crypto;
 
 import com.nexblocks.authguard.service.config.EncryptionConfig;
 import com.nexblocks.authguard.service.config.JwtConfig;
@@ -12,7 +12,7 @@ import java.security.Security;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class TokenEncryptorTest {
+class TokenEncryptorAdapterTest {
 
     private static final String TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
             "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ." +
@@ -33,7 +33,24 @@ class TokenEncryptorTest {
                         .build())
                 .build();
 
-        final TokenEncryptor encryptor = new TokenEncryptor(jwtConfig);
+        final TokenEncryptorAdapter encryptor = new TokenEncryptorAdapter(jwtConfig);
+
+        final String encrypted = encryptor.encryptAndEncode(TOKEN).get();
+        final String decrypted = encryptor.decryptEncoded(encrypted).get();
+
+        assertThat(decrypted).isEqualTo(TOKEN);
+    }
+
+    @Test
+    void encryptAndDecryptAes() {
+        final JwtConfig jwtConfig = JwtConfig.builder()
+                .encryption(EncryptionConfig.builder()
+                        .algorithm("AES_CBC")
+                        .privateKey("src/test/resources/aes128.txt")
+                        .build())
+                .build();
+
+        final TokenEncryptorAdapter encryptor = new TokenEncryptorAdapter(jwtConfig);
 
         final String encrypted = encryptor.encryptAndEncode(TOKEN).get();
         final String decrypted = encryptor.decryptEncoded(encrypted).get();
@@ -45,7 +62,7 @@ class TokenEncryptorTest {
     void encryptAndDecryptNotEnabled() {
         final JwtConfig jwtConfig = JwtConfig.builder().build();
 
-        final TokenEncryptor encryptor = new TokenEncryptor(jwtConfig);
+        final TokenEncryptorAdapter encryptor = new TokenEncryptorAdapter(jwtConfig);
 
         assertThat(encryptor.encryptAndEncode("").isLeft()).isTrue();
         assertThat(encryptor.decryptEncoded("").isLeft()).isTrue();
@@ -59,7 +76,7 @@ class TokenEncryptorTest {
                         .build())
                 .build();
 
-        assertThatThrownBy(() -> new TokenEncryptor(jwtConfig)).isInstanceOf(ConfigurationException.class);
+        assertThatThrownBy(() -> new TokenEncryptorAdapter(jwtConfig)).isInstanceOf(ConfigurationException.class);
     }
 
     @Test
@@ -72,7 +89,7 @@ class TokenEncryptorTest {
                         .build())
                 .build();
 
-        assertThatThrownBy(() -> new TokenEncryptor(jwtConfig)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> new TokenEncryptorAdapter(jwtConfig)).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -85,6 +102,6 @@ class TokenEncryptorTest {
                         .build())
                 .build();
 
-        assertThatThrownBy(() -> new TokenEncryptor(jwtConfig)).isInstanceOf(ConfigurationException.class);
+        assertThatThrownBy(() -> new TokenEncryptorAdapter(jwtConfig)).isInstanceOf(ConfigurationException.class);
     }
 }

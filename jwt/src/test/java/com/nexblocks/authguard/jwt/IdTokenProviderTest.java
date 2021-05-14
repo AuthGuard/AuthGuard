@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Verification;
+import com.nexblocks.authguard.jwt.crypto.TokenEncryptorAdapter;
 import com.nexblocks.authguard.service.config.EncryptionConfig;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
@@ -28,7 +29,7 @@ class IdTokenProviderTest {
     private static final String ISSUER = "test";
 
     private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
-    private TokenEncryptor tokenEncryptor;
+    private TokenEncryptorAdapter tokenEncryptor;
 
     private JwtConfig jwtConfig() {
         return JwtConfig.builder()
@@ -55,7 +56,7 @@ class IdTokenProviderTest {
     }
 
     private IdTokenProvider newProviderInstance(final JwtConfig jwtConfig) {
-        tokenEncryptor = Mockito.mock(TokenEncryptor.class);
+        tokenEncryptor = Mockito.mock(TokenEncryptorAdapter.class);
 
         return new IdTokenProvider(jwtConfig, strategyConfig(), tokenEncryptor);
     }

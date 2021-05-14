@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.jwt;
+package com.nexblocks.authguard.jwt.crypto;
 
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;

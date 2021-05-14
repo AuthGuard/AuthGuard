@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.jwt;
+package com.nexblocks.authguard.jwt.crypto;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeEach;

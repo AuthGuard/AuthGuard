@@ -7,6 +7,7 @@ import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
+import com.nexblocks.authguard.jwt.crypto.TokenEncryptorAdapter;
 import com.nexblocks.authguard.service.auth.AuthProvider;
 import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ConfigParser;
@@ -29,7 +30,7 @@ public class AccessTokenProvider implements AuthProvider {
     private final AccountTokensRepository accountTokensRepository;
     private final JtiProvider jti;
     private final ServiceMapper serviceMapper;
-    private final TokenEncryptor tokenEncryptor;
+    private final TokenEncryptorAdapter tokenEncryptor;
 
     private final Algorithm algorithm;
     private final JwtGenerator jwtGenerator;
@@ -43,7 +44,7 @@ public class AccessTokenProvider implements AuthProvider {
                                final @Named("jwt") ConfigContext jwtConfigContext,
                                final @Named("accessToken") ConfigContext accessTokenConfigContext,
                                final JtiProvider jti,
-                               final TokenEncryptor tokenEncryptor,
+                               final TokenEncryptorAdapter tokenEncryptor,
                                final ServiceMapper serviceMapper) {
         this(accountTokensRepository,
                 jwtConfigContext.asConfigBean(JwtConfig.class),
@@ -55,7 +56,7 @@ public class AccessTokenProvider implements AuthProvider {
                                final JwtConfig jwtConfig,
                                final StrategyConfig accessTokenConfig,
                                final JtiProvider jti,
-                               final TokenEncryptor tokenEncryptor,
+                               final TokenEncryptorAdapter tokenEncryptor,
                                final ServiceMapper serviceMapper) {
         this.accountTokensRepository = accountTokensRepository;
         this.jti = jti;

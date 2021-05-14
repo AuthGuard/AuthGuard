@@ -5,6 +5,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Verification;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
+import com.nexblocks.authguard.jwt.crypto.TokenEncryptorAdapter;
 import com.nexblocks.authguard.service.config.EncryptionConfig;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
@@ -37,7 +38,7 @@ class AccessTokenProviderTest {
 
     private AccountTokensRepository accountTokensRepository;
     private JtiProvider jtiProvider;
-    private TokenEncryptor tokenEncryptor;
+    private TokenEncryptorAdapter tokenEncryptor;
 
     private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
 
@@ -81,7 +82,7 @@ class AccessTokenProviderTest {
                                                     final StrategyConfig strategyConfig) {
         jtiProvider = Mockito.mock(JtiProvider.class);
         accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
-        tokenEncryptor = Mockito.mock(TokenEncryptor.class);
+        tokenEncryptor = Mockito.mock(TokenEncryptorAdapter.class);
 
         Mockito.when(accountTokensRepository.save(Mockito.any())).thenAnswer(invocation -> {
             final AccountTokenDO arg = invocation.getArgument(0);
