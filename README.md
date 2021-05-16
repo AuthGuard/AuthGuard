@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.com/AuthGuard/AuthGuard.svg?branch=master)](https://travis-ci.com/AuthGuard/AuthGuard)
 
+[![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/AuthGuard/AuthGuard.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/AuthGuard/AuthGuard/context:java)
+
 An easy-to-use, and easy-to-customize, identity server. It supports multiple authentication and authorization options and 
 can be extended to support other ones, or add new features. It's an API-only solution, with a dashboard distributed 
 separately.

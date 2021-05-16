@@ -3,15 +3,16 @@ package com.nexblocks.authguard.jwt;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Verification;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.nexblocks.authguard.config.ConfigContext;
-import com.nexblocks.authguard.config.JacksonConfigContext;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
+import com.nexblocks.authguard.jwt.crypto.TokenEncryptorAdapter;
+import com.nexblocks.authguard.service.config.EncryptionConfig;
+import com.nexblocks.authguard.service.config.JwtConfig;
+import com.nexblocks.authguard.service.config.StrategyConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.*;
+import io.vavr.control.Either;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.MethodOrderer;
@@ -37,49 +38,64 @@ class AccessTokenProviderTest {
 
     private AccountTokensRepository accountTokensRepository;
     private JtiProvider jtiProvider;
+    private TokenEncryptorAdapter tokenEncryptor;
 
     private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
 
-    private ConfigContext jwtConfig() {
-        final ObjectNode configNode = new ObjectNode(JsonNodeFactory.instance);
-        
-        configNode.put("algorithm", ALGORITHM)
-                .put("privateKey", KEY)
-                .put("issuer", ISSUER);
-        
-        return new JacksonConfigContext(configNode);
+    private JwtConfig jwtConfig() {
+        return JwtConfig.builder()
+                .algorithm(ALGORITHM)
+                .privateKey(KEY)
+                .issuer(ISSUER)
+                .build();
     }
 
-    private ConfigContext strategyConfig(final boolean useJti) {
-        final ObjectNode configNode = new ObjectNode(JsonNodeFactory.instance);
-
-        configNode.put("tokenLife", "5m")
-                .put("refreshTokenLife", "20m")
-                .put("useJti", useJti)
-                .put("includePermissions", true)
-                .put("includeScopes", true);
-
-        return new JacksonConfigContext(configNode);
+    private JwtConfig jwtConfigWithEncryption() {
+        return JwtConfig.builder()
+                .algorithm(ALGORITHM)
+                .privateKey(KEY)
+                .issuer(ISSUER)
+                .encryption(EncryptionConfig.builder()
+                        .build())
+                .build();
     }
 
-    private AccessTokenProvider newProviderInstance(final ConfigContext strategyConfig) {
+    private StrategyConfig strategyConfig() {
+        return StrategyConfig.builder()
+                .tokenLife("5m")
+                .refreshTokenLife("20m")
+                .useJti(false)
+                .includePermissions(true)
+                .build();
+    }
+
+    private StrategyConfig strategyConfigWithJti() {
+        return StrategyConfig.builder()
+                .tokenLife("5m")
+                .refreshTokenLife("20m")
+                .useJti(true)
+                .includePermissions(true)
+                .build();
+    }
+
+    private AccessTokenProvider newProviderInstance(final JwtConfig jwtConfig,
+                                                    final StrategyConfig strategyConfig) {
         jtiProvider = Mockito.mock(JtiProvider.class);
         accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
+        tokenEncryptor = Mockito.mock(TokenEncryptorAdapter.class);
 
         Mockito.when(accountTokensRepository.save(Mockito.any())).thenAnswer(invocation -> {
             final AccountTokenDO arg = invocation.getArgument(0);
             return CompletableFuture.completedFuture(arg);
         });
 
-        return new AccessTokenProvider(accountTokensRepository, jwtConfig(), strategyConfig, jtiProvider,
-                new ServiceMapperImpl());
+        return new AccessTokenProvider(accountTokensRepository, jwtConfig, strategyConfig, jtiProvider,
+                tokenEncryptor, new ServiceMapperImpl());
     }
 
     @Test
     void generate() {
-        final ConfigContext strategyConfig = strategyConfig(false);
-
-        final AccessTokenProvider accessTokenProvider = newProviderInstance(strategyConfig);
+        final AccessTokenProvider accessTokenProvider = newProviderInstance(jwtConfig(), strategyConfig());
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
         final AuthResponseBO tokens = accessTokenProvider.generateToken(account);
@@ -102,10 +118,36 @@ class AccessTokenProviderTest {
     }
 
     @Test
-    void generateWithRestrictions() {
-        final ConfigContext strategyConfig = strategyConfig(false);
+    void generateEncrypted() {
+        final AccessTokenProvider accessTokenProvider =
+                newProviderInstance(jwtConfigWithEncryption(), strategyConfig());
 
-        final AccessTokenProvider accessTokenProvider = newProviderInstance(strategyConfig);
+        Mockito.when(tokenEncryptor.encryptAndEncode(Mockito.any()))
+                .thenAnswer(invocation -> Either.right("encrypted"));
+
+        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final AuthResponseBO tokens = accessTokenProvider.generateToken(account);
+
+        assertThat(tokens).isNotNull();
+        assertThat(tokens.getToken()).isEqualTo("encrypted");
+        assertThat(tokens.getRefreshToken()).isNotNull();
+        assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
+
+        final ArgumentCaptor<AccountTokenDO> accountTokenCaptor = ArgumentCaptor.forClass(AccountTokenDO.class);
+
+        Mockito.verify(accountTokensRepository).save(accountTokenCaptor.capture());
+
+        assertThat(accountTokenCaptor.getValue().getAssociatedAccountId()).isEqualTo(account.getId());
+        assertThat(accountTokenCaptor.getValue().getToken()).isEqualTo(tokens.getRefreshToken());
+        assertThat(accountTokenCaptor.getValue().getExpiresAt()).isNotNull()
+                .isAfter(OffsetDateTime.now());
+
+        // token cannot be verified directly since it's encrypted
+    }
+
+    @Test
+    void generateWithRestrictions() {
+        final AccessTokenProvider accessTokenProvider = newProviderInstance(jwtConfig(), strategyConfig());
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class)
                 .withPermissions(Arrays.asList(
@@ -140,9 +182,7 @@ class AccessTokenProviderTest {
 
     @Test
     void generateWithJti() {
-        final ConfigContext strategyConfig = strategyConfig(true);
-
-        final AccessTokenProvider accessTokenProvider = newProviderInstance(strategyConfig);
+        final AccessTokenProvider accessTokenProvider = newProviderInstance(jwtConfig(), strategyConfigWithJti());
 
         final String jti = UUID.randomUUID().toString();
 
@@ -161,8 +201,7 @@ class AccessTokenProviderTest {
 
     @Test
     void delete() {
-        final ConfigContext strategyConfig = strategyConfig(false);
-        final AccessTokenProvider accessTokenProvider = newProviderInstance(strategyConfig);
+        final AccessTokenProvider accessTokenProvider = newProviderInstance(jwtConfig(), strategyConfig());
 
         final String refreshToken = "refresh";
         final String accountId = "account";
@@ -177,7 +216,7 @@ class AccessTokenProviderTest {
                 )));
 
         final AuthResponseBO expected = AuthResponseBO.builder()
-                .type("access_token")
+                .type("accessToken")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(accountId)
                 .refreshToken(refreshToken)
@@ -190,8 +229,7 @@ class AccessTokenProviderTest {
 
     @Test
     void deleteInvalidToken() {
-        final ConfigContext strategyConfig = strategyConfig(false);
-        final AccessTokenProvider accessTokenProvider = newProviderInstance(strategyConfig);
+        final AccessTokenProvider accessTokenProvider = newProviderInstance(jwtConfig(), strategyConfig());
 
         final String refreshToken = "refresh";
         final AuthRequestBO deleteRequest = AuthRequestBO.builder().token(refreshToken).build();
