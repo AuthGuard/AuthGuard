@@ -9,8 +9,8 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.TokenRestrictionsBO;
-import com.nexblocks.authguard.service.model.TokensBO;
 import io.vavr.control.Either;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,7 +60,7 @@ class RefreshToAccessTokenTest {
                 .id(accountId)
                 .build();
 
-        final TokensBO newTokens = TokensBO.builder()
+        final AuthResponseBO newTokens = AuthResponseBO.builder()
                 .token("new_token")
                 .refreshToken("new_refresh_token")
                 .build();
@@ -76,7 +76,7 @@ class RefreshToAccessTokenTest {
                 .thenReturn(newTokens);
 
         // do
-        final Either<Exception, TokensBO> actual = refreshToAccessToken.exchange(authRequest);
+        final Either<Exception, AuthResponseBO> actual = refreshToAccessToken.exchange(authRequest);
 
         // assert
         assertThat(actual.isRight()).isTrue();
@@ -110,7 +110,7 @@ class RefreshToAccessTokenTest {
                 .id(accountId)
                 .build();
 
-        final TokensBO newTokens = TokensBO.builder()
+        final AuthResponseBO newTokens = AuthResponseBO.builder()
                 .token("new_token")
                 .refreshToken("new_refresh_token")
                 .build();
@@ -127,7 +127,7 @@ class RefreshToAccessTokenTest {
                 .build())).thenReturn(newTokens);
 
         // do
-        final Either<Exception, TokensBO> actual = refreshToAccessToken.exchange(authRequest);
+        final Either<Exception, AuthResponseBO> actual = refreshToAccessToken.exchange(authRequest);
 
         // assert
         assertThat(actual.isRight()).isTrue();
@@ -157,7 +157,7 @@ class RefreshToAccessTokenTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
 
         // do
-        final Either<Exception, TokensBO> actual = refreshToAccessToken.exchange(authRequest);
+        final Either<Exception, AuthResponseBO> actual = refreshToAccessToken.exchange(authRequest);
 
         // assert
         assertThat(actual.isLeft()).isTrue();
@@ -190,7 +190,7 @@ class RefreshToAccessTokenTest {
                 .thenReturn(Optional.empty());
 
         // do
-        final Either<Exception, TokensBO> actual = refreshToAccessToken.exchange(authRequest);
+        final Either<Exception, AuthResponseBO> actual = refreshToAccessToken.exchange(authRequest);
 
         // assert
         assertThat(actual.isLeft()).isTrue();
@@ -213,7 +213,7 @@ class RefreshToAccessTokenTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         // do
-        final Either<Exception, TokensBO> actual = refreshToAccessToken.exchange(authRequest);
+        final Either<Exception, AuthResponseBO> actual = refreshToAccessToken.exchange(authRequest);
 
         // assert
         assertThat(actual.isLeft()).isTrue();

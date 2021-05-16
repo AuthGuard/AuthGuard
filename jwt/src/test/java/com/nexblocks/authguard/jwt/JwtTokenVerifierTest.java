@@ -7,9 +7,10 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
+import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.model.AccountBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.PermissionBO;
-import com.nexblocks.authguard.service.model.TokensBO;
 import io.vavr.control.Either;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
@@ -17,6 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -57,7 +60,7 @@ class JwtTokenVerifierTest {
         return new JwtTokenVerifier(strategyConfig, jtiProvider, algorithm);
     }
 
-    private TokensBO generateToken(final JwtConfig jwtConfig, final AccountBO account, final String jti) {
+    private AuthResponseBO generateToken(final JwtConfig jwtConfig, final AccountBO account, final String jti) {
         final Algorithm algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getPublicKey(),
                 jwtConfig.getPrivateKey());
         final JwtGenerator jwtGenerator = new JwtGenerator(jwtConfig);
@@ -71,7 +74,7 @@ class JwtTokenVerifierTest {
         final String token = tokenBuilder.sign(algorithm);
         final String refreshToken = jwtGenerator.generateRandomRefreshToken();
 
-        return TokensBO.builder()
+        return AuthResponseBO.builder()
                 .token(token)
                 .refreshToken(refreshToken)
                 .build();
@@ -85,11 +88,34 @@ class JwtTokenVerifierTest {
         final JwtTokenVerifier jwtTokenVerifier = newVerifierInstance(strategyConfig);
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final TokensBO tokens = generateToken(jwtConfig, account, null);
+        final AuthResponseBO tokens = generateToken(jwtConfig, account, null);
         final Either<Exception, DecodedJWT> validatedToken = jwtTokenVerifier.verify(tokens.getToken().toString());
 
         assertThat(validatedToken.isRight()).isTrue();
         verifyToken(validatedToken.get(), account.getId(), null, null, null);
+    }
+
+    @Test
+    void validateExpired() {
+        final StrategyConfig strategyConfig = strategyConfig(false);
+        final JwtConfig jwtConfig = jwtConfig();
+
+        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+
+        final Algorithm algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getPublicKey(),
+                jwtConfig.getPrivateKey());
+        final JwtGenerator jwtGenerator = new JwtGenerator(jwtConfig);
+
+        final String token = jwtGenerator.generateUnsignedToken(account, Duration.ofMinutes(5))
+                .withExpiresAt(Date.from(Instant.now().minusSeconds(60)))
+                .sign(algorithm);
+
+        final JwtTokenVerifier jwtTokenVerifier = newVerifierInstance(strategyConfig);
+
+        final Either<Exception, DecodedJWT> validatedToken = jwtTokenVerifier.verify(token);
+
+        assertThat(validatedToken.isLeft()).isTrue();
+        assertThat(validatedToken.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
@@ -105,7 +131,7 @@ class JwtTokenVerifierTest {
         Mockito.when(jtiProvider.validate(jti)).thenReturn(true);
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final TokensBO tokens = generateToken(jwtConfig, account, jti);
+        final AuthResponseBO tokens = generateToken(jwtConfig, account, jti);
         final Either<Exception, DecodedJWT> validatedToken = jwtTokenVerifier.verify(tokens.getToken().toString());
 
         assertThat(validatedToken.isRight()).isTrue();
@@ -125,7 +151,7 @@ class JwtTokenVerifierTest {
         Mockito.when(jtiProvider.validate(jti)).thenReturn(false);
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final TokensBO tokens = generateToken(jwtConfig, account, jti);
+        final AuthResponseBO tokens = generateToken(jwtConfig, account, jti);
         final Either<Exception, DecodedJWT> validatedToken = jwtTokenVerifier.verify(tokens.getToken().toString());
 
         assertThat(validatedToken.isLeft());
@@ -139,7 +165,7 @@ class JwtTokenVerifierTest {
         final JwtTokenVerifier jwtTokenVerifier = newVerifierInstance(strategyConfig);
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final TokensBO tokens = generateToken(jwtConfig, account, null);
+        final AuthResponseBO tokens = generateToken(jwtConfig, account, null);
         final String payload = tokens.getToken().toString().split("\\.")[1];
         final String maliciousToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." + payload + ".signature";
 

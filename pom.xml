@@ -7,7 +7,15 @@
     <groupId>com.nexblocks.authguard</groupId>
     <artifactId>authguard</artifactId>
     <packaging>pom</packaging>
-    <version>0.5.0</version>
+    <version>0.6.0</version>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub AuthGuard Maven Packages</name>
+            <url>https://maven.pkg.github.com/AuthGuard/AuthGuard</url>
+        </repository>
+    </distributionManagement>
 
     <modules>
         <module>config</module>

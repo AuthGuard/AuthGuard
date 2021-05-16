@@ -17,7 +17,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @ProvidesToken("otp")
 public class OtpProvider implements AuthProvider {
@@ -42,11 +41,11 @@ public class OtpProvider implements AuthProvider {
     }
 
     @Override
-    public TokensBO generateToken(final AccountBO account) {
+    public AuthResponseBO generateToken(final AccountBO account) {
         final String passwordId = ID.generate();
         final String password = generatePassword();
 
-        final TokensBO token = createToken(passwordId, account.getId());
+        final AuthResponseBO token = createToken(passwordId, account.getId());
 
         final OneTimePasswordBO oneTimePassword = OneTimePasswordBO.builder()
                 .id(passwordId)
@@ -63,12 +62,12 @@ public class OtpProvider implements AuthProvider {
     }
 
     @Override
-    public TokensBO generateToken(final AppBO app) {
+    public AuthResponseBO generateToken(final AppBO app) {
         throw new UnsupportedOperationException("OTPs cannot be generated for applications");
     }
 
-    private TokensBO createToken(final String passwordId, final String accountId) {
-        return TokensBO.builder()
+    private AuthResponseBO createToken(final String passwordId, final String accountId) {
+        return AuthResponseBO.builder()
                 .type(TOKEN_TYPE)
                 .token(passwordId)
                 .entityType(EntityType.ACCOUNT)

@@ -90,12 +90,12 @@ class RestMapperTest {
 
     @Test
     void toTokensBOAndBack() {
-        convertAndBack(TokensDTO.class, restMapper::toBO, restMapper::toDTO);
+        convertAndBack(AuthResponseDTO.class, restMapper::toBO, restMapper::toDTO);
     }
 
     @Test
     void toTokensDTOAndBack() {
-        convertAndBack(TokensBO.class, restMapper::toDTO, restMapper::toBO, "entityType", "id", "entityId");
+        convertAndBack(AuthResponseBO.class, restMapper::toDTO, restMapper::toBO, "entityType", "id", "entityId");
     }
 
     @Test

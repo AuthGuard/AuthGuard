@@ -10,7 +10,7 @@ import com.nexblocks.authguard.service.keys.ApiKeyHashProvider;
 import com.nexblocks.authguard.service.keys.DefaultApiKeysProvider;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.EntityType;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -32,8 +32,8 @@ public class DefaultApiKeyExchange implements ApiKeyExchange {
     }
 
     @Override
-    public TokensBO generateKey(final AppBO app) {
-        return TokensBO.builder()
+    public AuthResponseBO generateKey(final AppBO app) {
+        return AuthResponseBO.builder()
                 .entityType(EntityType.APPLICATION)
                 .entityId(app.getId())
                 .type(TOKEN_TYPE)

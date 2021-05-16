@@ -1,9 +1,9 @@
 package com.nexblocks.authguard.rest.routes;
 
 import com.google.inject.Inject;
+import com.nexblocks.authguard.api.dto.entities.AuthResponseDTO;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.ExchangeAttemptDTO;
-import com.nexblocks.authguard.api.dto.entities.TokensDTO;
 import com.nexblocks.authguard.api.dto.requests.AuthRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
@@ -16,9 +16,9 @@ import com.nexblocks.authguard.service.AuthenticationService;
 import com.nexblocks.authguard.service.ExchangeAttemptsService;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.ExchangeAttemptsQueryBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
-import com.nexblocks.authguard.service.model.TokensBO;
 import io.javalin.http.Context;
 
 import java.time.OffsetDateTime;
@@ -52,7 +52,7 @@ public class AuthRoute extends AuthApi {
         final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
         final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        final Optional<TokensDTO> tokens = authenticationService.authenticate(restMapper.toBO(authenticationRequest), requestContext)
+        final Optional<AuthResponseDTO> tokens = authenticationService.authenticate(restMapper.toBO(authenticationRequest), requestContext)
                 .map(restMapper::toDTO);
 
         if (tokens.isPresent()) {
@@ -81,7 +81,7 @@ public class AuthRoute extends AuthApi {
 
         final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        final TokensBO tokens = exchangeService.exchange(restMapper.toBO(authenticationRequest), from, to, requestContext);
+        final AuthResponseBO tokens = exchangeService.exchange(restMapper.toBO(authenticationRequest), from, to, requestContext);
 
         context.json(restMapper.toDTO(tokens));
     }
@@ -95,7 +95,7 @@ public class AuthRoute extends AuthApi {
             context.status(400)
                     .json(new Error("400", "Missing 'tokenType' query parameter"));
         } else {
-            final TokensBO tokens = exchangeService.delete(restMapper.toBO(authenticationRequest), tokenType);
+            final AuthResponseBO tokens = exchangeService.delete(restMapper.toBO(authenticationRequest), tokenType);
 
             context.json(restMapper.toDTO(tokens));
         }

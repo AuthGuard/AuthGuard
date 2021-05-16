@@ -1,13 +1,13 @@
 package com.nexblocks.authguard.rest;
 
-import com.nexblocks.authguard.api.dto.entities.TokensDTO;
+import com.nexblocks.authguard.api.dto.entities.AuthResponseDTO;
 import com.nexblocks.authguard.api.dto.requests.AuthRequestDTO;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.mappers.RestMapperImpl;
 import com.nexblocks.authguard.service.AuthenticationService;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
-import com.nexblocks.authguard.service.model.TokensBO;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
 import org.junit.jupiter.api.AfterEach;
@@ -47,10 +47,10 @@ class AuthRouteTest extends AbstractRouteTest {
     void authenticate() {
         final AuthRequestDTO requestDTO = randomObject(AuthRequestDTO.class);
         final AuthRequestBO requestBO = restMapper.toBO(requestDTO);
-        final TokensBO tokensBO = TokensBO.builder()
+        final AuthResponseBO tokensBO = AuthResponseBO.builder()
                 .token("token")
                 .build();
-        final TokensDTO tokensDTO = mapper().toDTO(tokensBO);
+        final AuthResponseDTO tokensDTO = mapper().toDTO(tokensBO);
 
         Mockito.when(authenticationService.authenticate(Mockito.eq(requestBO), Mockito.any()))
                 .thenReturn(Optional.of(tokensBO));
@@ -62,10 +62,10 @@ class AuthRouteTest extends AbstractRouteTest {
                 .statusCode(200)
                 .contentType(ContentType.JSON);
 
-        final TokensDTO responseBody = httpResponse.extract()
+        final AuthResponseDTO responseBody = httpResponse.extract()
                 .response()
                 .body()
-                .as(TokensDTO.class);
+                .as(AuthResponseDTO.class);
 
         assertThat(responseBody).isEqualTo(tokensDTO);
     }

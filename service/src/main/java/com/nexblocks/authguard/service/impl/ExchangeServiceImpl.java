@@ -40,8 +40,8 @@ public class ExchangeServiceImpl implements ExchangeService {
     }
 
     @Override
-    public TokensBO exchange(final AuthRequestBO authRequest, final String fromTokenType, final String toTokenType,
-                             final RequestContextBO requestContext) {
+    public AuthResponseBO exchange(final AuthRequestBO authRequest, final String fromTokenType, final String toTokenType,
+                                   final RequestContextBO requestContext) {
         final String key = exchangeKey(fromTokenType, toTokenType);
         final Exchange exchange = exchanges.get(key);
 
@@ -49,10 +49,10 @@ public class ExchangeServiceImpl implements ExchangeService {
             throw new ServiceException(ErrorCode.UNKNOWN_EXCHANGE, "Unknown token exchange " + fromTokenType + " to " + toTokenType);
         }
 
-        final Either<Exception, TokensBO> result = exchange.exchange(authRequest);
+        final Either<Exception, AuthResponseBO> result = exchange.exchange(authRequest);
 
         if (result.isRight()) {
-            final TokensBO tokens = result.get();
+            final AuthResponseBO tokens = result.get();
 
             exchangeSuccess(authRequest, requestContext, tokens, fromTokenType, toTokenType);
 
@@ -77,7 +77,7 @@ public class ExchangeServiceImpl implements ExchangeService {
     }
 
     @Override
-    public TokensBO delete(final AuthRequestBO authRequest, final String tokenType) {
+    public AuthResponseBO delete(final AuthRequestBO authRequest, final String tokenType) {
         final AuthProvider provider = authProviders.get(tokenType);
 
         if (provider == null) {
@@ -88,7 +88,7 @@ public class ExchangeServiceImpl implements ExchangeService {
     }
 
     private void exchangeSuccess(final AuthRequestBO authRequest, final RequestContextBO requestContext,
-                                 final TokensBO tokens, final String fromTokenType, final String toTokenType) {
+                                 final AuthResponseBO tokens, final String fromTokenType, final String toTokenType) {
         final AuthMessage authMessage = AuthMessage.success(fromTokenType, toTokenType,
                 tokens.getEntityType(), tokens.getEntityId());
 

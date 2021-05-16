@@ -7,8 +7,8 @@ import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.PasswordlessService;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
-import com.nexblocks.authguard.service.model.TokensBO;
 
 public class PasswordlessServiceImpl implements PasswordlessService {
     private final ExchangeService exchangeService;
@@ -22,12 +22,12 @@ public class PasswordlessServiceImpl implements PasswordlessService {
     }
 
     @Override
-    public TokensBO authenticate(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
+    public AuthResponseBO authenticate(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
         return exchangeService.exchange(authRequest, "passwordless", passwordlessConfig.getGenerateToken(), requestContext);
     }
 
     @Override
-    public TokensBO authenticate(final String passwordlessToken, final RequestContextBO requestContext) {
+    public AuthResponseBO authenticate(final String passwordlessToken, final RequestContextBO requestContext) {
         return authenticate(AuthRequestBO.builder().token(passwordlessToken).build(), requestContext);
     }
 }

@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.jwt;
+package com.nexblocks.authguard.jwt.crypto;
 
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -7,8 +7,16 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
 
 public class KeyLoader {
+    public static byte[] readTextKeyFile(final String filePath) {
+        try {
+            return Files.readAllBytes(new File(filePath).toPath());
+        } catch (final IOException e) {
+            throw new IllegalStateException("Failed to read txt file " + filePath, e);
+        }
+    }
 
     public static byte[] readPemKeyFile(final String filePath) {
         try {

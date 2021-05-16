@@ -36,7 +36,7 @@ public class SessionProvider implements AuthProvider {
     }
 
     @Override
-    public TokensBO generateToken(final AccountBO account) {
+    public AuthResponseBO generateToken(final AccountBO account) {
         final SessionBO session = SessionBO.builder()
                 .accountId(account.getId())
                 .expiresAt(OffsetDateTime.now().plus(sessionTtl))
@@ -50,7 +50,7 @@ public class SessionProvider implements AuthProvider {
 
         final SessionBO created = sessionsService.create(session);
 
-        return TokensBO.builder()
+        return AuthResponseBO.builder()
                 .type(TOKEN_TYPE)
                 .token(created.getSessionToken())
                 .entityType(EntityType.ACCOUNT)
@@ -59,14 +59,14 @@ public class SessionProvider implements AuthProvider {
     }
 
     @Override
-    public TokensBO generateToken(final AppBO app) {
+    public AuthResponseBO generateToken(final AppBO app) {
         throw new UnsupportedOperationException("Sessions cannot be generated for applications");
     }
 
     @Override
-    public TokensBO delete(final AuthRequestBO authRequest) {
+    public AuthResponseBO delete(final AuthRequestBO authRequest) {
         return sessionsService.deleteByToken(authRequest.getToken())
-                .map(session -> TokensBO.builder()
+                .map(session -> AuthResponseBO.builder()
                         .type(TOKEN_TYPE)
                         .entityType(EntityType.ACCOUNT)
                         .entityId(session.getAccountId())

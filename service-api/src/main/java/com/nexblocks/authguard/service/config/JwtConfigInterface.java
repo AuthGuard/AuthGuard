@@ -16,4 +16,5 @@ public interface JwtConfigInterface {
     String getIssuer();
     List<String> getAllowedAlgorithms();
     List<String> getTrustedIssuers();
+    EncryptionConfig getEncryption();
 }

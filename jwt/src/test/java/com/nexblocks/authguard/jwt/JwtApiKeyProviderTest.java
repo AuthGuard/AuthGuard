@@ -6,7 +6,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AppBO;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
@@ -49,7 +49,7 @@ class JwtApiKeyProviderTest {
 
         Mockito.when(jtiProvider.next()).thenReturn(jti);
 
-        final TokensBO tokens = tokenProvider.generateToken(app);
+        final AuthResponseBO tokens = tokenProvider.generateToken(app);
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();

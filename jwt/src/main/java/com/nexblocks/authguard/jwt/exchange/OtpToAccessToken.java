@@ -9,7 +9,7 @@ import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
 
@@ -28,7 +28,7 @@ public class OtpToAccessToken implements Exchange {
     }
 
     @Override
-    public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
+    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
         return otpVerifier.verifyAccountToken(request.getToken())
                 .map(accountsService::getById)
                 .flatMap(accountOpt -> accountOpt
@@ -37,7 +37,7 @@ public class OtpToAccessToken implements Exchange {
                                 "Failed to generate access token"))));
     }
 
-    private Either<Exception, TokensBO> generate(final AccountBO account) {
+    private Either<Exception, AuthResponseBO> generate(final AccountBO account) {
         return Either.right(accessTokenProvider.generateToken(account));
     }
 }

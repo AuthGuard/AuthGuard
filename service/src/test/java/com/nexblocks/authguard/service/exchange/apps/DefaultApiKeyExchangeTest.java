@@ -7,8 +7,8 @@ import com.nexblocks.authguard.service.config.ApiKeysConfig;
 import com.nexblocks.authguard.service.keys.ApiKeyHashProvider;
 import com.nexblocks.authguard.service.keys.DefaultApiKeysProvider;
 import com.nexblocks.authguard.service.model.AppBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.EntityType;
-import com.nexblocks.authguard.service.model.TokensBO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -47,13 +47,13 @@ class DefaultApiKeyExchangeTest {
                 .id("app")
                 .build();
 
-        final TokensBO expected = TokensBO.builder()
+        final AuthResponseBO expected = AuthResponseBO.builder()
                 .type("api_key")
                 .entityType(EntityType.APPLICATION)
                 .entityId(app.getId())
                 .build();
 
-        final TokensBO actual = exchange.generateKey(app);
+        final AuthResponseBO actual = exchange.generateKey(app);
 
         assertThat(actual).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(actual.getToken()).isNotNull();

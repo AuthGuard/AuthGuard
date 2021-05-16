@@ -4,7 +4,7 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @BOStyle
-public interface Tokens {
+public interface AuthResponse {
     EntityType getEntityType();
     String getEntityId();
     String getType();

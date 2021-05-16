@@ -12,7 +12,7 @@ import com.nexblocks.authguard.service.config.ConfigParser;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.EntityType;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.nexblocks.authguard.service.util.ID;
@@ -21,7 +21,6 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Base64;
-import java.util.UUID;
 
 @ProvidesToken("passwordless")
 public class PasswordlessProvider implements AuthProvider {
@@ -47,7 +46,7 @@ public class PasswordlessProvider implements AuthProvider {
     }
 
     @Override
-    public TokensBO generateToken(final AccountBO account) {
+    public AuthResponseBO generateToken(final AccountBO account) {
         final String token = randomToken();
 
         final AccountTokenDO accountToken = AccountTokenDO.builder()
@@ -61,7 +60,7 @@ public class PasswordlessProvider implements AuthProvider {
 
         messageBus.publish(PASSWORDLESS_CHANNEL, Messages.passwordlessGenerated(accountToken));
 
-        return TokensBO.builder()
+        return AuthResponseBO.builder()
                 .type(TOKEN_TYPE)
                 .token(accountToken.getId())
                 .entityType(EntityType.ACCOUNT)
@@ -70,7 +69,7 @@ public class PasswordlessProvider implements AuthProvider {
     }
 
     @Override
-    public TokensBO generateToken(final AppBO app) {
+    public AuthResponseBO generateToken(final AppBO app) {
         throw new UnsupportedOperationException("Passwordless cannot be used for applications");
     }
 

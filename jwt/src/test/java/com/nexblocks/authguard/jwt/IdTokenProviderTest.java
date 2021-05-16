@@ -4,17 +4,19 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Verification;
-import com.nexblocks.authguard.config.ConfigContext;
-import com.nexblocks.authguard.config.JacksonConfigContext;
+import com.nexblocks.authguard.jwt.crypto.TokenEncryptorAdapter;
+import com.nexblocks.authguard.service.config.EncryptionConfig;
+import com.nexblocks.authguard.service.config.JwtConfig;
+import com.nexblocks.authguard.service.config.StrategyConfig;
 import com.nexblocks.authguard.service.model.AccountBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.PermissionBO;
-import com.nexblocks.authguard.service.model.TokensBO;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.vavr.control.Either;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.mockito.Mockito;
 
 import java.util.List;
 
@@ -27,37 +29,44 @@ class IdTokenProviderTest {
     private static final String ISSUER = "test";
 
     private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
+    private TokenEncryptorAdapter tokenEncryptor;
 
-    private ConfigContext jwtConfig() {
-        final ObjectNode configNode = new ObjectNode(JsonNodeFactory.instance);
-
-        configNode.put("algorithm", ALGORITHM)
-                .put("privateKey", KEY)
-                .put("issuer", ISSUER);
-
-        return new JacksonConfigContext(configNode);
+    private JwtConfig jwtConfig() {
+        return JwtConfig.builder()
+                .algorithm(ALGORITHM)
+                .privateKey(KEY)
+                .issuer(ISSUER)
+                .build();
     }
 
-    private ConfigContext strategyConfig() {
-        final ObjectNode configNode = new ObjectNode(JsonNodeFactory.instance);
-
-        configNode.put("tokenLife", "5m")
-                .put("refreshTokenLife", "20m")
-                .put("includePermissions", true);
-
-        return new JacksonConfigContext(configNode);
+    private JwtConfig jwtConfigWithEncryption() {
+        return JwtConfig.builder()
+                .algorithm(ALGORITHM)
+                .privateKey(KEY)
+                .issuer(ISSUER)
+                .encryption(EncryptionConfig.builder().build())
+                .build();
     }
 
-    private IdTokenProvider newProviderInstance() {
-        return new IdTokenProvider(jwtConfig(), strategyConfig());
+    private StrategyConfig strategyConfig() {
+        return StrategyConfig.builder()
+                .tokenLife("5m")
+                .refreshTokenLife("20m")
+                .build();
+    }
+
+    private IdTokenProvider newProviderInstance(final JwtConfig jwtConfig) {
+        tokenEncryptor = Mockito.mock(TokenEncryptorAdapter.class);
+
+        return new IdTokenProvider(jwtConfig, strategyConfig(), tokenEncryptor);
     }
 
     @Test
     void generate() {
-        final IdTokenProvider idTokenProvider = newProviderInstance();
+        final IdTokenProvider idTokenProvider = newProviderInstance(jwtConfig());
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class);
-        final TokensBO tokens = idTokenProvider.generateToken(account);
+        final AuthResponseBO tokens = idTokenProvider.generateToken(account);
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
@@ -65,6 +74,22 @@ class IdTokenProviderTest {
         assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
 
         verifyToken(tokens.getToken().toString(), account.getId(), null, null, null);
+    }
+
+    @Test
+    void generateEncrypted() {
+        final IdTokenProvider idTokenProvider = newProviderInstance(jwtConfigWithEncryption());
+
+        Mockito.when(tokenEncryptor.encryptAndEncode(Mockito.any()))
+                .thenAnswer(invocation -> Either.right("encrypted"));
+
+        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final AuthResponseBO tokens = idTokenProvider.generateToken(account);
+
+        assertThat(tokens).isNotNull();
+        assertThat(tokens.getToken()).isEqualTo("encrypted");
+        assertThat(tokens.getRefreshToken()).isNotNull();
+        assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
     }
 
     private void verifyToken(final String token, final String subject, final String jti,

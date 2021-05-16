@@ -11,12 +11,11 @@ import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exchange.ApiKeyExchange;
 import com.nexblocks.authguard.service.keys.ApiKeyHash;
 import com.nexblocks.authguard.service.keys.ApiKeyHashProvider;
-import com.nexblocks.authguard.service.keys.Blake2bApiKeyHash;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.ApiKeyBO;
 import com.nexblocks.authguard.service.model.AppBO;
-import com.nexblocks.authguard.service.model.TokensBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -79,7 +78,7 @@ class ApiKeysServiceImplTest {
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, ApiKeyDO.class)));
 
         Mockito.when(apiKeyExchange.generateKey(app))
-                .thenReturn(TokensBO.builder()
+                .thenReturn(AuthResponseBO.builder()
                         .token(key)
                         .build());
 

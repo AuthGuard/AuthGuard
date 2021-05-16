@@ -7,6 +7,7 @@ import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
+import com.nexblocks.authguard.jwt.crypto.TokenEncryptorAdapter;
 import com.nexblocks.authguard.service.auth.AuthProvider;
 import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ConfigParser;
@@ -21,41 +22,45 @@ import com.nexblocks.authguard.service.util.ID;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 @ProvidesToken("accessToken")
 public class AccessTokenProvider implements AuthProvider {
-    private static final String TOKEN_TYPE = "access_token";
+    private static final String TOKEN_TYPE = "accessToken";
 
     private final AccountTokensRepository accountTokensRepository;
     private final JtiProvider jti;
     private final ServiceMapper serviceMapper;
+    private final TokenEncryptorAdapter tokenEncryptor;
 
     private final Algorithm algorithm;
     private final JwtGenerator jwtGenerator;
     private final StrategyConfig strategy;
     private final Duration tokenTtl;
     private final Duration refreshTokenTtl;
+    private final boolean encrypt;
 
     @Inject
     public AccessTokenProvider(final AccountTokensRepository accountTokensRepository,
                                final @Named("jwt") ConfigContext jwtConfigContext,
                                final @Named("accessToken") ConfigContext accessTokenConfigContext,
                                final JtiProvider jti,
+                               final TokenEncryptorAdapter tokenEncryptor,
                                final ServiceMapper serviceMapper) {
         this(accountTokensRepository,
                 jwtConfigContext.asConfigBean(JwtConfig.class),
                 accessTokenConfigContext.asConfigBean(StrategyConfig.class),
-                jti, serviceMapper);
+                jti, tokenEncryptor, serviceMapper);
     }
 
     public AccessTokenProvider(final AccountTokensRepository accountTokensRepository,
                                final JwtConfig jwtConfig,
                                final StrategyConfig accessTokenConfig,
                                final JtiProvider jti,
+                               final TokenEncryptorAdapter tokenEncryptor,
                                final ServiceMapper serviceMapper) {
         this.accountTokensRepository = accountTokensRepository;
         this.jti = jti;
+        this.tokenEncryptor = tokenEncryptor;
 
         this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getPublicKey(),
                 jwtConfig.getPrivateKey());
@@ -65,25 +70,28 @@ public class AccessTokenProvider implements AuthProvider {
         this.serviceMapper = serviceMapper;
         this.tokenTtl = ConfigParser.parseDuration(strategy.getTokenLife());
         this.refreshTokenTtl = ConfigParser.parseDuration(strategy.getRefreshTokenLife());
+        this.encrypt = jwtConfig.getEncryption() != null;
     }
 
     @Override
-    public TokensBO generateToken(final AccountBO account) {
+    public AuthResponseBO generateToken(final AccountBO account) {
         return generateToken(account, null);
     }
 
     @Override
-    public TokensBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
+    public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
         final JwtTokenBuilder tokenBuilder = generateAccessToken(account, restrictions);
-        final String token = tokenBuilder.getBuilder().sign(algorithm);
+
+        final String signedToken = tokenBuilder.getBuilder().sign(algorithm);
+        final String finalToken = encryptIfNeeded(signedToken);
         final String refreshToken = jwtGenerator.generateRandomRefreshToken();
 
         storeRefreshToken(account.getId(), refreshToken, restrictions);
 
-        return TokensBO.builder()
+        return AuthResponseBO.builder()
                 .id(tokenBuilder.getId().orElse(null))
                 .type(TOKEN_TYPE)
-                .token(token)
+                .token(finalToken)
                 .refreshToken(refreshToken)
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
@@ -91,14 +99,14 @@ public class AccessTokenProvider implements AuthProvider {
     }
 
     @Override
-    public TokensBO generateToken(final AppBO app) {
+    public AuthResponseBO generateToken(final AppBO app) {
         throw new UnsupportedOperationException("Access tokens cannot be generated for an application");
     }
 
     @Override
-    public TokensBO delete(final AuthRequestBO authRequest) {
+    public AuthResponseBO delete(final AuthRequestBO authRequest) {
         return deleteRefreshToken(authRequest.getToken())
-                .map(accountToken -> TokensBO.builder()
+                .map(accountToken -> AuthResponseBO.builder()
                         .type(TOKEN_TYPE)
                         .entityId(accountToken.getAssociatedAccountId())
                         .entityType(EntityType.ACCOUNT)
@@ -147,6 +155,12 @@ public class AccessTokenProvider implements AuthProvider {
         }
 
         return tokenBuilder.builder(jwtBuilder).build();
+    }
+
+    private String encryptIfNeeded(final String token) {
+        return this.encrypt
+                ? tokenEncryptor.encryptAndEncode(token).get()
+                : token;
     }
 
     private OffsetDateTime refreshTokenExpiry() {

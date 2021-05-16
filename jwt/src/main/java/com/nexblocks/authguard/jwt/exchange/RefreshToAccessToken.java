@@ -34,15 +34,15 @@ public class RefreshToAccessToken implements Exchange {
     }
 
     @Override
-    public Either<Exception, TokensBO> exchange(final AuthRequestBO request) {
+    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
         return accountTokensRepository.getByToken(request.getToken())
                 .join()
                 .map(this::generateAndClear)
                 .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid refresh token")));
     }
 
-    private Either<Exception, TokensBO> generateAndClear(final AccountTokenDO accountToken) {
-        final Either<Exception, TokensBO> result = generate(accountToken);
+    private Either<Exception, AuthResponseBO> generateAndClear(final AccountTokenDO accountToken) {
+        final Either<Exception, AuthResponseBO> result = generate(accountToken);
 
         /*
          * The refresh token cannot be reused, so we need to remove it.
@@ -52,7 +52,7 @@ public class RefreshToAccessToken implements Exchange {
         return result;
     }
 
-    private Either<Exception, TokensBO> generate(final AccountTokenDO accountToken) {
+    private Either<Exception, AuthResponseBO> generate(final AccountTokenDO accountToken) {
         if (!validateExpirationDateTime(accountToken)) {
             return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Refresh token has expired",
                     EntityType.ACCOUNT, accountToken.getAssociatedAccountId()));
@@ -61,7 +61,7 @@ public class RefreshToAccessToken implements Exchange {
         return generateNewTokens(accountToken);
     }
 
-    private Either<Exception, TokensBO> generateNewTokens(final AccountTokenDO accountToken) {
+    private Either<Exception, AuthResponseBO> generateNewTokens(final AccountTokenDO accountToken) {
         final String accountId = accountToken.getAssociatedAccountId();
         final TokenRestrictionsBO tokenRestrictions = serviceMapper.toBO(accountToken.getTokenRestrictions());
 
