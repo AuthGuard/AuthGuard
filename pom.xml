@@ -230,6 +230,7 @@
                 <configuration>
                     <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
                     <detectJavaApiLink>false</detectJavaApiLink>
+                    <doclint>none</doclint>
                 </configuration>
 
                 <executions>
