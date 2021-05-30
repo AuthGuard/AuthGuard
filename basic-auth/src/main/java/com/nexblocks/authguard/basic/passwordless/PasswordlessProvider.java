@@ -58,7 +58,10 @@ public class PasswordlessProvider implements AuthProvider {
 
         accountTokensRepository.save(accountToken);
 
-        messageBus.publish(PASSWORDLESS_CHANNEL, Messages.passwordlessGenerated(accountToken));
+        final PasswordlessMessageBody messageBody =
+                new PasswordlessMessageBody(accountToken, account);
+
+        messageBus.publish(PASSWORDLESS_CHANNEL, Messages.passwordlessGenerated(messageBody));
 
         return AuthResponseBO.builder()
                 .type(TOKEN_TYPE)
