@@ -7,6 +7,7 @@ import com.nexblocks.authguard.external.sms.SmsProvider;
 import com.nexblocks.authguard.injection.ClassSearch;
 
 import java.util.Collection;
+import java.util.Optional;
 
 public class ExternalProvidersBinder extends AbstractModule {
     private final ConfigContext configContext;
@@ -19,10 +20,17 @@ public class ExternalProvidersBinder extends AbstractModule {
 
     @Override
     protected void configure() {
-        if (configContext.get("verification") != null) {
-            bindAndRegister(SmsProvider.class);
-            bindAndRegister(EmailProvider.class);
-        }
+        final ConfigContext subContext = configContext.getSubContext("external");
+
+        Optional.ofNullable(subContext)
+                .map(context -> context.getAsBoolean("email"))
+                .filter(Boolean::booleanValue)
+                .ifPresent(ignored -> bindAndRegister(EmailProvider.class));
+
+        Optional.ofNullable(subContext)
+                .map(context -> context.getAsBoolean("sms"))
+                .filter(Boolean::booleanValue)
+                .ifPresent(ignored -> bindAndRegister(SmsProvider.class));
     }
 
     private <T> void bindAndRegister(final Class<T> clazz) {
