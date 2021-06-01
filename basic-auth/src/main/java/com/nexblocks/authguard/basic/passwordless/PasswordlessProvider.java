@@ -1,5 +1,7 @@
 package com.nexblocks.authguard.basic.passwordless;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.nexblocks.authguard.basic.config.PasswordlessConfig;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
@@ -11,16 +13,13 @@ import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ConfigParser;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AppBO;
-import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import com.nexblocks.authguard.service.model.EntityType;
+import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.ID;
 
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.util.Base64;
 
 @ProvidesToken("passwordless")
 public class PasswordlessProvider implements AuthProvider {
@@ -30,7 +29,7 @@ public class PasswordlessProvider implements AuthProvider {
     private final AccountTokensRepository accountTokensRepository;
     private final MessageBus messageBus;
     private final PasswordlessConfig passwordlessConfig;
-    private final SecureRandom secureRandom;
+    private final CryptographicRandom cryptographicRandom;
     private final Duration tokenTtl;
 
     @Inject
@@ -41,7 +40,7 @@ public class PasswordlessProvider implements AuthProvider {
         this.messageBus = messageBus;
         this.passwordlessConfig = configContext.asConfigBean(PasswordlessConfig.class);
 
-        this.secureRandom = new SecureRandom();
+        this.cryptographicRandom = new CryptographicRandom();
         this.tokenTtl = ConfigParser.parseDuration(this.passwordlessConfig.getTokenLife());
     }
 
@@ -77,10 +76,6 @@ public class PasswordlessProvider implements AuthProvider {
     }
 
     private String randomToken() {
-        final byte[] bytes = new byte[passwordlessConfig.getRandomSize()];
-
-        secureRandom.nextBytes(bytes);
-
-        return Base64.getEncoder().encodeToString(bytes);
+        return cryptographicRandom.base64Url(passwordlessConfig.getRandomSize());
     }
 }
