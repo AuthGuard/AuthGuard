@@ -1,7 +1,10 @@
 package com.nexblocks.authguard.rest;
 
+import com.google.inject.CreationException;
+import com.google.inject.ProvisionException;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.rest.exceptions.InitializationException;
+import com.nexblocks.authguard.service.exceptions.ConfigurationException;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,9 +50,24 @@ public class AuthGuardCli {
         // run the server
         try {
             serverRunner.run(configContext);
-        } catch (final InitializationException e) {
-            System.err.println("Failed to initialize the server. Error: " + e.getMessage());
+        } catch (final ProvisionException | CreationException e) {
+            if (e.getCause() != null) {
+                if (e.getCause().getMessage() != null) {
+                    log.error("Failed to initialize the server. Error: {}", e.getCause().getMessage());
+                } else {
+                    log.error("Failed to initialize the server. Error: ", e.getCause());
+                }
+            } else {
+                log.error("Failed to initialize the server. Error: ", e);
+            }
+
             return 1;
+        } catch (final ConfigurationException e) {
+            log.error("Configuration error: {}", e.getMessage());
+            return 2;
+        } catch (final InitializationException e) {
+            log.error("Failed to initialize the server. Error: {}", e.getMessage());
+            return 3;
         }
 
         return 0;
