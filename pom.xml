@@ -54,7 +54,7 @@
         <commons-validator.version>1.4.0</commons-validator.version>
         <commons-cli.version>1.4</commons-cli.version>
         <mapstruct.version>1.3.0.Final</mapstruct.version>
-        <bouncy-castle.version>1.62</bouncy-castle.version>
+        <bouncy-castle.version>1.68</bouncy-castle.version>
         <reflections.version>0.9.11</reflections.version>
         <guice.version>4.2.2</guice.version>
         <rxjava.version>3.0.2</rxjava.version>
