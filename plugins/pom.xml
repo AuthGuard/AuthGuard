@@ -5,7 +5,7 @@
     <parent>
         <artifactId>authguard</artifactId>
         <groupId>com.nexblocks.authguard</groupId>
-        <version>0.6.1</version>
+        <version>0.7.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -16,6 +16,7 @@
     <modules>
         <module>account-lock</module>
         <module>verification-plugin</module>
+        <module>passwordless-send</module>
     </modules>
 
 </project>

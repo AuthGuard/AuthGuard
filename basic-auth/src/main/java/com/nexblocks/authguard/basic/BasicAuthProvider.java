@@ -45,20 +45,10 @@ public class BasicAuthProvider {
     }
 
     public Either<Exception, AccountBO> getAccount(final AuthRequestBO request) {
-        return handleBasicAuthenticationNoPassword(request.getIdentifier());
+        return verifyCredentialsAndGetAccount(request.getIdentifier());
     }
 
     public Either<Exception, AccountBO> getAccount(final String basicToken) {
-        final String[] parts = TokensUtils.parseAuthorization(basicToken);
-
-        if (parts[0].equals("Basic")) {
-            return handleBasicAuthenticationNoPassword(parts[1]);
-        } else {
-            throw new ServiceException(ErrorCode.UNSUPPORTED_SCHEME, "Unsupported authorization scheme");
-        }
-    }
-
-    public Either<Exception, AccountBO> getAccountEither(final String basicToken) {
         final String[] parts = TokensUtils.parseAuthorization(basicToken);
 
         if (parts[0].equals("Basic")) {

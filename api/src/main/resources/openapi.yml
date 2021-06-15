@@ -14,7 +14,7 @@ paths:
       operationId: createAccount
       description: Create an account
       tags:
-        - accounts
+        - Accounts
       parameters:
         - $ref:  "#/components/parameters/IdempotentKeyHeader"
       requestBody:
@@ -38,7 +38,7 @@ paths:
       operationId: getAccountById
       description: Get an account by ID
       tags:
-        - accounts
+        - Accounts
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       responses:
@@ -53,7 +53,7 @@ paths:
       operationId: patchAccount
       description: Update account information
       tags:
-        - accounts
+        - Accounts
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       requestBody:
@@ -76,7 +76,7 @@ paths:
       operationId: deleteAccount
       description: Delet an account
       tags:
-        - accounts
+        - Accounts
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       responses:
@@ -92,7 +92,7 @@ paths:
       operationId: getAccountByExternalId
       description: Get an account by an external ID
       tags:
-        - accounts
+        - Accounts
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       responses:
@@ -108,7 +108,7 @@ paths:
       operationId: getAccountByEmail
       description: Get an account by email, regardless of whether it's the primary email or not
       tags:
-        - accounts
+        - Accounts
       parameters:
         - $ref: "#/components/parameters/EmailParameter"
       responses:
@@ -124,7 +124,7 @@ paths:
       operationId: updateAccountPermissions
       description: Update the permissions of an account
       tags:
-        - accounts
+        - Accounts
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       requestBody:
@@ -145,7 +145,7 @@ paths:
       operationId: updateAccountRoles
       description: Update the roles of an account
       tags:
-        - accounts
+        - Accounts
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       requestBody:
@@ -166,7 +166,7 @@ paths:
       operationId: activateAnAccount
       description: Activate an account if not already active
       tags:
-        - accounts
+        - Accounts
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       responses:
@@ -182,7 +182,7 @@ paths:
       operationId: deactivateAnAccount
       description: Deactivate an account if it's active
       tags:
-        - accounts
+        - Accounts
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       responses:
@@ -198,7 +198,7 @@ paths:
       operationId: getApplicationsByAccountId
       description: Get a list of applications associated with an account
       tags:
-        - accounts
+        - Accounts
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       responses:
@@ -214,7 +214,7 @@ paths:
       operationId: getLocksByAccountId
       description: Get a list of active locks placed on an account
       tags:
-        - accounts
+        - Accounts
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       responses:
@@ -230,7 +230,7 @@ paths:
       operationId: createAccountWithCredentials
       description: Create an account as well as its credentials
       tags:
-        - accounts
+        - Accounts
       parameters:
         - $ref:  "#/components/parameters/IdempotentKeyHeader"
       requestBody:
@@ -255,7 +255,7 @@ paths:
       operationId: createCredentials
       description: Create credentials
       tags:
-        - credentials
+        - Credentials
       parameters:
         - $ref:  "#/components/parameters/IdempotentKeyHeader"
       requestBody:
@@ -279,7 +279,7 @@ paths:
       operationId: getCredentialsById
       description: Get credentials by ID
       tags:
-        - credentials
+        - Credentials
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       responses:
@@ -293,7 +293,7 @@ paths:
       operationId: deleteCredentials
       description: Delete credentials by ID
       tags:
-        - credentials
+        - Credentials
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       responses:
@@ -309,7 +309,7 @@ paths:
       operationId: updatePassword
       description: Update the password in a credentials entity
       tags:
-        - credentials
+        - Credentials
       requestBody:
         content:
           application/json:
@@ -330,7 +330,7 @@ paths:
       operationId: addIdentifier
       description: Add new identifiers to credentials
       tags:
-        - credentials
+        - Credentials
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       requestBody:
@@ -353,7 +353,7 @@ paths:
       operationId: deleteIdentifier
       description: Delete identifiers from credentials
       tags:
-        - credentials
+        - Credentials
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       requestBody:
@@ -378,7 +378,7 @@ paths:
       operationId: createApp
       description: Create an application
       tags:
-        - applications
+        - Applications
       requestBody:
         content:
           application/json:
@@ -397,7 +397,7 @@ paths:
       operationId: getAppById
       description: Get an application by ID
       tags:
-        - applications
+        - Applications
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       responses:
@@ -412,7 +412,7 @@ paths:
       operationId: deleteApp
       description: Delet an application
       tags:
-        - applications
+        - Applications
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       responses:
@@ -428,8 +428,8 @@ paths:
       operationId: getApiKeysByAppId
       description: Get all API keys associated with an application
       tags:
-        - applications
-        - api_keys
+        - Applications
+        - API Keys
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       responses:
@@ -445,7 +445,7 @@ paths:
       operationId: getAppsByExternalId
       description: Get an application by an external ID
       tags:
-        - applications
+        - Applications
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       responses:
@@ -461,7 +461,7 @@ paths:
       operationId: activateAnApp
       description: Activate an application if not already active
       tags:
-        - applications
+        - Applications
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       responses:
@@ -477,7 +477,7 @@ paths:
       operationId: deactivateAnApp
       description: Deactivate an application if it's active
       tags:
-        - applications
+        - Applications
       parameters:
         - $ref: "#/components/parameters/IdParameter"
       responses:
@@ -494,7 +494,7 @@ paths:
       operationId: generateApiKey
       description: Generate a new API key for an application
       tags:
-        - api_keys
+        - API Keys
       requestBody:
         content:
           application/json:
@@ -513,7 +513,7 @@ paths:
       operationId: getApiKeyById
       description: Get an API key by ID
       tags:
-        - api_keys
+        - API Keys
       requestBody:
         content:
           application/json:
@@ -530,7 +530,7 @@ paths:
       operationId: deleteApiKey
       description: Delete an API key by ID
       tags:
-        - api_keys
+        - API Keys
       requestBody:
         content:
           application/json:
@@ -551,7 +551,7 @@ paths:
       operationId: createRole
       description: Create a role
       tags:
-        - roles
+        - Roles
       requestBody:
         content:
           application/json:
@@ -569,7 +569,7 @@ paths:
       operationId: getAllRoles
       description: Get all roles
       tags:
-        - roles
+        - Roles
       responses:
         201:
           description: Success
@@ -583,7 +583,7 @@ paths:
       operationId: getRoleById
       description: Get role by ID
       tags:
-        - roles
+        - Roles
       responses:
         200:
           description: Success
@@ -596,7 +596,7 @@ paths:
       operationId: deleteRole
       description: Delete a role
       tags:
-        - roles
+        - Roles
       responses:
         200:
           description: Success
@@ -610,7 +610,7 @@ paths:
       operationId: getRoleByName
       description: Get a role by its name
       tags:
-        - roles
+        - Roles
       responses:
         200:
           description: Success
@@ -625,7 +625,7 @@ paths:
       operationId: createPermission
       description: Create a permission
       tags:
-        - permissions
+        - Permissions
       requestBody:
         content:
           application/json:
@@ -642,7 +642,7 @@ paths:
       operationId: getPermissions
       description: Get all permissions
       tags:
-        - permissions
+        - Permissions
       parameters:
         - name: group
           in: query
@@ -658,7 +658,7 @@ paths:
       operationId: getPermissionById
       description: Get a permission by ID
       tags:
-        - permissions
+        - Permissions
       responses:
         200:
           description: Success
@@ -670,7 +670,7 @@ paths:
       operationId: deletePermission
       description: Delete a permission by ID
       tags:
-        - permissions
+        - Permissions
       responses:
         200:
           description: Success
@@ -684,7 +684,7 @@ paths:
       operationId: getPermissionsByGroupName
       description: Get a permissions by group name
       tags:
-        - permissions
+        - Permissions
       responses:
         200:
           description: Success
@@ -696,7 +696,7 @@ paths:
       operationId: exchange
       description: Perform an auth exchange
       tags:
-        - auth
+        - Auth
       parameters:
         - name: from
           in: query
@@ -726,7 +726,7 @@ paths:
       operationId: clear
       description: Clear (delete) a token
       tags:
-        - auth
+        - Auth
       parameters:
         - name: tokenType
           in: query
@@ -751,7 +751,7 @@ paths:
       operationId: authenticate
       description: Perform an auth exchange from 'basic' to what is specified in the configuration
       tags:
-        - auth
+        - Auth
       requestBody:
         content:
           application/json:
@@ -770,7 +770,7 @@ paths:
       operationId: logout
       description: Clear (delete) a token based on whatever is specified in the configuration
       tags:
-        - auth
+        - Auth
       requestBody:
         content:
           application/json:
@@ -789,7 +789,7 @@ paths:
       operationId: getExchangeAttempts
       description: Get a list of attempts performed for an entity
       tags:
-        - auth
+        - Auth
       parameters:
         - name: entityId
           in: query
@@ -817,7 +817,7 @@ paths:
     post:
       operationId: Verify a passwordless token
       tags:
-        - auth
+        - Auth
       requestBody:
         content:
           application/json:
@@ -835,7 +835,7 @@ paths:
     post:
       operationId: Verify a one-time password
       tags:
-        - auth
+        - Auth
       requestBody:
         content:
           application/json:
@@ -853,7 +853,7 @@ paths:
     post:
       operationId: Verify an email
       tags:
-        - verification
+        - Verification
       parameters:
         - name: token
           in: query
