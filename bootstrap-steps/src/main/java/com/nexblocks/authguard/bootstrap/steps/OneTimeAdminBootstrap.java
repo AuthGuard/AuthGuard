@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.UUID;
 
 public class OneTimeAdminBootstrap implements BootstrapStep {
+    private static final String OTA_ROLE = "one_time_admin";
+
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final AccountsService accountsService;
@@ -34,8 +36,9 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
     @Override
     public void run() {
         final List<AccountBO> admins = accountsService.getAdmins();
+        final List<AccountBO> oneTimeAdmins = accountsService.getByRole(OTA_ROLE);
 
-        if (admins.isEmpty()) {
+        if (admins.isEmpty() && oneTimeAdmins.isEmpty()) {
             log.info("No admin accounts were found, a one-time admin account will be created");
             final RequestContextBO requestContext = RequestContextBO.builder()
                     .idempotentKey(UUID.randomUUID().toString())
@@ -51,7 +54,7 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
 
     private AccountBO oneTimeAccount() {
         return AccountBO.builder()
-                .roles(Collections.singletonList("one_time_admin"))
+                .roles(Collections.singletonList(OTA_ROLE))
                 .active(true)
                 .build();
     }

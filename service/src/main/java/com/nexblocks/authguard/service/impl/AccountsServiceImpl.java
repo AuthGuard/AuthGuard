@@ -284,7 +284,12 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public List<AccountBO> getAdmins() {
-        return accountsRepository.getByRole(accountConfig.getAuthguardAdminRole())
+        return getByRole(accountConfig.getAuthguardAdminRole());
+    }
+
+    @Override
+    public List<AccountBO> getByRole(final String role) {
+        return accountsRepository.getByRole(role)
                 .join()
                 .stream()
                 .map(serviceMapper::toBO)
