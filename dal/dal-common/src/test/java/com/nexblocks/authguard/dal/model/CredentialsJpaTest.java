@@ -1,11 +1,13 @@
 package com.nexblocks.authguard.dal.model;
 
 import org.assertj.core.api.Assertions;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceException;
 import javax.persistence.TypedQuery;
 import java.util.Collections;
 import java.util.List;
@@ -105,5 +107,39 @@ public class CredentialsJpaTest {
 
         final List<CredentialsDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).isEmpty();
+    }
+
+    @Test
+    void createDuplicate() {
+        final CredentialsDO duplicate = CredentialsDO.builder()
+                .id("duplicate-credentials")
+                .accountId("account")
+                .hashedPassword(PasswordDO.builder()
+                        .password("password")
+                        .salt("salt")
+                        .build())
+                .identifiers(Collections.singleton(UserIdentifierDO.builder()
+                        .identifier("username")
+                        .type(UserIdentifierDO.Type.USERNAME)
+                        .build()))
+                .build();
+
+        entityManager.getTransaction().begin();
+
+        try {
+            entityManager.persist(duplicate);
+            entityManager.getTransaction().commit();
+        } catch (final PersistenceException persistenceException) {
+            final Throwable cause = persistenceException.getCause();
+
+            if (cause instanceof ConstraintViolationException) {
+                Assertions.assertThat(((ConstraintViolationException) cause).getConstraintName())
+                        .contains("IDENTIFIER_DUP");
+            } else {
+                throw persistenceException;
+            }
+        } finally {
+            entityManager.getTransaction().rollback();
+        }
     }
 }
