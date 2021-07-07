@@ -13,7 +13,7 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import io.vavr.control.Either;
 
-@TokenExchange(from = "passwordless", to = "oidc")
+@TokenExchange(from = "otp", to = "oidc")
 public class OtpToOidc implements Exchange {
     private final AccountsService accountsService;
     private final OtpVerifier otpVerifier;
