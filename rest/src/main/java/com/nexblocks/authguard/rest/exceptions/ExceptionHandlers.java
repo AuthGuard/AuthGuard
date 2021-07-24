@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeoutException;
 
 public class ExceptionHandlers {
     private static final Logger LOG = LoggerFactory.getLogger(ExceptionHandlers.class);
@@ -65,6 +66,14 @@ public class ExceptionHandlers {
         context.status(409).json(error);
     }
 
+    public static void timeoutException(final TimeoutException e, final Context context) {
+        final Error error = new Error("504", "Timeout");
+
+        LOG.warn("A timeout error occurred", e);
+
+        context.status(504).json(error);
+    }
+
     // NOTE: this will go away when we move to async services
     public static void completionException(final CompletionException e, final Context context) {
         final Throwable cause = e.getCause();
@@ -85,6 +94,8 @@ public class ExceptionHandlers {
             requestValidationException((RequestValidationException) cause, context);
         } else if (cause instanceof IdempotencyException) {
             idempotencyException((IdempotencyException) cause, context);
+        } else if (cause instanceof TimeoutException) {
+            timeoutException((TimeoutException) cause, context);
         } else {
             LOG.error("An unexpected exception was thrown", cause);
 
