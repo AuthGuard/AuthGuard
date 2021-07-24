@@ -21,7 +21,7 @@ public class ExceptionHandlers {
     public static void serviceException(final ServiceException e, final Context context) {
         LOG.info("Service exception was thrown");
 
-        final Error error = new Error(e.getErrorCode().getCode(), e.getMessage());
+        final Error error = new Error(e.getErrorCode(), e.getMessage());
         context.status(400)
                 .json(error);
     }
@@ -29,7 +29,7 @@ public class ExceptionHandlers {
     public static void serviceConflictException(final ServiceConflictException e, final Context context) {
         LOG.info("Service conflict exception was thrown");
 
-        final Error error = new Error(e.getErrorCode().getCode(), e.getMessage());
+        final Error error = new Error(e.getErrorCode(), e.getMessage());
         context.status(409)
                 .json(error);
     }
@@ -37,7 +37,7 @@ public class ExceptionHandlers {
     public static void serviceAuthorizationException(final ServiceAuthorizationException e, final Context context) {
         LOG.info("Service authorization exception was thrown");
 
-        final Error error = new Error(e.getErrorCode().getCode(), e.getMessage());
+        final Error error = new Error(e.getErrorCode(), e.getMessage());
         /*
          * We leave 401 to signal an unauthorized access.
          * TODO: don't rely on exceptions to highlight something like that and instead
