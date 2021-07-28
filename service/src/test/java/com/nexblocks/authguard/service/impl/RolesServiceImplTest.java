@@ -4,11 +4,11 @@ import com.nexblocks.authguard.dal.model.RoleDO;
 import com.nexblocks.authguard.dal.persistence.RolesRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.RolesService;
+import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.RoleBO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 
 import java.util.Arrays;
@@ -18,8 +18,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class RolesServiceImplTest {
     private RolesRepository rolesRepository;
     private MessageBus messageBus;
@@ -59,12 +59,34 @@ class RolesServiceImplTest {
                 .name("role")
                 .build();
 
+        Mockito.when(rolesRepository.getByName("role"))
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+
         Mockito.when(rolesRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, RoleDO.class)));
 
         final RoleBO actual = rolesService.create(request);
 
         assertThat(actual).isEqualToIgnoringGivenFields(request, "id", "createdAt", "lastModified");
+    }
+
+    @Test
+    void createDuplicate() {
+        final RoleDO role = RoleDO.builder()
+                .name("role")
+                .build();
+
+        final RoleBO request = RoleBO.builder()
+                .name("role")
+                .build();
+
+        Mockito.when(rolesRepository.getByName("role"))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(role)));
+
+        Mockito.when(rolesRepository.save(Mockito.any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, RoleDO.class)));
+
+        assertThatThrownBy(() -> rolesService.create(request)).isInstanceOf(ServiceConflictException.class);
     }
 
     @Test
