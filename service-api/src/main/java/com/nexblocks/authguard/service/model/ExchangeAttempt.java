@@ -13,6 +13,7 @@ public interface ExchangeAttempt extends Entity {
      String getClientId();
      String getExternalSessionId();
      String getSourceIp();
+     String getUserAgent();
 
      @Override
      @Value.Derived

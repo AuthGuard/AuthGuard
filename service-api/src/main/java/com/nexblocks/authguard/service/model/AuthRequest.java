@@ -11,4 +11,6 @@ public interface AuthRequest {
     TokenRestrictionsBO getRestrictions();
     String getDeviceId();
     String getExternalSessionId();
+    String getUserAgent();
+    String getSourceIp();
 }

@@ -2,7 +2,7 @@ openapi: 3.0.3
 
 info:
   title: AuthGuard API
-  version: 0.4.0
+  version: 0.8.0
 
 security:
   - apiKey: []
@@ -1199,6 +1199,10 @@ components:
         deviceId:
           type: string
         externalSessionId:
+          type: string
+        sourceIp:
+          type: string
+        userAgent:
           type: string
   
     AuthResult:

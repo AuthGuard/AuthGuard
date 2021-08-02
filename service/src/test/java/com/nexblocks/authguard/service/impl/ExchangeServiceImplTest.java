@@ -179,4 +179,55 @@ class ExchangeServiceImplTest {
 
         Mockito.verify(emb).publish(Mockito.eq(ExchangeServiceImpl.CHANNEL), Mockito.any());
     }
+
+    @Test
+    void exchangeWithOverriddenProperties() {
+        final MessageBus emb = Mockito.mock(MessageBus.class);
+        final ExchangeAttemptsService exchangeAttemptsService = Mockito.mock(ExchangeAttemptsService.class);
+
+        final ExchangeService exchangeService = new ExchangeServiceImpl(
+                Arrays.asList(
+                        new ValidExchange(),
+                        new InvalidExchange(),
+                        new ExceptionExchange()),
+                Collections.emptyList(),
+                exchangeAttemptsService, emb);
+
+        final String basic = "Basic the-rest";
+        final AuthRequestBO authRequest = AuthRequestBO.builder()
+                .token(basic)
+                .deviceId("user-device")
+                .externalSessionId("external-session")
+                .userAgent("user-agent")
+                .sourceIp("10.0.0.3")
+                .build();
+        final RequestContextBO requestContext = RequestContextBO.builder()
+                .clientId("client")
+                .source("10.0.0.2")
+                .build();
+
+        final AuthResponseBO expected = AuthResponseBO.builder()
+                .type("Basic")
+                .token(basic)
+                .entityType(EntityType.ACCOUNT)
+                .entityId("account")
+                .build();
+
+        Assertions.assertThat(exchangeService.exchange(authRequest, "basic", "basic", requestContext))
+                .isEqualTo(expected);
+
+        Mockito.verify(exchangeAttemptsService).create(ExchangeAttemptBO.builder()
+                .successful(true)
+                .exchangeFrom("basic")
+                .exchangeTo("basic")
+                .entityId("account")
+                .clientId("client")
+                .sourceIp("10.0.0.3")
+                .deviceId("user-device")
+                .externalSessionId("external-session")
+                .userAgent("user-agent")
+                .build());
+
+        Mockito.verify(emb).publish(Mockito.eq(ExchangeServiceImpl.CHANNEL), Mockito.any());
+    }
 }
