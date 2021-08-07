@@ -59,4 +59,11 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
      * if a one-time admin account should be created or not.
      */
     List<AccountBO> getAdmins();
+
+    /**
+     * Finds a list of all accounts with a certain role.
+     * This is useful only when deciding if a one-time
+     * admin account should be created or not.
+     */
+    List<AccountBO> getByRole(String role);
 }

@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeoutException;
 
 public class ServerExceptionHandlers implements JavalinAppConfigurer {
     private final static Logger log = LoggerFactory.getLogger(AuthGuardServer.class.getSimpleName());
@@ -39,6 +40,8 @@ public class ServerExceptionHandlers implements JavalinAppConfigurer {
         app.exception(RequestValidationException.class, ExceptionHandlers::requestValidationException);
 
         app.exception(IdempotencyException.class, ExceptionHandlers::idempotencyException);
+
+        app.exception(TimeoutException.class, ExceptionHandlers::timeoutException);
 
         app.exception(CompletionException.class, ExceptionHandlers::completionException);
     }

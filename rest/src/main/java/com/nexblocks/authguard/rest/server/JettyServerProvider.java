@@ -48,7 +48,7 @@ public class JettyServerProvider {
     }
 
     private void configureHttpsConnector(final Server server) {
-        final Integer port = Optional.ofNullable(serverConfig.getPort())
+        final Integer port = Optional.ofNullable(serverConfig.getSecurePort())
                 .orElse(443);
 
         final SslContextFactory sslContextFactory = createContextFactory();

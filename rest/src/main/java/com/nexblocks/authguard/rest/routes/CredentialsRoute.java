@@ -74,7 +74,7 @@ public class CredentialsRoute extends CredentialsApi {
                 .map(restMapper::toDTO);
 
         if (updated.isPresent()) {
-            context.status(400).json(updated.get());
+            context.status(200).json(updated.get());
         } else {
             context.status(404);
         }
@@ -90,7 +90,7 @@ public class CredentialsRoute extends CredentialsApi {
                 .map(restMapper::toDTO);
 
         if (updated.isPresent()) {
-            context.status(400).json(updated.get());
+            context.status(200).json(updated.get());
         } else {
             context.status(404);
         }

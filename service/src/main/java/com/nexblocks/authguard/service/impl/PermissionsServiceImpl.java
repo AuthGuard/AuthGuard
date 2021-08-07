@@ -1,12 +1,14 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.model.PermissionDO;
 import com.nexblocks.authguard.dal.persistence.PermissionsRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.PermissionsService;
+import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
+import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.PermissionBO;
-import com.google.inject.Inject;
 
 import java.util.Collection;
 import java.util.List;
@@ -33,6 +35,10 @@ public class PermissionsServiceImpl implements PermissionsService {
 
     @Override
     public PermissionBO create(final PermissionBO permission) {
+        if (permissionsRepository.search(permission.getGroup(), permission.getName()).join().isPresent()) {
+            throw new ServiceConflictException(ErrorCode.PERMISSION_ALREADY_EXIST,
+                    "Permission " + permission.getFullName() + " already exists");
+        }
         return persistenceService.create(permission);
     }
 
@@ -62,7 +68,7 @@ public class PermissionsServiceImpl implements PermissionsService {
     }
 
     @Override
-    public Collection<PermissionBO> getAllForGroup(final String group) {
+    public List<PermissionBO> getAllForGroup(final String group) {
         return permissionsRepository.getAllForGroup(group)
                 .join()
                 .stream()

@@ -14,7 +14,7 @@ import javax.persistence.*;
 // JPA
 @Entity
 @Table(name = "user_identifiers", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "identifier")
+        @UniqueConstraint(columnNames = "identifier", name = "IDENTIFIER_DUP")
 })
 public class UserIdentifierDO {
     @Id
