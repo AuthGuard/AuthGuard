@@ -45,4 +45,35 @@ class JacksonConfigContextTest {
 
         assertThat(actual).isEqualTo(expected);
     }
+
+    @Test
+    void withSystemProperties() {
+        final ObjectNode rootNode = objectMapper.createObjectNode();
+        final ObjectNode childWithEnvNode = objectMapper.createObjectNode();
+        final ObjectNode childNode = objectMapper.createObjectNode();
+
+        rootNode.put("normal", "value");
+        rootNode.put("system", "system:VARIABLE");
+
+        childWithEnvNode.put("normal", "value");
+        childWithEnvNode.put("system", "system:VARIABLE");
+
+        childNode.put("normal", "value");
+
+        rootNode.set("child", childNode);
+        rootNode.set("childEnv", childWithEnvNode);
+
+        System.setProperty("VARIABLE", "resolved");
+
+        final JacksonConfigContext configContext = new JacksonConfigContext(rootNode);
+
+        assertThat(configContext.getAsString("normal")).isEqualTo("value");
+        assertThat(configContext.getAsString("system")).isEqualTo("resolved");
+
+        assertThat(configContext.getSubContext("childEnv").getAsString("normal")).isEqualTo("value");
+        assertThat(configContext.getSubContext("childEnv").getAsString("system")).isEqualTo("resolved");
+
+        assertThat(configContext.getSubContext("child").getAsString("normal")).isEqualTo("value");
+    }
+
 }
