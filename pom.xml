@@ -223,26 +223,27 @@
             </plugin>
 
             <!-- javadoc -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${maven-javadoc-plugin.version}</version>
+            <!-- commented out due to an issue with GitHub actions and Immutables -->
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-javadoc-plugin</artifactId>-->
+<!--                <version>${maven-javadoc-plugin.version}</version>-->
 
-                <configuration>
-                    <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
-                    <detectJavaApiLink>false</detectJavaApiLink>
-                    <doclint>none</doclint>
-                </configuration>
+<!--                <configuration>-->
+<!--                    <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>-->
+<!--                    <detectJavaApiLink>false</detectJavaApiLink>-->
+<!--                    <doclint>none</doclint>-->
+<!--                </configuration>-->
 
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>attach-javadocs</id>-->
+<!--                        <goals>-->
+<!--                            <goal>jar</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 
