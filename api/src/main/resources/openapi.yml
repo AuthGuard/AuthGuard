@@ -1164,7 +1164,11 @@ components:
     ApiKey:
       type: object
       properties:
+        id:
+          type: string
         appId:
+          type: string
+        key:
           type: string
 
     ExchangeAttempt:
