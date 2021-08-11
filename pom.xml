@@ -175,6 +175,27 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>github_actions</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/OAuthServiceClientTest.java</exclude>
+                                <exclude>**/OAuthServiceTest.java</exclude>
+                                <exclude>**/rest/*.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
             <plugin>
