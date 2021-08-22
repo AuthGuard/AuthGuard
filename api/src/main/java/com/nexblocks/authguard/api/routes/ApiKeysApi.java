@@ -16,12 +16,15 @@ public abstract class ApiKeysApi implements ApiRoute {
     public void addEndpoints() {
         post("/", this::generate, ActorRoles.anyAdmin());
         get("/:id", this::getById, ActorRoles.adminClient());
+        post("/verify", this::verify, ActorRoles.adminClient());
         delete("/:id", this::deleteById, ActorRoles.adminClient());
     }
 
     public abstract void generate(final Context context);
 
     public abstract void getById(final Context context);
+
+    public abstract void verify(final Context context);
 
     public abstract void deleteById(final Context context);
 }
