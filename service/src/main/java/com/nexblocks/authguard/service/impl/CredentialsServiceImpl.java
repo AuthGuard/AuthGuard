@@ -1,10 +1,13 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.basic.passwords.PasswordValidator;
 import com.nexblocks.authguard.basic.passwords.SecurePassword;
 import com.nexblocks.authguard.basic.passwords.ServiceInvalidPasswordException;
 import com.nexblocks.authguard.basic.passwords.Violation;
+import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
+import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.dal.model.CredentialsDO;
 import com.nexblocks.authguard.dal.persistence.CredentialsAuditRepository;
 import com.nexblocks.authguard.dal.persistence.CredentialsRepository;
@@ -19,8 +22,11 @@ import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
+import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.ID;
 
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,15 +35,20 @@ import java.util.stream.Collectors;
 
 public class CredentialsServiceImpl implements CredentialsService {
     private static final String CREDENTIALS_CHANNEL = "credentials";
+    private static final int RESET_TOKEN_SIZE = 128;
+    private static final Duration TOKEN_LIFETIME = Duration.ofMinutes(30);
 
     private final AccountsService accountsService;
     private final IdempotencyService idempotencyService;
     private final CredentialsRepository credentialsRepository;
     private final CredentialsAuditRepository credentialsAuditRepository;
+    private final AccountTokensRepository accountTokensRepository;
     private final SecurePassword securePassword;
     private final PasswordValidator passwordValidator;
     private final MessageBus messageBus;
     private final ServiceMapper serviceMapper;
+
+    private final CryptographicRandom cryptographicRandom;
     private final PersistenceService<CredentialsBO, CredentialsDO, CredentialsRepository> persistenceService;
 
     @Inject
@@ -45,6 +56,7 @@ public class CredentialsServiceImpl implements CredentialsService {
                                   final IdempotencyService idempotencyService,
                                   final CredentialsRepository credentialsRepository,
                                   final CredentialsAuditRepository credentialsAuditRepository,
+                                  final AccountTokensRepository accountTokensRepository,
                                   final SecurePassword securePassword,
                                   final PasswordValidator passwordValidator,
                                   final MessageBus messageBus,
@@ -53,10 +65,13 @@ public class CredentialsServiceImpl implements CredentialsService {
         this.idempotencyService = idempotencyService;
         this.credentialsRepository = credentialsRepository;
         this.credentialsAuditRepository = credentialsAuditRepository;
+        this.accountTokensRepository = accountTokensRepository;
         this.securePassword = securePassword;
         this.passwordValidator = passwordValidator;
         this.messageBus = messageBus;
         this.serviceMapper = serviceMapper;
+
+        this.cryptographicRandom = new CryptographicRandom();
 
         this.persistenceService = new PersistenceService<>(credentialsRepository, messageBus,
                 serviceMapper::toDO, serviceMapper::toBO, CREDENTIALS_CHANNEL);
@@ -88,10 +103,16 @@ public class CredentialsServiceImpl implements CredentialsService {
     }
 
     @Override
+    public Optional<CredentialsBO> getByIdUnsafe(final String id) {
+        return persistenceService.getById(id);
+    }
+
+    @Override
     public Optional<CredentialsBO> getByUsername(final String username) {
         return credentialsRepository.findByIdentifier(username)
-                .thenApply(optional -> optional.map(serviceMapper::toBO).map(this::removeSensitiveInformation))
-                .join();
+                .join()
+                .map(serviceMapper::toBO)
+                .map(this::removeSensitiveInformation);
     }
 
     @Override
@@ -108,7 +129,7 @@ public class CredentialsServiceImpl implements CredentialsService {
 
     @Override
     public Optional<CredentialsBO> updatePassword(final String id, final String plainPassword) {
-        final CredentialsBO existing = persistenceService.getById(id)
+        final CredentialsBO existing = getByIdUnsafe(id)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
 
         final HashedPasswordBO newPassword = verifyAndHashPassword(plainPassword);
@@ -119,7 +140,7 @@ public class CredentialsServiceImpl implements CredentialsService {
 
     @Override
     public Optional<CredentialsBO> addIdentifiers(final String id, final List<UserIdentifierBO> identifiers) {
-        final CredentialsBO existing = getById(id)
+        final CredentialsBO existing = getByIdUnsafe(id)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
 
         final Set<String> existingIdentifiers = existing.getIdentifiers().stream()
@@ -145,7 +166,7 @@ public class CredentialsServiceImpl implements CredentialsService {
 
     @Override
     public Optional<CredentialsBO> removeIdentifiers(final String id, final List<String> identifiers) {
-        final CredentialsBO existing = getById(id)
+        final CredentialsBO existing = getByIdUnsafe(id)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
 
         final List<UserIdentifierBO> updatedIdentifiers = existing.getIdentifiers().stream()
@@ -163,6 +184,52 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .build();
 
         return doUpdate(existing, updated, false);
+    }
+
+    @Override
+    public PasswordResetTokenBO generateResetToken(final String identifier) {
+        final CredentialsBO credentials = getByUsername(identifier)
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST, "Unknown identifier"));
+        final AccountBO account = accountsService.getById(credentials.getAccountId())
+                .orElseThrow(() -> new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
+                        "Credentials found for the identifier but no account was associated with it. This could be the " +
+                                "result of deleting an account without deleting its credentials"));
+
+        final OffsetDateTime now = OffsetDateTime.now();
+
+        final AccountTokenDO accountToken = AccountTokenDO
+                .builder()
+                .token(cryptographicRandom.base64Url(RESET_TOKEN_SIZE))
+                .associatedAccountId(account.getId())
+                .additionalInformation(ImmutableMap.of("credentialsId", credentials.getId()))
+                .expiresAt(now.plus(TOKEN_LIFETIME))
+                .build();
+
+        accountTokensRepository.save(accountToken);
+
+        return PasswordResetTokenBO.builder()
+                .token(accountToken.getToken())
+                .issuedAt(now.toEpochSecond())
+                .expiresAt(accountToken.getExpiresAt().toEpochSecond())
+                .build();
+    }
+
+    @Override
+    public Optional<CredentialsBO> resetPassword(final String token, final String plainPassword) {
+        final AccountTokenDO accountToken = accountTokensRepository.getByToken(token)
+                .join()
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
+                        "AccountDO token " + token + " does not exist"));
+
+        if (accountToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
+            throw new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token " + token + " has expired");
+        }
+
+        final String credentialsId = Optional.ofNullable(accountToken.getAdditionalInformation())
+                .map(m -> m.get("credentialsId"))
+                .orElseThrow(() -> new ServiceException(ErrorCode.INVALID_TOKEN, "Reset token was not mapped to any credentials"));
+
+        return updatePassword(credentialsId, plainPassword);
     }
 
     private Optional<CredentialsBO> doUpdate(final CredentialsBO existing, final CredentialsBO updated, boolean storePasswordAudit) {
