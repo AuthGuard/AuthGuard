@@ -508,6 +508,25 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
+  /keys/verify:
+    post:
+      operationId: verifyKey
+      description: Verify an API key
+      tags:
+        - API Keys
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRequest"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApplicationResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
   /keys/{id}:
     get:
       operationId: getApiKeyById
@@ -543,7 +562,6 @@ paths:
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
-      
 
   # ----------------- roles -----------------
   /roles:

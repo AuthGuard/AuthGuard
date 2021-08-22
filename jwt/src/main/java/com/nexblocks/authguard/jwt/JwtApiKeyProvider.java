@@ -30,7 +30,6 @@ public class JwtApiKeyProvider implements AuthProvider {
     @Override
     public AuthResponseBO generateToken(final AccountBO account) {
         throw new UnsupportedOperationException("API keys cannot be generated for an account");
-
     }
 
     @Override
