@@ -1,9 +1,12 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.api.dto.entities.CredentialsDTO;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.UserIdentifierDTO;
 import com.nexblocks.authguard.api.dto.requests.CreateCredentialsRequestDTO;
+import com.nexblocks.authguard.api.dto.requests.PasswordResetRequestDTO;
+import com.nexblocks.authguard.api.dto.requests.PasswordResetTokenRequestDTO;
 import com.nexblocks.authguard.api.dto.requests.UserIdentifiersRequestDTO;
 import com.nexblocks.authguard.api.routes.CredentialsApi;
 import com.nexblocks.authguard.rest.mappers.RestJsonMapper;
@@ -11,9 +14,10 @@ import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.rest.util.IdempotencyHeader;
 import com.nexblocks.authguard.service.CredentialsService;
+import com.nexblocks.authguard.service.model.CredentialsBO;
+import com.nexblocks.authguard.service.model.PasswordResetTokenBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.nexblocks.authguard.service.model.UserIdentifierBO;
-import com.google.inject.Inject;
 import io.javalin.http.Context;
 
 import java.util.List;
@@ -26,6 +30,8 @@ public class CredentialsRoute extends CredentialsApi {
 
     private final BodyHandler<CreateCredentialsRequestDTO> credentialsRequestBodyHandler;
     private final BodyHandler<UserIdentifiersRequestDTO> userIdentifiersRequestBodyHandler;
+    private final BodyHandler<PasswordResetTokenRequestDTO> passwordResetTokenRequestBodyHandler;
+    private final BodyHandler<PasswordResetRequestDTO> passwordResetRequestBodyHandler;
 
     @Inject
     public CredentialsRoute(final RestMapper restMapper, final CredentialsService credentialsService) {
@@ -35,6 +41,10 @@ public class CredentialsRoute extends CredentialsApi {
         this.credentialsRequestBodyHandler = new BodyHandler.Builder<>(CreateCredentialsRequestDTO.class)
                 .build();
         this.userIdentifiersRequestBodyHandler = new BodyHandler.Builder<>(UserIdentifiersRequestDTO.class)
+                .build();
+        this.passwordResetTokenRequestBodyHandler = new BodyHandler.Builder<>(PasswordResetTokenRequestDTO.class)
+                .build();
+        this.passwordResetRequestBodyHandler = new BodyHandler.Builder<>(PasswordResetRequestDTO.class)
                 .build();
     }
 
@@ -135,6 +145,28 @@ public class CredentialsRoute extends CredentialsApi {
 
         if (credentials.isPresent()) {
             context.json(credentials.get());
+        } else {
+            context.status(404);
+        }
+    }
+
+    @Override
+    public void createResetToken(final Context context) {
+        final PasswordResetTokenRequestDTO request = passwordResetTokenRequestBodyHandler.getValidated(context);
+
+        final PasswordResetTokenBO token = credentialsService.generateResetToken(request.getIdentifier());
+
+        context.json(restMapper.toDTO(token));
+    }
+
+    @Override
+    public void resetPassword(final Context context) {
+        final PasswordResetRequestDTO request = passwordResetRequestBodyHandler.getValidated(context);
+
+        final Optional<CredentialsBO> updated = credentialsService.resetPassword(request.getResetToken(), request.getPlainPassword());
+
+        if (updated.isPresent()) {
+            context.status(200).json(updated.get());
         } else {
             context.status(404);
         }

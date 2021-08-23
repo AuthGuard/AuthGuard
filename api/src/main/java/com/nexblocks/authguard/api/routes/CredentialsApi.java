@@ -25,6 +25,9 @@ public abstract class CredentialsApi implements ApiRoute {
         delete("/:id/identifiers", this::removeIdentifiers, ActorRoles.adminClient());
 
         delete("/:id", this::removeById, ActorRoles.adminClient());
+
+        post("/reset_token", this::createResetToken, ActorRoles.adminClient());
+        post("/reset", this::resetPassword, ActorRoles.adminClient());
     }
 
     public abstract void create(final Context context);
@@ -40,4 +43,8 @@ public abstract class CredentialsApi implements ApiRoute {
     public abstract void getById(final Context context);
 
     public abstract void removeById(final Context context);
+
+    public abstract void createResetToken(final Context context);
+
+    public abstract void resetPassword(final Context context);
 }
