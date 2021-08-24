@@ -8,7 +8,15 @@ public interface AuthProvider {
      */
     AuthResponseBO generateToken(AccountBO account);
 
+    default AuthResponseBO generateToken(AccountBO account, TokenOptionsBO options) {
+        return generateToken(account);
+    }
+
     default AuthResponseBO generateToken(AccountBO account, TokenRestrictionsBO restrictions) {
+        return generateToken(account);
+    }
+
+    default AuthResponseBO generateToken(AccountBO account, TokenRestrictionsBO restrictions, TokenOptionsBO options) {
         return generateToken(account);
     }
 

@@ -49,10 +49,14 @@ class BasicToOIdCTest {
                 .token("id token")
                 .build();
 
+        final TokenOptionsBO options = TokenOptionsBO.builder()
+                .source("basic")
+                .build();
+
         Mockito.when(basicAuth.authenticateAndGetAccount(authRequest))
                 .thenReturn(Either.right(account));
 
-        Mockito.when(accessTokenProvider.generateToken(account, authRequest.getRestrictions()))
+        Mockito.when(accessTokenProvider.generateToken(account, authRequest.getRestrictions(), options))
                 .thenReturn(accessTokenResponse);
 
         Mockito.when(idTokenProvider.generateToken(account))

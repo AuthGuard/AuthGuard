@@ -6,4 +6,5 @@ class SessionKeys {
     static final String PERMISSIONS = "permissions";
     static final String USER_AGENT = "user_agent";
     static final String CREATED_BY = "created_by";
+    static final String SOURCE = "source";
 }

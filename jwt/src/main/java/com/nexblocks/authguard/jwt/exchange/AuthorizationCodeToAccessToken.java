@@ -9,6 +9,7 @@ import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
+import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import com.nexblocks.authguard.service.model.TokenRestrictionsBO;
 import io.vavr.control.Either;
 
@@ -37,10 +38,14 @@ public class AuthorizationCodeToAccessToken implements Exchange {
     }
 
     private Either<Exception, AuthResponseBO> generateToken(final AccountTokenDO accountToken) {
+        final TokenOptionsBO options = TokenOptionsBO.builder()
+                .source("aut_code")
+                .build();
+
         final TokenRestrictionsBO restrictions = getRestrictions(accountToken);
 
         return accountsServiceAdapter.getAccount(accountToken.getAssociatedAccountId())
-                .map(account -> accessTokenProvider.generateToken(account, restrictions));
+                .map(account -> accessTokenProvider.generateToken(account, restrictions, options));
     }
 
     private TokenRestrictionsBO getRestrictions(final AccountTokenDO accountToken) {

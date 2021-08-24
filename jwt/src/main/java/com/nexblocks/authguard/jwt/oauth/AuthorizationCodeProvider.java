@@ -1,5 +1,7 @@
 package com.nexblocks.authguard.jwt.oauth;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
@@ -10,8 +12,6 @@ import com.nexblocks.authguard.service.config.ConfigParser;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.nexblocks.authguard.service.util.ID;
 
 import java.time.Duration;
@@ -41,11 +41,22 @@ public class AuthorizationCodeProvider implements AuthProvider {
 
     @Override
     public AuthResponseBO generateToken(final AccountBO account) {
-        return generateToken(account, null);
+        return generateToken(account, null, null);
+    }
+
+    @Override
+    public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO options) {
+        return generateToken(account, null, options);
     }
 
     @Override
     public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
+        return generateToken(account, restrictions, null);
+    }
+
+    @Override
+    public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+                                        final TokenOptionsBO options) {
         final String code = random.base64(config.getRandomSize());
 
         final AccountTokenDO accountToken = AccountTokenDO.builder()

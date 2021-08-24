@@ -7,6 +7,7 @@ import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
+import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import io.vavr.control.Either;
 
 @TokenExchange(from = "basic", to = "accessToken")
@@ -22,12 +23,16 @@ public class BasicToAccessToken implements Exchange {
 
     @Override
     public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
+        final TokenOptionsBO options = TokenOptionsBO.builder()
+                .source("basic")
+                .build();
+
         return basicAuth.authenticateAndGetAccount(request)
                 .map(account -> {
                     if (request.getRestrictions() == null) {
-                        return accessTokenProvider.generateToken(account);
+                        return accessTokenProvider.generateToken(account, options);
                     } else {
-                        return accessTokenProvider.generateToken(account, request.getRestrictions());
+                        return accessTokenProvider.generateToken(account, request.getRestrictions(), options);
                     }
                 });
     }

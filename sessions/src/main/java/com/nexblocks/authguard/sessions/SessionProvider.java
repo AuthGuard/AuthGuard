@@ -15,6 +15,7 @@ import com.nexblocks.authguard.service.model.*;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @ProvidesToken("sessionToken")
@@ -37,6 +38,11 @@ public class SessionProvider implements AuthProvider {
 
     @Override
     public AuthResponseBO generateToken(final AccountBO account) {
+        return generateToken(account, (TokenOptionsBO) null);
+    }
+
+    @Override
+    public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO options) {
         final SessionBO session = SessionBO.builder()
                 .accountId(account.getId())
                 .expiresAt(OffsetDateTime.now().plus(sessionTtl))
@@ -45,7 +51,10 @@ public class SessionProvider implements AuthProvider {
                         Map.entry(SessionKeys.ROLES, String.join(",", account.getRoles())),
                         Map.entry(SessionKeys.PERMISSIONS, account.getPermissions().stream()
                                 .map(Permission::getFullName)
-                                .collect(Collectors.joining(",")))
+                                .collect(Collectors.joining(","))),
+                        Map.entry(SessionKeys.SOURCE, Optional.ofNullable(options)
+                                .map(TokenOptionsBO::getSource)
+                                .orElse(""))
                 )).build();
 
         final SessionBO created = sessionsService.create(session);
