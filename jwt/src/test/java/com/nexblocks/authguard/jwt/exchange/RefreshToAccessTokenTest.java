@@ -72,7 +72,7 @@ class RefreshToAccessTokenTest {
         Mockito.when(accountsService.getById(accountId))
                 .thenReturn(Optional.of(account));
 
-        Mockito.when(accessTokenProvider.generateToken(account, null))
+        Mockito.when(accessTokenProvider.generateToken(account, (TokenRestrictionsBO) null))
                 .thenReturn(newTokens);
 
         // do

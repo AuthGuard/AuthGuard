@@ -75,12 +75,23 @@ public class AccessTokenProvider implements AuthProvider {
 
     @Override
     public AuthResponseBO generateToken(final AccountBO account) {
-        return generateToken(account, null);
+        return generateToken(account, (TokenRestrictionsBO) null);
+    }
+
+    @Override
+    public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO options) {
+        return generateToken(account, null, options);
     }
 
     @Override
     public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
-        final JwtTokenBuilder tokenBuilder = generateAccessToken(account, restrictions);
+        return generateToken(account, restrictions, null);
+    }
+
+    @Override
+    public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+                                        final TokenOptionsBO options) {
+        final JwtTokenBuilder tokenBuilder = generateAccessToken(account, restrictions, options);
 
         final String signedToken = tokenBuilder.getBuilder().sign(algorithm);
         final String finalToken = encryptIfNeeded(signedToken);
@@ -132,7 +143,8 @@ public class AccessTokenProvider implements AuthProvider {
         return accountTokensRepository.deleteToken(refreshToken).join();
     }
 
-    private JwtTokenBuilder generateAccessToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
+    private JwtTokenBuilder generateAccessToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+                                                final TokenOptionsBO options) {
         final JwtTokenBuilder.Builder tokenBuilder = JwtTokenBuilder.builder();
         final JWTCreator.Builder jwtBuilder = jwtGenerator.generateUnsignedToken(account, tokenTtl);
 
@@ -152,6 +164,10 @@ public class AccessTokenProvider implements AuthProvider {
 
         if (strategy.includeRoles()) {
             jwtBuilder.withArrayClaim("roles", account.getRoles().toArray(new String[] {}));
+        }
+
+        if (options != null && options.getSource() != null) {
+            jwtBuilder.withClaim("source", options.getSource());
         }
 
         return tokenBuilder.builder(jwtBuilder).build();

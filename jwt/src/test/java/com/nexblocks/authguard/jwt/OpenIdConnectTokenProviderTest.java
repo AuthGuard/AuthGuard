@@ -35,7 +35,7 @@ class OpenIdConnectTokenProviderTest {
                 .token("id token")
                 .build();
 
-        Mockito.when(accessTokenProvider.generateToken(account, null))
+        Mockito.when(accessTokenProvider.generateToken(account, null, null))
                 .thenReturn(accessTokenResponse);
 
         Mockito.when(idTokenProvider.generateToken(account))
@@ -74,13 +74,17 @@ class OpenIdConnectTokenProviderTest {
                 .token("id token")
                 .build();
 
-        Mockito.when(accessTokenProvider.generateToken(account, restrictions))
+        final TokenOptionsBO options = TokenOptionsBO.builder()
+                .source("source")
+                .build();
+
+        Mockito.when(accessTokenProvider.generateToken(account, restrictions, options))
                 .thenReturn(accessTokenResponse);
 
         Mockito.when(idTokenProvider.generateToken(account))
                 .thenReturn(idTokenResponse);
 
-        final AuthResponseBO actual = openIdConnectTokenProvider.generateToken(account, restrictions);
+        final AuthResponseBO actual = openIdConnectTokenProvider.generateToken(account, restrictions, options);
 
         final AuthResponseBO expected = AuthResponseBO.builder()
                 .entityType(EntityType.ACCOUNT)

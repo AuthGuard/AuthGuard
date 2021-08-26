@@ -5,10 +5,7 @@ import com.nexblocks.authguard.basic.BasicAuthProvider;
 import com.nexblocks.authguard.jwt.OpenIdConnectTokenProvider;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.service.model.AuthResponseBO;
-import com.nexblocks.authguard.service.model.TokenRestrictionsBO;
+import com.nexblocks.authguard.service.model.*;
 import io.vavr.control.Either;
 
 @TokenExchange(from = "basic", to = "oidc")
@@ -30,6 +27,10 @@ public class BasicToOIdC implements Exchange {
     }
 
     private AuthResponseBO generateTokens(final AccountBO account, final TokenRestrictionsBO restrictions) {
-        return openIdConnectTokenProvider.generateToken(account, restrictions);
+        final TokenOptionsBO options = TokenOptionsBO.builder()
+                .source("basic")
+                .build();
+
+        return openIdConnectTokenProvider.generateToken(account, restrictions, options);
     }
 }

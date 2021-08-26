@@ -11,6 +11,7 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.google.inject.Inject;
+import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import io.vavr.control.Either;
 
 @TokenExchange(from = "passwordless", to = "accessToken")
@@ -39,6 +40,10 @@ public class PasswordlessToAccessToken implements Exchange {
     }
 
     private Either<Exception, AuthResponseBO> generate(final AccountBO account) {
-        return Either.right(accessTokenProvider.generateToken(account));
+        final TokenOptionsBO options = TokenOptionsBO.builder()
+                .source("passwordless")
+                .build();
+
+        return Either.right(accessTokenProvider.generateToken(account, options));
     }
 }
