@@ -25,6 +25,8 @@ public class BasicToSession implements Exchange {
     public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
         final TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("basic")
+                .sourceIp(request.getSourceIp())
+                .userAgent(request.getUserAgent())
                 .build();
 
         return basicAuth.authenticateAndGetAccount(request)

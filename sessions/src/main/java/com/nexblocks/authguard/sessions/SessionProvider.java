@@ -14,8 +14,8 @@ import com.nexblocks.authguard.service.model.*;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @ProvidesToken("sessionToken")
@@ -43,19 +43,24 @@ public class SessionProvider implements AuthProvider {
 
     @Override
     public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO options) {
+        final Map<String, String> data = new HashMap<>();
+
+        data.put(SessionKeys.ACCOUNT_ID, account.getId());
+        data.put(SessionKeys.ROLES, String.join(",", account.getRoles()));
+        data.put(SessionKeys.PERMISSIONS, account.getPermissions().stream()
+                        .map(Permission::getFullName)
+                        .collect(Collectors.joining(",")));
+
+        if (options != null) {
+            data.put(SessionKeys.SOURCE, options.getSource());
+            data.put(SessionKeys.USER_AGENT, options.getUserAgent());
+        }
+
         final SessionBO session = SessionBO.builder()
                 .accountId(account.getId())
                 .expiresAt(OffsetDateTime.now().plus(sessionTtl))
-                .data(Map.ofEntries(
-                        Map.entry(SessionKeys.ACCOUNT_ID, account.getId()),
-                        Map.entry(SessionKeys.ROLES, String.join(",", account.getRoles())),
-                        Map.entry(SessionKeys.PERMISSIONS, account.getPermissions().stream()
-                                .map(Permission::getFullName)
-                                .collect(Collectors.joining(","))),
-                        Map.entry(SessionKeys.SOURCE, Optional.ofNullable(options)
-                                .map(TokenOptionsBO::getSource)
-                                .orElse(""))
-                )).build();
+                .data(data)
+                .build();
 
         final SessionBO created = sessionsService.create(session);
 

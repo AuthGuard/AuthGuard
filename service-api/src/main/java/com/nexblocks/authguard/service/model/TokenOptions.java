@@ -6,4 +6,8 @@ import org.immutables.value.Value;
 @BOStyle
 public interface TokenOptions {
     String getSource();
+    String getDeviceId();
+    String getExternalSessionId();
+    String getUserAgent();
+    String getSourceIp();
 }
