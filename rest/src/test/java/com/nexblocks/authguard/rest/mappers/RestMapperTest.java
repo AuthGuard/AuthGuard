@@ -6,6 +6,9 @@ import com.nexblocks.authguard.api.dto.requests.CreateAppRequestDTO;
 import com.nexblocks.authguard.service.model.*;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
+import org.jeasy.random.api.Randomizer;
+import org.jeasy.random.randomizers.misc.BooleanRandomizer;
+import org.jeasy.random.randomizers.text.StringRandomizer;
 import org.junit.jupiter.api.Test;
 
 import java.util.function.Function;
@@ -13,7 +16,18 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class RestMapperTest {
-    private final EasyRandom easyRandom = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 3));
+    private final EasyRandom easyRandom = new EasyRandom(new EasyRandomParameters()
+            .collectionSizeRange(1, 3)
+            .randomize(UserIdentifierBO.class, new Randomizer<UserIdentifierBO>() {
+                @Override
+                public UserIdentifierBO getRandomValue() {
+                    return UserIdentifierBO.builder()
+                            .identifier(new StringRandomizer().getRandomValue())
+                            .active(new BooleanRandomizer().getRandomValue())
+                            .build();
+                }
+            })
+    );
     private final RestMapper restMapper = new RestMapperImpl();
 
     private <T, R> void convertAndBack(final Class<T> fromClass, final Function<T, R> map,

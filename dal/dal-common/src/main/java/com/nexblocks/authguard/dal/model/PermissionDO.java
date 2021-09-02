@@ -14,7 +14,7 @@ import javax.persistence.*;
 // JPA
 @Entity
 @Table(name = "permissions", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"group", "name"})
+        @UniqueConstraint(columnNames = {"group", "name"}, name = "PERMISSION_DUP")
 })
 @NamedQuery(
         name = "permissions.getById",

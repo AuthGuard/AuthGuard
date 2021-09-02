@@ -20,10 +20,7 @@ import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.AccountUpdateMerger;
 import com.nexblocks.authguard.service.util.ValueComparator;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -202,7 +199,7 @@ public class AccountsServiceImpl implements AccountsService {
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
                         + accountId + " was found"));
 
-        final List<PermissionBO> combinedPermissions = Stream.concat(account.getPermissions().stream(), permissions.stream())
+        final List<PermissionBO> combinedPermissions = Stream.concat(account.getPermissions().stream(), verifiedPermissions.stream())
                 .distinct()
                 .collect(Collectors.toList());
 
@@ -215,6 +212,10 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public AccountBO revokePermissions(final String accountId, final List<PermissionBO> permissions) {
+        final Set<String> permissionsFullNames = permissions.stream()
+                .map(Permission::getFullName)
+                .collect(Collectors.toSet());
+
         final AccountBO account = accountsRepository.getById(accountId)
                 .join()
                 .map(serviceMapper::toBO)
@@ -222,7 +223,7 @@ public class AccountsServiceImpl implements AccountsService {
                         + accountId + " was found"));
 
         final List<PermissionBO> filteredPermissions = account.getPermissions().stream()
-                .filter(permission -> !permissions.contains(permission))
+                .filter(permission -> !permissionsFullNames.contains(permission.getFullName()))
                 .collect(Collectors.toList());
 
         final AccountBO updated = account.withPermissions(filteredPermissions);
