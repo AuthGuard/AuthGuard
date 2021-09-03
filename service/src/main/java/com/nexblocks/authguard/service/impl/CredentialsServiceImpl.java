@@ -199,13 +199,14 @@ public class CredentialsServiceImpl implements CredentialsService {
 
         final AccountTokenDO accountToken = AccountTokenDO
                 .builder()
+                .id(ID.generate())
                 .token(cryptographicRandom.base64Url(RESET_TOKEN_SIZE))
                 .associatedAccountId(account.getId())
                 .additionalInformation(ImmutableMap.of("credentialsId", credentials.getId()))
                 .expiresAt(now.plus(TOKEN_LIFETIME))
                 .build();
 
-        accountTokensRepository.save(accountToken);
+        accountTokensRepository.save(accountToken).join();
 
         return PasswordResetTokenBO.builder()
                 .token(accountToken.getToken())

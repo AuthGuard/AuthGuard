@@ -7,6 +7,7 @@ import com.nexblocks.authguard.basic.passwords.PasswordValidator;
 import com.nexblocks.authguard.basic.passwords.SecurePassword;
 import com.nexblocks.authguard.basic.passwords.ServiceInvalidPasswordException;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
+import com.nexblocks.authguard.dal.model.AccountDO;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.dal.model.CredentialsAuditDO;
 import com.nexblocks.authguard.dal.model.CredentialsDO;
@@ -269,6 +270,8 @@ class CredentialsServiceImplTest {
         Mockito.when(credentialsRepository.findByIdentifier(identifier))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
         Mockito.when(accountsService.getById(accountId)).thenReturn(Optional.of(account));
+        Mockito.when(accountTokensRepository.save(Mockito.any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
 
         // action
         final PasswordResetTokenBO resetToken = credentialsService.generateResetToken(identifier);

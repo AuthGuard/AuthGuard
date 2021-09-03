@@ -52,8 +52,13 @@ public class SessionProvider implements AuthProvider {
                         .collect(Collectors.joining(",")));
 
         if (options != null) {
-            data.put(SessionKeys.SOURCE, options.getSource());
-            data.put(SessionKeys.USER_AGENT, options.getUserAgent());
+            if (options.getSource() != null) {
+                data.put(SessionKeys.SOURCE, options.getSource());
+            }
+
+            if (options.getUserAgent() != null) {
+                data.put(SessionKeys.USER_AGENT, options.getUserAgent());
+            }
         }
 
         final SessionBO session = SessionBO.builder()

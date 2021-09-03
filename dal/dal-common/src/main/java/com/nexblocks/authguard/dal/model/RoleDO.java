@@ -17,7 +17,7 @@ import javax.persistence.UniqueConstraint;
 // JPA
 @Entity
 @Table(name = "roles", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"name"})
+        @UniqueConstraint(columnNames = {"name"}, name = "ROLE_DUP")
 })
 @NamedQuery(
         name = "roles.getById",

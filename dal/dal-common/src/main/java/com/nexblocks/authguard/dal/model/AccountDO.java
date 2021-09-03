@@ -14,7 +14,11 @@ import java.util.Set;
 @SuperBuilder
 // JPA
 @Entity
-@Table(name = "accounts")
+@Table(name = "accounts", uniqueConstraints = {
+        @UniqueConstraint(columnNames = "email", name = "EMAIL_DUP"),
+        @UniqueConstraint(columnNames = "backup_email", name = "BACKUP_EMAIL_DUP"),
+        @UniqueConstraint(columnNames = "phone_number", name = "PHONE_NUMBER_DUP")
+})
 @NamedQuery(
         name = "accounts.getById",
         query = "SELECT account FROM AccountDO account " +
@@ -61,7 +65,7 @@ public class AccountDO extends AbstractDO {
 
     @Embedded
     @AttributeOverrides({
-            @AttributeOverride(name = "email", column = @Column(name = "email", unique = true)),
+            @AttributeOverride(name = "email", column = @Column(name = "email")),
             @AttributeOverride(name = "verified", column = @Column(name = "email_verified")),
             @AttributeOverride(name = "active", column = @Column(name = "email_active"))
     })
@@ -69,7 +73,7 @@ public class AccountDO extends AbstractDO {
 
     @Embedded
     @AttributeOverrides({
-            @AttributeOverride(name = "email", column = @Column(name = "backup_email", unique = true)),
+            @AttributeOverride(name = "email", column = @Column(name = "backup_email")),
             @AttributeOverride(name = "verified", column = @Column(name = "backup_email_verified")),
             @AttributeOverride(name = "active", column = @Column(name = "backup_email_active"))
     })
@@ -77,7 +81,7 @@ public class AccountDO extends AbstractDO {
 
     @Embedded
     @AttributeOverrides({
-            @AttributeOverride(name = "number", column = @Column(name = "phone_number", unique = true)),
+            @AttributeOverride(name = "number", column = @Column(name = "phone_number")),
             @AttributeOverride(name = "verified", column = @Column(name = "phone_number_verified")),
             @AttributeOverride(name = "active", column = @Column(name = "phone_number_active"))
     })

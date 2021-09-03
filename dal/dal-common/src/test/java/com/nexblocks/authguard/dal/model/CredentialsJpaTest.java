@@ -1,6 +1,5 @@
 package com.nexblocks.authguard.dal.model;
 
-import org.assertj.core.api.Assertions;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -11,6 +10,8 @@ import javax.persistence.PersistenceException;
 import javax.persistence.TypedQuery;
 import java.util.Collections;
 import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CredentialsJpaTest {
@@ -70,7 +71,7 @@ public class CredentialsJpaTest {
                 .setParameter("id", createdCredentials.getId());
 
         final List<CredentialsDO> retrieved = query.getResultList();
-        Assertions.assertThat(retrieved).containsExactly(createdCredentials);
+        assertThat(retrieved).containsExactly(createdCredentials);
     }
 
     @Test
@@ -79,7 +80,7 @@ public class CredentialsJpaTest {
                 .setParameter("accountId", createdCredentials.getAccountId());
 
         final List<CredentialsDO> retrieved = query.getResultList();
-        Assertions.assertThat(retrieved).containsExactly(createdCredentials);
+        assertThat(retrieved).containsExactly(createdCredentials);
     }
 
     @Test
@@ -88,7 +89,7 @@ public class CredentialsJpaTest {
                 .setParameter("identifier", "username");
 
         final List<CredentialsDO> retrieved = query.getResultList();
-        Assertions.assertThat(retrieved).containsExactly(createdCredentials);
+        assertThat(retrieved).containsExactly(createdCredentials);
     }
 
     @Test
@@ -97,7 +98,7 @@ public class CredentialsJpaTest {
                 .setParameter("id", deletedCredentials.getId());
 
         final List<CredentialsDO> retrieved = query.getResultList();
-        Assertions.assertThat(retrieved).isEmpty();
+        assertThat(retrieved).isEmpty();
     }
 
     @Test
@@ -106,7 +107,7 @@ public class CredentialsJpaTest {
                 .setParameter("identifier", "nonsense");
 
         final List<CredentialsDO> retrieved = query.getResultList();
-        Assertions.assertThat(retrieved).isEmpty();
+        assertThat(retrieved).isEmpty();
     }
 
     @Test
@@ -133,7 +134,7 @@ public class CredentialsJpaTest {
             final Throwable cause = persistenceException.getCause();
 
             if (cause instanceof ConstraintViolationException) {
-                Assertions.assertThat(((ConstraintViolationException) cause).getConstraintName())
+                assertThat(((ConstraintViolationException) cause).getConstraintName())
                         .contains("IDENTIFIER_DUP");
             } else {
                 throw persistenceException;
@@ -142,4 +143,5 @@ public class CredentialsJpaTest {
             entityManager.getTransaction().rollback();
         }
     }
+
 }
