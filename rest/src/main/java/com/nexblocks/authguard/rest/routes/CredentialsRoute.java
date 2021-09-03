@@ -8,7 +8,10 @@ import com.nexblocks.authguard.api.dto.requests.CreateCredentialsRequestDTO;
 import com.nexblocks.authguard.api.dto.requests.PasswordResetRequestDTO;
 import com.nexblocks.authguard.api.dto.requests.PasswordResetTokenRequestDTO;
 import com.nexblocks.authguard.api.dto.requests.UserIdentifiersRequestDTO;
+import com.nexblocks.authguard.api.dto.validation.violations.Violation;
+import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.CredentialsApi;
+import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestJsonMapper;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
@@ -20,6 +23,7 @@ import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.nexblocks.authguard.service.model.UserIdentifierBO;
 import io.javalin.http.Context;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -107,13 +111,26 @@ public class CredentialsRoute extends CredentialsApi {
     public void addIdentifiers(final Context context) {
         final String credentialsId = context.pathParam("id");
         final UserIdentifiersRequestDTO request = userIdentifiersRequestBodyHandler.getValidated(context);
+
+        if (request.getOldIdentifier() != null && request.getIdentifiers().size() != 1) {
+            throw new RequestValidationException(Collections.singletonList(
+                    new Violation("identifier", ViolationType.EXCEEDS_LENGTH_BOUNDARIES)
+            ));
+        }
+
         final List<UserIdentifierBO> identifiers = request.getIdentifiers().stream()
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
 
-        credentialsService.addIdentifiers(credentialsId, identifiers)
-                .map(restMapper::toDTO)
-                .ifPresentOrElse(context::json, () -> context.status(404));
+        if (request.getOldIdentifier() != null) {
+            credentialsService.replaceIdentifier(credentialsId, request.getOldIdentifier(), identifiers.get(0))
+                    .map(restMapper::toDTO)
+                    .ifPresentOrElse(context::json, () -> context.status(404));
+        } else {
+            credentialsService.addIdentifiers(credentialsId, identifiers)
+                    .map(restMapper::toDTO)
+                    .ifPresentOrElse(context::json, () -> context.status(404));
+        }
     }
 
     public void removeIdentifiers(final Context context) {

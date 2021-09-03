@@ -7,7 +7,6 @@ import com.nexblocks.authguard.basic.passwords.PasswordValidator;
 import com.nexblocks.authguard.basic.passwords.SecurePassword;
 import com.nexblocks.authguard.basic.passwords.ServiceInvalidPasswordException;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
-import com.nexblocks.authguard.dal.model.AccountDO;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.dal.model.CredentialsAuditDO;
 import com.nexblocks.authguard.dal.model.CredentialsDO;
@@ -418,6 +417,84 @@ class CredentialsServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(persistedToken)));
 
         assertThatThrownBy(() -> credentialsService.resetPassword(resetToken, newPassword))
+                .isInstanceOf(ServiceException.class);
+    }
+
+    @Test
+    void replaceIdentifier() {
+        final String credentialsId = "credentials";
+
+        final CredentialsBO credentialsBO = CredentialsBO.builder()
+                .id(credentialsId)
+                .addIdentifiers(UserIdentifierBO.builder()
+                        .identifier("username")
+                        .build())
+                .hashedPassword(HashedPasswordBO.builder()
+                        .salt("salty")
+                        .password("hashed")
+                        .build())
+                .build();
+
+        final CredentialsDO credentialsDO = serviceMapper.toDO(credentialsBO);
+
+        final UserIdentifierBO newIdentifier = UserIdentifierBO.builder()
+                .identifier("new_username")
+                .active(true)
+                .build();
+
+        Mockito.when(credentialsRepository.getById(credentialsId))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentialsDO)));
+        Mockito.when(credentialsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, CredentialsDO.class))));
+
+        final Optional<CredentialsBO> result = credentialsService.replaceIdentifier(credentialsId, "username", newIdentifier);
+
+        final CredentialsBO expected = CredentialsBO.builder()
+                .id(credentialsId)
+                .addIdentifiers(newIdentifier)
+                .build();
+
+        assertThat(result).isPresent();
+        assertThat(result.get()).isEqualToIgnoringGivenFields(expected,
+                "lastModified", "hashedPassword", "plainPassword");
+        assertThat(result.get().getHashedPassword()).isNull();
+        assertThat(result.get().getPlainPassword()).isNull();
+    }
+
+    @Test
+    void replaceIdentifierNoCredentials() {
+        final String credentialsId = "credentials";
+
+        Mockito.when(credentialsRepository.getById(credentialsId))
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+
+        assertThatThrownBy(() -> credentialsService.replaceIdentifier(credentialsId, "username", null))
+                .isInstanceOf(ServiceNotFoundException.class);
+    }
+
+    @Test
+    void replaceIdentifierNoIdentifier() {
+        final String credentialsId = "credentials";
+
+        final CredentialsBO credentialsBO = CredentialsBO.builder()
+                .id(credentialsId)
+                .addIdentifiers(UserIdentifierBO.builder()
+                        .identifier("username")
+                        .build())
+                .hashedPassword(HashedPasswordBO.builder()
+                        .salt("salty")
+                        .password("hashed")
+                        .build())
+                .build();
+
+        final CredentialsDO credentialsDO = serviceMapper.toDO(credentialsBO);
+
+        Mockito.when(credentialsRepository.getById(credentialsId))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentialsDO)));
+        Mockito.when(credentialsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, CredentialsDO.class))));
+
+        assertThatThrownBy(() -> credentialsService.replaceIdentifier(credentialsId, "none", null))
                 .isInstanceOf(ServiceException.class);
     }
 }

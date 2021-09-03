@@ -187,6 +187,37 @@ public class CredentialsServiceImpl implements CredentialsService {
     }
 
     @Override
+    public Optional<CredentialsBO> replaceIdentifier(final String id, final String oldIdentifier, final UserIdentifierBO newIdentifier) {
+        final CredentialsBO credentials = getByIdUnsafe(id)
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
+
+        final boolean hasIdentifier = credentials.getIdentifiers()
+                .stream()
+                .anyMatch(identifier -> identifier.getIdentifier().equals(oldIdentifier));
+
+        if (!hasIdentifier) {
+            throw new ServiceException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "Credentials " + id + " has no identifier " + oldIdentifier);
+        }
+
+        final Set<UserIdentifierBO> newIdentifiers = credentials.getIdentifiers()
+                .stream()
+                .map(identifier -> {
+                    if (identifier.getIdentifier().equals(oldIdentifier)) {
+                        return identifier
+                                .withIdentifier(newIdentifier.getIdentifier())
+                                .withActive(newIdentifier.isActive());
+                    }
+
+                    return identifier;
+                })
+                .collect(Collectors.toSet());
+
+        final CredentialsBO update = credentials.withIdentifiers(newIdentifiers);
+
+        return doUpdate(credentials, update, false);
+    }
+
+    @Override
     public PasswordResetTokenBO generateResetToken(final String identifier) {
         final CredentialsBO credentials = getByUsername(identifier)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST, "Unknown identifier"));
