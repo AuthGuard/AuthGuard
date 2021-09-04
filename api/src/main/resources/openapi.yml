@@ -1465,10 +1465,12 @@ components:
       required:
         - identifiers
       properties:
+        oldIdentifier:
+          type: string
         identifiers:
           type: array
           items:
-            $ref:  "#/components/schemas/UserIdentifier"
+            $ref: "#/components/schemas/UserIdentifier"
 
     PasswordlessRequest:
       type: object

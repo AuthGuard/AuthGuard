@@ -13,5 +13,6 @@ import java.util.List;
 @JsonSerialize(as = UserIdentifiersRequestDTO.class)
 @JsonDeserialize(as = UserIdentifiersRequestDTO.class)
 public interface UserIdentifiersRequest {
+    String getOldIdentifier();
     List<UserIdentifierDTO> getIdentifiers();
 }
