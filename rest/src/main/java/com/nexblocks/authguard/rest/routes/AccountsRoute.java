@@ -24,6 +24,7 @@ import io.javalin.http.Context;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
@@ -134,6 +135,22 @@ public class AccountsRoute extends AccountsApi {
 
         final Optional<AccountDTO> account = accountsService.getById(accountId)
                 .map(restMapper::toDTO);
+
+        if (account.isPresent()) {
+            context.status(200).json(account.get());
+        } else {
+            context.status(404)
+                    .json(new Error(ErrorCode.ACCOUNT_DOES_NOT_EXIST.getCode(), "Account not found"));
+        }
+    }
+
+    @Override
+    public void getByIdentifier(final Context context) {
+        final String identifier = context.pathParam("identifier");
+        final Optional<AccountBO> account = credentialsService.getByUsername(identifier)
+                .map(CredentialsBO::getAccountId)
+                .filter(Objects::nonNull)
+                .flatMap(accountsService::getById);
 
         if (account.isPresent()) {
             context.status(200).json(account.get());

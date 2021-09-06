@@ -19,6 +19,7 @@ public abstract class AccountsApi implements ApiRoute {
         get("/:id", this::getById, ActorRoles.adminClient());
         delete("/:id", this::deleteAccount, ActorRoles.adminClient());
         patch("/:id", this::patchAccount, ActorRoles.adminClient());
+        get("/identifier/:identifier", this::getByIdentifier, ActorRoles.adminClient());
 
         get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
         get("/email/:email", this::getByEmail, ActorRoles.adminClient());
@@ -38,6 +39,8 @@ public abstract class AccountsApi implements ApiRoute {
     public abstract void createComplete(final Context context);
 
     public abstract void getById(final Context context);
+
+    public abstract void getByIdentifier(final Context context);
 
     public abstract void deleteAccount(final Context context);
 

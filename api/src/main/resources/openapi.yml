@@ -87,6 +87,22 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
+  /accounts/identifier/{id}:
+    get:
+      operationId: getAccountByCredentialsIdentifier
+      description: Get an account by credentials identifier
+      tags:
+        - Accounts
+      parameters:
+        - $ref: "#/components/parameters/IdentifierParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/AccountResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
   /accounts/externalId/{id}:
     get:
       operationId: getAccountByExternalId
@@ -296,6 +312,22 @@ paths:
         - Credentials
       parameters:
         - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/CredentialsResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /credentials/identifier/{id}:
+    get:
+      operationId: getCredentialsByIdentifier
+      description: Get credentials by identifier
+      tags:
+        - Credentials
+      parameters:
+        - $ref: "#/components/parameters/IdentifierParameter"
       responses:
         200:
           description: Success
@@ -939,6 +971,13 @@ components:
   parameters:
     IdParameter:
       name: id
+      in: path
+      required: true
+      schema:
+        type: string
+
+    IdentifierParameter:
+      name: identifier
       in: path
       required: true
       schema:
