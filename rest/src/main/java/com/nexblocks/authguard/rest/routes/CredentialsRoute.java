@@ -156,6 +156,18 @@ public class CredentialsRoute extends CredentialsApi {
         }
     }
 
+    @Override
+    public void getByIdentifier(final Context context) {
+        final Optional<CredentialsDTO> credentials = credentialsService.getByUsername(context.pathParam("identifier"))
+                .map(restMapper::toDTO);
+
+        if (credentials.isPresent()) {
+            context.json(credentials.get());
+        } else {
+            context.status(404);
+        }
+    }
+
     public void removeById(final Context context) {
         final Optional<CredentialsDTO> credentials = credentialsService.delete(context.pathParam("id"))
                 .map(restMapper::toDTO);

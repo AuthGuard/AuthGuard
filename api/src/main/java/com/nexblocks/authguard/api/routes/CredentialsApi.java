@@ -15,6 +15,7 @@ public abstract class CredentialsApi implements ApiRoute {
     @Override
     public void addEndpoints() {
         get("/:id", this::getById, ActorRoles.adminClient());
+        get("/identifier/:identifier", this::getByIdentifier, ActorRoles.adminClient());
 
         post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin"));
 
@@ -41,6 +42,8 @@ public abstract class CredentialsApi implements ApiRoute {
     public abstract void removeIdentifiers(final Context context);
 
     public abstract void getById(final Context context);
+
+    public abstract void getByIdentifier(final Context context);
 
     public abstract void removeById(final Context context);
 
