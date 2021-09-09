@@ -28,12 +28,14 @@ public class OpenIdConnectRequestParser {
         final String redirectUri = context.queryParam("redirect_uri");
         final String scope = context.queryParam("scope");
         final String state = context.queryParam("state");
+        final String nonce = context.queryParam("nonce");
 
         final ImmutableOpenIdConnectRequest.Builder request = ImmutableOpenIdConnectRequest.builder()
                 .responseType(responseType.get())
                 .clientId(clientId.get())
                 .redirectUri(redirectUri)
-                .state(state);
+                .state(state)
+                .nonce(nonce);
 
         if (scope != null) {
             request.scope(Arrays.asList(scope.split(" ")));

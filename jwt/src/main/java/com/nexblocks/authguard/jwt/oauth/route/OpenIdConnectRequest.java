@@ -11,4 +11,5 @@ public interface OpenIdConnectRequest {
     List<String> getScope();
     String getState();
     String getRedirectUri();
+    String getNonce();
 }

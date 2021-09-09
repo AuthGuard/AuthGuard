@@ -39,12 +39,14 @@ public class OAuthRoute implements ApiRoute {
     }
 
     void openIdConnectAuthFlows(final Context context) {
-        final Either<RequestValidationError, ImmutableOpenIdConnectRequest> request
+        final Either<RequestValidationError, ImmutableOpenIdConnectRequest> parseResult
                 = OpenIdConnectRequestParser.fromContext(context, "code");
 
-        if (request.isLeft()) {
-            context.status(400).json(request.getLeft());
+        if (parseResult.isLeft()) {
+            context.status(400).json(parseResult.getLeft());
         } else {
+            final ImmutableOpenIdConnectRequest request = parseResult.get();
+
             context.json(501).json(new Error("501", "Feature not currently supported"));
         }
     }
