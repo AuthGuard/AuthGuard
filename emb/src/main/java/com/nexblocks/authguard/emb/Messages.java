@@ -38,6 +38,10 @@ public class Messages {
         return basicMessage(EventType.AUTHENTICATION, object);
     }
 
+    public static Message resetTokenGenerated(final Object object) {
+        return basicMessage(EventType.RESET_TOKEN_GENERATED, object);
+    }
+
     public static Message basicMessage(final EventType eventType, final Object object) {
         return Message.builder()
                 .eventType(eventType)

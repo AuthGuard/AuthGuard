@@ -21,6 +21,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
+import com.nexblocks.authguard.service.messaging.ResetTokenMessage;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.ID;
@@ -238,6 +239,9 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .build();
 
         accountTokensRepository.save(accountToken).join();
+
+        messageBus.publish(CREDENTIALS_CHANNEL,
+                Messages.resetTokenGenerated(new ResetTokenMessage(account, accountToken)));
 
         return PasswordResetTokenBO.builder()
                 .token(accountToken.getToken())
