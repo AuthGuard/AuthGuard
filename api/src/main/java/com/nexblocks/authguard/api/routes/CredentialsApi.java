@@ -16,6 +16,7 @@ public abstract class CredentialsApi implements ApiRoute {
     public void addEndpoints() {
         get("/:id", this::getById, ActorRoles.adminClient());
         get("/identifier/:identifier", this::getByIdentifier, ActorRoles.adminClient());
+        get("/identifier/:identifier/exists", this::identifierExists, ActorRoles.adminOrAuthClient());
 
         post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin"));
 
@@ -28,7 +29,7 @@ public abstract class CredentialsApi implements ApiRoute {
         delete("/:id", this::removeById, ActorRoles.adminClient());
 
         post("/reset_token", this::createResetToken, ActorRoles.adminClient());
-        post("/reset", this::resetPassword, ActorRoles.adminClient());
+        post("/reset", this::resetPassword, ActorRoles.adminOrAuthClient());
     }
 
     public abstract void create(final Context context);
@@ -44,6 +45,8 @@ public abstract class CredentialsApi implements ApiRoute {
     public abstract void getById(final Context context);
 
     public abstract void getByIdentifier(final Context context);
+
+    public abstract void identifierExists(final Context context);
 
     public abstract void removeById(final Context context);
 

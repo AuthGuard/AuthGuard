@@ -2,6 +2,7 @@ package com.nexblocks.authguard.service;
 
 import com.nexblocks.authguard.service.model.RoleBO;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,5 +23,5 @@ public interface RolesService extends CrudService<RoleBO> {
      */
     Optional<RoleBO> getRoleByName(String name);
 
-    List<String> verifyRoles(List<String> roles);
+    List<String> verifyRoles(Collection<String> roles);
 }

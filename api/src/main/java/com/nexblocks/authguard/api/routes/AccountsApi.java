@@ -23,6 +23,7 @@ public abstract class AccountsApi implements ApiRoute {
 
         get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
         get("/email/:email", this::getByEmail, ActorRoles.adminClient());
+        get("/email/:email/exists", this::emailExists, ActorRoles.adminOrAuthClient());
 
         patch("/:id/permissions", this::updatePermissions, ActorRoles.adminClient());
         patch("/:id/roles", this::updateRoles, ActorRoles.adminClient());
@@ -49,6 +50,8 @@ public abstract class AccountsApi implements ApiRoute {
     public abstract void getByExternalId(final Context context);
 
     public abstract void getByEmail(final Context context);
+
+    public abstract void emailExists(final Context context);
 
     public abstract void updatePermissions(final Context context);
 

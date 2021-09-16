@@ -6,6 +6,7 @@ import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.CredentialsService;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.nexblocks.authguard.service.RolesService;
 import com.nexblocks.authguard.service.exceptions.ConfigurationException;
 import com.nexblocks.authguard.service.model.*;
 import org.slf4j.Logger;
@@ -22,14 +23,17 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
 
     private final AccountsService accountsService;
     private final CredentialsService credentialsService;
+    private final RolesService rolesService;
     private final ConfigContext oneTimeAdminConfig;
 
     @Inject
     public OneTimeAdminBootstrap(final AccountsService accountsService,
                                  final CredentialsService credentialsService,
+                                 final RolesService rolesService,
                                  @Named("oneTimeAdmin") final ConfigContext oneTimeAdminConfig) {
         this.accountsService = accountsService;
         this.credentialsService = credentialsService;
+        this.rolesService = rolesService;
         this.oneTimeAdminConfig = oneTimeAdminConfig;
     }
 
@@ -40,6 +44,14 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
 
         if (admins.isEmpty() && oneTimeAdmins.isEmpty()) {
             log.info("No admin accounts were found, a one-time admin account will be created");
+
+            if (rolesService.getRoleByName(OTA_ROLE).isEmpty()) {
+                log.info("Default role {} wasn't found and will be created", OTA_ROLE);
+
+                final RoleBO created = createRole(OTA_ROLE);
+                log.info("Created default role {}", created);
+            }
+
             final RequestContextBO requestContext = RequestContextBO.builder()
                     .idempotentKey(UUID.randomUUID().toString())
                     .build();
@@ -87,4 +99,12 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
                 .plainPassword(password)
                 .build();
     }
+    private RoleBO createRole(final String roleName) {
+        final RoleBO role = RoleBO.builder()
+                .name(roleName)
+                .build();
+
+        return rolesService.create(role);
+    }
+
 }

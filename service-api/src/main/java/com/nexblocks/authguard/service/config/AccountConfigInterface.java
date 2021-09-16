@@ -3,6 +3,8 @@ package com.nexblocks.authguard.service.config;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
+import java.util.Set;
+
 @Value.Immutable
 @ConfigStyle
 @JsonDeserialize(as = AccountConfig.class)
@@ -12,4 +14,5 @@ public interface AccountConfigInterface {
     boolean requirePhoneNumber();
     boolean verifyEmail();
     boolean verifyPhoneNumber();
+    Set<String> getDefaultRoles();
 }

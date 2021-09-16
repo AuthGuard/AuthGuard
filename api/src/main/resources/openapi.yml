@@ -135,6 +135,20 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
+  /accounts/email/{email}/exists:
+    get:
+      operationId: emailExists
+      description: Checks whether an account with that email exists
+      tags:
+        - Accounts
+      parameters:
+        - $ref: "#/components/parameters/EmailParameter"
+      responses:
+        200:
+          description: Success
+        404:
+          description: Not found
+
   /accounts/{id}/permissions:
     patch:
       operationId: updateAccountPermissions
@@ -320,7 +334,7 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /credentials/identifier/{id}:
+  /credentials/identifier/{identifier}:
     get:
       operationId: getCredentialsByIdentifier
       description: Get credentials by identifier
@@ -335,6 +349,20 @@ paths:
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
+
+  /credentials/identifier/{identifier}/exists:
+    get:
+      operationId: identifierExists
+      description: Check whether an identifier exists or not
+      tags:
+        - Credentials
+      parameters:
+        - $ref: "#/components/parameters/IdentifierParameter"
+      responses:
+        200:
+          description: Success
+        404:
+          description: Not found
 
   /credentials/{id}/password:
     patch:

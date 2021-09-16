@@ -1,6 +1,7 @@
 package com.nexblocks.authguard.rest.routes;
 
 import com.google.inject.Inject;
+import com.nexblocks.authguard.api.access.AuthGuardRoles;
 import com.nexblocks.authguard.api.dto.entities.AccountDTO;
 import com.nexblocks.authguard.api.dto.entities.AccountLockDTO;
 import com.nexblocks.authguard.api.dto.entities.AppDTO;
@@ -16,10 +17,7 @@ import com.nexblocks.authguard.service.ApplicationsService;
 import com.nexblocks.authguard.service.CredentialsService;
 import com.nexblocks.authguard.service.exceptions.IdempotencyException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.CredentialsBO;
-import com.nexblocks.authguard.service.model.PermissionBO;
-import com.nexblocks.authguard.service.model.RequestContextBO;
+import com.nexblocks.authguard.service.model.*;
 import io.javalin.http.Context;
 
 import java.util.Collection;
@@ -70,6 +68,12 @@ public class AccountsRoute extends AccountsApi {
         final String idempotentKey = IdempotencyHeader.getKeyOrFail(context);
         final CreateAccountRequestDTO request = accountRequestBodyHandler.getValidated(context);
 
+        if (!canPerform(context, request)) {
+            context.status(403)
+                    .json(new Error("", "An auth client violated its restrictions in the request"));
+            return;
+        }
+
         final RequestContextBO requestContext = RequestContextBO.builder()
                 .idempotentKey(idempotentKey)
                 .source(context.ip())
@@ -90,6 +94,12 @@ public class AccountsRoute extends AccountsApi {
     public void createComplete(final Context context) {
         final String idempotentKey = IdempotencyHeader.getKeyOrFail(context);
         final CreateCompleteAccountRequestDTO request = completeAccountRequestBodyHandler.getValidated(context);
+
+        if (!canPerform(context, request.getAccount())) {
+            context.status(403)
+                    .json(new Error("", "An auth client violated its restrictions in the request"));
+            return;
+        }
 
         final RequestContextBO requestContext = RequestContextBO.builder()
                 .idempotentKey(idempotentKey)
@@ -219,6 +229,19 @@ public class AccountsRoute extends AccountsApi {
         }
     }
 
+    @Override
+    public void emailExists(final Context context) {
+        final String email = context.pathParam("email");
+
+        final boolean exists = accountsService.getByEmail(email).isPresent();
+
+        if (exists) {
+            context.status(200);
+        } else {
+            context.status(404);
+        }
+    }
+
     public void updatePermissions(final Context context) {
         final String accountId = context.pathParam("id");
         final PermissionsRequestDTO request = permissionsRequestBodyHandler.getValidated(context);
@@ -300,5 +323,41 @@ public class AccountsRoute extends AccountsApi {
                 .collect(Collectors.toList());
 
         context.status(200).json(locks);
+    }
+
+    private boolean canPerform(final Context context, final CreateAccountRequestDTO request) {
+        if (context.attribute("actor") instanceof AppBO) {
+            final AppBO actor = context.attribute("actor");
+            final boolean isAuthClient = actor.getRoles().contains(AuthGuardRoles.AUTH_CLIENT);
+
+            /*
+             * Clients shouldn't have both auth and admin client
+             * client roles. If that was the case then it'll still
+             * be treated as an auth client and not an admin client.
+             */
+            return !isAuthClient || canPerform(request);
+        }
+
+        return true;
+    }
+
+    private boolean canPerform(final CreateAccountRequestDTO request) {
+        if (request.getEmail() != null && request.getEmail().isVerified()) {
+            return false;
+        }
+
+        if (request.getBackupEmail() != null && request.getBackupEmail().isVerified()) {
+            return false;
+        }
+
+        if (request.getPhoneNumber() != null && request.getPhoneNumber().isVerified()) {
+            return false;
+        }
+
+        if (request.getRoles() != null && !request.getRoles().isEmpty()) {
+            return false;
+        }
+
+        return request.getPermissions() == null || request.getPermissions().isEmpty();
     }
 }
