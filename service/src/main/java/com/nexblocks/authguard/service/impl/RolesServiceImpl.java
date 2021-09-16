@@ -10,6 +10,7 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.RoleBO;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -74,7 +75,7 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public List<String> verifyRoles(final List<String> roles) {
+    public List<String> verifyRoles(final Collection<String> roles) {
         return rolesRepository.getMultiple(roles)
                 .thenApply(found -> found.stream()
                         .map(RoleDO::getName)
