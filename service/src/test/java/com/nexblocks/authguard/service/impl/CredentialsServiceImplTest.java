@@ -51,7 +51,8 @@ class CredentialsServiceImplTest {
     private MessageBus messageBus;
     private ServiceMapper serviceMapper;
 
-    private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(2, 4));
+    private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters()
+            .collectionSizeRange(2, 4));
 
     @BeforeEach
     void setup() {
@@ -68,10 +69,12 @@ class CredentialsServiceImplTest {
         final PasswordValidator passwordValidator = new PasswordValidator(PasswordsConfig.builder()
                 .conditions(PasswordConditions.builder().build()).build());
 
-        credentialsService = new CredentialsServiceImpl(accountsService, idempotencyService, credentialsRepository,
-                credentialsAuditRepository, accountTokensRepository, securePassword, passwordValidator, messageBus, serviceMapper);
+        credentialsService = new CredentialsServiceImpl(accountsService, idempotencyService,
+                credentialsRepository, credentialsAuditRepository, accountTokensRepository,
+                securePassword, passwordValidator, messageBus, serviceMapper);
 
-        Mockito.when(accountsService.getById(any())).thenReturn(Optional.of(RANDOM.nextObject(AccountBO.class)));
+        Mockito.when(accountsService.getById(any()))
+                .thenReturn(Optional.of(RANDOM.nextObject(AccountBO.class)));
     }
 
     @Test
@@ -273,7 +276,7 @@ class CredentialsServiceImplTest {
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
 
         // action
-        final PasswordResetTokenBO resetToken = credentialsService.generateResetToken(identifier);
+        final PasswordResetTokenBO resetToken = credentialsService.generateResetToken(identifier, true);
 
         // verify
         final ArgumentCaptor<AccountTokenDO> accountTokenCaptor = ArgumentCaptor.forClass(AccountTokenDO.class);
@@ -291,13 +294,54 @@ class CredentialsServiceImplTest {
     }
 
     @Test
+    void generateResetTokenNoReturn() {
+        // data
+        final String identifier = "identifier";
+        final String credentialsId = "credentials";
+        final String accountId = "account";
+
+        final CredentialsDO credentials = CredentialsDO.builder()
+                .id(credentialsId)
+                .accountId(accountId)
+                .identifiers(new HashSet<>())
+                .build();
+        final AccountBO account = AccountBO.builder()
+                .id(accountId)
+                .build();
+
+        // mocks
+        Mockito.when(credentialsRepository.findByIdentifier(identifier))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
+        Mockito.when(accountsService.getById(accountId)).thenReturn(Optional.of(account));
+        Mockito.when(accountTokensRepository.save(Mockito.any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
+
+        // action
+        final PasswordResetTokenBO resetToken = credentialsService.generateResetToken(identifier, false);
+
+        // verify
+        final ArgumentCaptor<AccountTokenDO> accountTokenCaptor = ArgumentCaptor.forClass(AccountTokenDO.class);
+
+        Mockito.verify(accountTokensRepository).save(accountTokenCaptor.capture());
+
+        final AccountTokenDO persistedToken = accountTokenCaptor.getValue();
+
+        assertThat(resetToken.getToken()).isNull();
+        assertThat(persistedToken.getExpiresAt())
+                .isAfter(OffsetDateTime.now())
+                .isBefore(OffsetDateTime.now().plusMinutes(31));
+        assertThat(persistedToken.getAdditionalInformation().get("credentialsId"))
+                .isEqualTo(credentialsId);
+    }
+
+    @Test
     void generateResetTokenNoCredentials() {
         final String identifier = "identifier";
 
         Mockito.when(credentialsRepository.findByIdentifier(identifier))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        assertThatThrownBy(() -> credentialsService.generateResetToken(identifier))
+        assertThatThrownBy(() -> credentialsService.generateResetToken(identifier, true))
                 .isInstanceOf(ServiceNotFoundException.class);
     }
 
@@ -317,7 +361,7 @@ class CredentialsServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
         Mockito.when(accountsService.getById(accountId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> credentialsService.generateResetToken(identifier))
+        assertThatThrownBy(() -> credentialsService.generateResetToken(identifier, true))
                 .isInstanceOf(ServiceException.class);
     }
 

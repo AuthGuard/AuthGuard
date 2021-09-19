@@ -1,6 +1,7 @@
 package com.nexblocks.authguard.rest.routes;
 
 import com.google.inject.Inject;
+import com.nexblocks.authguard.api.access.AuthGuardRoles;
 import com.nexblocks.authguard.api.dto.entities.CredentialsDTO;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.UserIdentifierDTO;
@@ -17,10 +18,7 @@ import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.rest.util.IdempotencyHeader;
 import com.nexblocks.authguard.service.CredentialsService;
-import com.nexblocks.authguard.service.model.CredentialsBO;
-import com.nexblocks.authguard.service.model.PasswordResetTokenBO;
-import com.nexblocks.authguard.service.model.RequestContextBO;
-import com.nexblocks.authguard.service.model.UserIdentifierBO;
+import com.nexblocks.authguard.service.model.*;
 import io.javalin.http.Context;
 
 import java.util.Collections;
@@ -194,8 +192,11 @@ public class CredentialsRoute extends CredentialsApi {
     @Override
     public void createResetToken(final Context context) {
         final PasswordResetTokenRequestDTO request = passwordResetTokenRequestBodyHandler.getValidated(context);
+        final AppBO actor = context.attribute("actor");
+        final boolean isAuthClient = actor.getRoles().contains(AuthGuardRoles.AUTH_CLIENT);
 
-        final PasswordResetTokenBO token = credentialsService.generateResetToken(request.getIdentifier());
+        final PasswordResetTokenBO token = credentialsService
+                .generateResetToken(request.getIdentifier(), !isAuthClient); // prevent an auth client from seeing the reset token
 
         context.json(restMapper.toDTO(token));
     }

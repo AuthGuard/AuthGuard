@@ -13,8 +13,8 @@ public abstract class AccountsApi implements ApiRoute {
     }
 
     public void addEndpoints() {
-        post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin"));
-        post("/complete", this::createComplete, ActorRoles.of("authguard_admin_client", "one_time_admin"));
+        post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin", "authguard_auth_client"));
+        post("/complete", this::createComplete, ActorRoles.of("authguard_admin_client", "one_time_admin", "authguard_auth_client"));
 
         get("/:id", this::getById, ActorRoles.adminClient());
         delete("/:id", this::deleteAccount, ActorRoles.adminClient());
