@@ -204,9 +204,11 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .stream()
                 .map(identifier -> {
                     if (identifier.getIdentifier().equals(oldIdentifier)) {
-                        return identifier
-                                .withIdentifier(newIdentifier.getIdentifier())
-                                .withActive(newIdentifier.isActive());
+                        return UserIdentifierBO.builder()
+                                .identifier(newIdentifier.getIdentifier())
+                                .active(newIdentifier.isActive())
+                                .type(identifier.getType())
+                                .build();
                     }
 
                     return identifier;
