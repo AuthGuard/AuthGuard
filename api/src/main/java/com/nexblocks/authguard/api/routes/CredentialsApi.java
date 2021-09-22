@@ -28,7 +28,7 @@ public abstract class CredentialsApi implements ApiRoute {
 
         delete("/:id", this::removeById, ActorRoles.adminClient());
 
-        post("/reset_token", this::createResetToken, ActorRoles.adminClient());
+        post("/reset_token", this::createResetToken, ActorRoles.adminOrAuthClient());
         post("/reset", this::resetPassword, ActorRoles.adminOrAuthClient());
     }
 

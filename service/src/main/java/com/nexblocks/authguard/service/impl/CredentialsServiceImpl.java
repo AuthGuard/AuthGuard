@@ -221,7 +221,7 @@ public class CredentialsServiceImpl implements CredentialsService {
     }
 
     @Override
-    public PasswordResetTokenBO generateResetToken(final String identifier) {
+    public PasswordResetTokenBO generateResetToken(final String identifier, final boolean returnToken) {
         final CredentialsBO credentials = getByUsername(identifier)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST, "Unknown identifier"));
         final AccountBO account = accountsService.getById(credentials.getAccountId())
@@ -246,7 +246,7 @@ public class CredentialsServiceImpl implements CredentialsService {
                 Messages.resetTokenGenerated(new ResetTokenMessage(account, accountToken)));
 
         return PasswordResetTokenBO.builder()
-                .token(accountToken.getToken())
+                .token(returnToken ? accountToken.getToken() : null)
                 .issuedAt(now.toEpochSecond())
                 .expiresAt(accountToken.getExpiresAt().toEpochSecond())
                 .build();
