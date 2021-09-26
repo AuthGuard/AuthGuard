@@ -11,4 +11,5 @@ public interface AuthResponse {
     String getId();
     Object getToken();
     Object getRefreshToken();
+    Long getValidFor();
 }

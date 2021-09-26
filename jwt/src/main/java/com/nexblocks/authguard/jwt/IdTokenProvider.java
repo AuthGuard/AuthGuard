@@ -65,6 +65,7 @@ public class IdTokenProvider implements AuthProvider {
                 .refreshToken(refreshToken)
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
+                .validFor(tokenTtl.getSeconds())
                 .build();
     }
 

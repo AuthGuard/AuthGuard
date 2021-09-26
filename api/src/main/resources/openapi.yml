@@ -1354,6 +1354,9 @@ components:
           type: string
         refreshToken:
           type: string
+        validFor:
+          type: string
+          description: The duration for which the token will be valid (in seconds)
 
     CreateAccountRequest:
       type: object
