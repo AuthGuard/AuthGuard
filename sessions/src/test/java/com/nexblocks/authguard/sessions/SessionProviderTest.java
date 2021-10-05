@@ -10,6 +10,7 @@ import com.nexblocks.authguard.service.model.*;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.time.Duration;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,6 +44,7 @@ class SessionProviderTest {
                 .type("session_token")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
+                .validFor(Duration.ofMinutes(20).getSeconds())
                 .build();
 
         final AuthResponseBO actual = sessionProvider.generateToken(account);

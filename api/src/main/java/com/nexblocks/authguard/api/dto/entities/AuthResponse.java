@@ -13,4 +13,5 @@ public interface AuthResponse {
     String getType();
     Object getToken();
     Object getRefreshToken();
+    Long getValidFor();
 }

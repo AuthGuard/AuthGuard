@@ -17,8 +17,8 @@ public abstract class AuthApi implements ApiRoute {
     public void addEndpoints() {
         post("/authenticate", this::authenticate, ActorRoles.adminOrAuthClient());
         post("/logout", this::logout, ActorRoles.adminOrAuthClient());
-        post("/exchange", this::exchange, ActorRoles.adminOrAuthClient());
-        post("/exchange/clear", this::clearToken, ActorRoles.adminOrAuthClient());
+        post("/exchange", this::exchange, ActorRoles.adminClient());
+        post("/exchange/clear", this::clearToken, ActorRoles.adminClient());
         get("/exchange/attempts", this::getExchangeAttempts, ActorRoles.adminClient());
     }
 

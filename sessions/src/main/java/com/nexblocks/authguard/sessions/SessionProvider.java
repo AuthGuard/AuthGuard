@@ -74,6 +74,7 @@ public class SessionProvider implements AuthProvider {
                 .token(created.getSessionToken())
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
+                .validFor(sessionTtl.getSeconds())
                 .build();
     }
 
