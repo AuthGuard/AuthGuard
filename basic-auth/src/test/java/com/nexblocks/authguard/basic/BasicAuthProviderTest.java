@@ -64,6 +64,7 @@ class BasicAuthProviderTest {
                 .withIdentifiers(UserIdentifierBO.builder()
                         .identifier(username)
                         .type(UserIdentifier.Type.USERNAME)
+                        .active(true)
                         .build());
         final HashedPasswordBO hashedPasswordBO = HashedPasswordBO.builder()
                 .password(credentials.getHashedPassword().getPassword())
@@ -77,6 +78,27 @@ class BasicAuthProviderTest {
         final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
 
         assertThat(result.get()).isEqualTo(account);
+    }
+
+    @Test
+    void authenticateInactiveIdentifier() {
+        final String username = "username";
+        final String password = "password";
+        final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+
+        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class)
+                .withIdentifiers(UserIdentifierBO.builder()
+                        .identifier(username)
+                        .type(UserIdentifier.Type.USERNAME)
+                        .active(false)
+                        .build());
+
+        Mockito.when(credentialsService.getByUsernameUnsafe(username)).thenReturn(Optional.of(credentials));
+
+        final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test

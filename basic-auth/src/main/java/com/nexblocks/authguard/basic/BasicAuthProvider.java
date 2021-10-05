@@ -7,10 +7,7 @@ import com.nexblocks.authguard.service.CredentialsService;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.service.model.CredentialsBO;
-import com.nexblocks.authguard.service.model.EntityType;
+import com.nexblocks.authguard.service.model.*;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
 import org.slf4j.Logger;
@@ -86,7 +83,14 @@ public class BasicAuthProvider {
     private Either<Exception, AccountBO> verifyCredentialsAndGetAccount(final String username, final String password) {
         final Optional<CredentialsBO> credentials = credentialsService.getByUsernameUnsafe(username);
 
+        // TODO replace this with Either mapping
         if (credentials.isPresent()) {
+            final Optional<Exception> validationError = checkIdentifier(credentials.get(), username);
+
+            if (validationError.isPresent()) {
+                return Either.left(validationError.get());
+            }
+
             if (securePassword.verify(password, credentials.get().getHashedPassword())) {
                 return getAccountById(credentials.get().getAccountId());
             } else {
@@ -103,11 +107,36 @@ public class BasicAuthProvider {
         final Optional<CredentialsBO> credentials = credentialsService.getByUsernameUnsafe(username);
 
         if (credentials.isPresent()) {
+            final Optional<Exception> validationError = checkIdentifier(credentials.get(), username);
+
+            if (validationError.isPresent()) {
+                return Either.left(validationError.get());
+            }
+
             return getAccountById(credentials.get().getAccountId());
         } else {
             return Either.left(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
                     "Identifier " + username + " does not exist"));
         }
+    }
+
+    private Optional<Exception> checkIdentifier(final CredentialsBO credentials,
+                                                final String identifier) {
+        final Optional<UserIdentifierBO> matchedIdentifier = credentials.getIdentifiers()
+                .stream()
+                .filter(existing -> identifier.equals(existing.getIdentifier()))
+                .findFirst();
+
+        if (matchedIdentifier.isEmpty()) {
+            return Optional.of(new IllegalStateException("No identifier matched but credentials were returned"));
+        }
+
+        if (!matchedIdentifier.get().isActive()) {
+            return Optional.of(new ServiceAuthorizationException(ErrorCode.INACTIVE_IDENTIFIER,
+                    "Identifier is not active", EntityType.ACCOUNT, credentials.getAccountId()));
+        }
+
+        return Optional.empty();
     }
 
     private Either<Exception, AccountBO> getAccountById(final String accountId) {
