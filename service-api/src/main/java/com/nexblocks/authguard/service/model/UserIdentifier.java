@@ -8,7 +8,11 @@ public interface UserIdentifier {
     Long getId(); // only useful for relational DBs
     Type getType();
     String getIdentifier();
-    boolean isActive();
+
+    @Value.Default
+    default boolean isActive() {
+        return true;
+    }
 
     enum Type {
         USERNAME,
