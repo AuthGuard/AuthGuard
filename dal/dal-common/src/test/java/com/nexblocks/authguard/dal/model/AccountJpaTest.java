@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.dal.model;
 
+import com.google.common.collect.ImmutableMap;
 import org.assertj.core.api.Assertions;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeAll;
@@ -54,6 +55,7 @@ class AccountJpaTest {
                 .backupEmail(EmailDO.builder()
                         .email("backup@emails.com")
                         .build())
+                .metadata(ImmutableMap.of("meta-1", "value-1"))
                 .build();
 
         deletedAccount = AccountDO.builder()
