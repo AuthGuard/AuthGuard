@@ -1196,6 +1196,9 @@ components:
             type: string
         active:
           type: boolean
+        metadata:
+          description: A collection of custom information to be attached to the account
+          type: object
 
     Credentials:
       type: object
@@ -1391,6 +1394,9 @@ components:
             type: string
         active:
           type: boolean
+        metadata:
+          description: A collection of custom information to be attached to the account
+          type: object
 
     UpdateAccountRequest:
       type: object

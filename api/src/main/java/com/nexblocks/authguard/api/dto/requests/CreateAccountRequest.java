@@ -9,6 +9,7 @@ import com.nexblocks.authguard.api.dto.style.DTOStyle;
 import org.immutables.value.Value;
 
 import java.util.List;
+import java.util.Map;
 
 @Value.Immutable
 @DTOStyle
@@ -28,6 +29,7 @@ public interface CreateAccountRequest {
 
     List<PermissionDTO> getPermissions();
     List<String> getRoles();
+    Map<String, String> getMetadata();
 
     boolean isActive();
 }
