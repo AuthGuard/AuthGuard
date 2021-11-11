@@ -56,4 +56,6 @@ public interface RestMapper {
     ExchangeAttemptDTO toDTO(ExchangeAttemptBO exchangeAttemptBO);
 
     PasswordResetTokenDTO toDTO(PasswordResetTokenBO passwordResetTokenBO);
+
+    ActionTokenDTO toDTO(ActionTokenBO actionTokenBO);
 }
