@@ -7,7 +7,7 @@
     <groupId>com.nexblocks.authguard</groupId>
     <artifactId>authguard</artifactId>
     <packaging>pom</packaging>
-    <version>0.10.0-SNAPSHOT</version>
+    <version>0.10.0</version>
 
     <distributionManagement>
         <repository>
