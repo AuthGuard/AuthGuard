@@ -36,7 +36,7 @@ public class ActionTokensRoute extends ActionTokensApi {
 
     @Override
     public void createOtp(final Context context) {
-        final String accountId = context.queryParam("account");
+        final String accountId = context.queryParam("accountId");
 
         if (accountId == null) {
             throw new RequestValidationException(Collections.singletonList(
