@@ -1,8 +1,6 @@
 package com.nexblocks.authguard.jwt.oauth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
@@ -89,11 +87,9 @@ public class TestIdentityServer {
     }
 
     private void writeJson(final HttpServerResponse response, final TokensResponse tokensResponse) {
-        final ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+        final ObjectNode objectNode = new ObjectMapper().convertValue(tokensResponse, ObjectNode.class);
 
-        arrayNode.add(new ObjectMapper().convertValue(tokensResponse, ObjectNode.class));
-
-        final String json = arrayNode.toPrettyString();
+        final String json = objectNode.toPrettyString();
         final byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
         final int contentLength = bytes.length;
 

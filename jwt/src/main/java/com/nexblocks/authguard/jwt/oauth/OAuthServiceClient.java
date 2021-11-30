@@ -6,7 +6,6 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
@@ -14,9 +13,10 @@ import okhttp3.HttpUrl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class OAuthServiceClient {
     private static final Logger LOG = LoggerFactory.getLogger(OAuthServiceClient.class);
@@ -84,11 +84,17 @@ public class OAuthServiceClient {
         final String url = clientConfiguration.getTokenUrl();
 
         final CompletableFuture<TokensResponse> future = new CompletableFuture<>();
+        final String path = tokenUrl.encodedPath();
 
-        webClient.post(tokenUrl.port(), tokenUrl.host(), tokenUrl.encodedPath())
+        webClient.post(tokenUrl.port(), tokenUrl.host(), path)
+                .ssl(tokenUrl.isHttps())
+                .putHeader("Accept", "application/json")
                 .sendForm(form, response -> {
                     if (response.succeeded()) {
                         final HttpResponse<Buffer> httpResponse = response.result();
+                        final String body = httpResponse.bodyAsString();
+
+                        LOG.info("Body {}", body);
 
                         if (httpResponse.statusCode() == 200) {
                             processResponse(httpResponse, url, future);
@@ -111,33 +117,65 @@ public class OAuthServiceClient {
 
     private void processResponse(final HttpResponse<Buffer> httpResponse, final String url,
                                  final CompletableFuture<TokensResponse> future) {
-        final JsonArray jsonArray = httpResponse.bodyAsJsonArray();
+        try {
+            final String contentType = httpResponse.getHeader("Content-Type");
 
-        if (jsonArray.isEmpty()) {
-            LOG.warn("An authorization code exchange call to {} returned an empty list", url);
+            if (contentType.startsWith("application/json")) {
+                processJsonResponse(httpResponse, url, future);
+            } else {
+                processFormDataResponse(httpResponse, url, future);
+            }
+        } catch (final Exception e) {
+            LOG.error("An error occurred while trying to parse the response from {}", url, e);
 
             future.completeExceptionally(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
-                    "Identity provider didn't return any tokens"));
-        } else {
-            try {
-                final JsonObject first = jsonArray.getJsonObject(0);
-
-                final TokensResponse tokens = new TokensResponse()
-                        .setAccessToken(first.getString("access_token"))
-                        .setIdToken(first.getString("id_token"))
-                        .setRefreshToken(first.getString("refresh_token"));
-
-                future.complete(tokens);
-            } catch (final Exception e) {
-                LOG.error("An error occurred while trying to parse the response from {}", url, e);
-
-                future.completeExceptionally(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
-                        "Failed to process identity provider response"));
-            }
+                    "Failed to process identity provider response"));
         }
     }
 
-    private String encode(final String value) {
-        return URLEncoder.encode(value, Charset.defaultCharset());
+    private void processJsonResponse(final HttpResponse<Buffer> httpResponse,
+                                     final String url,
+                                     final CompletableFuture<TokensResponse> future) {
+        final JsonObject jsonObject = httpResponse.bodyAsJsonObject();
+        final String error = jsonObject.getString("error");
+
+        if (error != null) {
+            LOG.warn("Call to {} returned an error {}", url, error);
+
+            future.completeExceptionally(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
+                    "Unsuccessful call to the identity provider"));
+        }
+
+        final TokensResponse tokens = new TokensResponse()
+                .setAccessToken(jsonObject.getString("access_token"))
+                .setIdToken(jsonObject.getString("id_token"))
+                .setRefreshToken(jsonObject.getString("refresh_token"));
+
+        future.complete(tokens);
+    }
+
+    private void processFormDataResponse(final HttpResponse<Buffer> httpResponse,
+                                         final String url,
+                                         final CompletableFuture<TokensResponse> future) {
+        final String formBody = httpResponse.bodyAsString();
+        final Map<String, String> formData = Arrays.stream(formBody.split("&"))
+                .map(field -> field.split("="))
+                .collect(Collectors.toMap(field -> field[0], field -> field[1]));
+
+        final String error = formData.get("error");
+
+        if (error != null) {
+            LOG.warn("Call to {} returned an error {}", url, error);
+
+            future.completeExceptionally(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
+                    "Unsuccessful call to the identity provider"));
+        }
+
+        final TokensResponse tokens = new TokensResponse()
+                .setAccessToken(formData.get("access_token"))
+                .setIdToken(formData.get("id_token"))
+                .setRefreshToken(formData.get("refresh_token"));
+
+        future.complete(tokens);
     }
 }
