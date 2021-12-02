@@ -15,6 +15,9 @@ public interface Account extends Entity {
     String getLastName();
     String getFullName();
 
+    boolean isSocial();
+    String getIdentityProvider();
+
     Set<PermissionBO> getPermissions();
     Set<String> getRoles();
     AccountEmailBO getEmail();

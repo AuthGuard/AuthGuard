@@ -43,6 +43,10 @@ public class OAuthServiceClient {
         this.tokenUrl = HttpUrl.get(clientConfiguration.getTokenUrl());
     }
 
+    public ImmutableOAuthClientConfiguration getConfiguration() {
+        return this.clientConfiguration;
+    }
+
     /**
      * Creates an authorization URL to send the user to. It will get the URL
      * from {@link ImmutableOAuthClientConfiguration#getAuthUrl()}, then add
@@ -87,6 +91,7 @@ public class OAuthServiceClient {
         final String path = tokenUrl.encodedPath();
 
         webClient.post(tokenUrl.port(), tokenUrl.host(), path)
+                .timeout(5000)
                 .ssl(tokenUrl.isHttps())
                 .putHeader("Accept", "application/json")
                 .sendForm(form, response -> {

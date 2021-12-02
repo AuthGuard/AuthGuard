@@ -23,12 +23,14 @@ public class TestIdentityServer {
     private static final String EXPECTED_CLIENT_SECRET = "secret";
     private static final String EXPECTED_GRANT_TYPE = "authorization_code";
 
+    private static final String TEST_ID_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxIiwiZW1haWwiOiJ0ZXN0dXNlckBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6InRydWUiLCJuYW1lIjoiVGVzdCBVc2VyIiwiZ2l2ZW5fbmFtZSI6IlRlc3QiLCJmYW1pbHlfbmFtZSI6IlVzZXIiLCJsb2NhbGUiOiJlbiJ9.noWpYrx30V_L0qY_dmtRQLd0ynK1Do36xHOKKk_QTU8";
+
     private final Vertx vertx = Vertx.vertx();
     private HttpServer server;
 
     private int port = 7586;;
     private final TokensResponse successResponse = new TokensResponse()
-            .setIdToken("id-token")
+            .setIdToken(TEST_ID_TOKEN)
             .setAccessToken("access-token")
             .setRefreshToken("refresh-token");
 
@@ -103,5 +105,7 @@ public class TestIdentityServer {
                 LOG.error("Failed to write data", writeResult.cause());
             }
         });
+
+        response.end();
     }
 }
