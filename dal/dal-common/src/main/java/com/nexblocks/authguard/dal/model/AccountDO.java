@@ -56,6 +56,9 @@ public class AccountDO extends AbstractDO {
     private String lastName;
     private String fullName;
 
+    private boolean social;
+    private String identityProvider;
+
     @ElementCollection(fetch = FetchType.LAZY)
     @JoinTable(name = "account_roles")
     private Set<String> roles;

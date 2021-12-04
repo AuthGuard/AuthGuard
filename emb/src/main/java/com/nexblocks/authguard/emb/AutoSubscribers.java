@@ -30,9 +30,15 @@ public class AutoSubscribers {
         for (final MessageSubscriber subscriber : subscribers) {
             final Channel channel = subscriber.getClass().getAnnotation(Channel.class);
 
-            messageBus.subscribe(channel.value(), subscriber);
+            try {
+                messageBus.subscribe(channel.value(), subscriber);
 
-            log.info("Auto-subscribed {} to channel {}", subscriber.getClass().getSimpleName(), channel.value());
+                log.info("Auto-subscribed {} to channel {}",
+                        subscriber.getClass().getSimpleName(), channel.value());
+            } catch (final Exception e) {
+                log.warn("Failed to subscribe {} to channel {}. Reason: {}",
+                        subscriber.getClass().getSimpleName(), channel.value(), e.getMessage());
+            }
         }
     }
 }

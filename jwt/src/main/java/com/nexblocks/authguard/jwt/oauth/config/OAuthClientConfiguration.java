@@ -8,6 +8,7 @@ import java.util.Set;
 
 @Value.Immutable
 @Value.Style(
+        get = { "get*", "is*" },
         validationMethod = Value.Style.ValidationMethod.NONE,
         jdkOnly = true
 )
@@ -46,4 +47,11 @@ public interface OAuthClientConfiguration {
     String getClientId();
     String getClientSecret();
     Set<String> getDefaultScopes();
+
+    /**
+     * If true, the client will create an account from an ID token
+     * if none exists, or will return the account ID in the process.
+     */
+    boolean isAccountProvider();
+    String getEmailField();
 }

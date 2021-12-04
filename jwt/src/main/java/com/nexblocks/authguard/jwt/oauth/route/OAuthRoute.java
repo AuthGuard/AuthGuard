@@ -1,6 +1,7 @@
 package com.nexblocks.authguard.jwt.oauth.route;
 
 import com.google.inject.Inject;
+import com.nexblocks.authguard.api.access.ActorRoles;
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.RequestValidationError;
@@ -27,15 +28,15 @@ public class OAuthRoute implements ApiRoute {
 
     @Override
     public String getPath() {
-        return null;
+        return "oauth";
     }
 
     @Override
     public void addEndpoints() {
         get("/oidc/auth", this::openIdConnectAuthFlows);
         post("/oidc/token", this::openIdConnectAuthFlows);
-        get("/auth_url", this::getAuthUrl);
-        post("/authorize", this::authorize);
+        get("/auth_url", this::getAuthUrl, ActorRoles.adminOrAuthClient());
+        post("/authorize", this::authorize, ActorRoles.adminOrAuthClient());
     }
 
     void openIdConnectAuthFlows(final Context context) {
@@ -61,11 +62,9 @@ public class OAuthRoute implements ApiRoute {
                     new Violation("provider", ViolationType.MISSING_REQUIRED_VALUE)
             )));
         } else {
-            oAuthService.getAuthorizationUrl(provider)
-                    .thenApply(authorizationUrl -> context.status(302)
-                            .header("Location", authorizationUrl)
-                            .result("")
-                    );
+            final String url = oAuthService.getAuthorizationUrl(provider).join();
+
+            context.redirect(url);
         }
     }
 

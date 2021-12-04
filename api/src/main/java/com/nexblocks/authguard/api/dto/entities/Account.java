@@ -20,6 +20,9 @@ public interface Account {
 
     String getExternalId();
 
+    boolean isSocial();
+    String getIdentityProvider();
+
     String getFirstName();
     String getMiddleName();
     String getLastName();
