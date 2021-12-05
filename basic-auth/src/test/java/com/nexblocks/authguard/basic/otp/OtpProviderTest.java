@@ -6,6 +6,7 @@ import com.nexblocks.authguard.dal.cache.OtpRepository;
 import com.nexblocks.authguard.dal.model.OneTimePasswordDO;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.basic.config.OtpMode;
+import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
@@ -20,11 +21,14 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 class OtpProviderTest {
-    private final EasyRandom random = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
+    private final EasyRandom random = new EasyRandom(new EasyRandomParameters()
+            .excludeField(field -> field.getName().equals("initShim"))
+            .collectionSizeRange(1, 4));
 
     private OtpRepository mockOtpRepository;
     private MessageBus messageBus;
@@ -52,7 +56,7 @@ class OtpProviderTest {
 
         setup(otpConfig);
 
-        final AccountBO account = random.nextObject(AccountBO.class);
+        final AccountBO account = random.nextObject(AccountBO.class).withActive(true);
 
         final AuthResponseBO expected = AuthResponseBO.builder()
                 .type("otp")
@@ -93,7 +97,7 @@ class OtpProviderTest {
 
         setup(otpConfig);
 
-        final AccountBO account = random.nextObject(AccountBO.class);
+        final AccountBO account = random.nextObject(AccountBO.class).withActive(true);
 
         final AuthResponseBO expected = AuthResponseBO.builder()
                 .type("otp")
@@ -138,7 +142,7 @@ class OtpProviderTest {
 
         setup(otpConfig);
 
-        final AccountBO account = random.nextObject(AccountBO.class);
+        final AccountBO account = random.nextObject(AccountBO.class).withActive(true);
 
         final AuthResponseBO expected = AuthResponseBO.builder()
                 .type("otp")
@@ -171,5 +175,20 @@ class OtpProviderTest {
 
         Mockito.verify(messageBus, Mockito.times(1))
                 .publish(eq("otp"), any());
+    }
+
+    @Test
+    void generateTokenForInactiveAccount() {
+        final OtpConfig otpConfig = OtpConfig.builder()
+                .mode(OtpMode.ALPHANUMERIC)
+                .length(6)
+                .lifeTime("5m")
+                .build();
+
+        setup(otpConfig);
+
+        final AccountBO account = random.nextObject(AccountBO.class).withActive(false);
+
+        assertThatThrownBy(() -> otpProvider.generateToken(account)).isInstanceOf(ServiceAuthorizationException.class);
     }
 }

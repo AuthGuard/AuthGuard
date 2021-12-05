@@ -140,11 +140,16 @@ public class BasicAuthProvider {
     }
 
     private Either<Exception, AccountBO> getAccountById(final String accountId) {
-        final Optional<AccountBO> account = accountsService.getById(accountId);
+        return accountsService.getById(accountId)
+                .<Either<Exception, AccountBO>>map(account -> {
+                    if (account.isActive()) {
+                        return Either.right(account);
+                    }
 
-        return account
-                .<Either<Exception, AccountBO>>map(Either::right)
+                    return Either.left(new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE,
+                            "Account " + accountId + " was deactivated"));
+                })
                 .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
-                "Account " + accountId + " does not exist")));
+                        "Account " + accountId + " does not exist")));
     }
 }

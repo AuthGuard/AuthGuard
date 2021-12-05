@@ -28,7 +28,9 @@ class IdTokenProviderTest {
     private static final String KEY = "src/test/resources/hmac256.pem";
     private static final String ISSUER = "test";
 
-    private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
+    private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters()
+            .excludeField(field -> field.getName().equals("initShim"))
+            .collectionSizeRange(1, 4));
     private TokenEncryptorAdapter tokenEncryptor;
 
     private JwtConfig jwtConfig() {
@@ -65,7 +67,7 @@ class IdTokenProviderTest {
     void generate() {
         final IdTokenProvider idTokenProvider = newProviderInstance(jwtConfig());
 
-        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(true);
         final AuthResponseBO tokens = idTokenProvider.generateToken(account);
 
         assertThat(tokens).isNotNull();
@@ -83,7 +85,7 @@ class IdTokenProviderTest {
         Mockito.when(tokenEncryptor.encryptAndEncode(Mockito.any()))
                 .thenAnswer(invocation -> Either.right("encrypted"));
 
-        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(true);
         final AuthResponseBO tokens = idTokenProvider.generateToken(account);
 
         assertThat(tokens).isNotNull();

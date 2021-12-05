@@ -54,6 +54,23 @@ class SessionProviderTest {
     }
 
     @Test
+    void generateForInactiveAccount() {
+        final SessionsService sessionsService = Mockito.mock(SessionsService.class);
+
+        Mockito.when(sessionsService.create(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0, SessionBO.class).withSessionToken("token"));
+
+        final SessionProvider sessionProvider = new SessionProvider(sessionsService, sessionsConfig());
+
+        final AccountBO account = AccountBO.builder()
+                .id("account-id")
+                .active(false)
+                .build();
+
+        assertThatThrownBy(() -> sessionProvider.generateToken(account)).isInstanceOf(ServiceAuthorizationException.class);
+    }
+
+    @Test
     void delete() {
         final SessionsService sessionsService = Mockito.mock(SessionsService.class);
         final SessionProvider sessionProvider = new SessionProvider(sessionsService, sessionsConfig());

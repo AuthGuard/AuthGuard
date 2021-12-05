@@ -31,5 +31,8 @@ public interface CreateAccountRequest {
     List<String> getRoles();
     Map<String, String> getMetadata();
 
-    boolean isActive();
+    @Value.Default
+    default boolean isActive() {
+        return true;
+    }
 }

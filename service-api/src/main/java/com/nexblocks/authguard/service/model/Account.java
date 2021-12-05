@@ -26,7 +26,11 @@ public interface Account extends Entity {
 
     Map<String, String> getMetadata();
 
-    boolean isActive();
+    @Value.Default
+    default boolean isActive() {
+        return true;
+    }
+
     boolean isDeleted();
 
     @Override

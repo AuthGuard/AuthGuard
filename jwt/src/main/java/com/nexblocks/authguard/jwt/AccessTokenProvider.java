@@ -18,6 +18,7 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.ID;
+import io.vavr.control.Either;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -91,6 +92,10 @@ public class AccessTokenProvider implements AuthProvider {
     @Override
     public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
                                         final TokenOptionsBO options) {
+        if (!account.isActive()) {
+            throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
+        }
+
         final JwtTokenBuilder tokenBuilder = generateAccessToken(account, restrictions, options);
 
         final String signedToken = tokenBuilder.getBuilder().sign(algorithm);
