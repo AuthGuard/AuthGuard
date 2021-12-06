@@ -12,9 +12,8 @@ import io.vavr.control.Either;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 
 import java.util.Base64;
@@ -24,7 +23,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class BasicAuthProviderTest {
     private AccountsService accountsService;
     private CredentialsService credentialsService;
@@ -34,7 +32,7 @@ class BasicAuthProviderTest {
 
     private final static EasyRandom RANDOM = new EasyRandom();
 
-    @BeforeAll
+    @BeforeEach
     void setup() {
         accountsService = Mockito.mock(AccountsService.class);
         credentialsService = Mockito.mock(CredentialsService.class);
@@ -59,7 +57,9 @@ class BasicAuthProviderTest {
         final String password = "password";
         final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final AccountBO account = AccountBO.builder()
+                .active(true)
+                .build();
         final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class)
                 .withIdentifiers(UserIdentifierBO.builder()
                         .identifier(username)
@@ -78,6 +78,35 @@ class BasicAuthProviderTest {
         final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
 
         assertThat(result.get()).isEqualTo(account);
+    }
+
+    @Test
+    void authenticateInactiveAccount() {
+        final String username = "username";
+        final String password = "password";
+        final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+
+        final AccountBO account = AccountBO.builder()
+                .active(false)
+                .build();
+        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class)
+                .withIdentifiers(UserIdentifierBO.builder()
+                        .identifier(username)
+                        .type(UserIdentifier.Type.USERNAME)
+                        .active(true)
+                        .build());
+        final HashedPasswordBO hashedPasswordBO = HashedPasswordBO.builder()
+                .password(credentials.getHashedPassword().getPassword())
+                .salt(credentials.getHashedPassword().getSalt())
+                .build();
+
+        Mockito.when(credentialsService.getByUsernameUnsafe(username)).thenReturn(Optional.of(credentials));
+        Mockito.when(accountsService.getById(credentials.getAccountId())).thenReturn(Optional.of(account));
+        Mockito.when(securePassword.verify(eq(password), eq(hashedPasswordBO))).thenReturn(true);
+
+        final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
+
+        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test

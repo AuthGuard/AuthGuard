@@ -43,6 +43,10 @@ public class SessionProvider implements AuthProvider {
 
     @Override
     public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO options) {
+        if (!account.isActive()) {
+            throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
+        }
+
         final Map<String, String> data = new HashMap<>();
 
         data.put(SessionKeys.ACCOUNT_ID, account.getId());

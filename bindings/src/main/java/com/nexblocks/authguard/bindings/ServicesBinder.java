@@ -32,9 +32,6 @@ public class ServicesBinder extends AbstractModule {
         bind(AccountLocksService.class).to(AccountLocksServiceImpl.class);
         bind(ActionTokenService.class).to(ActionTokenServiceImpl.class);
 
-        // should be conditional on property value
-        bind(SecurePassword.class).to(SCryptPassword.class);
-
         // optional bindings
         if (configContext.get("verification") != null) {
             bind(VerificationService.class).to(VerificationServiceImpl.class);
