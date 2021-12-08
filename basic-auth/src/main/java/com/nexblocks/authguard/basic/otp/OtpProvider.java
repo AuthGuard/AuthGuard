@@ -1,6 +1,7 @@
 package com.nexblocks.authguard.basic.otp;
 
 import com.nexblocks.authguard.basic.config.OtpConfig;
+import com.nexblocks.authguard.basic.config.OtpConfigInterface;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.OtpRepository;
 import com.nexblocks.authguard.emb.MessageBus;
@@ -60,9 +61,13 @@ public class OtpProvider implements AuthProvider {
                 .password(password)
                 .build();
 
+        final OtpMessageBody messageBody = new OtpMessageBody(oneTimePassword, account,
+                otpConfig.getMethod() == OtpConfigInterface.Method.EMAIL,
+                otpConfig.getMethod() == OtpConfigInterface.Method.SMS);
+
         otpRepository.save(serviceMapper.toDO(oneTimePassword));
 
-        messageBus.publish(OTP_CHANNEL, Messages.otpGenerated(oneTimePassword));
+        messageBus.publish(OTP_CHANNEL, Messages.otpGenerated(messageBody));
 
         return token;
     }

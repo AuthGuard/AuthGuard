@@ -12,4 +12,10 @@ public interface OtpConfigInterface {
     int getLength();
     String getLifeTime();
     String getGenerateToken();
+    Method getMethod();
+
+    enum Method {
+        EMAIL,
+        SMS
+    }
 }
