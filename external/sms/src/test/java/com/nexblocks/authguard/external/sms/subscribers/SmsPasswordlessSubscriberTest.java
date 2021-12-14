@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.external.email.subscribers;
+package com.nexblocks.authguard.external.sms.subscribers;
 
 import com.google.common.collect.ImmutableMap;
 import com.nexblocks.authguard.basic.passwordless.PasswordlessMessageBody;
@@ -6,29 +6,27 @@ import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.emb.model.EventType;
 import com.nexblocks.authguard.emb.model.Message;
-import com.nexblocks.authguard.external.email.EmailProvider;
-import com.nexblocks.authguard.external.email.ImmutableEmail;
+import com.nexblocks.authguard.external.sms.ImmutableTextMessage;
+import com.nexblocks.authguard.external.sms.SmsProvider;
 import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AccountEmailBO;
+import com.nexblocks.authguard.service.model.PhoneNumberBO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import java.util.Collections;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
-class EmailPasswordlessSubscriberTest {
-    private EmailProvider emailProvider;
+class SmsPasswordlessSubscriberTest {
+    private SmsProvider smsProvider;
 
-    private EmailPasswordlessSubscriber emailPasswordlessSubscriber;
+    private SmsPasswordlessSubscriber smsPasswordlessSubscriber;
 
     @BeforeEach
     void setup() {
-        emailProvider = Mockito.mock(EmailProvider.class);
+        smsProvider = Mockito.mock(SmsProvider.class);
 
-        emailPasswordlessSubscriber = new EmailPasswordlessSubscriber(emailProvider);
+        smsPasswordlessSubscriber = new SmsPasswordlessSubscriber(smsProvider);
     }
 
     @Test
@@ -37,8 +35,8 @@ class EmailPasswordlessSubscriberTest {
                 .token("token")
                 .build();
         final AccountBO account = AccountBO.builder()
-                .email(AccountEmailBO.builder()
-                        .email("user@test.net")
+                .phoneNumber(PhoneNumberBO.builder()
+                        .number("+178945632")
                         .build())
                 .firstName("first")
                 .lastName("second")
@@ -46,22 +44,21 @@ class EmailPasswordlessSubscriberTest {
 
         final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account);
         final Message message = Messages.passwordlessGenerated(messageBody);
-        final ImmutableEmail expectedEmail = ImmutableEmail.builder()
-                .template("passwordless")
-                .to(account.getEmail().getEmail())
+        final ImmutableTextMessage expectedSms = ImmutableTextMessage.builder()
+                .to(account.getPhoneNumber().getNumber())
                 .parameters(ImmutableMap.of(
                         "token", accountToken.getToken(),
                         "firstName", account.getFirstName(),
                         "lastName", account.getLastName()))
                 .build();
 
-        emailPasswordlessSubscriber.onMessage(message);
+        smsPasswordlessSubscriber.onMessage(message);
 
-        final ArgumentCaptor<ImmutableEmail> sentEmailCaptor = ArgumentCaptor.forClass(ImmutableEmail.class);
+        final ArgumentCaptor<ImmutableTextMessage> sentSmsCaptor = ArgumentCaptor.forClass(ImmutableTextMessage.class);
 
-        Mockito.verify(emailProvider).send(sentEmailCaptor.capture());
+        Mockito.verify(smsProvider).send(sentSmsCaptor.capture());
 
-        assertThat(sentEmailCaptor.getValue()).isEqualTo(expectedEmail);
+        assertThat(sentSmsCaptor.getValue()).isEqualTo(expectedSms);
     }
 
     @Test
@@ -70,8 +67,8 @@ class EmailPasswordlessSubscriberTest {
                 .token("token")
                 .build();
         final AccountBO account = AccountBO.builder()
-                .email(AccountEmailBO.builder()
-                        .email("user@test.net")
+                .phoneNumber(PhoneNumberBO.builder()
+                        .number("+178945632")
                         .build())
                 .build();
 
@@ -79,13 +76,13 @@ class EmailPasswordlessSubscriberTest {
         final Message message = Messages.passwordlessGenerated(messageBody)
                 .withEventType(EventType.ADMIN);
 
-        emailPasswordlessSubscriber.onMessage(message);
+        smsPasswordlessSubscriber.onMessage(message);
 
-        Mockito.verify(emailProvider, Mockito.never()).send(Mockito.any());
+        Mockito.verify(smsProvider, Mockito.never()).send(Mockito.any());
     }
 
     @Test
-    void onValidMessageNoEmail() {
+    void onValidMessageNoPhoneNumber() {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token("token")
                 .build();
@@ -95,8 +92,8 @@ class EmailPasswordlessSubscriberTest {
         final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account);
         final Message message = Messages.passwordlessGenerated(messageBody);
 
-        emailPasswordlessSubscriber.onMessage(message);
+        smsPasswordlessSubscriber.onMessage(message);
 
-        Mockito.verify(emailProvider, Mockito.never()).send(Mockito.any());
+        Mockito.verify(smsProvider, Mockito.never()).send(Mockito.any());
     }
 }

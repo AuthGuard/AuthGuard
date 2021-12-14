@@ -1,15 +1,16 @@
-package com.nexblocks.authguard.external.email.subscribers;
+package com.nexblocks.authguard.external.sms.subscribers;
 
 import com.google.common.collect.ImmutableMap;
 import com.nexblocks.authguard.basic.otp.OtpMessageBody;
 import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.emb.model.EventType;
 import com.nexblocks.authguard.emb.model.Message;
-import com.nexblocks.authguard.external.email.EmailProvider;
-import com.nexblocks.authguard.external.email.ImmutableEmail;
+import com.nexblocks.authguard.external.sms.ImmutableTextMessage;
+import com.nexblocks.authguard.external.sms.SmsProvider;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AccountEmailBO;
 import com.nexblocks.authguard.service.model.OneTimePasswordBO;
+import com.nexblocks.authguard.service.model.PhoneNumberBO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -17,16 +18,16 @@ import org.mockito.Mockito;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class EmailOtpSubscriberTest {
-    private EmailProvider emailProvider;
+class SmsOtpSubscriberTest {
+    private SmsProvider smsProvider;
 
-    private EmailOtpSubscriber otpSubscriber;
+    private SmsOtpSubscriber otpSubscriber;
 
     @BeforeEach
     void setup() {
-        emailProvider = Mockito.mock(EmailProvider.class);
+        smsProvider = Mockito.mock(SmsProvider.class);
 
-        otpSubscriber = new EmailOtpSubscriber(emailProvider);
+        otpSubscriber = new SmsOtpSubscriber(smsProvider);
     }
 
     @Test
@@ -36,8 +37,8 @@ public class EmailOtpSubscriberTest {
                 .build();
 
         final AccountBO account = AccountBO.builder()
-                .email(AccountEmailBO.builder()
-                        .email("user@test.net")
+                .phoneNumber(PhoneNumberBO.builder()
+                        .number("+178945632")
                         .build())
                 .firstName("first")
                 .lastName("second")
@@ -45,9 +46,8 @@ public class EmailOtpSubscriberTest {
 
         final OtpMessageBody messageBody = new OtpMessageBody(otp, account, true, false);
         final Message message = Messages.otpGenerated(messageBody);
-        final ImmutableEmail expectedEmail = ImmutableEmail.builder()
-                .template("otp")
-                .to(account.getEmail().getEmail())
+        final ImmutableTextMessage expectedEmail = ImmutableTextMessage.builder()
+                .to(account.getPhoneNumber().getNumber())
                 .parameters(ImmutableMap.of(
                         "password", otp.getPassword(),
                         "firstName", account.getFirstName(),
@@ -56,11 +56,11 @@ public class EmailOtpSubscriberTest {
 
         otpSubscriber.onMessage(message);
 
-        final ArgumentCaptor<ImmutableEmail> sentEmailCaptor = ArgumentCaptor.forClass(ImmutableEmail.class);
+        final ArgumentCaptor<ImmutableTextMessage> sentSmsCaptor = ArgumentCaptor.forClass(ImmutableTextMessage.class);
 
-        Mockito.verify(emailProvider).send(sentEmailCaptor.capture());
+        Mockito.verify(smsProvider).send(sentSmsCaptor.capture());
 
-        assertThat(sentEmailCaptor.getValue()).isEqualTo(expectedEmail);
+        assertThat(sentSmsCaptor.getValue()).isEqualTo(expectedEmail);
     }
 
     @Test
@@ -70,8 +70,8 @@ public class EmailOtpSubscriberTest {
                 .build();
 
         final AccountBO account = AccountBO.builder()
-                .email(AccountEmailBO.builder()
-                        .email("user@test.net")
+                .phoneNumber(PhoneNumberBO.builder()
+                        .number("+178945632")
                         .build())
                 .build();
 
@@ -81,11 +81,11 @@ public class EmailOtpSubscriberTest {
 
         otpSubscriber.onMessage(message);
 
-        Mockito.verify(emailProvider, Mockito.never()).send(Mockito.any());
+        Mockito.verify(smsProvider, Mockito.never()).send(Mockito.any());
     }
 
     @Test
-    void onValidMessageNoEmail() {
+    void onValidMessageNoPhoneNumber() {
         final OneTimePasswordBO otp = OneTimePasswordBO.builder()
                 .password("password")
                 .build();
@@ -98,6 +98,6 @@ public class EmailOtpSubscriberTest {
 
         otpSubscriber.onMessage(message);
 
-        Mockito.verify(emailProvider, Mockito.never()).send(Mockito.any());
+        Mockito.verify(smsProvider, Mockito.never()).send(Mockito.any());
     }
 }

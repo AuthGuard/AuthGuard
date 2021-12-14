@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.external.email.subscribers;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.emb.MessageSubscriber;
@@ -37,9 +38,19 @@ public class EmailResetTokenSubscriber implements MessageSubscriber {
 
     private void sendEmail(final AccountBO account, final AccountTokenDO accountToken) {
         if (account.getEmail() != null) {
+            final ImmutableMap.Builder<String, String> parameters = ImmutableMap.builder();
+
+            if (account.getFirstName() != null) {
+                parameters.put("firstName", account.getFirstName());
+            }
+
+            if (account.getLastName() != null) {
+                parameters.put("lastName", account.getLastName());
+            }
+
             final ImmutableEmail email = ImmutableEmail.builder()
                     .template("passwordReset")
-                    .parameters(Collections.singletonMap("token", accountToken.getToken()))
+                    .parameters(parameters.put("token", accountToken.getToken()).build())
                     .to(account.getEmail().getEmail())
                     .build();
 

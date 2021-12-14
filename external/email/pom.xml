@@ -21,13 +21,6 @@
 
         <dependency>
             <groupId>com.nexblocks.authguard</groupId>
-            <artifactId>sms</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.nexblocks.authguard</groupId>
             <artifactId>service-api</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>

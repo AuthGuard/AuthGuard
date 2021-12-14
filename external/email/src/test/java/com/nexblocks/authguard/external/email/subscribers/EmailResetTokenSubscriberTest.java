@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.external.email.subscribers;
 
+import com.google.common.collect.ImmutableMap;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.emb.model.EventType;
@@ -39,6 +40,8 @@ class EmailResetTokenSubscriberTest {
                 .email(AccountEmailBO.builder()
                         .email("user@test.net")
                         .build())
+                .firstName("first")
+                .lastName("second")
                 .build();
 
         final ResetTokenMessage messageBody = new ResetTokenMessage(account, accountToken);
@@ -46,7 +49,10 @@ class EmailResetTokenSubscriberTest {
         final ImmutableEmail expectedEmail = ImmutableEmail.builder()
                 .template("passwordReset")
                 .to(account.getEmail().getEmail())
-                .parameters(Collections.singletonMap("token", accountToken.getToken()))
+                .parameters(ImmutableMap.of(
+                        "token", accountToken.getToken(),
+                        "firstName", account.getFirstName(),
+                        "lastName", account.getLastName()))
                 .build();
 
         emailResetTokenSubscriber.onMessage(message);

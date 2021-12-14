@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.external.email.subscribers;
+package com.nexblocks.authguard.external.sms.subscribers;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -8,23 +8,23 @@ import com.nexblocks.authguard.emb.MessageSubscriber;
 import com.nexblocks.authguard.emb.annotations.Channel;
 import com.nexblocks.authguard.emb.model.EventType;
 import com.nexblocks.authguard.emb.model.Message;
-import com.nexblocks.authguard.external.email.EmailProvider;
-import com.nexblocks.authguard.external.email.ImmutableEmail;
+import com.nexblocks.authguard.external.sms.ImmutableTextMessage;
+import com.nexblocks.authguard.external.sms.SmsProvider;
 import com.nexblocks.authguard.service.model.AccountBO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
+import java.util.Map;
 
 @Channel("passwordless")
-public class EmailPasswordlessSubscriber implements MessageSubscriber {
-    private static final Logger LOG = LoggerFactory.getLogger(EmailPasswordlessSubscriber.class);
+public class SmsPasswordlessSubscriber implements MessageSubscriber {
+    private static final Logger LOG = LoggerFactory.getLogger(SmsPasswordlessSubscriber.class);
 
-    private final EmailProvider emailProvider;
+    private final SmsProvider smsProvider;
 
     @Inject
-    public EmailPasswordlessSubscriber(final EmailProvider emailProvider) {
-        this.emailProvider = emailProvider;
+    public SmsPasswordlessSubscriber(final SmsProvider smsProvider) {
+        this.smsProvider = smsProvider;
     }
 
     @Override
@@ -39,7 +39,7 @@ public class EmailPasswordlessSubscriber implements MessageSubscriber {
     }
 
     private void sendEmail(final AccountBO account, final AccountTokenDO accountToken) {
-        if (account.getEmail() != null) {
+        if (account.getPhoneNumber() != null) {
             final ImmutableMap.Builder<String, String> parameters = ImmutableMap.builder();
 
             if (account.getFirstName() != null) {
@@ -50,15 +50,14 @@ public class EmailPasswordlessSubscriber implements MessageSubscriber {
                 parameters.put("lastName", account.getLastName());
             }
 
-            final ImmutableEmail email = ImmutableEmail.builder()
-                    .template("passwordless")
+            final ImmutableTextMessage sms = ImmutableTextMessage.builder()
+                    .to(account.getPhoneNumber().getNumber())
                     .parameters(parameters.put("token", accountToken.getToken()).build())
-                    .to(account.getEmail().getEmail())
                     .build();
 
-            emailProvider.send(email);
+            smsProvider.send(sms);
         } else {
-            LOG.error("A passwordless token was generated for an account without an email. Account: {}, token ID: {}",
+            LOG.error("A passwordless token was generated for an account without a phone number. Account: {}, token ID: {}",
                     account.getId(), accountToken.getId());
         }
     }
