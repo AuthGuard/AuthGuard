@@ -45,8 +45,8 @@
         <maven-source-plugin.version>3.2.0</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
 
-        <javalin.version>3.7.0</javalin.version>
-        <logback.version>1.2.3</logback.version>
+        <javalin.version>3.13.9</javalin.version>
+        <logback.version>1.2.7</logback.version>
         <jackson.version>2.12.3</jackson.version>
         <immutables.version>2.7.4</immutables.version>
         <jetbrains-annotations.version>13.0</jetbrains-annotations.version>
