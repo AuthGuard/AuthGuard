@@ -16,8 +16,6 @@
     <modules>
         <module>account-lock</module>
         <module>verification-plugin</module>
-        <module>passwordless-send</module>
-        <module>reset-token-send</module>
     </modules>
 
 </project>

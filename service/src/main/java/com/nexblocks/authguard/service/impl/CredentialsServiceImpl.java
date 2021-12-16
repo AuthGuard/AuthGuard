@@ -2,10 +2,7 @@ package com.nexblocks.authguard.service.impl;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.nexblocks.authguard.basic.passwords.PasswordValidator;
-import com.nexblocks.authguard.basic.passwords.SecurePassword;
-import com.nexblocks.authguard.basic.passwords.ServiceInvalidPasswordException;
-import com.nexblocks.authguard.basic.passwords.Violation;
+import com.nexblocks.authguard.basic.passwords.*;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.dal.model.CredentialsDO;
@@ -58,7 +55,7 @@ public class CredentialsServiceImpl implements CredentialsService {
                                   final CredentialsRepository credentialsRepository,
                                   final CredentialsAuditRepository credentialsAuditRepository,
                                   final AccountTokensRepository accountTokensRepository,
-                                  final SecurePassword securePassword,
+                                  final SecurePasswordProvider securePasswordProvider,
                                   final PasswordValidator passwordValidator,
                                   final MessageBus messageBus,
                                   final ServiceMapper serviceMapper) {
@@ -67,7 +64,7 @@ public class CredentialsServiceImpl implements CredentialsService {
         this.credentialsRepository = credentialsRepository;
         this.credentialsAuditRepository = credentialsAuditRepository;
         this.accountTokensRepository = accountTokensRepository;
-        this.securePassword = securePassword;
+        this.securePassword = securePasswordProvider.get();
         this.passwordValidator = passwordValidator;
         this.messageBus = messageBus;
         this.serviceMapper = serviceMapper;

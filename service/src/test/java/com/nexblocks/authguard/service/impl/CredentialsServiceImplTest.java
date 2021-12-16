@@ -5,6 +5,7 @@ import com.nexblocks.authguard.basic.config.PasswordConditions;
 import com.nexblocks.authguard.basic.config.PasswordsConfig;
 import com.nexblocks.authguard.basic.passwords.PasswordValidator;
 import com.nexblocks.authguard.basic.passwords.SecurePassword;
+import com.nexblocks.authguard.basic.passwords.SecurePasswordProvider;
 import com.nexblocks.authguard.basic.passwords.ServiceInvalidPasswordException;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
@@ -47,6 +48,7 @@ class CredentialsServiceImplTest {
     private CredentialsAuditRepository credentialsAuditRepository;
     private AccountTokensRepository accountTokensRepository;
     private SecurePassword securePassword;
+    private SecurePasswordProvider securePasswordProvider;
     private CredentialsServiceImpl credentialsService;
     private MessageBus messageBus;
     private ServiceMapper serviceMapper;
@@ -62,16 +64,19 @@ class CredentialsServiceImplTest {
         credentialsAuditRepository = Mockito.mock(CredentialsAuditRepository.class);
         accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
         securePassword = Mockito.mock(SecurePassword.class);
+        securePasswordProvider = Mockito.mock(SecurePasswordProvider.class);
         messageBus = Mockito.mock(MessageBus.class);
 
         serviceMapper = new ServiceMapperImpl();
+
+        Mockito.when(securePasswordProvider.get()).thenReturn(securePassword);
 
         final PasswordValidator passwordValidator = new PasswordValidator(PasswordsConfig.builder()
                 .conditions(PasswordConditions.builder().build()).build());
 
         credentialsService = new CredentialsServiceImpl(accountsService, idempotencyService,
                 credentialsRepository, credentialsAuditRepository, accountTokensRepository,
-                securePassword, passwordValidator, messageBus, serviceMapper);
+                securePasswordProvider, passwordValidator, messageBus, serviceMapper);
 
         Mockito.when(accountsService.getById(any()))
                 .thenReturn(Optional.of(RANDOM.nextObject(AccountBO.class)));
