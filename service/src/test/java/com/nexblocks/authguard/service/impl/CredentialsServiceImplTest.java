@@ -104,7 +104,8 @@ class CredentialsServiceImplTest {
 
         assertThat(persisted).isNotNull();
         assertThat(persisted).isEqualToIgnoringGivenFields(credentials,
-                "id", "plainPassword", "hashedPassword", "createdAt", "lastModified");
+                "id", "plainPassword", "hashedPassword",
+                "createdAt", "lastModified", "passwordUpdatedAt");
         assertThat(persisted.getHashedPassword()).isNull();
 
         // need better assertion
@@ -233,7 +234,7 @@ class CredentialsServiceImplTest {
 
         assertThat(result).isPresent();
         assertThat(result.get()).isEqualToIgnoringGivenFields(credentialsBO,
-                "lastModified", "hashedPassword", "plainPassword");
+                "lastModified", "hashedPassword", "plainPassword", "passwordUpdatedAt");
         assertThat(result.get().getHashedPassword()).isNull();
         assertThat(result.get().getPlainPassword()).isNull();
 
@@ -416,7 +417,7 @@ class CredentialsServiceImplTest {
         // verify
         assertThat(result).isPresent();
         assertThat(result.get()).isEqualToIgnoringGivenFields(credentialsBO,
-                "lastModified", "hashedPassword", "plainPassword");
+                "lastModified", "hashedPassword", "plainPassword", "passwordUpdatedAt");
         assertThat(result.get().getHashedPassword()).isNull();
         assertThat(result.get().getPlainPassword()).isNull();
     }

@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import javax.persistence.*;
+import java.time.OffsetDateTime;
 import java.util.Set;
 
 @Data
@@ -39,4 +40,6 @@ public class CredentialsDO extends AbstractDO {
 
     @Embedded
     private PasswordDO hashedPassword;
+
+    private OffsetDateTime passwordUpdatedAt;
 }

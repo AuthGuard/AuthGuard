@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.nexblocks.authguard.service.config.ConfigStyle;
 import org.immutables.value.Value;
 
+import java.time.OffsetDateTime;
+
 @Value.Immutable
 @ConfigStyle
 @JsonDeserialize(as = PasswordsConfig.class)
@@ -24,4 +26,6 @@ public interface PasswordsConfigInterface {
     default PasswordConditions getConditions() {
         return PasswordConditions.builder().build();
     }
+
+    String getValidFor();
 }

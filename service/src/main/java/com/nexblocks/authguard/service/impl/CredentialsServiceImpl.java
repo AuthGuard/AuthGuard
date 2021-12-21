@@ -89,6 +89,7 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .from(credentials)
                 .hashedPassword(hashedPassword)
                 .id(ID.generate())
+                .passwordUpdatedAt(OffsetDateTime.now())
                 .build();
 
         return removeSensitiveInformation(persistenceService.create(credentialsHashedPassword));
@@ -131,7 +132,9 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
 
         final HashedPasswordBO newPassword = verifyAndHashPassword(plainPassword);
-        final CredentialsBO update = existing.withHashedPassword(newPassword);
+        final CredentialsBO update = existing
+                .withHashedPassword(newPassword)
+                .withPasswordUpdatedAt(OffsetDateTime.now());
 
         return doUpdate(existing, update, true);
     }
