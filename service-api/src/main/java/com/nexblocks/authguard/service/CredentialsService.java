@@ -18,5 +18,6 @@ public interface CredentialsService extends IdempotentCrudService<CredentialsBO>
     Optional<CredentialsBO> replaceIdentifier(String id, String oldIdentifier, UserIdentifierBO newIdentifier);
 
     PasswordResetTokenBO generateResetToken(String identifier, boolean returnToken);
-    Optional<CredentialsBO> resetPassword(String token, String plainPassword);
+    Optional<CredentialsBO> resetPasswordByToken(String token, String plainPassword);
+    Optional<CredentialsBO> replacePassword(String identifier, String oldPassword, String newPassword);
 }
