@@ -14,6 +14,7 @@ public interface Credentials {
     String getId();
     OffsetDateTime getCreatedAt();
     OffsetDateTime getLastModified();
+    OffsetDateTime getPasswordUpdatedAt();
     String getAccountId();
     List<UserIdentifierDTO> getIdentifiers();
     String getPlainPassword();

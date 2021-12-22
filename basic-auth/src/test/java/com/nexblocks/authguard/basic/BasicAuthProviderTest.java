@@ -16,6 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.Optional;
 
@@ -26,6 +28,7 @@ import static org.mockito.ArgumentMatchers.eq;
 class BasicAuthProviderTest {
     private AccountsService accountsService;
     private CredentialsService credentialsService;
+    private SecurePasswordProvider securePasswordProvider;
     private SecurePassword securePassword;
 
     private BasicAuthProvider basicAuth;
@@ -38,7 +41,7 @@ class BasicAuthProviderTest {
         credentialsService = Mockito.mock(CredentialsService.class);
         securePassword = Mockito.mock(SecurePassword.class);
 
-        final SecurePasswordProvider securePasswordProvider = Mockito.mock(SecurePasswordProvider.class);
+        securePasswordProvider = Mockito.mock(SecurePasswordProvider.class);
 
         Mockito.when(securePasswordProvider.get()).thenReturn(securePassword);
 
@@ -159,6 +162,34 @@ class BasicAuthProviderTest {
 
         Mockito.when(credentialsService.getByUsernameUnsafe(username)).thenReturn(Optional.of(credentials));
         Mockito.when(securePassword.verify(eq(password), eq(hashedPasswordBO))).thenReturn(false);
+
+        final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
+    }
+
+    @Test
+    void authenticateExpiredPassword() {
+        final String username = "username";
+        final String password = "password";
+        final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+
+        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class)
+                .withPasswordUpdatedAt(OffsetDateTime.now().minusMinutes(5))
+                .withIdentifiers(UserIdentifierBO.builder()
+                        .identifier(username)
+                        .type(UserIdentifier.Type.USERNAME)
+                        .build());
+        final HashedPasswordBO hashedPasswordBO = HashedPasswordBO.builder()
+                .password(credentials.getHashedPassword().getPassword())
+                .salt(credentials.getHashedPassword().getSalt())
+                .build();
+
+        Mockito.when(credentialsService.getByUsernameUnsafe(username)).thenReturn(Optional.of(credentials));
+        Mockito.when(securePassword.verify(eq(password), eq(hashedPasswordBO))).thenReturn(true);
+        Mockito.when(securePasswordProvider.passwordsExpire()).thenReturn(true);
+        Mockito.when(securePasswordProvider.getPasswordTtl()).thenReturn(Duration.ofMinutes(2));
 
         final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
 

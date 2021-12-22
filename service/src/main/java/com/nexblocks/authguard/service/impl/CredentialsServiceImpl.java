@@ -13,6 +13,7 @@ import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.CredentialsService;
 import com.nexblocks.authguard.service.IdempotencyService;
+import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
@@ -89,6 +90,7 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .from(credentials)
                 .hashedPassword(hashedPassword)
                 .id(ID.generate())
+                .passwordUpdatedAt(OffsetDateTime.now())
                 .build();
 
         return removeSensitiveInformation(persistenceService.create(credentialsHashedPassword));
@@ -131,7 +133,9 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
 
         final HashedPasswordBO newPassword = verifyAndHashPassword(plainPassword);
-        final CredentialsBO update = existing.withHashedPassword(newPassword);
+        final CredentialsBO update = existing
+                .withHashedPassword(newPassword)
+                .withPasswordUpdatedAt(OffsetDateTime.now());
 
         return doUpdate(existing, update, true);
     }
@@ -250,7 +254,7 @@ public class CredentialsServiceImpl implements CredentialsService {
     }
 
     @Override
-    public Optional<CredentialsBO> resetPassword(final String token, final String plainPassword) {
+    public Optional<CredentialsBO> resetPasswordByToken(final String token, final String plainPassword) {
         final AccountTokenDO accountToken = accountTokensRepository.getByToken(token)
                 .join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
@@ -265,6 +269,25 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .orElseThrow(() -> new ServiceException(ErrorCode.INVALID_TOKEN, "Reset token was not mapped to any credentials"));
 
         return updatePassword(credentialsId, plainPassword);
+    }
+
+    @Override
+    public Optional<CredentialsBO> replacePassword(final String identifier,
+                                                   final String oldPassword,
+                                                   final String newPassword) {
+        final CredentialsBO credentials = getByUsernameUnsafe(identifier)
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST, "Unknown identifier"));
+
+        if (!securePassword.verify(oldPassword, credentials.getHashedPassword())) {
+            throw new ServiceException(ErrorCode.PASSWORDS_DO_NOT_MATCH, "Passwords do not match");
+        }
+
+        final HashedPasswordBO newHashedPassword = verifyAndHashPassword(newPassword);
+        final CredentialsBO update = credentials
+                .withHashedPassword(newHashedPassword)
+                .withPasswordUpdatedAt(OffsetDateTime.now());
+
+        return doUpdate(credentials, update, true);
     }
 
     private Optional<CredentialsBO> doUpdate(final CredentialsBO existing, final CredentialsBO updated, boolean storePasswordAudit) {

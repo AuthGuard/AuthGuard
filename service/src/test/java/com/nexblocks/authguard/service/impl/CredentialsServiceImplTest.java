@@ -16,6 +16,7 @@ import com.nexblocks.authguard.dal.persistence.CredentialsRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.IdempotencyService;
+import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
@@ -104,7 +105,8 @@ class CredentialsServiceImplTest {
 
         assertThat(persisted).isNotNull();
         assertThat(persisted).isEqualToIgnoringGivenFields(credentials,
-                "id", "plainPassword", "hashedPassword", "createdAt", "lastModified");
+                "id", "plainPassword", "hashedPassword",
+                "createdAt", "lastModified", "passwordUpdatedAt");
         assertThat(persisted.getHashedPassword()).isNull();
 
         // need better assertion
@@ -233,7 +235,7 @@ class CredentialsServiceImplTest {
 
         assertThat(result).isPresent();
         assertThat(result.get()).isEqualToIgnoringGivenFields(credentialsBO,
-                "lastModified", "hashedPassword", "plainPassword");
+                "lastModified", "hashedPassword", "plainPassword", "passwordUpdatedAt");
         assertThat(result.get().getHashedPassword()).isNull();
         assertThat(result.get().getPlainPassword()).isNull();
 
@@ -371,7 +373,7 @@ class CredentialsServiceImplTest {
     }
 
     @Test
-    void resetPassword() {
+    void resetPasswordByToken() {
         // data
         final String resetToken = "token";
         final String credentialsId = "credentials";
@@ -411,12 +413,12 @@ class CredentialsServiceImplTest {
                         .build());
 
         // action
-        final Optional<CredentialsBO> result = credentialsService.resetPassword(resetToken, newPassword);
+        final Optional<CredentialsBO> result = credentialsService.resetPasswordByToken(resetToken, newPassword);
 
         // verify
         assertThat(result).isPresent();
         assertThat(result.get()).isEqualToIgnoringGivenFields(credentialsBO,
-                "lastModified", "hashedPassword", "plainPassword");
+                "lastModified", "hashedPassword", "plainPassword", "passwordUpdatedAt");
         assertThat(result.get().getHashedPassword()).isNull();
         assertThat(result.get().getPlainPassword()).isNull();
     }
@@ -429,7 +431,7 @@ class CredentialsServiceImplTest {
         Mockito.when(accountTokensRepository.getByToken(resetToken))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        assertThatThrownBy(() -> credentialsService.resetPassword(resetToken, newPassword))
+        assertThatThrownBy(() -> credentialsService.resetPasswordByToken(resetToken, newPassword))
                 .isInstanceOf(ServiceNotFoundException.class);
     }
 
@@ -448,7 +450,7 @@ class CredentialsServiceImplTest {
         Mockito.when(accountTokensRepository.getByToken(resetToken))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(persistedToken)));
 
-        assertThatThrownBy(() -> credentialsService.resetPassword(resetToken, newPassword))
+        assertThatThrownBy(() -> credentialsService.resetPasswordByToken(resetToken, newPassword))
                 .isInstanceOf(ServiceException.class);
     }
 
@@ -465,8 +467,132 @@ class CredentialsServiceImplTest {
         Mockito.when(accountTokensRepository.getByToken(resetToken))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(persistedToken)));
 
-        assertThatThrownBy(() -> credentialsService.resetPassword(resetToken, newPassword))
+        assertThatThrownBy(() -> credentialsService.resetPasswordByToken(resetToken, newPassword))
                 .isInstanceOf(ServiceException.class);
+    }
+
+    @Test
+    void replacePassword() {
+        // data
+        final String identifier = "username";
+        final String oldPassword = "old_password";
+        final String newPassword = "new_password";
+
+        final CredentialsBO credentialsBO = CredentialsBO.builder()
+                .id("credentials")
+                .addIdentifiers(UserIdentifierBO.builder()
+                        .identifier(identifier)
+                        .build())
+                .hashedPassword(HashedPasswordBO.builder()
+                        .salt("salty")
+                        .password("hashed")
+                        .build())
+                .build();
+        final CredentialsDO credentialsDO = serviceMapper.toDO(credentialsBO);
+
+        // mocks
+        Mockito.when(credentialsRepository.findByIdentifier(identifier))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentialsDO)));
+        Mockito.when(credentialsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, CredentialsDO.class))));
+        Mockito.when(credentialsAuditRepository.save(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CredentialsAuditDO.class)));
+        Mockito.when(securePassword.hash(newPassword))
+                .thenReturn(HashedPasswordBO.builder()
+                        .password("hashed_new_password")
+                        .build());
+        Mockito.when(securePassword.verify(oldPassword, credentialsBO.getHashedPassword()))
+                .thenReturn(true);
+
+        // action
+        final Optional<CredentialsBO> result =
+                credentialsService.replacePassword(identifier, oldPassword, newPassword);
+
+        // verify
+        assertThat(result).isPresent();
+        assertThat(result.get()).isEqualToIgnoringGivenFields(credentialsBO,
+                "lastModified", "hashedPassword", "plainPassword", "passwordUpdatedAt");
+        assertThat(result.get().getHashedPassword()).isNull();
+        assertThat(result.get().getPlainPassword()).isNull();
+        assertThat(result.get().getPasswordUpdatedAt())
+                .isAfter(OffsetDateTime.now().minusSeconds(2))
+                .isBefore(OffsetDateTime.now());
+    }
+
+    @Test
+    void replacePasswordWrongPassword() {
+        // data
+        final String identifier = "username";
+        final String oldPassword = "old_password";
+        final String newPassword = "new_password";
+
+        final CredentialsBO credentialsBO = CredentialsBO.builder()
+                .id("credentials")
+                .addIdentifiers(UserIdentifierBO.builder()
+                        .identifier(identifier)
+                        .build())
+                .hashedPassword(HashedPasswordBO.builder()
+                        .salt("salty")
+                        .password("hashed")
+                        .build())
+                .build();
+        final CredentialsDO credentialsDO = serviceMapper.toDO(credentialsBO);
+
+        // mocks
+        Mockito.when(credentialsRepository.findByIdentifier(identifier))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentialsDO)));
+        Mockito.when(credentialsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, CredentialsDO.class))));
+        Mockito.when(credentialsAuditRepository.save(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CredentialsAuditDO.class)));
+        Mockito.when(securePassword.hash(newPassword))
+                .thenReturn(HashedPasswordBO.builder()
+                        .password("hashed_new_password")
+                        .build());
+        Mockito.when(securePassword.verify(oldPassword, credentialsBO.getHashedPassword()))
+                .thenReturn(false);
+
+        // action
+        assertThatThrownBy(() -> credentialsService.replacePassword(identifier, oldPassword, newPassword))
+                .isInstanceOf(ServiceException.class);
+    }
+
+    @Test
+    void replacePasswordInvalidPassword() {
+        // data
+        final String identifier = "username";
+        final String oldPassword = "old_password";
+        final String newPassword = "bad";
+
+        final CredentialsBO credentialsBO = CredentialsBO.builder()
+                .id("credentials")
+                .addIdentifiers(UserIdentifierBO.builder()
+                        .identifier(identifier)
+                        .build())
+                .hashedPassword(HashedPasswordBO.builder()
+                        .salt("salty")
+                        .password("hashed")
+                        .build())
+                .build();
+        final CredentialsDO credentialsDO = serviceMapper.toDO(credentialsBO);
+
+        // mocks
+        Mockito.when(credentialsRepository.findByIdentifier(identifier))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentialsDO)));
+        Mockito.when(credentialsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, CredentialsDO.class))));
+        Mockito.when(credentialsAuditRepository.save(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CredentialsAuditDO.class)));
+        Mockito.when(securePassword.hash(newPassword))
+                .thenReturn(HashedPasswordBO.builder()
+                        .password("hashed_new_password")
+                        .build());
+        Mockito.when(securePassword.verify(oldPassword, credentialsBO.getHashedPassword()))
+                .thenReturn(true);
+
+        // action
+        assertThatThrownBy(() -> credentialsService.replacePassword(identifier, oldPassword, newPassword))
+                .isInstanceOf(ServiceInvalidPasswordException.class);
     }
 
     @Test

@@ -10,6 +10,9 @@ import org.immutables.value.Value;
 @JsonSerialize(as = PasswordResetRequestDTO.class)
 @JsonDeserialize(as = PasswordResetRequestDTO.class)
 public interface PasswordResetRequest {
+    boolean isByToken();
     String getResetToken();
-    String getPlainPassword();
+    String getIdentifier();
+    String getOldPassword();
+    String getNewPassword();
 }
