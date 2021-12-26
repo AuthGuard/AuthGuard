@@ -42,10 +42,40 @@ come with the following plugins:
 6. Email
 7. JavaMail provider (for SMTP, IMAP, and POP3)
 
+### Running Standard Distributions
+Standard distributions are available as executable jar files, in [releases](https://github.com/AuthGuard/AuthGuard/releases) 
+or as container images. The images are hosted on GitHub Packages which you can pull and run.
+The images are:
+
+* Mongo Stadndard: `ghcr.io/authguard/authguard-mongo-standard:<version>`
+* Postgres Standard: `ghcr.io/authguard/authguard-postgres-standard:<version>`
+* MySQL Standard: `ghcr.io/authguard/authguard-mysql-standard:<version>`
+
+
 ### Creating a Distribution
 There are two ways to create a distribution:
 1. Using a build system (Maven, Gradle, SBT...etc) by adding them as dependencies
 2. Running the `rest` jar and setting the classpath manually
+
+All modules are published as Maven artifacts to GitHub Packages, make sure that you add the 
+correct repositories to you build configuration to be able to pull them. For example, 
+if you are using Maven you need to add the following two repositories
+
+```xml
+ <repositories>
+     <repository>
+         <id>authguard-github</id>
+         <name>GitHub AuthGuard Maven Packages</name>
+         <url>https://maven.pkg.github.com/AuthGuard/AuthGuard</url>
+     </repository>
+
+     <repository>
+         <id>exntesions-github</id>
+         <name>GitHub AuthGuard Extensions Maven Packages</name>
+         <url>https://maven.pkg.github.com/AuthGuard/extensions</url>
+     </repository>
+ </repositories>
+```
 
 ## Plugins
 There are some standard plugins created and support by the AuthGuard team. Some are considered core parts and exist as 
