@@ -13,6 +13,7 @@ public interface Credentials extends Entity {
     String getPlainPassword();
     HashedPasswordBO getHashedPassword();
     OffsetDateTime getPasswordUpdatedAt();
+    Integer getPasswordVersion();
 
     @Override
     @Value.Derived

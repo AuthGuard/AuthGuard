@@ -18,4 +18,5 @@ public interface Credentials {
     String getAccountId();
     List<UserIdentifierDTO> getIdentifiers();
     String getPlainPassword();
+    Integer getPasswordVersion();
 }

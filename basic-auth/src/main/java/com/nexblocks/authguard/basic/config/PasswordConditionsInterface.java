@@ -19,7 +19,7 @@ public interface PasswordConditionsInterface {
 
     @Value.Default
     default int getMaxLength() {
-        return Integer.MAX_VALUE;
+        return 30;
     }
 
     @Value.Default

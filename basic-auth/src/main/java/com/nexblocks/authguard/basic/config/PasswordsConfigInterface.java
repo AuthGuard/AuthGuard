@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.nexblocks.authguard.service.config.ConfigStyle;
 import org.immutables.value.Value;
 
-import java.time.OffsetDateTime;
+import java.util.List;
 
 @Value.Immutable
 @ConfigStyle
@@ -28,4 +28,14 @@ public interface PasswordsConfigInterface {
     }
 
     String getValidFor();
+
+    @Value.Default
+    default Integer getMinimumVersion() { return 0; }
+
+    @Value.Default
+    default Integer getVersion() {
+        return 1;
+    }
+
+    List<PasswordsConfig> getPreviousVersions();
 }

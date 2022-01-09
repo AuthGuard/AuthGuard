@@ -42,4 +42,5 @@ public class CredentialsDO extends AbstractDO {
     private PasswordDO hashedPassword;
 
     private OffsetDateTime passwordUpdatedAt;
+    private int passwordVersion;
 }

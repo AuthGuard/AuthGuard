@@ -13,7 +13,6 @@ import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.CredentialsService;
 import com.nexblocks.authguard.service.IdempotencyService;
-import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
@@ -46,6 +45,7 @@ public class CredentialsServiceImpl implements CredentialsService {
     private final PasswordValidator passwordValidator;
     private final MessageBus messageBus;
     private final ServiceMapper serviceMapper;
+    private final Integer passwordVersion;
 
     private final CryptographicRandom cryptographicRandom;
     private final PersistenceService<CredentialsBO, CredentialsDO, CredentialsRepository> persistenceService;
@@ -66,6 +66,7 @@ public class CredentialsServiceImpl implements CredentialsService {
         this.credentialsAuditRepository = credentialsAuditRepository;
         this.accountTokensRepository = accountTokensRepository;
         this.securePassword = securePasswordProvider.get();
+        this.passwordVersion = securePasswordProvider.getCurrentVersion();
         this.passwordValidator = passwordValidator;
         this.messageBus = messageBus;
         this.serviceMapper = serviceMapper;
@@ -91,6 +92,7 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .hashedPassword(hashedPassword)
                 .id(ID.generate())
                 .passwordUpdatedAt(OffsetDateTime.now())
+                .passwordVersion(passwordVersion)
                 .build();
 
         return removeSensitiveInformation(persistenceService.create(credentialsHashedPassword));
