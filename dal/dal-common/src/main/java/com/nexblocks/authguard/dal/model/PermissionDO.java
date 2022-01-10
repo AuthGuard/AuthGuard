@@ -14,7 +14,7 @@ import javax.persistence.*;
 // JPA
 @Entity
 @Table(name = "permissions", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"group", "name"}, name = "PERMISSION_DUP")
+        @UniqueConstraint(columnNames = { "group", "name", "domain" }, name = "PERMISSION_DUP")
 })
 @NamedQuery(
         name = "permissions.getById",
@@ -24,20 +24,21 @@ import javax.persistence.*;
 @NamedQuery(
         name = "permissions.getAll",
         query = "SELECT permission FROM PermissionDO permission " +
-                "WHERE permission.deleted = false"
+                "WHERE permission.deleted = false AND permission.domain = :domain"
 )
 @NamedQuery(
         name = "permissions.getByGroupAndName",
         query = "SELECT permission FROM PermissionDO permission " +
-                "WHERE permission.group = :group AND permission.name = :name AND permission.deleted = false"
+                "WHERE permission.group = :group AND permission.name = :name AND permission.domain = :domain AND permission.deleted = false"
 )
 @NamedQuery(
         name = "permissions.getByGroup",
         query = "SELECT permission FROM PermissionDO permission " +
-                "WHERE permission.group = :group AND permission.deleted = false"
+                "WHERE permission.group = :group AND permission.domain = :domain AND  permission.deleted = false"
 )
 public class PermissionDO extends AbstractDO {
     @Column(name = "\"group\"")
     private String group;
     private String name;
+    private String domain;
 }

@@ -29,17 +29,20 @@ public class RolesJpaTest {
         first = RoleDO.builder()
                 .id("first-role")
                 .name("role-1")
+                .domain("main")
                 .build();
 
         second = RoleDO.builder()
                 .id("second-role")
                 .name("role-2")
+                .domain("main")
                 .build();
 
         deleted = RoleDO.builder()
                 .id("deleted-role")
                 .deleted(true)
                 .name("role-3")
+                .domain("main")
                 .build();
 
         entityManager.getTransaction().begin();
@@ -62,7 +65,8 @@ public class RolesJpaTest {
 
     @Test
     void getAll() {
-        final TypedQuery<RoleDO> query = entityManager.createNamedQuery("roles.getAll", RoleDO.class);
+        final TypedQuery<RoleDO> query = entityManager.createNamedQuery("roles.getAll", RoleDO.class)
+                .setParameter("domain", first.getDomain());
 
         final List<RoleDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(first, second);
@@ -71,7 +75,8 @@ public class RolesJpaTest {
     @Test
     void getByName() {
         final TypedQuery<RoleDO> query = entityManager.createNamedQuery("roles.getByName", RoleDO.class)
-                .setParameter("name", first.getName());
+                .setParameter("name", first.getName())
+                .setParameter("domain", first.getDomain());
 
         final List<RoleDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(first);
@@ -80,7 +85,8 @@ public class RolesJpaTest {
     @Test
     void getMultiple() {
         final TypedQuery<RoleDO> query = entityManager.createNamedQuery("roles.getMultiple", RoleDO.class)
-                .setParameter("names", Arrays.asList(first.getName(), second.getName()));
+                .setParameter("names", Arrays.asList(first.getName(), second.getName()))
+                .setParameter("domain", first.getDomain());
 
         final List<RoleDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(first, second);

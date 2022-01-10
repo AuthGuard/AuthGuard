@@ -30,7 +30,7 @@ import java.util.Set;
         name = "credentials.getByIdentifier",
         query = "SELECT credentials FROM CredentialsDO credentials " +
                 "JOIN credentials.identifiers identifier " +
-                "WHERE identifier.identifier = :identifier AND credentials.deleted = false"
+                "WHERE identifier.identifier = :identifier AND identifier.domain = :domain AND credentials.deleted = false"
 )
 public class CredentialsDO extends AbstractDO {
     private String accountId;

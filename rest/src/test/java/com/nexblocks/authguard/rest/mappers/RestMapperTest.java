@@ -148,6 +148,7 @@ class RestMapperTest {
                 .roles(requestDTO.getRoles())
                 .active(requestDTO.isActive())
                 .metadata(requestDTO.getMetadata())
+                .domain(requestDTO.getDomain())
                 .build();
 
         final AccountBO expected = restMapper.toBO(accountDTO); // verified in another test case

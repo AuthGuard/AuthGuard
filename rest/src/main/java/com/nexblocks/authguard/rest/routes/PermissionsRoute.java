@@ -2,9 +2,12 @@ package com.nexblocks.authguard.rest.routes;
 
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.PermissionDTO;
+import com.nexblocks.authguard.api.dto.requests.CreatePermissionRequestDTO;
+import com.nexblocks.authguard.api.dto.requests.CreateRoleRequestDTO;
 import com.nexblocks.authguard.api.routes.PermissionsApi;
 import com.nexblocks.authguard.rest.mappers.RestJsonMapper;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
+import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.service.PermissionsService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.PermissionBO;
@@ -18,14 +21,19 @@ public class PermissionsRoute extends PermissionsApi {
     private final PermissionsService permissionsService;
     private final RestMapper restMapper;
 
+    private final BodyHandler<CreatePermissionRequestDTO> createPermissionRequestBodyHandler;
+
     @Inject
     public PermissionsRoute(final PermissionsService permissionsService, final RestMapper restMapper) {
         this.permissionsService = permissionsService;
         this.restMapper = restMapper;
+
+        this.createPermissionRequestBodyHandler = new BodyHandler.Builder<>(CreatePermissionRequestDTO.class)
+                .build();
     }
 
     public void create(final Context context) {
-        final PermissionDTO permission = RestJsonMapper.asClass(context.body(), PermissionDTO.class);
+        final CreatePermissionRequestDTO permission = createPermissionRequestBodyHandler.getValidated(context);
         final PermissionBO created = permissionsService.create(restMapper.toBO(permission));
 
         context.status(201)

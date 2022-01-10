@@ -59,7 +59,13 @@ public class CredentialsRoute extends CredentialsApi {
                 .source(context.ip())
                 .build();
 
-        final Optional<CredentialsDTO> created = Optional.of(restMapper.toBO(request))
+        final CredentialsBO credentials = restMapper.toBO(request);
+        final List<UserIdentifierBO> identifiers = credentials.getIdentifiers()
+                .stream()
+                .map(identifier -> identifier.withDomain(request.getDomain()))
+                .collect(Collectors.toList());
+
+        final Optional<CredentialsDTO> created = Optional.of(credentials.withIdentifiers(identifiers))
                 .map(credentialsBO -> credentialsService.create(credentialsBO, requestContext))
                 .map(restMapper::toDTO);
 

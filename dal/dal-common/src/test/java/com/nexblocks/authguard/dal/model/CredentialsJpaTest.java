@@ -40,6 +40,7 @@ public class CredentialsJpaTest {
                 .identifiers(Collections.singleton(UserIdentifierDO.builder()
                         .identifier("username")
                         .type(UserIdentifierDO.Type.USERNAME)
+                        .domain("main")
                         .build()))
                 .build();
 
@@ -54,6 +55,7 @@ public class CredentialsJpaTest {
                 .identifiers(Collections.singleton(UserIdentifierDO.builder()
                         .identifier("deleted-username")
                         .type(UserIdentifierDO.Type.USERNAME)
+                        .domain("main")
                         .build()))
                 .build();
 
@@ -86,7 +88,8 @@ public class CredentialsJpaTest {
     @Test
     void getByIdentifier() {
         final TypedQuery<CredentialsDO> query = entityManager.createNamedQuery("credentials.getByIdentifier", CredentialsDO.class)
-                .setParameter("identifier", "username");
+                .setParameter("identifier", "username")
+                .setParameter("domain", "main");
 
         final List<CredentialsDO> retrieved = query.getResultList();
         assertThat(retrieved).containsExactly(createdCredentials);
@@ -104,7 +107,8 @@ public class CredentialsJpaTest {
     @Test
     void getByNonexistentIdentifier() {
         final TypedQuery<CredentialsDO> query = entityManager.createNamedQuery("credentials.getByIdentifier", CredentialsDO.class)
-                .setParameter("identifier", "nonsense");
+                .setParameter("identifier", "nonsense")
+                .setParameter("domain", "main");
 
         final List<CredentialsDO> retrieved = query.getResultList();
         assertThat(retrieved).isEmpty();
@@ -122,6 +126,7 @@ public class CredentialsJpaTest {
                 .identifiers(Collections.singleton(UserIdentifierDO.builder()
                         .identifier("username")
                         .type(UserIdentifierDO.Type.USERNAME)
+                        .domain("main")
                         .build()))
                 .build();
 
