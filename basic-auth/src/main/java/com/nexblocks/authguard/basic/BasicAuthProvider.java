@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.basic;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.basic.passwords.SecurePassword;
 import com.nexblocks.authguard.basic.passwords.SecurePasswordProvider;
 import com.nexblocks.authguard.service.AccountsService;
@@ -8,7 +9,6 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
-import com.google.inject.Inject;
 import io.vavr.control.Either;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,30 +95,63 @@ public class BasicAuthProvider {
                 return Either.left(validationError.get());
             }
 
-            if (securePasswordProvider.passwordsExpire()) {
-                if (credentials.getPasswordUpdatedAt() == null) {
-                    return Either.left(new IllegalStateException("Credentials " + credentials.getId() + " passwordUpdatedAt was null"));
-                }
-
-                final OffsetDateTime expiresAt = credentials.getPasswordUpdatedAt()
-                        .plus(securePasswordProvider.getPasswordTtl());
-
-                if (expiresAt.isBefore(OffsetDateTime.now())) {
-                    return Either.left(new ServiceAuthorizationException(ErrorCode.PASSWORD_EXPIRED,
-                            "Password has already expired", EntityType.ACCOUNT, credentials.getAccountId()));
-                }
-            }
-
-            if (securePassword.verify(password, credentials.getHashedPassword())) {
-                return getAccountById(credentialsOpt.get().getAccountId());
-            } else {
-                return Either.left(new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH,
-                        "Passwords do not match", EntityType.ACCOUNT, credentials.getAccountId()));
-            }
+            return checkIfExpired(credentials)
+                    .flatMap(valid -> checkPasswordsMatch(valid, password))
+                    .flatMap(valid -> getAccountById(valid.getAccountId()));
         } else {
             return Either.left(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
                     "Identifier " + username + " does not exist"));
         }
+    }
+
+    private Either<Exception, CredentialsBO> checkIfExpired(final CredentialsBO credentials) {
+        // check if expired
+        if (securePasswordProvider.passwordsExpire()) {
+            if (credentials.getPasswordUpdatedAt() == null) {
+                return Either.left(new IllegalStateException("Credentials " + credentials.getId() + " passwordUpdatedAt was null"));
+            }
+
+            final OffsetDateTime expiresAt = credentials.getPasswordUpdatedAt()
+                    .plus(securePasswordProvider.getPasswordTtl());
+
+            if (expiresAt.isBefore(OffsetDateTime.now())) {
+                return Either.left(new ServiceAuthorizationException(ErrorCode.PASSWORD_EXPIRED,
+                        "Password has already expired", EntityType.ACCOUNT, credentials.getAccountId()));
+            }
+        }
+
+        // check if the version is too old
+        if (credentials.getPasswordVersion() < securePasswordProvider.getMinimumVersion()) {
+            return Either.left(new ServiceAuthorizationException(ErrorCode.PASSWORD_EXPIRED,
+                    "Password has already expired", EntityType.ACCOUNT, credentials.getAccountId()));
+        }
+
+        return Either.right(credentials);
+    }
+
+    private Either<Exception, CredentialsBO> checkPasswordsMatch(final CredentialsBO credentials, final String password) {
+        final SecurePassword securePasswordImplementation = getPasswordImplementation(credentials);
+
+        if (securePasswordImplementation == null) {
+            return Either.left(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
+                    "Unable to map password version", EntityType.ACCOUNT, credentials.getAccountId()));
+        }
+
+        if (securePasswordImplementation.verify(password, credentials.getHashedPassword())) {
+            return Either.right(credentials);
+        } else {
+            return Either.left(new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH,
+                    "Passwords do not match", EntityType.ACCOUNT, credentials.getAccountId()));
+        }
+    }
+
+    private SecurePassword getPasswordImplementation(final CredentialsBO credentials) {
+        if (credentials.getPasswordVersion() == null
+                || credentials.getPasswordVersion().equals(securePasswordProvider.getCurrentVersion())) {
+            return securePassword;
+        }
+
+        return securePasswordProvider.getPreviousVersions().get(credentials.getPasswordVersion());
     }
 
     private Either<Exception, AccountBO> verifyCredentialsAndGetAccount(final String username) {

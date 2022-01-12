@@ -8,9 +8,7 @@ import com.nexblocks.authguard.basic.passwords.SecurePassword;
 import com.nexblocks.authguard.basic.passwords.SecurePasswordProvider;
 import com.nexblocks.authguard.basic.passwords.ServiceInvalidPasswordException;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
-import com.nexblocks.authguard.dal.model.AccountTokenDO;
-import com.nexblocks.authguard.dal.model.CredentialsAuditDO;
-import com.nexblocks.authguard.dal.model.CredentialsDO;
+import com.nexblocks.authguard.dal.model.*;
 import com.nexblocks.authguard.dal.persistence.CredentialsAuditRepository;
 import com.nexblocks.authguard.dal.persistence.CredentialsRepository;
 import com.nexblocks.authguard.emb.MessageBus;
@@ -31,6 +29,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -71,6 +70,8 @@ class CredentialsServiceImplTest {
         serviceMapper = new ServiceMapperImpl();
 
         Mockito.when(securePasswordProvider.get()).thenReturn(securePassword);
+        Mockito.when(securePasswordProvider.getCurrentVersion())
+                .thenReturn(1);
 
         final PasswordValidator passwordValidator = new PasswordValidator(PasswordsConfig.builder()
                 .conditions(PasswordConditions.builder().build()).build());
@@ -83,9 +84,41 @@ class CredentialsServiceImplTest {
                 .thenReturn(Optional.of(RANDOM.nextObject(AccountBO.class)));
     }
 
+    private CredentialsBO createCredentials() {
+        return CredentialsBO.builder()
+                .id("credentials")
+                .addIdentifiers(UserIdentifierBO.builder()
+                        .identifier("username")
+                        .type(UserIdentifier.Type.USERNAME)
+                        .active(true)
+                        .build())
+                .hashedPassword(HashedPasswordBO.builder()
+                        .password("hashed")
+                        .salt("super-salt")
+                        .build())
+                .passwordVersion(1)
+                .build();
+    }
+
+    private CredentialsDO createCredentialsDO() {
+        return CredentialsDO.builder()
+                .id("credentials")
+                .identifiers(Collections.singleton(UserIdentifierDO.builder()
+                        .identifier("username")
+                        .type(UserIdentifierDO.Type.USERNAME)
+                        .active(true)
+                        .build()))
+                .hashedPassword(PasswordDO.builder()
+                        .password("hashed")
+                        .salt("super-salt")
+                        .build())
+                .passwordVersion(1)
+                .build();
+    }
+
     @Test
     void create() {
-        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class)
+        final CredentialsBO credentials = createCredentials()
                 .withPlainPassword("SecurePassword77$3");
         final HashedPasswordBO hashedPassword = RANDOM.nextObject(HashedPasswordBO.class);
 
@@ -116,7 +149,7 @@ class CredentialsServiceImplTest {
 
     @Test
     void createNonExistingAccount() {
-        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class);
+        final CredentialsBO credentials = createCredentials();
         final String idempotentKey = "idempotent-key";
         final RequestContextBO requestContext = RequestContextBO.builder()
                 .idempotentKey(idempotentKey)
@@ -132,7 +165,7 @@ class CredentialsServiceImplTest {
 
     @Test
     void createWithInvalidPassword() {
-        final CredentialsBO credentials = RANDOM.nextObject(CredentialsBO.class)
+        final CredentialsBO credentials = createCredentials()
                 .withPlainPassword("bad");
         final String idempotentKey = "idempotent-key";
         final RequestContextBO requestContext = RequestContextBO.builder()
@@ -184,7 +217,7 @@ class CredentialsServiceImplTest {
 
     @Test
     void getByUsernameUnsafe() {
-        final CredentialsDO credentialsDO = RANDOM.nextObject(CredentialsDO.class);
+        final CredentialsDO credentialsDO = createCredentialsDO();
         final CredentialsBO credentialsBO = serviceMapper.toBO(credentialsDO);
 
         Mockito.when(credentialsRepository.findByIdentifier(any()))
@@ -217,6 +250,7 @@ class CredentialsServiceImplTest {
                         .salt("salty")
                         .password("hashed")
                         .build())
+                .passwordVersion(1)
                 .build();
         final CredentialsDO credentialsDO = serviceMapper.toDO(credentialsBO);
 
@@ -394,6 +428,7 @@ class CredentialsServiceImplTest {
                         .salt("salty")
                         .password("hashed")
                         .build())
+                .passwordVersion(1)
                 .build();
         final CredentialsDO credentialsDO = serviceMapper.toDO(credentialsBO);
 
@@ -487,6 +522,7 @@ class CredentialsServiceImplTest {
                         .salt("salty")
                         .password("hashed")
                         .build())
+                .passwordVersion(1)
                 .build();
         final CredentialsDO credentialsDO = serviceMapper.toDO(credentialsBO);
 
@@ -608,6 +644,7 @@ class CredentialsServiceImplTest {
                         .salt("salty")
                         .password("hashed")
                         .build())
+                .passwordVersion(1)
                 .build();
 
         final CredentialsDO credentialsDO = serviceMapper.toDO(credentialsBO);
@@ -627,6 +664,7 @@ class CredentialsServiceImplTest {
         final CredentialsBO expected = CredentialsBO.builder()
                 .id(credentialsId)
                 .addIdentifiers(newIdentifier)
+                .passwordVersion(1)
                 .build();
 
         assertThat(result).isPresent();
@@ -660,6 +698,7 @@ class CredentialsServiceImplTest {
                         .salt("salty")
                         .password("hashed")
                         .build())
+                .passwordVersion(1)
                 .build();
 
         final CredentialsDO credentialsDO = serviceMapper.toDO(credentialsBO);
