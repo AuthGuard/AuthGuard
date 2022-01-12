@@ -41,14 +41,14 @@ class RolesServiceImplTest {
                 RoleDO.builder().name("role-2").build()
         );
 
-        Mockito.when(rolesRepository.getAll()).thenReturn(CompletableFuture.completedFuture(roles));
+        Mockito.when(rolesRepository.getAll("main")).thenReturn(CompletableFuture.completedFuture(roles));
 
         final List<RoleBO> expected = Arrays.asList(
                 RoleBO.builder().name("role-1").build(),
                 RoleBO.builder().name("role-2").build()
         );
 
-        final List<RoleBO> actual = rolesService.getAll();
+        final List<RoleBO> actual = rolesService.getAll("main");
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -57,9 +57,10 @@ class RolesServiceImplTest {
     void create() {
         final RoleBO request = RoleBO.builder()
                 .name("role")
+                .domain("main")
                 .build();
 
-        Mockito.when(rolesRepository.getByName("role"))
+        Mockito.when(rolesRepository.getByName("role", "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         Mockito.when(rolesRepository.save(Mockito.any()))
@@ -74,13 +75,15 @@ class RolesServiceImplTest {
     void createDuplicate() {
         final RoleDO role = RoleDO.builder()
                 .name("role")
+                .domain("main")
                 .build();
 
         final RoleBO request = RoleBO.builder()
                 .name("role")
+                .domain("main")
                 .build();
 
-        Mockito.when(rolesRepository.getByName("role"))
+        Mockito.when(rolesRepository.getByName("role", "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(role)));
 
         Mockito.when(rolesRepository.save(Mockito.any()))
@@ -95,14 +98,14 @@ class RolesServiceImplTest {
                 .name("role")
                 .build();
 
-        Mockito.when(rolesRepository.getByName("role"))
+        Mockito.when(rolesRepository.getByName("role", "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(role)));
 
         final RoleBO expected = RoleBO.builder()
                 .name("role")
                 .build();
 
-        final Optional<RoleBO> actual = rolesService.getRoleByName("role");
+        final Optional<RoleBO> actual = rolesService.getRoleByName("role", "main");
 
         assertThat(actual).contains(expected);
     }
@@ -111,13 +114,13 @@ class RolesServiceImplTest {
     void verifyRoles() {
         final List<String> request = Arrays.asList("role-1", "role-2");
 
-        Mockito.when(rolesRepository.getMultiple(request))
+        Mockito.when(rolesRepository.getMultiple(request, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Arrays.asList(
                         RoleDO.builder().name("role-1").build(),
                         RoleDO.builder().name("role-2").build()
                 )));
 
-        final List<String> actual = rolesService.verifyRoles(request);
+        final List<String> actual = rolesService.verifyRoles(request, "main");
 
         assertThat(actual).isEqualTo(request);
     }
@@ -126,14 +129,14 @@ class RolesServiceImplTest {
     void verifyInvalidRoles() {
         final List<String> request = Arrays.asList("role-1", "role-2");
 
-        Mockito.when(rolesRepository.getMultiple(request))
+        Mockito.when(rolesRepository.getMultiple(request, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Collections.singletonList(
                         RoleDO.builder().name("role-1").build()
                 )));
 
         final List<String> expected = Collections.singletonList("role-1");
 
-        final List<String> actual = rolesService.verifyRoles(request);
+        final List<String> actual = rolesService.verifyRoles(request, "main");
 
         assertThat(actual).isEqualTo(expected);
     }

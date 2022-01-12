@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 
 public class DefaultRolesBootstrap implements BootstrapStep {
+    private static final String RESERVED_DOMAIN = "global";
+
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final RolesService rolesService;
@@ -30,7 +32,8 @@ public class DefaultRolesBootstrap implements BootstrapStep {
         final Set<String> defaultRoles = accountConfig.getDefaultRoles();
 
         defaultRoles.forEach(role -> {
-            if (rolesService.getRoleByName(role).isEmpty()) {
+            // TODO create the roles in another domain (read from config)
+            if (rolesService.getRoleByName(role, RESERVED_DOMAIN).isEmpty()) {
                 log.info("Default role {} wasn't found and will be created", role);
 
                 final RoleBO created = createRole(role);
@@ -42,6 +45,7 @@ public class DefaultRolesBootstrap implements BootstrapStep {
     private RoleBO createRole(final String roleName) {
         final RoleBO role = RoleBO.builder()
                 .name(roleName)
+                .domain(RESERVED_DOMAIN)
                 .build();
 
         return rolesService.create(role);

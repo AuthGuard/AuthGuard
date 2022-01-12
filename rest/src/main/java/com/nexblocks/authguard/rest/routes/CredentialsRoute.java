@@ -162,7 +162,8 @@ public class CredentialsRoute extends CredentialsApi {
 
     @Override
     public void getByIdentifier(final Context context) {
-        final Optional<CredentialsDTO> credentials = credentialsService.getByUsername(context.pathParam("identifier"))
+        final String domain = context.pathParam("domain");
+        final Optional<CredentialsDTO> credentials = credentialsService.getByUsername(context.pathParam("identifier"), domain)
                 .map(restMapper::toDTO);
 
         if (credentials.isPresent()) {
@@ -174,7 +175,8 @@ public class CredentialsRoute extends CredentialsApi {
 
     @Override
     public void identifierExists(final Context context) {
-        final boolean exists = credentialsService.getByUsername(context.pathParam("identifier"))
+        final String domain = context.pathParam("domain");
+        final boolean exists = credentialsService.getByUsername(context.pathParam("identifier"), domain)
                 .isPresent();
 
         if (exists) {
@@ -202,7 +204,7 @@ public class CredentialsRoute extends CredentialsApi {
         final boolean isAuthClient = actor.getRoles().contains(AuthGuardRoles.AUTH_CLIENT);
 
         final PasswordResetTokenBO token = credentialsService
-                .generateResetToken(request.getIdentifier(), !isAuthClient); // prevent an auth client from seeing the reset token
+                .generateResetToken(request.getIdentifier(), !isAuthClient, request.getDomain()); // prevent an auth client from seeing the reset token
 
         context.json(restMapper.toDTO(token));
     }
@@ -217,7 +219,7 @@ public class CredentialsRoute extends CredentialsApi {
             updated = credentialsService.resetPasswordByToken(request.getResetToken(), request.getNewPassword());
         } else {
             updated = credentialsService.replacePassword(request.getIdentifier(), request.getOldPassword(),
-                    request.getNewPassword());
+                    request.getNewPassword(), request.getDomain());
         }
 
         if (updated.isPresent()) {

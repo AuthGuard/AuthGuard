@@ -43,4 +43,5 @@ public class CredentialsDO extends AbstractDO {
 
     private OffsetDateTime passwordUpdatedAt;
     private int passwordVersion;
+    private String domain;
 }

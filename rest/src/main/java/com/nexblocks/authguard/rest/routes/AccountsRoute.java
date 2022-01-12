@@ -157,7 +157,9 @@ public class AccountsRoute extends AccountsApi {
     @Override
     public void getByIdentifier(final Context context) {
         final String identifier = context.pathParam("identifier");
-        final Optional<AccountBO> account = credentialsService.getByUsername(identifier)
+        final String domain = context.pathParam("domain");
+
+        final Optional<AccountBO> account = credentialsService.getByUsername(identifier, domain)
                 .map(CredentialsBO::getAccountId)
                 .filter(Objects::nonNull)
                 .flatMap(accountsService::getById);
@@ -216,9 +218,10 @@ public class AccountsRoute extends AccountsApi {
 
     @Override
     public void getByEmail(final Context context) {
+        final String domain = context.pathParam("domain");
         final String email = context.pathParam("email");
 
-        final Optional<AccountDTO> account = accountsService.getByEmail(email)
+        final Optional<AccountDTO> account = accountsService.getByEmail(email, domain)
                 .map(restMapper::toDTO);
 
         if (account.isPresent()) {
@@ -231,9 +234,10 @@ public class AccountsRoute extends AccountsApi {
 
     @Override
     public void emailExists(final Context context) {
+        final String domain = context.pathParam("domain");
         final String email = context.pathParam("email");
 
-        final boolean exists = accountsService.getByEmail(email).isPresent();
+        final boolean exists = accountsService.getByEmail(email, domain).isPresent();
 
         if (exists) {
             context.status(200);
