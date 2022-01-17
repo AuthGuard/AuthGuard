@@ -8,6 +8,7 @@ import com.nexblocks.authguard.api.dto.requests.AuthRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.AuthApi;
+import com.nexblocks.authguard.rest.access.ActorDomainVerifier;
 import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
@@ -50,6 +51,12 @@ public class AuthRoute extends AuthApi {
 
     public void authenticate(final Context context) {
         final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
+
+        if (authenticationRequest.getDomain() != null
+                && !ActorDomainVerifier.verifyActorDomain(context, authenticationRequest.getDomain())) {
+            return;
+        }
+
         final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
         final Optional<AuthResponseDTO> tokens = authenticationService.authenticate(restMapper.toBO(authenticationRequest), requestContext)
@@ -76,6 +83,12 @@ public class AuthRoute extends AuthApi {
 
     public void exchange(final Context context) {
         final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
+
+        if (authenticationRequest.getDomain() != null
+                && !ActorDomainVerifier.verifyActorDomain(context, authenticationRequest.getDomain())) {
+            return;
+        }
+
         final String from = context.queryParam("from");
         final String to = context.queryParam("to");
 

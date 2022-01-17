@@ -12,6 +12,7 @@ import com.nexblocks.authguard.api.dto.requests.UserIdentifiersRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.CredentialsApi;
+import com.nexblocks.authguard.rest.access.ActorDomainVerifier;
 import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestJsonMapper;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
@@ -53,6 +54,10 @@ public class CredentialsRoute extends CredentialsApi {
     public void create(final Context context) {
         final String idempotentKey = IdempotencyHeader.getKeyOrFail(context);
         final CreateCredentialsRequestDTO request = credentialsRequestBodyHandler.getValidated(context);
+
+        if (!ActorDomainVerifier.verifyActorDomain(context, request.getDomain())) {
+            return;
+        }
 
         final RequestContextBO requestContext = RequestContextBO.builder()
                 .idempotentKey(idempotentKey)
@@ -176,6 +181,11 @@ public class CredentialsRoute extends CredentialsApi {
     @Override
     public void identifierExists(final Context context) {
         final String domain = context.pathParam("domain");
+
+        if (!ActorDomainVerifier.verifyActorDomain(context, domain)) {
+            return;
+        }
+
         final boolean exists = credentialsService.getByUsername(context.pathParam("identifier"), domain)
                 .isPresent();
 
@@ -200,6 +210,11 @@ public class CredentialsRoute extends CredentialsApi {
     @Override
     public void createResetToken(final Context context) {
         final PasswordResetTokenRequestDTO request = passwordResetTokenRequestBodyHandler.getValidated(context);
+
+        if (!ActorDomainVerifier.verifyActorDomain(context, request.getDomain())) {
+            return;
+        }
+
         final AppBO actor = context.attribute("actor");
         final boolean isAuthClient = actor.getRoles().contains(AuthGuardRoles.AUTH_CLIENT);
 
@@ -212,6 +227,11 @@ public class CredentialsRoute extends CredentialsApi {
     @Override
     public void resetPassword(final Context context) {
         final PasswordResetRequestDTO request = passwordResetRequestBodyHandler.getValidated(context);
+
+        if (request.getIdentifier() != null &&
+                !ActorDomainVerifier.verifyActorDomain(context, request.getDomain())) {
+            return;
+        }
 
         final Optional<CredentialsBO> updated;
 

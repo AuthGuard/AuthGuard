@@ -48,6 +48,7 @@ class PasswordResetRequestValidatorTest {
                 .identifier("identifier")
                 .oldPassword("oldPassword")
                 .newPassword("newPassword")
+                .domain("main")
                 .build();
 
         final Validator<PasswordResetRequestDTO> validator = Validators.getForClass(PasswordResetRequestDTO.class);
@@ -55,6 +56,22 @@ class PasswordResetRequestValidatorTest {
         final List<Violation> violations = validator.validate(request);
 
         assertThat(violations).isEmpty();
+    }
+
+    @Test
+    void validateValidByPasswordWithoutDomain() {
+        final PasswordResetRequestDTO request = PasswordResetRequestDTO.builder()
+                .byToken(false)
+                .identifier("identifier")
+                .oldPassword("oldPassword")
+                .newPassword("newPassword")
+                .build();
+
+        final Validator<PasswordResetRequestDTO> validator = Validators.getForClass(PasswordResetRequestDTO.class);
+
+        final List<Violation> violations = validator.validate(request);
+
+        assertThat(violations).containsExactly(new Violation("domain", ViolationType.MISSING_REQUIRED_VALUE));
     }
 
     @Test

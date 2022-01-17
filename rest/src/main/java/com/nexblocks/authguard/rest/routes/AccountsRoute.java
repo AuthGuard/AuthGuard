@@ -8,6 +8,7 @@ import com.nexblocks.authguard.api.dto.entities.AppDTO;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.requests.*;
 import com.nexblocks.authguard.api.routes.AccountsApi;
+import com.nexblocks.authguard.rest.access.ActorDomainVerifier;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.rest.util.IdempotencyHeader;
@@ -237,6 +238,10 @@ public class AccountsRoute extends AccountsApi {
         final String domain = context.pathParam("domain");
         final String email = context.pathParam("email");
 
+        if (!ActorDomainVerifier.verifyActorDomain(context, domain)) {
+            return;
+        }
+
         final boolean exists = accountsService.getByEmail(email, domain).isPresent();
 
         if (exists) {
@@ -339,13 +344,13 @@ public class AccountsRoute extends AccountsApi {
              * client roles. If that was the case then it'll still
              * be treated as an auth client and not an admin client.
              */
-            return !isAuthClient || canPerform(request);
+            return !isAuthClient || canPerform(actor, request);
         }
 
         return true;
     }
 
-    private boolean canPerform(final CreateAccountRequestDTO request) {
+    private boolean canPerform(final AppBO actor, final CreateAccountRequestDTO request) {
         if (request.getEmail() != null && request.getEmail().isVerified()) {
             return false;
         }
@@ -359,6 +364,10 @@ public class AccountsRoute extends AccountsApi {
         }
 
         if (request.getRoles() != null && !request.getRoles().isEmpty()) {
+            return false;
+        }
+
+        if (actor.getDomain() == null || !actor.getDomain().equals(request.getDomain())) {
             return false;
         }
 

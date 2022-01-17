@@ -16,6 +16,7 @@ class CreateAppRequestValidatorTest {
     void validateValid() {
         final CreateAppRequestDTO request = CreateAppRequestDTO.builder()
                 .name("app")
+                .domain("main")
                 .build();
 
         final Validator<CreateAppRequestDTO> validator = Validators.getForClass(CreateAppRequestDTO.class);
@@ -26,7 +27,7 @@ class CreateAppRequestValidatorTest {
     }
 
     @Test
-    void validateMissingName() {
+    void validateMissingNameAndDomain() {
         final CreateAppRequestDTO request = CreateAppRequestDTO.builder()
                 .build();
 
@@ -34,6 +35,9 @@ class CreateAppRequestValidatorTest {
 
         final List<Violation> violations = validator.validate(request);
 
-        assertThat(violations).contains(new Violation("name", ViolationType.MISSING_REQUIRED_VALUE));
+        assertThat(violations).containsExactlyInAnyOrder(
+                new Violation("name", ViolationType.MISSING_REQUIRED_VALUE),
+                new Violation("domain", ViolationType.MISSING_REQUIRED_VALUE)
+        );
     }
 }

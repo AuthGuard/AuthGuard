@@ -167,6 +167,7 @@ class RestMapperTest {
                 .permissions(requestDTO.getPermissions())
                 .roles(requestDTO.getRoles())
                 .active(requestDTO.isActive())
+                .domain(requestDTO.getDomain())
                 .build();
 
         final AppBO expected = restMapper.toBO(appDTO); // verified in another test case
