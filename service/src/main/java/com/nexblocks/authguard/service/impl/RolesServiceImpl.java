@@ -1,13 +1,16 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.model.RoleDO;
 import com.nexblocks.authguard.dal.persistence.RolesRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.RolesService;
+import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
+import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.RoleBO;
-import com.google.inject.Inject;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -41,6 +44,11 @@ public class RolesServiceImpl implements RolesService {
 
     @Override
     public RoleBO create(final RoleBO role) {
+        if (getRoleByName(role.getName()).isPresent()) {
+            throw new ServiceConflictException(ErrorCode.ROLE_ALREADY_EXISTS,
+                    "Role " + role.getName() + " already exists");
+        }
+
         return persistenceService.create(role);
     }
 
@@ -67,7 +75,7 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public List<String> verifyRoles(final List<String> roles) {
+    public List<String> verifyRoles(final Collection<String> roles) {
         return rolesRepository.getMultiple(roles)
                 .thenApply(found -> found.stream()
                         .map(RoleDO::getName)

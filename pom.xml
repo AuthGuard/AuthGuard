@@ -7,7 +7,7 @@
     <groupId>com.nexblocks.authguard</groupId>
     <artifactId>authguard</artifactId>
     <packaging>pom</packaging>
-    <version>0.7.0</version>
+    <version>0.12.0</version>
 
     <distributionManagement>
         <repository>
@@ -35,6 +35,7 @@
         <module>api</module>
         <module>rest</module>
         <module>plugins</module>
+        <module>bom</module>
     </modules>
 
     <properties>
@@ -46,20 +47,20 @@
 
         <javalin.version>3.13.9</javalin.version>
         <logback.version>1.2.3</logback.version>
-        <jackson.version>2.12.3</jackson.version>
+        <jackson.version>2.12.6</jackson.version>
         <immutables.version>2.7.4</immutables.version>
         <jetbrains-annotations.version>13.0</jetbrains-annotations.version>
-        <auth0-jwt.version>3.12.0</auth0-jwt.version>
+        <auth0-jwt.version>3.18.3</auth0-jwt.version>
         <apache-commons.version>3.12.0</apache-commons.version>
         <commons-validator.version>1.7</commons-validator.version>
         <commons-cli.version>1.4</commons-cli.version>
         <mapstruct.version>1.3.0.Final</mapstruct.version>
-        <bouncy-castle.version>1.62</bouncy-castle.version>
-        <reflections.version>0.9.11</reflections.version>
-        <guice.version>4.2.3</guice.version>
+        <bouncy-castle.version>1.68</bouncy-castle.version>
+        <reflections.version>0.9.12</reflections.version>
+        <guice.version>5.0.0</guice.version>
         <rxjava.version>3.0.12</rxjava.version>
-        <vertx.version>3.9.4</vertx.version>
-        <okhttp.version>4.9.0</okhttp.version>
+        <vertx.version>3.9.10</vertx.version>
+        <okhttp.version>4.9.1</okhttp.version>
         <unbounded-ldap.version>5.1.4</unbounded-ldap.version>
         <javax-persistence.version>2.2</javax-persistence.version>
         <vavr.version>0.9.0</vavr.version>
@@ -174,6 +175,27 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>github_actions</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/OAuthServiceClientTest.java</exclude>
+                                <exclude>**/OAuthServiceTest.java</exclude>
+                                <exclude>**/rest/*.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
             <plugin>
@@ -222,26 +244,27 @@
             </plugin>
 
             <!-- javadoc -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${maven-javadoc-plugin.version}</version>
+            <!-- commented out due to an issue with GitHub actions and Immutables -->
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-javadoc-plugin</artifactId>-->
+<!--                <version>${maven-javadoc-plugin.version}</version>-->
 
-                <configuration>
-                    <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
-                    <detectJavaApiLink>false</detectJavaApiLink>
-                    <doclint>none</doclint>
-                </configuration>
+<!--                <configuration>-->
+<!--                    <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>-->
+<!--                    <detectJavaApiLink>false</detectJavaApiLink>-->
+<!--                    <doclint>none</doclint>-->
+<!--                </configuration>-->
 
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>attach-javadocs</id>-->
+<!--                        <goals>-->
+<!--                            <goal>jar</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 

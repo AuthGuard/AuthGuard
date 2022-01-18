@@ -2,6 +2,7 @@ package com.nexblocks.authguard.service.model;
 
 import org.immutables.value.Value;
 
+import java.util.Map;
 import java.util.Set;
 
 @Value.Immutable
@@ -14,13 +15,22 @@ public interface Account extends Entity {
     String getLastName();
     String getFullName();
 
+    boolean isSocial();
+    String getIdentityProvider();
+
     Set<PermissionBO> getPermissions();
     Set<String> getRoles();
     AccountEmailBO getEmail();
     AccountEmailBO getBackupEmail();
     PhoneNumberBO getPhoneNumber();
 
-    boolean isActive();
+    Map<String, String> getMetadata();
+
+    @Value.Default
+    default boolean isActive() {
+        return true;
+    }
+
     boolean isDeleted();
 
     @Override

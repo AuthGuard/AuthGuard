@@ -4,12 +4,16 @@ import com.google.inject.Inject;
 import com.nexblocks.authguard.api.dto.entities.ApiKeyDTO;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.requests.ApiKeyRequestDTO;
+import com.nexblocks.authguard.api.dto.requests.AuthRequestDTO;
 import com.nexblocks.authguard.api.routes.ApiKeysApi;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
+import com.nexblocks.authguard.rest.util.RequestContextExtractor;
 import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.ApiKeyBO;
+import com.nexblocks.authguard.service.model.AppBO;
+import com.nexblocks.authguard.service.model.RequestContextBO;
 import io.javalin.http.Context;
 
 import java.util.Optional;
@@ -19,6 +23,7 @@ public class ApiKeysRoute extends ApiKeysApi {
     private final RestMapper restMapper;
 
     private final BodyHandler<ApiKeyRequestDTO> apiKeyRequestBodyHandler;
+    private final BodyHandler<AuthRequestDTO> authRequestBodyHandler;
 
     @Inject
     public ApiKeysRoute(final ApiKeysService apiKeysService, final RestMapper restMapper) {
@@ -26,6 +31,8 @@ public class ApiKeysRoute extends ApiKeysApi {
         this.restMapper = restMapper;
 
         this.apiKeyRequestBodyHandler = new BodyHandler.Builder<>(ApiKeyRequestDTO.class)
+                .build();
+        this.authRequestBodyHandler = new BodyHandler.Builder<>(AuthRequestDTO.class)
                 .build();
     }
 
@@ -46,6 +53,20 @@ public class ApiKeysRoute extends ApiKeysApi {
 
         if (apiKey.isPresent()) {
             context.status(200).json(apiKey.get());
+        } else {
+            context.status(404)
+                    .json(new Error(ErrorCode.API_KEY_DOES_NOT_EXIST.getCode(), "API key does not exist"));
+        }
+    }
+
+    @Override
+    public void verify(final Context context) {
+        final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
+
+        final Optional<AppBO> app = apiKeysService.validateApiKey(authenticationRequest.getToken());
+
+        if (app.isPresent()) {
+            context.status(200).json(app.get());
         } else {
             context.status(404)
                     .json(new Error(ErrorCode.API_KEY_DOES_NOT_EXIST.getCode(), "API key does not exist"));

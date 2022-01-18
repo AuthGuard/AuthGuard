@@ -30,7 +30,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AccessTokenProviderTest {
     private static final String ALGORITHM = "HMAC256";
     private static final String KEY = "src/test/resources/hmac256.pem";
@@ -40,7 +39,9 @@ class AccessTokenProviderTest {
     private JtiProvider jtiProvider;
     private TokenEncryptorAdapter tokenEncryptor;
 
-    private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
+    private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters()
+            .excludeField(field -> field.getName().equals("initShim"))
+            .collectionSizeRange(1, 4));
 
     private JwtConfig jwtConfig() {
         return JwtConfig.builder()
@@ -97,7 +98,7 @@ class AccessTokenProviderTest {
     void generate() {
         final AccessTokenProvider accessTokenProvider = newProviderInstance(jwtConfig(), strategyConfig());
 
-        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(true);
         final AuthResponseBO tokens = accessTokenProvider.generateToken(account);
 
         assertThat(tokens).isNotNull();
@@ -118,6 +119,16 @@ class AccessTokenProviderTest {
     }
 
     @Test
+    void generateForInactiveAccount() {
+        final AccessTokenProvider accessTokenProvider = newProviderInstance(jwtConfig(), strategyConfig());
+
+        final AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(false);
+
+        assertThatThrownBy(() -> accessTokenProvider.generateToken(account))
+                .isInstanceOf(ServiceAuthorizationException.class);
+    }
+
+    @Test
     void generateEncrypted() {
         final AccessTokenProvider accessTokenProvider =
                 newProviderInstance(jwtConfigWithEncryption(), strategyConfig());
@@ -125,7 +136,7 @@ class AccessTokenProviderTest {
         Mockito.when(tokenEncryptor.encryptAndEncode(Mockito.any()))
                 .thenAnswer(invocation -> Either.right("encrypted"));
 
-        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(true);
         final AuthResponseBO tokens = accessTokenProvider.generateToken(account);
 
         assertThat(tokens).isNotNull();
@@ -150,6 +161,7 @@ class AccessTokenProviderTest {
         final AccessTokenProvider accessTokenProvider = newProviderInstance(jwtConfig(), strategyConfig());
 
         final AccountBO account = RANDOM.nextObject(AccountBO.class)
+                .withActive(true)
                 .withPermissions(Arrays.asList(
                         PermissionBO.builder().group("super").name("permission-1").build(),
                         PermissionBO.builder().group("super").name("permission-2").build())
@@ -188,7 +200,7 @@ class AccessTokenProviderTest {
 
         Mockito.when(jtiProvider.next()).thenReturn(jti);
 
-        final AccountBO account = RANDOM.nextObject(AccountBO.class);
+        final AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(true);
         final AuthResponseBO tokens = accessTokenProvider.generateToken(account);
 
         assertThat(tokens).isNotNull();

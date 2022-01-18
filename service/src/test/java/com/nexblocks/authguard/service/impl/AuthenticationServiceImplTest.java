@@ -97,6 +97,6 @@ class AuthenticationServiceImplTest {
 
         assertThatThrownBy(() -> authenticationService.authenticate(authRequest, requestContext))
                 .isInstanceOf(ServiceAuthorizationException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCOUNT_IS_LOCKED);
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCOUNT_IS_LOCKED.getCode());
     }
 }

@@ -29,6 +29,8 @@ public class AccountTokenDO extends AbstractDO {
     private OffsetDateTime expiresAt;
 
     @ElementCollection(fetch = FetchType.EAGER)
+    @MapKeyColumn(name="key")
+    @Column(name="value")
     private Map<String, String> additionalInformation;
 
     @Embedded

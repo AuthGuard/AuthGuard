@@ -5,12 +5,16 @@
 [![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/AuthGuard/AuthGuard.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/AuthGuard/AuthGuard/context:java)
 
 An easy-to-use, and easy-to-customize, identity server. It supports multiple authentication and authorization options and 
-can be extended to support other ones, or add new features. It's an API-only solution, with a dashboard distributed 
-separately.
+can be extended to support other ones, or add new features. It's an API-only solution, there is currently 
+no dedicated dashboard. 
 
 ## Documentation
-You can see the full documentation on the website [here](https://authguard.github.io/), and the OpenAPI documentation is
-available under the `api` module.
+You can see the full documentation on the website [here](https://authguard.github.io/). OpenAPI documentation is
+available under the `api` module, and can also be found [here](https://authguard.github.io/). Tutorials are 
+also available on the same website.
+
+For the documentation of a specific plugin please visit the [extensions repository](https://github.com/AuthGuard/extensions) 
+and check that plugin readme.
 
 ## Why Use AuthGuard?
 Identity management is almost never the core part of apps, websites, or services. AuthGuard is a simple service which 
@@ -21,16 +25,57 @@ can be used to provide that so that you can focus on the important parts of what
    with monitoring tools, or a data processing pipeline).
 4. Are not tied to a certain database, or a class of databases. You can make it work with any database even ones which 
    are not officially supported.
+5. Have more advanced features available out-of-the-box like requiring OTPs, or re-entring passwords
+   to perform certain actions..etc.
    
 ## AuthGuard Distributions
 There's no "one size fits all". AuthGuard is, more or less, a "kernel". In order for you to run it and make it usable, 
 you need to create a distribution. An AuthGuard distribution is essentially AuthGuard + plugins. It's required to at 
-least have a plugin providing data access implementation in order for the server to run.
+least have a plugin providing data access implementation in order for the server to run. We have three 
+standard distributions pre-built for three databases: MongoDB, PostgreSQL, MySQL. Standard distributions 
+come with the following plugins:
+1. Standard data access (persistence + cache)
+2. JWT
+3. Sessions
+4. Account lock
+5. Verification
+6. Email
+7. JavaMail provider (for SMTP, IMAP, and POP3)
+
+### Running Standard Distributions
+Standard distributions are available as executable jar files, in [releases](https://github.com/AuthGuard/AuthGuard/releases) 
+or as container images. The images are hosted on GitHub Packages which you can pull and run.
+The images are:
+
+* Mongo Stadndard: `ghcr.io/authguard/authguard-mongo-standard:<version>`
+* Postgres Standard: `ghcr.io/authguard/authguard-postgres-standard:<version>`
+* MySQL Standard: `ghcr.io/authguard/authguard-mysql-standard:<version>`
+
 
 ### Creating a Distribution
 There are two ways to create a distribution:
 1. Using a build system (Maven, Gradle, SBT...etc) by adding them as dependencies
 2. Running the `rest` jar and setting the classpath manually
+
+All modules are published as Maven artifacts to GitHub Packages, make sure that you add the 
+correct repositories to you build configuration to be able to pull them. For example, 
+if you are using Maven you need to add the following two repositories
+
+```xml
+ <repositories>
+     <repository>
+         <id>authguard-github</id>
+         <name>GitHub AuthGuard Maven Packages</name>
+         <url>https://maven.pkg.github.com/AuthGuard/AuthGuard</url>
+     </repository>
+
+     <repository>
+         <id>exntesions-github</id>
+         <name>GitHub AuthGuard Extensions Maven Packages</name>
+         <url>https://maven.pkg.github.com/AuthGuard/extensions</url>
+     </repository>
+ </repositories>
+```
 
 ## Plugins
 There are some standard plugins created and support by the AuthGuard team. Some are considered core parts and exist as 
@@ -53,8 +98,27 @@ implementation.
 ### Account Lock
 Adds support for locking accounts after a number of failed logins within a period.
 
-### LDAP (experimental)
+### LDAP 
 Adds support for LDAP-based authentication by using an LDAP server as an identity provider.
+
+### Email
+Adds subscribers for events which may require sending emails. This plugin does not come with 
+an email provider, and one must be added. We have an implementation using JavaMail and another 
+one (provided as an example to how to use external APIs) using SendGrid API.
+
+### SMS
+Similar to the email plugin, this one only adds definitions and subscribers, and an SMS provider 
+implementation must be provided.
+
+### JavaMail
+The standard email provider, it uses JavaMail library and support SMTP, IMAP, and POP3 protocols.
+
+## License and Price
+The project in its entirety is open-source and no features are hidden behind a professional 
+plan. It is also free of charge for non-commercial use. If you want to use it for a commercial 
+product or a business, please support the project by purchasing a license 
+from [our store](https://www.nexblocks.com/portal/). The store is temporary until we move to 
+a better one, but all license will be transferred.
 
 ## Open-Source Credits
 This project is made possible by other open-source projects, and they deserve the recognition. 
@@ -78,3 +142,4 @@ This project is made possible by other open-source projects, and they deserve th
 * WireMock
 * AssertJ
 * Rest Assured
+* JavaMail

@@ -14,7 +14,7 @@ public abstract class OtpApi implements ApiRoute {
 
     @Override
     public void addEndpoints() {
-        post("/verify", this::verify, ActorRoles.adminClient());
+        post("/verify", this::verify, ActorRoles.adminOrAuthClient());
     }
 
     public abstract void verify(final Context context);

@@ -11,6 +11,8 @@ import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ConfigParser;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
+import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
+import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
@@ -52,6 +54,10 @@ public class IdTokenProvider implements AuthProvider {
 
     @Override
     public AuthResponseBO generateToken(final AccountBO account) {
+        if (!account.isActive()) {
+            throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
+        }
+
         final JwtTokenBuilder tokenBuilder = generateIdToke(account);
 
         final String signedToken = tokenBuilder.getBuilder().sign(algorithm);
@@ -65,6 +71,7 @@ public class IdTokenProvider implements AuthProvider {
                 .refreshToken(refreshToken)
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
+                .validFor(tokenTtl.getSeconds())
                 .build();
     }
 

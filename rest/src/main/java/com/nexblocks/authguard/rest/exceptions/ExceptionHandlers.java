@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeoutException;
 
 public class ExceptionHandlers {
     private static final Logger LOG = LoggerFactory.getLogger(ExceptionHandlers.class);
@@ -20,7 +21,7 @@ public class ExceptionHandlers {
     public static void serviceException(final ServiceException e, final Context context) {
         LOG.info("Service exception was thrown");
 
-        final Error error = new Error(e.getErrorCode().getCode(), e.getMessage());
+        final Error error = new Error(e.getErrorCode(), e.getMessage());
         context.status(400)
                 .json(error);
     }
@@ -28,7 +29,7 @@ public class ExceptionHandlers {
     public static void serviceConflictException(final ServiceConflictException e, final Context context) {
         LOG.info("Service conflict exception was thrown");
 
-        final Error error = new Error(e.getErrorCode().getCode(), e.getMessage());
+        final Error error = new Error(e.getErrorCode(), e.getMessage());
         context.status(409)
                 .json(error);
     }
@@ -36,7 +37,7 @@ public class ExceptionHandlers {
     public static void serviceAuthorizationException(final ServiceAuthorizationException e, final Context context) {
         LOG.info("Service authorization exception was thrown");
 
-        final Error error = new Error(e.getErrorCode().getCode(), e.getMessage());
+        final Error error = new Error(e.getErrorCode(), e.getMessage());
         /*
          * We leave 401 to signal an unauthorized access.
          * TODO: don't rely on exceptions to highlight something like that and instead
@@ -65,6 +66,14 @@ public class ExceptionHandlers {
         context.status(409).json(error);
     }
 
+    public static void timeoutException(final TimeoutException e, final Context context) {
+        final Error error = new Error("504", "Timeout");
+
+        LOG.warn("A timeout error occurred", e);
+
+        context.status(504).json(error);
+    }
+
     // NOTE: this will go away when we move to async services
     public static void completionException(final CompletionException e, final Context context) {
         final Throwable cause = e.getCause();
@@ -85,6 +94,8 @@ public class ExceptionHandlers {
             requestValidationException((RequestValidationException) cause, context);
         } else if (cause instanceof IdempotencyException) {
             idempotencyException((IdempotencyException) cause, context);
+        } else if (cause instanceof TimeoutException) {
+            timeoutException((TimeoutException) cause, context);
         } else {
             LOG.error("An unexpected exception was thrown", cause);
 

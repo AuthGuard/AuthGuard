@@ -12,7 +12,11 @@ import org.immutables.value.Value;
 public interface UserIdentifier {
     Type getType();
     String getIdentifier();
-    boolean isActive();
+
+    @Value.Default
+    default boolean isActive() {
+        return true;
+    }
 
     enum Type {
         USERNAME,

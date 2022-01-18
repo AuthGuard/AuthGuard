@@ -33,6 +33,10 @@ public class Validators {
         classValidators.put(UserIdentifiersRequestDTO.class, new UserIdentifiersRequestValidator());
         classValidators.put(UserIdentifierDTO.class, new UserIdentifierValidator());
         classValidators.put(ApiKeyRequestDTO.class, new ApiKeysRequestValidator());
+        classValidators.put(ActionTokenRequestDTO.class, new ActionTokensRequestValidator());
+
+        classValidators.put(PasswordResetTokenRequestDTO.class, new PasswordResetTokenRequestValidator());
+        classValidators.put(PasswordResetRequestDTO.class, new PasswordResetRequestValidator());
     }
 
     @SuppressWarnings("unchecked")

@@ -54,4 +54,8 @@ public interface RestMapper {
     AccountLockDTO toDTO(AccountLockBO accountLockBO);
 
     ExchangeAttemptDTO toDTO(ExchangeAttemptBO exchangeAttemptBO);
+
+    PasswordResetTokenDTO toDTO(PasswordResetTokenBO passwordResetTokenBO);
+
+    ActionTokenDTO toDTO(ActionTokenBO actionTokenBO);
 }

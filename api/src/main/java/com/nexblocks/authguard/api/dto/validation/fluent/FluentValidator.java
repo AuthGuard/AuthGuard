@@ -32,9 +32,7 @@ public class FluentValidator {
 
     public <V> FluentValidator validate(final String fieldName, final V value,
                                         final Validator<V> validator) {
-        if (value != null) {
-            violations.addAll(validator.validate(value, fieldName));
-        }
+        violations.addAll(validator.validate(value, fieldName));
 
         return this;
     }

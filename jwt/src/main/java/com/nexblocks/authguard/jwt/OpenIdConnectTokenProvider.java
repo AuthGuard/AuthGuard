@@ -19,12 +19,23 @@ public class OpenIdConnectTokenProvider implements AuthProvider {
 
     @Override
     public AuthResponseBO generateToken(final AccountBO account) {
-        return generateToken(account, null);
+        return generateToken(account, null, null);
+    }
+
+    @Override
+    public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO options) {
+        return generateToken(account, null, options);
     }
 
     @Override
     public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
-        final AuthResponseBO accessToken = accessTokenProvider.generateToken(account, restrictions);
+        return generateToken(account, restrictions, null);
+    }
+
+    @Override
+    public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+                                        final TokenOptionsBO options) {
+        final AuthResponseBO accessToken = accessTokenProvider.generateToken(account, restrictions, options);
         final AuthResponseBO idToken = idTokenProvider.generateToken(account);
 
         return AuthResponseBO.builder()

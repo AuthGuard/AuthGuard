@@ -25,6 +25,7 @@ public class RequestContextExtractor {
 
         return RequestContextBO.builder()
                 .source(context.ip())
+                .userAgent(context.userAgent())
                 .build();
     }
 
@@ -33,12 +34,14 @@ public class RequestContextExtractor {
             return RequestContextBO.builder()
                     .source(context.ip())
                     .clientId(((AppBO) actor).getId())
+                    .userAgent(context.userAgent())
                     .build();
         }
 
         return RequestContextBO.builder()
                 .source(context.ip())
                 .accountId(((AccountBO) actor).getId())
+                .userAgent(context.userAgent())
                 .build();
     }
 }

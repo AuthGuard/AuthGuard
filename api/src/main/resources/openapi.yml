@@ -2,7 +2,7 @@ openapi: 3.0.3
 
 info:
   title: AuthGuard API
-  version: 0.4.0
+  version: 0.11.0
 
 security:
   - apiKey: []
@@ -74,7 +74,7 @@ paths:
 
     delete:
       operationId: deleteAccount
-      description: Delet an account
+      description: Delete an account
       tags:
         - Accounts
       parameters:
@@ -87,10 +87,26 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
+  /accounts/identifier/{id}:
+    get:
+      operationId: getAccountByCredentialsIdentifier
+      description: Get an account by credentials identifier
+      tags:
+        - Accounts
+      parameters:
+        - $ref: "#/components/parameters/IdentifierParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/AccountResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
   /accounts/externalId/{id}:
     get:
       operationId: getAccountByExternalId
-      description: Get an account by an external ID
+      description: Get an account by external ID
       tags:
         - Accounts
       parameters:
@@ -118,6 +134,20 @@ paths:
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
+
+  /accounts/email/{email}/exists:
+    get:
+      operationId: emailExists
+      description: Checks whether an account with that email exists
+      tags:
+        - Accounts
+      parameters:
+        - $ref: "#/components/parameters/EmailParameter"
+      responses:
+        200:
+          description: Success
+        404:
+          description: Not found
 
   /accounts/{id}/permissions:
     patch:
@@ -304,6 +334,36 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
+  /credentials/identifier/{identifier}:
+    get:
+      operationId: getCredentialsByIdentifier
+      description: Get credentials by identifier
+      tags:
+        - Credentials
+      parameters:
+        - $ref: "#/components/parameters/IdentifierParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/CredentialsResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /credentials/identifier/{identifier}/exists:
+    get:
+      operationId: identifierExists
+      description: Check whether an identifier exists or not
+      tags:
+        - Credentials
+      parameters:
+        - $ref: "#/components/parameters/IdentifierParameter"
+      responses:
+        200:
+          description: Success
+        404:
+          description: Not found
+
   /credentials/{id}/password:
     patch:
       operationId: updatePassword
@@ -361,6 +421,50 @@ paths:
           application/json:
             schema:
               $ref:  "#/components/schemas/UserIdentifiersRequest"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/CredentialsResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
+
+  /credentials/reset_token:
+    post:
+      operationId: generateResetToken
+      description: Generates a new reset token which can be used by the user to set a new password
+      tags:
+        - Credentials
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref:  "#/components/schemas/PasswordResetTokenRequest"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/PasswordResetTokenResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
+
+  /credentials/reset:
+    post:
+      operationId: resetPassword
+      description: Set a new password using a reset token or by using an identifier and its current password
+      tags:
+        - Credentials
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref:  "#/components/schemas/PasswordResetRequest"
       responses:
         200:
           description: Success
@@ -508,6 +612,25 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
+  /keys/verify:
+    post:
+      operationId: verifyKey
+      description: Verify an API key
+      tags:
+        - API Keys
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRequest"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApplicationResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
   /keys/{id}:
     get:
       operationId: getApiKeyById
@@ -543,7 +666,6 @@ paths:
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
-      
 
   # ----------------- roles -----------------
   /roles:
@@ -867,6 +989,67 @@ paths:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
 
+  /actions/otp:
+    post:
+      operationId: Generate a one-time password for an action
+      tags:
+        - Action tokens
+      parameters:
+        - name: accountId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Success
+          $ref:  "#/components/responses/SuccessfulAuthResponse"
+        400:
+          description: Bad request
+          $ref:  "#/components/responses/ErrorResponse"
+
+  /actions/token:
+    post:
+      operationId: Generate an action token either from an OTP generated by /actions/otp or by a user identifier and password
+      tags:
+        - Action tokens
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref:  "#/components/schemas/ActionTokenRequest"
+      responses:
+        200:
+          description: Success
+          $ref:  "#/components/responses/ActionTokenResponse"
+        400:
+          description: Bad request
+          $ref:  "#/components/responses/ErrorResponse"
+
+  /actions/verify:
+    post:
+      operationId: Verify that an action token is valid for the specified action
+      tags:
+        - Action tokens
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Success
+          $ref:  "#/components/responses/ActionTokenResponse"
+        400:
+          description: Bad request
+          $ref:  "#/components/responses/ErrorResponse"          
+
 components:
   securitySchemes:
     apiKey:
@@ -877,6 +1060,13 @@ components:
   parameters:
     IdParameter:
       name: id
+      in: path
+      required: true
+      schema:
+        type: string
+
+    IdentifierParameter:
+      name: identifier
       in: path
       required: true
       schema:
@@ -1014,6 +1204,20 @@ components:
             items:
               $ref: "#/components/schemas/ApiKey"
 
+    PasswordResetTokenResponse:
+      description: _
+      content:
+        application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordResetToken"
+
+    ActionTokenResponse:
+      description: _
+      content:
+        application/json:
+              schema:
+                $ref: "#/components/schemas/ActionToken"        
+
   schemas:
     AccountWithCredentials:
       type: object
@@ -1060,6 +1264,9 @@ components:
             type: string
         active:
           type: boolean
+        metadata:
+          description: A collection of custom information to be attached to the account
+          type: object
 
     Credentials:
       type: object
@@ -1164,7 +1371,11 @@ components:
     ApiKey:
       type: object
       properties:
+        id:
+          type: string
         appId:
+          type: string
+        key:
           type: string
 
     ExchangeAttempt:
@@ -1200,6 +1411,10 @@ components:
           type: string
         externalSessionId:
           type: string
+        sourceIp:
+          type: string
+        userAgent:
+          type: string
   
     AuthResult:
       type: object
@@ -1210,6 +1425,9 @@ components:
           type: string
         refreshToken:
           type: string
+        validFor:
+          type: string
+          description: The duration for which the token will be valid (in seconds)
 
     CreateAccountRequest:
       type: object
@@ -1244,6 +1462,9 @@ components:
             type: string
         active:
           type: boolean
+        metadata:
+          description: A collection of custom information to be attached to the account
+          type: object
 
     UpdateAccountRequest:
       type: object
@@ -1388,10 +1609,12 @@ components:
       required:
         - identifiers
       properties:
+        oldIdentifier:
+          type: string
         identifiers:
           type: array
           items:
-            $ref:  "#/components/schemas/UserIdentifier"
+            $ref: "#/components/schemas/UserIdentifier"
 
     PasswordlessRequest:
       type: object
@@ -1410,6 +1633,76 @@ components:
         passwordId:
           type: string
         password:
+          type: string
+
+    PasswordResetTokenRequest:
+      type: object
+      required:
+        - identifier
+      properties:
+        identifier:
+          type: string
+
+    PasswordResetRequest:
+      type: object
+      required:
+        - byToken
+        - plainPassword
+      properties:
+        byToken:
+          type: boolean
+        resetToken:
+          description: Required if 'byToken' is true
+          type: string
+        identifier:
+          description: Required if 'byToken' is false
+          type: string
+        oldPassword:
+          description: Required if 'byToken' is false
+          type: string
+        plainPassword:
+          type: string
+
+    PasswordResetToken:
+      type: object
+      properties:
+        token:
+          type: string
+        issuedAt:
+          type: integer
+          description: The time at which the token was issued (in epoch seconds)
+        expiresAt:
+          type: integer
+          description: The time after which the token will no longer be valid (in epoch seconds)
+
+    ActionToken:
+      type: object
+      properties:
+        token:
+          type: string
+        action:
+          type: string
+        accountId:
+          type: string
+        validFor:
+          type: number
+          description: The life time of the token in seconds
+
+    ActionTokenRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - OTP
+            - BASIC
+        otp:
+          type: object
+          $ref: "#/components/schemas/OtpRequest"
+        basic:
+          type: object
+          $ref: "#/components/schemas/AuthRequest"
+        action:
           type: string
 
     Error:

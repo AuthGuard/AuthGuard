@@ -16,10 +16,8 @@ import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.*;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
@@ -34,7 +32,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AccountsServiceImplTest {
     private AccountsRepository accountsRepository;
     private PermissionsService permissionsService;
@@ -48,7 +45,7 @@ class AccountsServiceImplTest {
             new EasyRandomParameters().collectionSizeRange(3, 5)
     );
 
-    @BeforeAll
+    @BeforeEach
     void setup() {
         accountsRepository = Mockito.mock(AccountsRepository.class);
         permissionsService = Mockito.mock(PermissionsService.class);
@@ -61,6 +58,7 @@ class AccountsServiceImplTest {
         final AccountConfig accountConfig = AccountConfig.builder()
                 .verifyEmail(true)
                 .verifyPhoneNumber(true)
+                .defaultRoles(Collections.singleton("def-role"))
                 .build();
 
         Mockito.when(configContext.asConfigBean(AccountConfig.class))
@@ -69,13 +67,6 @@ class AccountsServiceImplTest {
         serviceMapper = new ServiceMapperImpl();
         accountService = new AccountsServiceImpl(accountsRepository, permissionsService,rolesService,
                 idempotencyService, serviceMapper, messageBus, configContext);
-    }
-
-    @AfterEach
-    void resetMocks() {
-        Mockito.reset(accountsRepository);
-        Mockito.reset(permissionsService);
-        Mockito.reset(messageBus);
     }
 
     @Test
@@ -97,6 +88,9 @@ class AccountsServiceImplTest {
                     return CompletableFuture.completedFuture(invocation.getArgument(0, Supplier.class).get());
                 });
 
+        Mockito.when(rolesService.verifyRoles(account.getRoles()))
+                .thenReturn(new ArrayList<>(account.getRoles()));
+
         final AccountBO persisted = accountService.create(account, requestContext);
         final List<PermissionBO> expectedPermissions = account.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
@@ -105,6 +99,52 @@ class AccountsServiceImplTest {
         assertThat(persisted).isNotNull();
         assertThat(persisted)
                 .isEqualToIgnoringGivenFields(account.withPermissions(expectedPermissions), "id", "createdAt", "lastModified");
+
+        // need better assertion
+        final ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+
+        Mockito.verify(messageBus, Mockito.times(1))
+                .publish(eq("accounts"), any());
+
+        Mockito.verify(messageBus, Mockito.times(2))
+                .publish(Mockito.eq("verification"), messageCaptor.capture());
+
+        assertThat(messageCaptor.getAllValues().stream()
+                .map(Message::getEventType)
+                .collect(Collectors.toList()))
+                .containsExactly(EventType.EMAIL_VERIFICATION, EventType.PHONE_NUMBER_VERIFICATION);
+    }
+
+    @Test
+    void createWithoutRoles() {
+        final AccountBO account = RANDOM.nextObject(AccountBO.class)
+                .withDeleted(false)
+                .withRoles(Collections.emptySet())
+                .withPermissions(Collections.emptySet())
+                .withId(null);
+
+        final List<String> defaultRoles = Collections.singletonList("def-role");
+
+        final String idempotentKey = "idempotent-key";
+        final RequestContextBO requestContext = RequestContextBO.builder()
+                .idempotentKey(idempotentKey)
+                .build();
+
+        Mockito.when(accountsRepository.save(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountDO.class)));
+
+        Mockito.when(idempotencyService.performOperation(Mockito.any(), Mockito.eq(idempotentKey), Mockito.eq(account.getEntityType())))
+                .thenAnswer(invocation -> {
+                    return CompletableFuture.completedFuture(invocation.getArgument(0, Supplier.class).get());
+                });
+
+        Mockito.when(rolesService.verifyRoles(new HashSet<>(defaultRoles))).thenReturn(defaultRoles);
+
+        final AccountBO persisted = accountService.create(account, requestContext);
+
+        assertThat(persisted).isNotNull();
+        assertThat(persisted)
+                .isEqualToIgnoringGivenFields(account.withRoles("def-role"), "id", "createdAt", "lastModified");
 
         // need better assertion
         final ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);

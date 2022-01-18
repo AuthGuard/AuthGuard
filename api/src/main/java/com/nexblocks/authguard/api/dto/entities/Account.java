@@ -7,6 +7,7 @@ import org.immutables.value.Value;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Value.Immutable
 @DTOStyle
@@ -19,6 +20,9 @@ public interface Account {
 
     String getExternalId();
 
+    boolean isSocial();
+    String getIdentityProvider();
+
     String getFirstName();
     String getMiddleName();
     String getLastName();
@@ -29,6 +33,7 @@ public interface Account {
     AccountEmailDTO getEmail();
     AccountEmailDTO getBackupEmail();
     PhoneNumberDTO getPhoneNumber();
+    Map<String, String> getMetadata();
 
     boolean isActive();
     boolean isDeleted();

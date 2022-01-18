@@ -30,9 +30,7 @@ public class ServicesBinder extends AbstractModule {
         bind(IdempotencyService.class).to(IdempotencyServiceImpl.class);
         bind(ExchangeAttemptsService.class).to(ExchangeAttemptsServiceImpl.class);
         bind(AccountLocksService.class).to(AccountLocksServiceImpl.class);
-
-        // should be conditional on property value
-        bind(SecurePassword.class).to(SCryptPassword.class);
+        bind(ActionTokenService.class).to(ActionTokenServiceImpl.class);
 
         // optional bindings
         if (configContext.get("verification") != null) {

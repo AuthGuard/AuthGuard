@@ -17,13 +17,11 @@ import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
+import com.nexblocks.authguard.service.util.AccountPreProcessor;
 import com.nexblocks.authguard.service.util.AccountUpdateMerger;
 import com.nexblocks.authguard.service.util.ValueComparator;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -68,17 +66,21 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     private AccountBO doCreate(final AccountBO account) {
-        final AccountBO created = persistenceService.create(account);
+        final AccountBO preProcessed = AccountPreProcessor.preProcess(account, accountConfig);
+
+        verifyRolesOrFail(preProcessed.getRoles());
+
+        final AccountBO created = persistenceService.create(preProcessed);
 
         if (accountConfig.verifyEmail()) {
             final List<AccountEmailBO> toVerify = new ArrayList<>(2);
 
-            if (account.getEmail() != null) {
-                toVerify.add(account.getEmail());
+            if (preProcessed.getEmail() != null) {
+                toVerify.add(preProcessed.getEmail());
             }
 
-            if (account.getBackupEmail() != null) {
-                toVerify.add(account.getBackupEmail());
+            if (preProcessed.getBackupEmail() != null) {
+                toVerify.add(preProcessed.getBackupEmail());
             }
 
             messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(VerificationRequestBO.builder()
@@ -202,7 +204,7 @@ public class AccountsServiceImpl implements AccountsService {
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
                         + accountId + " was found"));
 
-        final List<PermissionBO> combinedPermissions = Stream.concat(account.getPermissions().stream(), permissions.stream())
+        final List<PermissionBO> combinedPermissions = Stream.concat(account.getPermissions().stream(), verifiedPermissions.stream())
                 .distinct()
                 .collect(Collectors.toList());
 
@@ -215,6 +217,10 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public AccountBO revokePermissions(final String accountId, final List<PermissionBO> permissions) {
+        final Set<String> permissionsFullNames = permissions.stream()
+                .map(Permission::getFullName)
+                .collect(Collectors.toSet());
+
         final AccountBO account = accountsRepository.getById(accountId)
                 .join()
                 .map(serviceMapper::toBO)
@@ -222,7 +228,7 @@ public class AccountsServiceImpl implements AccountsService {
                         + accountId + " was found"));
 
         final List<PermissionBO> filteredPermissions = account.getPermissions().stream()
-                .filter(permission -> !permissions.contains(permission))
+                .filter(permission -> !permissionsFullNames.contains(permission.getFullName()))
                 .collect(Collectors.toList());
 
         final AccountBO updated = account.withPermissions(filteredPermissions);
@@ -234,15 +240,7 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public AccountBO grantRoles(final String accountId, final List<String> roles) {
-        final List<String> verifiedRoles = rolesService.verifyRoles(roles);
-
-        if (verifiedRoles.size() != roles.size()) {
-            final List<String> difference = roles.stream()
-                    .filter(role -> !verifiedRoles.contains(role))
-                    .collect(Collectors.toList());
-
-            throw new ServiceException(ErrorCode.ROLE_DOES_NOT_EXIST, "The following roles are not valid " + difference);
-        }
+        verifyRolesOrFail(roles);
 
         final AccountBO account = accountsRepository.getById(accountId)
                 .join()
@@ -284,10 +282,27 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public List<AccountBO> getAdmins() {
-        return accountsRepository.getByRole(accountConfig.getAuthguardAdminRole())
+        return getByRole(accountConfig.getAuthguardAdminRole());
+    }
+
+    @Override
+    public List<AccountBO> getByRole(final String role) {
+        return accountsRepository.getByRole(role)
                 .join()
                 .stream()
                 .map(serviceMapper::toBO)
                 .collect(Collectors.toList());
+    }
+
+    private void verifyRolesOrFail(final Collection<String> roles) {
+        final List<String> verifiedRoles = rolesService.verifyRoles(roles);
+
+        if (verifiedRoles.size() != roles.size()) {
+            final List<String> difference = roles.stream()
+                    .filter(role -> !verifiedRoles.contains(role))
+                    .collect(Collectors.toList());
+
+            throw new ServiceException(ErrorCode.ROLE_DOES_NOT_EXIST, "The following roles are not valid " + difference);
+        }
     }
 }

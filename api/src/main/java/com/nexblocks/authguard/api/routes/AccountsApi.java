@@ -13,15 +13,17 @@ public abstract class AccountsApi implements ApiRoute {
     }
 
     public void addEndpoints() {
-        post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin"));
-        post("/complete", this::createComplete, ActorRoles.of("authguard_admin_client", "one_time_admin"));
+        post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin", "authguard_auth_client"));
+        post("/complete", this::createComplete, ActorRoles.of("authguard_admin_client", "one_time_admin", "authguard_auth_client"));
 
         get("/:id", this::getById, ActorRoles.adminClient());
         delete("/:id", this::deleteAccount, ActorRoles.adminClient());
         patch("/:id", this::patchAccount, ActorRoles.adminClient());
+        get("/identifier/:identifier", this::getByIdentifier, ActorRoles.adminClient());
 
         get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
         get("/email/:email", this::getByEmail, ActorRoles.adminClient());
+        get("/email/:email/exists", this::emailExists, ActorRoles.adminOrAuthClient());
 
         patch("/:id/permissions", this::updatePermissions, ActorRoles.adminClient());
         patch("/:id/roles", this::updateRoles, ActorRoles.adminClient());
@@ -39,6 +41,8 @@ public abstract class AccountsApi implements ApiRoute {
 
     public abstract void getById(final Context context);
 
+    public abstract void getByIdentifier(final Context context);
+
     public abstract void deleteAccount(final Context context);
 
     public abstract void patchAccount(final Context context);
@@ -46,6 +50,8 @@ public abstract class AccountsApi implements ApiRoute {
     public abstract void getByExternalId(final Context context);
 
     public abstract void getByEmail(final Context context);
+
+    public abstract void emailExists(final Context context);
 
     public abstract void updatePermissions(final Context context);
 

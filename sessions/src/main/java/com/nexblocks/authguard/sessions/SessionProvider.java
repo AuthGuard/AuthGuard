@@ -14,6 +14,7 @@ import com.nexblocks.authguard.service.model.*;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -37,16 +38,38 @@ public class SessionProvider implements AuthProvider {
 
     @Override
     public AuthResponseBO generateToken(final AccountBO account) {
+        return generateToken(account, (TokenOptionsBO) null);
+    }
+
+    @Override
+    public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO options) {
+        if (!account.isActive()) {
+            throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
+        }
+
+        final Map<String, String> data = new HashMap<>();
+
+        data.put(SessionKeys.ACCOUNT_ID, account.getId());
+        data.put(SessionKeys.ROLES, String.join(",", account.getRoles()));
+        data.put(SessionKeys.PERMISSIONS, account.getPermissions().stream()
+                        .map(Permission::getFullName)
+                        .collect(Collectors.joining(",")));
+
+        if (options != null) {
+            if (options.getSource() != null) {
+                data.put(SessionKeys.SOURCE, options.getSource());
+            }
+
+            if (options.getUserAgent() != null) {
+                data.put(SessionKeys.USER_AGENT, options.getUserAgent());
+            }
+        }
+
         final SessionBO session = SessionBO.builder()
                 .accountId(account.getId())
                 .expiresAt(OffsetDateTime.now().plus(sessionTtl))
-                .data(Map.ofEntries(
-                        Map.entry(SessionKeys.ACCOUNT_ID, account.getId()),
-                        Map.entry(SessionKeys.ROLES, String.join(",", account.getRoles())),
-                        Map.entry(SessionKeys.PERMISSIONS, account.getPermissions().stream()
-                                .map(Permission::getFullName)
-                                .collect(Collectors.joining(",")))
-                )).build();
+                .data(data)
+                .build();
 
         final SessionBO created = sessionsService.create(session);
 
@@ -55,6 +78,7 @@ public class SessionProvider implements AuthProvider {
                 .token(created.getSessionToken())
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
+                .validFor(sessionTtl.getSeconds())
                 .build();
     }
 

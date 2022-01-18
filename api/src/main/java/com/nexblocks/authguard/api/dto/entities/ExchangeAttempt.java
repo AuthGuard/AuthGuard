@@ -19,4 +19,5 @@ public interface ExchangeAttempt {
     String getClientId();
     String getExternalSessionId();
     String getSourceIp();
+    String getUserAgent();
 }

@@ -21,5 +21,5 @@ public interface PermissionsService extends CrudService<PermissionBO> {
      */
     List<PermissionBO> getAll();
 
-    Collection<PermissionBO> getAllForGroup(String group);
+    List<PermissionBO> getAllForGroup(String group);
 }

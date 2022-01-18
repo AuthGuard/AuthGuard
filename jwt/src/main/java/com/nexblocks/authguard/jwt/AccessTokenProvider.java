@@ -18,6 +18,7 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.ID;
+import io.vavr.control.Either;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -75,12 +76,27 @@ public class AccessTokenProvider implements AuthProvider {
 
     @Override
     public AuthResponseBO generateToken(final AccountBO account) {
-        return generateToken(account, null);
+        return generateToken(account, (TokenRestrictionsBO) null);
+    }
+
+    @Override
+    public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO options) {
+        return generateToken(account, null, options);
     }
 
     @Override
     public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
-        final JwtTokenBuilder tokenBuilder = generateAccessToken(account, restrictions);
+        return generateToken(account, restrictions, null);
+    }
+
+    @Override
+    public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+                                        final TokenOptionsBO options) {
+        if (!account.isActive()) {
+            throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
+        }
+
+        final JwtTokenBuilder tokenBuilder = generateAccessToken(account, restrictions, options);
 
         final String signedToken = tokenBuilder.getBuilder().sign(algorithm);
         final String finalToken = encryptIfNeeded(signedToken);
@@ -95,6 +111,7 @@ public class AccessTokenProvider implements AuthProvider {
                 .refreshToken(refreshToken)
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
+                .validFor(tokenTtl.getSeconds())
                 .build();
     }
 
@@ -132,7 +149,8 @@ public class AccessTokenProvider implements AuthProvider {
         return accountTokensRepository.deleteToken(refreshToken).join();
     }
 
-    private JwtTokenBuilder generateAccessToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
+    private JwtTokenBuilder generateAccessToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+                                                final TokenOptionsBO options) {
         final JwtTokenBuilder.Builder tokenBuilder = JwtTokenBuilder.builder();
         final JWTCreator.Builder jwtBuilder = jwtGenerator.generateUnsignedToken(account, tokenTtl);
 
@@ -152,6 +170,10 @@ public class AccessTokenProvider implements AuthProvider {
 
         if (strategy.includeRoles()) {
             jwtBuilder.withArrayClaim("roles", account.getRoles().toArray(new String[] {}));
+        }
+
+        if (options != null && options.getSource() != null) {
+            jwtBuilder.withClaim("source", options.getSource());
         }
 
         return tokenBuilder.builder(jwtBuilder).build();

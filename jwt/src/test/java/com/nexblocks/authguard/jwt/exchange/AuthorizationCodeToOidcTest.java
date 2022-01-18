@@ -10,6 +10,7 @@ import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
+import com.nexblocks.authguard.service.model.TokenRestrictionsBO;
 import io.vavr.control.Either;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,7 +70,7 @@ class AuthorizationCodeToOidcTest {
         Mockito.when(accountsService.getById(accountToken.getAssociatedAccountId()))
                 .thenReturn(Optional.of(account));
 
-        Mockito.when(openIdConnectTokenProvider.generateToken(account, null))
+        Mockito.when(openIdConnectTokenProvider.generateToken(account, (TokenRestrictionsBO) null))
                 .thenReturn(authResponse);
 
         final Either<Exception, AuthResponseBO> actual = authorizationCodeToOidc.exchange(authRequest);

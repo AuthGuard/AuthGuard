@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.sessions.exchange;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.basic.otp.OtpVerifier;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
@@ -9,8 +10,8 @@ import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
+import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import com.nexblocks.authguard.sessions.SessionProvider;
-import com.google.inject.Inject;
 import io.vavr.control.Either;
 
 @TokenExchange(from = "otp", to = "sessionToken")
@@ -29,9 +30,13 @@ public class OtpToSession implements Exchange {
 
     @Override
     public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
+        final TokenOptionsBO options = TokenOptionsBO.builder()
+                .source("otp")
+                .build();
+
         return otpVerifier.verifyAccountToken(request.getToken())
                 .flatMap(this::getAccount)
-                .map(sessionProvider::generateToken);
+                .map(account -> sessionProvider.generateToken(account, options));
     }
 
     private Either<Exception, AccountBO> getAccount(final String accountId) {
@@ -39,9 +44,5 @@ public class OtpToSession implements Exchange {
                 .<Either<Exception, AccountBO>>map(Either::right)
                 .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                         "Account " + accountId + " does not exist")));
-    }
-
-    private Either<Exception, AuthResponseBO> generate(final AccountBO account) {
-        return Either.right(sessionProvider.generateToken(account));
     }
 }

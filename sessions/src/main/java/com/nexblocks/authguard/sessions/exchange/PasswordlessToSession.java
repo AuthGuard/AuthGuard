@@ -9,6 +9,7 @@ import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
+import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import com.nexblocks.authguard.sessions.SessionProvider;
 import com.google.inject.Inject;
 import io.vavr.control.Either;
@@ -30,9 +31,13 @@ public class PasswordlessToSession implements Exchange {
 
     @Override
     public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
+        final TokenOptionsBO options = TokenOptionsBO.builder()
+                .source("passwordless")
+                .build();
+
         return passwordlessVerifier.verifyAccountToken(request.getToken())
                 .flatMap(this::getAccount)
-                .map(sessionProvider::generateToken);
+                .map(account -> sessionProvider.generateToken(account, options));
     }
 
     private Either<Exception, AccountBO> getAccount(final String accountId) {
@@ -40,9 +45,5 @@ public class PasswordlessToSession implements Exchange {
                 .<Either<Exception, AccountBO>>map(Either::right)
                 .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                         "Account " + accountId + " does not exist")));
-    }
-
-    private Either<Exception, AuthResponseBO> generate(final AccountBO account) {
-        return Either.right(sessionProvider.generateToken(account));
     }
 }

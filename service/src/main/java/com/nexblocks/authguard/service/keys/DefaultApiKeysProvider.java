@@ -1,12 +1,21 @@
 package com.nexblocks.authguard.service.keys;
 
-import com.nexblocks.authguard.config.ConfigContext;
-import com.nexblocks.authguard.service.config.ApiKeysConfig;
-import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.nexblocks.authguard.config.ConfigContext;
+import com.nexblocks.authguard.service.auth.AuthProvider;
+import com.nexblocks.authguard.service.auth.ProvidesToken;
+import com.nexblocks.authguard.service.config.ApiKeysConfig;
+import com.nexblocks.authguard.service.model.AccountBO;
+import com.nexblocks.authguard.service.model.AppBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
+import com.nexblocks.authguard.service.model.EntityType;
+import com.nexblocks.authguard.service.random.CryptographicRandom;
 
-public class DefaultApiKeysProvider {
+@ProvidesToken("apiKey")
+public class DefaultApiKeysProvider implements AuthProvider {
+    private final String TOKEN_TYPE = "api_key";
+
     private final CryptographicRandom cryptographicRandom;
     private final ApiKeysConfig config;
 
@@ -22,5 +31,22 @@ public class DefaultApiKeysProvider {
 
     public String generateKey() {
         return cryptographicRandom.base64Url(config.getRandomSize());
+    }
+
+    @Override
+    public AuthResponseBO generateToken(final AccountBO account) {
+        throw new UnsupportedOperationException("API keys cannot be generated for an account");
+    }
+
+    @Override
+    public AuthResponseBO generateToken(final AppBO app) {
+        final String token = cryptographicRandom.base64Url(config.getRandomSize());
+
+        return AuthResponseBO.builder()
+                .type(TOKEN_TYPE)
+                .token(token)
+                .entityType(EntityType.APPLICATION)
+                .entityId(app.getId())
+                .build();
     }
 }

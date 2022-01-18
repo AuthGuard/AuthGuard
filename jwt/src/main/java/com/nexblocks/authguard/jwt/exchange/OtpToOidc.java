@@ -11,9 +11,10 @@ import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
+import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import io.vavr.control.Either;
 
-@TokenExchange(from = "passwordless", to = "oidc")
+@TokenExchange(from = "otp", to = "oidc")
 public class OtpToOidc implements Exchange {
     private final AccountsService accountsService;
     private final OtpVerifier otpVerifier;
@@ -38,6 +39,10 @@ public class OtpToOidc implements Exchange {
     }
 
     private Either<Exception, AuthResponseBO> generate(final AccountBO account) {
-        return Either.right(openIdConnectTokenProvider.generateToken(account));
+        final TokenOptionsBO options = TokenOptionsBO.builder()
+                .source("otp")
+                .build();
+
+        return Either.right(openIdConnectTokenProvider.generateToken(account, options));
     }
 }

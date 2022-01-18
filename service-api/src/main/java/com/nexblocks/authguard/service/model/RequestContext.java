@@ -9,4 +9,5 @@ public interface RequestContext {
     String getSource();
     String getClientId();
     String getAccountId();
+    String getUserAgent();
 }

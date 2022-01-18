@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,11 +22,15 @@ public class JacksonConfigContext implements ConfigContext {
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         this.rootNode = readRootNode(configFile);
+
+        resolveStringValues(this.rootNode);
     }
 
     public JacksonConfigContext(final File configFile, final ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
         this.rootNode = readRootNode(configFile);
+
+        resolveStringValues(this.rootNode);
     }
 
     public JacksonConfigContext(final JsonNode rootNode) {
@@ -36,6 +41,8 @@ public class JacksonConfigContext implements ConfigContext {
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         this.rootNode = (ObjectNode) rootNode;
+
+        resolveStringValues(this.rootNode);
     }
 
     private ObjectNode readRootNode(final File configFile) {
@@ -46,6 +53,21 @@ public class JacksonConfigContext implements ConfigContext {
                     .orElseThrow(() -> new IllegalArgumentException("Invalid configuration"));
         } catch (final IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    private void resolveStringValues(final ObjectNode node) {
+        final Iterator<String> iterator = node.fieldNames();
+
+        while (iterator.hasNext()) {
+            final String field = iterator.next();
+            final JsonNode value = node.get(field);
+
+            if (value.isTextual()) {
+                node.replace(field, TextNode.valueOf(ValuesResolver.resolve(value.textValue())));
+            } else if (value.isObject()) {
+                resolveStringValues((ObjectNode) value);
+            }
         }
     }
 

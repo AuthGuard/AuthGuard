@@ -10,6 +10,7 @@ import com.nexblocks.authguard.service.model.*;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.time.Duration;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,12 +44,30 @@ class SessionProviderTest {
                 .type("session_token")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
+                .validFor(Duration.ofMinutes(20).getSeconds())
                 .build();
 
         final AuthResponseBO actual = sessionProvider.generateToken(account);
 
         assertThat(actual).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(actual.getToken()).isNotNull().isInstanceOf(String.class);
+    }
+
+    @Test
+    void generateForInactiveAccount() {
+        final SessionsService sessionsService = Mockito.mock(SessionsService.class);
+
+        Mockito.when(sessionsService.create(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0, SessionBO.class).withSessionToken("token"));
+
+        final SessionProvider sessionProvider = new SessionProvider(sessionsService, sessionsConfig());
+
+        final AccountBO account = AccountBO.builder()
+                .id("account-id")
+                .active(false)
+                .build();
+
+        assertThatThrownBy(() -> sessionProvider.generateToken(account)).isInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test

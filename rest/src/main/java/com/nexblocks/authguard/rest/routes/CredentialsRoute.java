@@ -1,21 +1,27 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.google.inject.Inject;
+import com.nexblocks.authguard.api.access.AuthGuardRoles;
 import com.nexblocks.authguard.api.dto.entities.CredentialsDTO;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.UserIdentifierDTO;
 import com.nexblocks.authguard.api.dto.requests.CreateCredentialsRequestDTO;
+import com.nexblocks.authguard.api.dto.requests.PasswordResetRequestDTO;
+import com.nexblocks.authguard.api.dto.requests.PasswordResetTokenRequestDTO;
 import com.nexblocks.authguard.api.dto.requests.UserIdentifiersRequestDTO;
+import com.nexblocks.authguard.api.dto.validation.violations.Violation;
+import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.CredentialsApi;
+import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestJsonMapper;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.rest.util.IdempotencyHeader;
 import com.nexblocks.authguard.service.CredentialsService;
-import com.nexblocks.authguard.service.model.RequestContextBO;
-import com.nexblocks.authguard.service.model.UserIdentifierBO;
-import com.google.inject.Inject;
+import com.nexblocks.authguard.service.model.*;
 import io.javalin.http.Context;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -26,6 +32,8 @@ public class CredentialsRoute extends CredentialsApi {
 
     private final BodyHandler<CreateCredentialsRequestDTO> credentialsRequestBodyHandler;
     private final BodyHandler<UserIdentifiersRequestDTO> userIdentifiersRequestBodyHandler;
+    private final BodyHandler<PasswordResetTokenRequestDTO> passwordResetTokenRequestBodyHandler;
+    private final BodyHandler<PasswordResetRequestDTO> passwordResetRequestBodyHandler;
 
     @Inject
     public CredentialsRoute(final RestMapper restMapper, final CredentialsService credentialsService) {
@@ -35,6 +43,10 @@ public class CredentialsRoute extends CredentialsApi {
         this.credentialsRequestBodyHandler = new BodyHandler.Builder<>(CreateCredentialsRequestDTO.class)
                 .build();
         this.userIdentifiersRequestBodyHandler = new BodyHandler.Builder<>(UserIdentifiersRequestDTO.class)
+                .build();
+        this.passwordResetTokenRequestBodyHandler = new BodyHandler.Builder<>(PasswordResetTokenRequestDTO.class)
+                .build();
+        this.passwordResetRequestBodyHandler = new BodyHandler.Builder<>(PasswordResetRequestDTO.class)
                 .build();
     }
 
@@ -74,7 +86,7 @@ public class CredentialsRoute extends CredentialsApi {
                 .map(restMapper::toDTO);
 
         if (updated.isPresent()) {
-            context.status(400).json(updated.get());
+            context.status(200).json(updated.get());
         } else {
             context.status(404);
         }
@@ -84,13 +96,11 @@ public class CredentialsRoute extends CredentialsApi {
         final CredentialsDTO credentials = RestJsonMapper.asClass(context.body(), CredentialsDTO.class);
         final String credentialsId = context.pathParam("id");
 
-        credentialsService.updatePassword(credentialsId, credentials.getPlainPassword());
-
         final Optional<CredentialsDTO> updated = credentialsService.updatePassword(credentialsId, credentials.getPlainPassword())
                 .map(restMapper::toDTO);
 
         if (updated.isPresent()) {
-            context.status(400).json(updated.get());
+            context.status(200).json(updated.get());
         } else {
             context.status(404);
         }
@@ -99,13 +109,26 @@ public class CredentialsRoute extends CredentialsApi {
     public void addIdentifiers(final Context context) {
         final String credentialsId = context.pathParam("id");
         final UserIdentifiersRequestDTO request = userIdentifiersRequestBodyHandler.getValidated(context);
+
+        if (request.getOldIdentifier() != null && request.getIdentifiers().size() != 1) {
+            throw new RequestValidationException(Collections.singletonList(
+                    new Violation("identifier", ViolationType.EXCEEDS_LENGTH_BOUNDARIES)
+            ));
+        }
+
         final List<UserIdentifierBO> identifiers = request.getIdentifiers().stream()
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
 
-        credentialsService.addIdentifiers(credentialsId, identifiers)
-                .map(restMapper::toDTO)
-                .ifPresentOrElse(context::json, () -> context.status(404));
+        if (request.getOldIdentifier() != null) {
+            credentialsService.replaceIdentifier(credentialsId, request.getOldIdentifier(), identifiers.get(0))
+                    .map(restMapper::toDTO)
+                    .ifPresentOrElse(context::json, () -> context.status(404));
+        } else {
+            credentialsService.addIdentifiers(credentialsId, identifiers)
+                    .map(restMapper::toDTO)
+                    .ifPresentOrElse(context::json, () -> context.status(404));
+        }
     }
 
     public void removeIdentifiers(final Context context) {
@@ -131,12 +154,68 @@ public class CredentialsRoute extends CredentialsApi {
         }
     }
 
+    @Override
+    public void getByIdentifier(final Context context) {
+        final Optional<CredentialsDTO> credentials = credentialsService.getByUsername(context.pathParam("identifier"))
+                .map(restMapper::toDTO);
+
+        if (credentials.isPresent()) {
+            context.json(credentials.get());
+        } else {
+            context.status(404);
+        }
+    }
+
+    @Override
+    public void identifierExists(final Context context) {
+        final boolean exists = credentialsService.getByUsername(context.pathParam("identifier"))
+                .isPresent();
+
+        if (exists) {
+            context.status(200);
+        } else {
+            context.status(404);
+        }
+    }
+
     public void removeById(final Context context) {
         final Optional<CredentialsDTO> credentials = credentialsService.delete(context.pathParam("id"))
                 .map(restMapper::toDTO);
 
         if (credentials.isPresent()) {
             context.json(credentials.get());
+        } else {
+            context.status(404);
+        }
+    }
+
+    @Override
+    public void createResetToken(final Context context) {
+        final PasswordResetTokenRequestDTO request = passwordResetTokenRequestBodyHandler.getValidated(context);
+        final AppBO actor = context.attribute("actor");
+        final boolean isAuthClient = actor.getRoles().contains(AuthGuardRoles.AUTH_CLIENT);
+
+        final PasswordResetTokenBO token = credentialsService
+                .generateResetToken(request.getIdentifier(), !isAuthClient); // prevent an auth client from seeing the reset token
+
+        context.json(restMapper.toDTO(token));
+    }
+
+    @Override
+    public void resetPassword(final Context context) {
+        final PasswordResetRequestDTO request = passwordResetRequestBodyHandler.getValidated(context);
+
+        final Optional<CredentialsBO> updated;
+
+        if (request.isByToken()) {
+            updated = credentialsService.resetPasswordByToken(request.getResetToken(), request.getNewPassword());
+        } else {
+            updated = credentialsService.replacePassword(request.getIdentifier(), request.getOldPassword(),
+                    request.getNewPassword());
+        }
+
+        if (updated.isPresent()) {
+            context.status(200).json(updated.get());
         } else {
             context.status(404);
         }

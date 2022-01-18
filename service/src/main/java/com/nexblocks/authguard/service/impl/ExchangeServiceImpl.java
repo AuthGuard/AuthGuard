@@ -18,6 +18,7 @@ import io.vavr.control.Either;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -136,9 +137,11 @@ public class ExchangeServiceImpl implements ExchangeService {
                                                         final RequestContextBO requestContext) {
         return ExchangeAttemptBO.builder()
                 .clientId(requestContext.getClientId())
-                .sourceIp(requestContext.getSource())
+                .sourceIp(Optional.ofNullable(authRequest.getSourceIp())
+                        .orElse(requestContext.getSource()))
                 .deviceId(authRequest.getDeviceId())
-                .externalSessionId(authRequest.getExternalSessionId());
+                .externalSessionId(authRequest.getExternalSessionId())
+                .userAgent(authRequest.getUserAgent());
     }
 
     private Map<String, Exchange> mapExchanges(final List<Exchange> exchanges) {
