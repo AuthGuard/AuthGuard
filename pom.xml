@@ -7,7 +7,7 @@
     <groupId>com.nexblocks.authguard</groupId>
     <artifactId>authguard</artifactId>
     <packaging>pom</packaging>
-    <version>0.11.0-SNAPSHOT</version>
+    <version>0.12.0</version>
 
     <distributionManagement>
         <repository>
@@ -47,10 +47,10 @@
 
         <javalin.version>3.7.0</javalin.version>
         <logback.version>1.2.7</logback.version>
-        <jackson.version>2.12.3</jackson.version>
+        <jackson.version>2.12.6</jackson.version>
         <immutables.version>2.7.4</immutables.version>
         <jetbrains-annotations.version>13.0</jetbrains-annotations.version>
-        <auth0-jwt.version>3.16.0</auth0-jwt.version>
+        <auth0-jwt.version>3.18.3</auth0-jwt.version>
         <apache-commons.version>3.12.0</apache-commons.version>
         <commons-validator.version>1.7</commons-validator.version>
         <commons-cli.version>1.4</commons-cli.version>

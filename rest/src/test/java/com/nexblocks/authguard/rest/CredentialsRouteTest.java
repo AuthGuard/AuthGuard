@@ -5,6 +5,7 @@ import com.nexblocks.authguard.api.dto.requests.CreateCredentialsRequestDTO;
 import com.nexblocks.authguard.service.CredentialsService;
 import com.nexblocks.authguard.service.model.CredentialsBO;
 import io.restassured.http.ContentType;
+import io.restassured.response.ResponseBody;
 import io.restassured.response.ValidatableResponse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,10 +41,12 @@ class CredentialsRouteTest extends AbstractRouteTest {
     @Test
     void create() {
         final CreateCredentialsRequestDTO credentialsRequest = randomObject(CreateCredentialsRequestDTO.class);
-        final CredentialsBO credentialsBO = mapper().toBO(credentialsRequest);
+        final CredentialsBO credentialsBO = mapper().toBO(credentialsRequest)
+                .withPasswordVersion(null);
         final CredentialsBO serviceResponse = credentialsBO
                 .withPlainPassword(null)
-                .withId(UUID.randomUUID().toString());
+                .withId(UUID.randomUUID().toString())
+                .withPasswordVersion(1);
 
         Mockito.when(credentialsService.create(Mockito.eq(credentialsBO), Mockito.any())).thenReturn(serviceResponse);
 
@@ -62,8 +65,9 @@ class CredentialsRouteTest extends AbstractRouteTest {
                 .as(CredentialsDTO.class);
 
         assertThat(responseBody).isEqualToIgnoringGivenFields(credentialsRequest,
-                "id", "plainPassword", "createdAt", "lastModified");
+                "id", "plainPassword", "createdAt", "lastModified", "passwordUpdatedAt", "passwordVersion");
         assertThat(responseBody.getPlainPassword()).isNull();
         assertThat(responseBody.getId()).isEqualTo(serviceResponse.getId());
+        assertThat(responseBody.getPasswordVersion()).isEqualTo(1);
     }
 }

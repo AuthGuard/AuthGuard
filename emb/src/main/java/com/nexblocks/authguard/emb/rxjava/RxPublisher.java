@@ -4,6 +4,7 @@ import com.nexblocks.authguard.emb.MessagePublisher;
 import com.nexblocks.authguard.emb.MessageSubscriber;
 import com.nexblocks.authguard.emb.model.Message;
 import io.reactivex.rxjava3.functions.Consumer;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.subjects.PublishSubject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +21,8 @@ public class RxPublisher implements MessagePublisher {
 
     @Override
     public void acceptSubscriber(final MessageSubscriber subscriber) {
-        subject.subscribe(safeConsumer(subscriber));
+        subject.observeOn(Schedulers.io())
+                .subscribe(safeConsumer(subscriber));
     }
 
     private Consumer<Message> safeConsumer(MessageSubscriber subscriber) {

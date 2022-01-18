@@ -205,7 +205,14 @@ public class CredentialsRoute extends CredentialsApi {
     public void resetPassword(final Context context) {
         final PasswordResetRequestDTO request = passwordResetRequestBodyHandler.getValidated(context);
 
-        final Optional<CredentialsBO> updated = credentialsService.resetPassword(request.getResetToken(), request.getPlainPassword());
+        final Optional<CredentialsBO> updated;
+
+        if (request.isByToken()) {
+            updated = credentialsService.resetPasswordByToken(request.getResetToken(), request.getNewPassword());
+        } else {
+            updated = credentialsService.replacePassword(request.getIdentifier(), request.getOldPassword(),
+                    request.getNewPassword());
+        }
 
         if (updated.isPresent()) {
             context.status(200).json(updated.get());
