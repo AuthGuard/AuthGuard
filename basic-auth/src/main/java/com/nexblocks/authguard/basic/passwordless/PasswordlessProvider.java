@@ -11,6 +11,8 @@ import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.service.auth.AuthProvider;
 import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ConfigParser;
+import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
+import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
@@ -46,6 +48,10 @@ public class PasswordlessProvider implements AuthProvider {
 
     @Override
     public AuthResponseBO generateToken(final AccountBO account) {
+        if (!account.isActive()) {
+            throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
+        }
+
         final String token = randomToken();
 
         final AccountTokenDO accountToken = AccountTokenDO.builder()

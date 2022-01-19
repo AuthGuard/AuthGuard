@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import javax.persistence.*;
+import java.util.Map;
 import java.util.Set;
 
 @Data
@@ -21,28 +22,28 @@ import java.util.Set;
 })
 @NamedQuery(
         name = "accounts.getById",
-        query = "SELECT account FROM AccountDO account " +
+        query = "SELECT DISTINCT account FROM AccountDO account " +
                 "LEFT JOIN FETCH account.roles " +
                 "LEFT JOIN FETCH account.permissions " +
                 "WHERE account.id = :id AND account.deleted = false"
 )
 @NamedQuery(
         name = "accounts.getByExternalId",
-        query = "SELECT account FROM AccountDO account " +
+        query = "SELECT DISTINCT account FROM AccountDO account " +
                 "LEFT JOIN FETCH account.roles " +
                 "LEFT JOIN FETCH account.permissions " +
                 "WHERE account.externalId = :externalId AND account.deleted = false"
 )
 @NamedQuery(
         name = "accounts.getByEmail",
-        query = "SELECT account FROM AccountDO account " +
+        query = "SELECT DISTINCT account FROM AccountDO account " +
                 "LEFT JOIN FETCH account.roles " +
                 "LEFT JOIN FETCH account.permissions " +
                 "WHERE (account.email.email = :email OR account.backupEmail.email = :email) AND account.deleted = false"
 )
 @NamedQuery(
         name = "accounts.getByRole",
-        query = "SELECT account FROM AccountDO account " +
+        query = "SELECT DISTINCT account FROM AccountDO account " +
                 "LEFT JOIN FETCH account.permissions " +
                 "LEFT JOIN FETCH account.roles role " +
                 "WHERE role = :role AND account.deleted = false "
@@ -54,6 +55,9 @@ public class AccountDO extends AbstractDO {
     private String middleName;
     private String lastName;
     private String fullName;
+
+    private boolean social;
+    private String identityProvider;
 
     @ElementCollection(fetch = FetchType.LAZY)
     @JoinTable(name = "account_roles")
@@ -88,4 +92,9 @@ public class AccountDO extends AbstractDO {
     private PhoneNumberDO phoneNumber;
 
     private boolean active;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @MapKeyColumn(name="key")
+    @Column(name="value")
+    private Map<String, String> metadata;
 }

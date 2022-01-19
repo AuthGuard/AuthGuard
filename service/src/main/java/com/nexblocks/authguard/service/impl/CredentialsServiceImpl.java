@@ -2,10 +2,7 @@ package com.nexblocks.authguard.service.impl;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.nexblocks.authguard.basic.passwords.PasswordValidator;
-import com.nexblocks.authguard.basic.passwords.SecurePassword;
-import com.nexblocks.authguard.basic.passwords.ServiceInvalidPasswordException;
-import com.nexblocks.authguard.basic.passwords.Violation;
+import com.nexblocks.authguard.basic.passwords.*;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.dal.model.CredentialsDO;
@@ -48,6 +45,7 @@ public class CredentialsServiceImpl implements CredentialsService {
     private final PasswordValidator passwordValidator;
     private final MessageBus messageBus;
     private final ServiceMapper serviceMapper;
+    private final Integer passwordVersion;
 
     private final CryptographicRandom cryptographicRandom;
     private final PersistenceService<CredentialsBO, CredentialsDO, CredentialsRepository> persistenceService;
@@ -58,7 +56,7 @@ public class CredentialsServiceImpl implements CredentialsService {
                                   final CredentialsRepository credentialsRepository,
                                   final CredentialsAuditRepository credentialsAuditRepository,
                                   final AccountTokensRepository accountTokensRepository,
-                                  final SecurePassword securePassword,
+                                  final SecurePasswordProvider securePasswordProvider,
                                   final PasswordValidator passwordValidator,
                                   final MessageBus messageBus,
                                   final ServiceMapper serviceMapper) {
@@ -67,7 +65,8 @@ public class CredentialsServiceImpl implements CredentialsService {
         this.credentialsRepository = credentialsRepository;
         this.credentialsAuditRepository = credentialsAuditRepository;
         this.accountTokensRepository = accountTokensRepository;
-        this.securePassword = securePassword;
+        this.securePassword = securePasswordProvider.get();
+        this.passwordVersion = securePasswordProvider.getCurrentVersion();
         this.passwordValidator = passwordValidator;
         this.messageBus = messageBus;
         this.serviceMapper = serviceMapper;
@@ -92,6 +91,8 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .from(credentials)
                 .hashedPassword(hashedPassword)
                 .id(ID.generate())
+                .passwordUpdatedAt(OffsetDateTime.now())
+                .passwordVersion(passwordVersion)
                 .build();
 
         return removeSensitiveInformation(persistenceService.create(credentialsHashedPassword));
@@ -134,7 +135,9 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
 
         final HashedPasswordBO newPassword = verifyAndHashPassword(plainPassword);
-        final CredentialsBO update = existing.withHashedPassword(newPassword);
+        final CredentialsBO update = existing
+                .withHashedPassword(newPassword)
+                .withPasswordUpdatedAt(OffsetDateTime.now());
 
         return doUpdate(existing, update, true);
     }
@@ -253,7 +256,7 @@ public class CredentialsServiceImpl implements CredentialsService {
     }
 
     @Override
-    public Optional<CredentialsBO> resetPassword(final String token, final String plainPassword) {
+    public Optional<CredentialsBO> resetPasswordByToken(final String token, final String plainPassword) {
         final AccountTokenDO accountToken = accountTokensRepository.getByToken(token)
                 .join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
@@ -268,6 +271,25 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .orElseThrow(() -> new ServiceException(ErrorCode.INVALID_TOKEN, "Reset token was not mapped to any credentials"));
 
         return updatePassword(credentialsId, plainPassword);
+    }
+
+    @Override
+    public Optional<CredentialsBO> replacePassword(final String identifier,
+                                                   final String oldPassword,
+                                                   final String newPassword) {
+        final CredentialsBO credentials = getByUsernameUnsafe(identifier)
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST, "Unknown identifier"));
+
+        if (!securePassword.verify(oldPassword, credentials.getHashedPassword())) {
+            throw new ServiceException(ErrorCode.PASSWORDS_DO_NOT_MATCH, "Passwords do not match");
+        }
+
+        final HashedPasswordBO newHashedPassword = verifyAndHashPassword(newPassword);
+        final CredentialsBO update = credentials
+                .withHashedPassword(newHashedPassword)
+                .withPasswordUpdatedAt(OffsetDateTime.now());
+
+        return doUpdate(credentials, update, true);
     }
 
     private Optional<CredentialsBO> doUpdate(final CredentialsBO existing, final CredentialsBO updated, boolean storePasswordAudit) {

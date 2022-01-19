@@ -1,6 +1,7 @@
 package com.nexblocks.authguard.basic.otp;
 
 import com.nexblocks.authguard.basic.config.OtpConfig;
+import com.nexblocks.authguard.basic.config.OtpConfigInterface;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.OtpRepository;
 import com.nexblocks.authguard.emb.MessageBus;
@@ -8,6 +9,8 @@ import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.service.auth.AuthProvider;
 import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ConfigParser;
+import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
+import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -42,6 +45,10 @@ public class OtpProvider implements AuthProvider {
 
     @Override
     public AuthResponseBO generateToken(final AccountBO account) {
+        if (!account.isActive()) {
+            throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
+        }
+
         final String passwordId = ID.generate();
         final String password = generatePassword();
 
@@ -54,9 +61,13 @@ public class OtpProvider implements AuthProvider {
                 .password(password)
                 .build();
 
+        final OtpMessageBody messageBody = new OtpMessageBody(oneTimePassword, account,
+                otpConfig.getMethod() == OtpConfigInterface.Method.EMAIL,
+                otpConfig.getMethod() == OtpConfigInterface.Method.SMS);
+
         otpRepository.save(serviceMapper.toDO(oneTimePassword));
 
-        messageBus.publish(OTP_CHANNEL, Messages.otpGenerated(oneTimePassword));
+        messageBus.publish(OTP_CHANNEL, Messages.otpGenerated(messageBody));
 
         return token;
     }

@@ -5,9 +5,12 @@ import com.nexblocks.authguard.jwt.oauth.TokensResponse;
 import com.nexblocks.authguard.jwt.oauth.config.ImmutableOAuthClientConfiguration;
 import com.nexblocks.authguard.jwt.oauth.config.ImmutableOAuthConfiguration;
 import com.nexblocks.authguard.jwt.oauth.util.HttpUrlAssertion;
+import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.SessionsService;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
+import com.nexblocks.authguard.service.model.AccountBO;
+import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.nexblocks.authguard.service.model.SessionBO;
 import okhttp3.HttpUrl;
 import org.junit.jupiter.api.*;
@@ -23,8 +26,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class OAuthServiceTest {
     private SessionsService sessionsService;
+    private AccountsService accountsService;
     private TestIdentityServer testIdentityServer;
     private ImmutableOAuthClientConfiguration clientConfiguration;
+    private ImmutableOAuthClientConfiguration accountProviderClientConfiguration;
 
     private OAuthService oAuthService;
 
@@ -45,13 +50,28 @@ class OAuthServiceTest {
                 .addDefaultScopes("openid", "profile")
                 .build();
 
+        accountProviderClientConfiguration = ImmutableOAuthClientConfiguration.builder()
+                .provider("account_test")
+                .authUrl("http://localhost:" + testIdentityServer.getPort() + "/auth")
+                .tokenUrl("http://localhost:" + testIdentityServer.getPort() + "/token")
+                .authRedirectUrl("http://localhost/redirect")
+                .tokenRedirectUrl("http://localhost/redirect")
+                .clientId("unit-tests")
+                .clientSecret("secret")
+                .addDefaultScopes("openid", "profile")
+                .accountProvider(true)
+                .emailField("email")
+                .build();
+
         final ImmutableOAuthConfiguration oAuthConfiguration = ImmutableOAuthConfiguration.builder()
                 .addClients(clientConfiguration)
+                .addClients(accountProviderClientConfiguration)
                 .build();
 
         sessionsService = Mockito.mock(SessionsService.class);
+        accountsService = Mockito.mock(AccountsService.class);
 
-        oAuthService = new OAuthService(oAuthConfiguration, sessionsService);
+        oAuthService = new OAuthService(oAuthConfiguration, sessionsService, accountsService);
     }
 
     @AfterAll
@@ -142,5 +162,58 @@ class OAuthServiceTest {
     void exchangeAuthorizationCodeInvalidProvider() {
         assertThatThrownBy(() -> oAuthService.getAuthorizationUrl("invalid").join())
                 .isInstanceOf(ServiceException.class);
+    }
+
+    @Test
+    void exchangeAuthorizationCodeAndCreateAccount() {
+        final RequestContextBO expectedContext = RequestContextBO.builder()
+                .idempotentKey("code")
+                .source("account_test").build();
+
+        Mockito.when(sessionsService.getByToken(Mockito.any()))
+                .thenAnswer(invocation -> {
+                    final SessionBO session = SessionBO.builder()
+                            .sessionToken(invocation.getArgument(0))
+                            .expiresAt(OffsetDateTime.now().plus(Duration.ofMinutes(2)))
+                            .build();
+
+                    return Optional.of(session);
+                });
+
+        Mockito.when(accountsService.create(Mockito.any(), Mockito.eq(expectedContext)))
+                .thenAnswer(invocation ->
+                        invocation.getArgument(0, AccountBO.class).withId("1"));
+
+        final TokensResponse actual = oAuthService.exchangeAuthorizationCode("account_test", "random", "code")
+                .join();
+        final TokensResponse expected = testIdentityServer.getSuccessResponse();
+
+        expected.setAccountId("1");
+
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void exchangeAuthorizationCodeAndGetAccount() {
+        Mockito.when(sessionsService.getByToken(Mockito.any()))
+                .thenAnswer(invocation -> {
+                    final SessionBO session = SessionBO.builder()
+                            .sessionToken(invocation.getArgument(0))
+                            .expiresAt(OffsetDateTime.now().plus(Duration.ofMinutes(2)))
+                            .build();
+
+                    return Optional.of(session);
+                });
+
+        Mockito.when(accountsService.getByExternalId("1"))
+                .thenReturn(Optional.of(AccountBO.builder().id("1").build()));
+
+        final TokensResponse actual = oAuthService.exchangeAuthorizationCode("account_test", "random", "code")
+                .join();
+        final TokensResponse expected = testIdentityServer.getSuccessResponse();
+
+        expected.setAccountId("1");
+
+        assertThat(actual).isEqualTo(expected);
     }
 }
