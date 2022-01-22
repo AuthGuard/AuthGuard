@@ -63,6 +63,7 @@ class AccountsApiTest extends AbstractRouteTest {
                 .email(AccountEmailDTO.builder()
                         .email("email@server.com")
                         .build())
+                .domain("main")
                 .build();
         final RequestContextBO requestContext = RequestContextBO.builder()
                 .idempotentKey(UUID.randomUUID().toString())
@@ -102,6 +103,7 @@ class AccountsApiTest extends AbstractRouteTest {
                 .email(AccountEmailDTO.builder()
                         .email("email@server.com")
                         .build())
+                .domain("main")
                 .build();
 
         final CreateCredentialsRequestDTO credentialsRequest = CreateCredentialsRequestDTO.builder()
@@ -159,6 +161,7 @@ class AccountsApiTest extends AbstractRouteTest {
                 .email(AccountEmailDTO.builder()
                         .email("email@server.com")
                         .build())
+                .domain("main")
                 .build();
 
         final CreateCredentialsRequestDTO credentialsRequest = CreateCredentialsRequestDTO.builder()
@@ -218,6 +221,7 @@ class AccountsApiTest extends AbstractRouteTest {
                 .email(AccountEmailDTO.builder()
                         .email("email@server.com")
                         .build())
+                .domain("main")
                 .build();
 
         final CreateCredentialsRequestDTO credentialsRequest = CreateCredentialsRequestDTO.builder()

@@ -19,4 +19,5 @@ public interface Credentials {
     List<UserIdentifierDTO> getIdentifiers();
     String getPlainPassword();
     Integer getPasswordVersion();
+    String getDomain();
 }

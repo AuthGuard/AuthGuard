@@ -14,7 +14,7 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
 
     Optional<AccountBO> getByExternalId(String externalId);
 
-    Optional<AccountBO> getByEmail(String email);
+    Optional<AccountBO> getByEmail(String email, String domain);
 
     Optional<AccountBO> activate(String accountId);
 
@@ -65,5 +65,5 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
      * This is useful only when deciding if a one-time
      * admin account should be created or not.
      */
-    List<AccountBO> getByRole(String role);
+    List<AccountBO> getByRole(String role, String domain);
 }

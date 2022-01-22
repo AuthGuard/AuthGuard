@@ -17,6 +17,7 @@ public class CreateCredentialsRequestValidator implements Validator<CreateCreden
                 .validate("identifiers", obj.getIdentifiers(), Constraints.required, Constraints.hasItems)
                 .validate("plainPassword", obj.getPlainPassword(), Constraints.required)
                 .validateCollection("identifiers", obj.getIdentifiers(), Validators.getForClass(UserIdentifierDTO.class))
+                .validate("domain", obj.getDomain(), Constraints.required)
                 .getViolations();
     }
 }

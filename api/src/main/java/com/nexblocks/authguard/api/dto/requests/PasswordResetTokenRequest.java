@@ -11,4 +11,5 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = PasswordResetTokenRequestDTO.class)
 public interface PasswordResetTokenRequest {
     String getIdentifier();
+    String getDomain();
 }

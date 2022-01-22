@@ -19,11 +19,11 @@ public abstract class AccountsApi implements ApiRoute {
         get("/:id", this::getById, ActorRoles.adminClient());
         delete("/:id", this::deleteAccount, ActorRoles.adminClient());
         patch("/:id", this::patchAccount, ActorRoles.adminClient());
-        get("/identifier/:identifier", this::getByIdentifier, ActorRoles.adminClient());
+        get("/domain/:domain/identifier/:identifier", this::getByIdentifier, ActorRoles.adminClient());
 
         get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
-        get("/email/:email", this::getByEmail, ActorRoles.adminClient());
-        get("/email/:email/exists", this::emailExists, ActorRoles.adminOrAuthClient());
+        get("/domain/:domain/email/:email", this::getByEmail, ActorRoles.adminClient());
+        get("/domain/:domain/email/:email/exists", this::emailExists, ActorRoles.adminOrAuthClient());
 
         patch("/:id/permissions", this::updatePermissions, ActorRoles.adminClient());
         patch("/:id/roles", this::updateRoles, ActorRoles.adminClient());

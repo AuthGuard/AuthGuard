@@ -48,7 +48,7 @@ class CredentialsRouteTest extends AbstractRouteTest {
                 .withId(UUID.randomUUID().toString())
                 .withPasswordVersion(1);
 
-        Mockito.when(credentialsService.create(Mockito.eq(credentialsBO), Mockito.any())).thenReturn(serviceResponse);
+        Mockito.when(credentialsService.create(Mockito.any(), Mockito.any())).thenReturn(serviceResponse);
 
         final ValidatableResponse httpResponse = given().body(credentialsRequest)
                 .contentType(ContentType.JSON)

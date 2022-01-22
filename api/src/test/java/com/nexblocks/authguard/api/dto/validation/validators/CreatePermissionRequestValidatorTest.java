@@ -1,6 +1,6 @@
 package com.nexblocks.authguard.api.dto.validation.validators;
 
-import com.nexblocks.authguard.api.dto.requests.CreateAppRequestDTO;
+import com.nexblocks.authguard.api.dto.requests.CreatePermissionRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.Validator;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
@@ -10,16 +10,16 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class CreateAppRequestValidatorTest {
-
+public class CreatePermissionRequestValidatorTest {
     @Test
-    void validateValid() {
-        final CreateAppRequestDTO request = CreateAppRequestDTO.builder()
-                .name("app")
+    void validateValidRequest() {
+        final CreatePermissionRequestDTO request = CreatePermissionRequestDTO.builder()
+                .group("group")
+                .name("test-Permission")
                 .domain("main")
                 .build();
 
-        final Validator<CreateAppRequestDTO> validator = Validators.getForClass(CreateAppRequestDTO.class);
+        final Validator<CreatePermissionRequestDTO> validator = Validators.getForClass(CreatePermissionRequestDTO.class);
 
         final List<Violation> violations = validator.validate(request);
 
@@ -27,16 +27,17 @@ class CreateAppRequestValidatorTest {
     }
 
     @Test
-    void validateMissingNameAndDomain() {
-        final CreateAppRequestDTO request = CreateAppRequestDTO.builder()
+    void validateNoFields() {
+        final CreatePermissionRequestDTO request = CreatePermissionRequestDTO.builder()
                 .build();
 
-        final Validator<CreateAppRequestDTO> validator = Validators.getForClass(CreateAppRequestDTO.class);
+        final Validator<CreatePermissionRequestDTO> validator = Validators.getForClass(CreatePermissionRequestDTO.class);
 
         final List<Violation> violations = validator.validate(request);
 
         assertThat(violations).containsExactlyInAnyOrder(
                 new Violation("name", ViolationType.MISSING_REQUIRED_VALUE),
+                new Violation("group", ViolationType.MISSING_REQUIRED_VALUE),
                 new Violation("domain", ViolationType.MISSING_REQUIRED_VALUE)
         );
     }

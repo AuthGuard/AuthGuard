@@ -56,6 +56,7 @@ class AccountJpaTest {
                         .email("backup@emails.com")
                         .build())
                 .metadata(ImmutableMap.of("meta-1", "value-1"))
+                .domain("main")
                 .build();
 
         deletedAccount = AccountDO.builder()
@@ -69,6 +70,7 @@ class AccountJpaTest {
                 .email(EmailDO.builder()
                         .email("deleted@emails.com")
                         .build())
+                .domain("main")
                 .build();
 
         entityManager.persist(createdAccount);
@@ -98,7 +100,8 @@ class AccountJpaTest {
     @Test
     void getByEmail() {
         final TypedQuery<AccountDO> query = entityManager.createNamedQuery("accounts.getByEmail", AccountDO.class)
-                .setParameter("email", createdAccount.getEmail().getEmail());
+                .setParameter("email", createdAccount.getEmail().getEmail())
+                .setParameter("domain", "main");
 
         final List<AccountDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(createdAccount);
@@ -107,7 +110,8 @@ class AccountJpaTest {
     @Test
     void getByBackupEmail() {
         final TypedQuery<AccountDO> query = entityManager.createNamedQuery("accounts.getByEmail", AccountDO.class)
-                .setParameter("email", createdAccount.getBackupEmail().getEmail());
+                .setParameter("email", createdAccount.getBackupEmail().getEmail())
+                .setParameter("domain", "main");
 
         final List<AccountDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(createdAccount);
@@ -116,7 +120,8 @@ class AccountJpaTest {
     @Test
     void getByWrongEmail() {
         final TypedQuery<AccountDO> query = entityManager.createNamedQuery("accounts.getByEmail", AccountDO.class)
-                .setParameter("email", "nonexistent");
+                .setParameter("email", "nonexistent")
+                .setParameter("domain", "main");
 
         final List<AccountDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).isEmpty();
@@ -136,6 +141,7 @@ class AccountJpaTest {
                 .email(EmailDO.builder()
                         .email("primary@emails.com")
                         .build())
+                .domain("main")
                 .build());
 
         Assertions.assertThatThrownBy(() -> entityManager.getTransaction().commit())
@@ -146,7 +152,8 @@ class AccountJpaTest {
     @Test
     void getByRole() {
         final TypedQuery<AccountDO> query = entityManager.createNamedQuery("accounts.getByRole", AccountDO.class)
-                .setParameter("role", "test");
+                .setParameter("role", "test")
+                .setParameter("domain", "main");
 
         final List<AccountDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(createdAccount);
@@ -155,7 +162,8 @@ class AccountJpaTest {
     @Test
     void getByWrongRole() {
         final TypedQuery<AccountDO> query = entityManager.createNamedQuery("accounts.getByRole", AccountDO.class)
-                .setParameter("role", "nonexistent");
+                .setParameter("role", "nonexistent")
+                .setParameter("domain", "main");
 
         final List<AccountDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).isEmpty();

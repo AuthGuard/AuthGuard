@@ -16,4 +16,5 @@ public interface Role {
     OffsetDateTime getCreatedAt();
     OffsetDateTime getLastModified();
     String getName();
+    String getDomain();
 }

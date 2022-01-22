@@ -6,22 +6,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Roles service interface.
- */
 public interface RolesService extends CrudService<RoleBO> {
-    /**
-     * @return All created roles.
-     */
-    List<RoleBO> getAll();
-
-    /**
-     * Find a role by name.
-     * @param name The name of the role.
-     * @return Optional of the found role or empty
-     *         if none was found.
-     */
-    Optional<RoleBO> getRoleByName(String name);
-
-    List<String> verifyRoles(Collection<String> roles);
+    List<RoleBO> getAll(final String domain);
+    Optional<RoleBO> getRoleByName(String name, final String domain);
+    List<String> verifyRoles(Collection<String> roles, final String domain);
 }

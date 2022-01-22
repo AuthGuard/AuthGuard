@@ -22,6 +22,7 @@ public interface CreateAccountRequest {
     String getMiddleName();
     String getLastName();
     String getFullName();
+    String getDomain();
 
     AccountEmailDTO getEmail();
     AccountEmailDTO getBackupEmail();

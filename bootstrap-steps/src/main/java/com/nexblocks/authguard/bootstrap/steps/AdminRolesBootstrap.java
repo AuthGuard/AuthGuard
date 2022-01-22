@@ -12,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AdminRolesBootstrap implements BootstrapStep {
+    private static final String RESERVED_DOMAIN = "global";
+
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final RolesService rolesService;
@@ -39,14 +41,14 @@ public class AdminRolesBootstrap implements BootstrapStep {
             throw new IllegalStateException("Admin client role name cannot be null in applications configuration");
         }
 
-        if (rolesService.getRoleByName(adminRoleName).isEmpty()) {
+        if (rolesService.getRoleByName(adminRoleName, RESERVED_DOMAIN).isEmpty()) {
             log.info("Admin role {} wasn't found and will be created", adminRoleName);
 
             final RoleBO adminRole = createRole(adminRoleName);
             log.info("Created admin client role {}", adminRole);
         }
 
-        if (rolesService.getRoleByName(adminClientRoleName).isEmpty()) {
+        if (rolesService.getRoleByName(adminClientRoleName, RESERVED_DOMAIN).isEmpty()) {
             log.info("Admin client role {} wasn't found and will be created", adminClientRoleName);
 
             final RoleBO adminClientRole = createRole(adminClientRoleName);
@@ -57,6 +59,7 @@ public class AdminRolesBootstrap implements BootstrapStep {
     private RoleBO createRole(final String roleName) {
         final RoleBO role = RoleBO.builder()
                 .name(roleName)
+                .domain(RESERVED_DOMAIN)
                 .build();
 
         return rolesService.create(role);

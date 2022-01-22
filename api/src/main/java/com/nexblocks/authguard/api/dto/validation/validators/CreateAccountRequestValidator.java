@@ -15,6 +15,7 @@ public class CreateAccountRequestValidator implements Validator<CreateAccountReq
                 .validate("externalId", obj.getExternalId(), Constraints.reasonableLength)
                 .validate("email", obj.getEmail(), Constraints.validEmail)
                 .validate("backupEmail", obj.getBackupEmail(), Constraints.validEmail)
+                .validate("domain", obj.getDomain(), Constraints.required)
                 .getViolations();
     }
 }

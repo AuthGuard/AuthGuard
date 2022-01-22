@@ -17,4 +17,5 @@ public interface Permission {
     OffsetDateTime getLastModified();
     String getGroup();
     String getName();
+    String getDomain();
 }

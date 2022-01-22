@@ -17,7 +17,7 @@ import javax.persistence.UniqueConstraint;
 // JPA
 @Entity
 @Table(name = "roles", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"name"}, name = "ROLE_DUP")
+        @UniqueConstraint(columnNames = { "name", "domain" }, name = "ROLE_DUP")
 })
 @NamedQuery(
         name = "roles.getById",
@@ -25,16 +25,17 @@ import javax.persistence.UniqueConstraint;
 )
 @NamedQuery(
         name = "roles.getAll",
-        query = "SELECT role FROM RoleDO role WHERE role.deleted = false"
+        query = "SELECT role FROM RoleDO role WHERE role.deleted = false AND role.domain = :domain"
 )
 @NamedQuery(
         name = "roles.getByName",
-        query = "SELECT role FROM RoleDO role WHERE role.name = :name AND role.deleted = false"
+        query = "SELECT role FROM RoleDO role WHERE role.name = :name AND role.domain = :domain AND role.deleted = false"
 )
 @NamedQuery(
         name = "roles.getMultiple",
-        query = "SELECT role FROM RoleDO role WHERE role.name in :names AND role.deleted = false"
+        query = "SELECT role FROM RoleDO role WHERE role.name in :names AND role.domain = :domain AND role.deleted = false"
 )
 public class RoleDO extends AbstractDO {
     private String name;
+    private String domain;
 }

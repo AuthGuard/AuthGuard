@@ -29,12 +29,14 @@ public class PermissionsJpaTest {
                 .id("first-permission")
                 .group("test")
                 .name("read")
+                .domain("main")
                 .build();
 
         second = PermissionDO.builder()
                 .id("second-permission")
                 .group("test")
                 .name("write")
+                .domain("main")
                 .build();
 
         deleted = PermissionDO.builder()
@@ -42,6 +44,7 @@ public class PermissionsJpaTest {
                 .deleted(true)
                 .group("test")
                 .name("delete")
+                .domain("main")
                 .build();
 
         entityManager.getTransaction().begin();
@@ -64,7 +67,8 @@ public class PermissionsJpaTest {
 
     @Test
     void getAll() {
-        final TypedQuery<PermissionDO> query = entityManager.createNamedQuery("permissions.getAll", PermissionDO.class);
+        final TypedQuery<PermissionDO> query = entityManager.createNamedQuery("permissions.getAll", PermissionDO.class)
+                .setParameter("domain", first.getDomain());
 
         final List<PermissionDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(first, second);
@@ -74,7 +78,8 @@ public class PermissionsJpaTest {
     void getByGroupAndName() {
         final TypedQuery<PermissionDO> query = entityManager.createNamedQuery("permissions.getByGroupAndName", PermissionDO.class)
                 .setParameter("group", first.getGroup())
-                .setParameter("name", first.getName());
+                .setParameter("name", first.getName())
+                .setParameter("domain", first.getDomain());
 
         final List<PermissionDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(first);
@@ -83,7 +88,8 @@ public class PermissionsJpaTest {
     @Test
     void getByGroup() {
         final TypedQuery<PermissionDO> query = entityManager.createNamedQuery("permissions.getByGroup", PermissionDO.class)
-                .setParameter("group", first.getGroup());
+                .setParameter("group", first.getGroup())
+                .setParameter("domain", first.getDomain());
 
         final List<PermissionDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(first, second);
