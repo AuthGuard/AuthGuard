@@ -2,7 +2,7 @@ openapi: 3.0.3
 
 info:
   title: AuthGuard API
-  version: 0.11.0
+  version: 0.12.0
 
 security:
   - apiKey: []
@@ -1236,6 +1236,8 @@ components:
           type: string
         externalId:
           type: string
+        domain:
+          type: string
         firstName:
           type: string
         middleName:
@@ -1273,6 +1275,8 @@ components:
       properties:
         accountId:
           type: string
+        domain:
+          type: string
         identifiers:
           type: array
           items:
@@ -1289,6 +1293,8 @@ components:
             - PHONE_NUMBER
         identifier:
           type: string
+        domain:
+          type: string
 
     Application:
       type: object
@@ -1296,6 +1302,8 @@ components:
         id:
           type: string
         externalId:
+          type: string
+        domain:
           type: string
         accountId:
           type: string
@@ -1334,6 +1342,8 @@ components:
           type: string
         name:
           type: string
+        domain:
+          type: string
 
     PermissionssArray:
       type: object
@@ -1348,6 +1358,8 @@ components:
       type: object
       properties:
         name:
+          type: string
+        domain:
           type: string
 
     RolesArray:
@@ -1431,8 +1443,12 @@ components:
 
     CreateAccountRequest:
       type: object
+      required:
+        - domain
       properties:
         externalId:
+          type: string
+        domain:
           type: string
         firstName:
           type: string
@@ -1489,8 +1505,12 @@ components:
 
     CreateApplicationRequest:
       type: object
+      required:
+        - domain
       properties:
         externalId:
+          type: string
+        domain:
           type: string
         accountId:
           type: string
@@ -1508,8 +1528,13 @@ components:
 
     CreateCredentialsRequest:
       type: object
+      required:
+        - domain
+        - identifiers
       properties:
         accountId:
+          type: string
+        domain:
           type: string
         identifiers:
           type: array
@@ -1546,8 +1571,11 @@ components:
       type: object
       required:
         - name
+        - domain
       properties:
         name:
+          type: string
+        domain:
           type: string
 
     CreatePermissionRequest:
@@ -1555,10 +1583,13 @@ components:
       required:
         - group
         - name
+        - domain
       properties:
         group:
           type: string
         name:
+          type: string
+        domain:
           type: string
 
     AccountEmailRequest:
@@ -1639,8 +1670,11 @@ components:
       type: object
       required:
         - identifier
+        - domain
       properties:
         identifier:
+          type: string
+        domain:
           type: string
 
     PasswordResetRequest:
@@ -1655,6 +1689,9 @@ components:
           description: Required if 'byToken' is true
           type: string
         identifier:
+          description: Required if 'byToken' is false
+          type: string
+        domain:
           description: Required if 'byToken' is false
           type: string
         oldPassword:
