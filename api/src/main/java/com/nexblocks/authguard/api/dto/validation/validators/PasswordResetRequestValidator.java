@@ -20,6 +20,12 @@ public class PasswordResetRequestValidator implements Validator<PasswordResetReq
                         );
                     }
 
+                    if (identifier != null && obj.getDomain() == null) {
+                        return Collections.singletonList(
+                                new Violation("domain", ViolationType.MISSING_REQUIRED_VALUE)
+                        );
+                    }
+
                     return Collections.emptyList();
                 })
                 .validate("oldPassword", obj.getOldPassword(), password -> {

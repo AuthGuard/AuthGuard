@@ -25,6 +25,7 @@ public class Validators {
         classValidators.put(PermissionsRequestDTO.class, new PermissionsRequestValidator());
         classValidators.put(RolesRequestDTO.class, new RolesRequestValidator());
         classValidators.put(CreateRoleRequestDTO.class, new CreateRoleRequestValidator());
+        classValidators.put(CreatePermissionRequestDTO.class, new CreatePermissionRequestValidator());
         classValidators.put(AccountEmailsRequestDTO.class, new AccountEmailsRequestValidator());
 
         classValidators.put(TokenRestrictionsDTO.class, new TokenRestrictionsValidator());

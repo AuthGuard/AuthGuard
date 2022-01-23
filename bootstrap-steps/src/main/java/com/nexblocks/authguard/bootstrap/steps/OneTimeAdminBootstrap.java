@@ -18,6 +18,7 @@ import java.util.UUID;
 
 public class OneTimeAdminBootstrap implements BootstrapStep {
     private static final String OTA_ROLE = "one_time_admin";
+    private static final String RESERVED_DOMAIN = "global";
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -40,12 +41,12 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
     @Override
     public void run() {
         final List<AccountBO> admins = accountsService.getAdmins();
-        final List<AccountBO> oneTimeAdmins = accountsService.getByRole(OTA_ROLE);
+        final List<AccountBO> oneTimeAdmins = accountsService.getByRole(OTA_ROLE, RESERVED_DOMAIN);
 
         if (admins.isEmpty() && oneTimeAdmins.isEmpty()) {
             log.info("No admin accounts were found, a one-time admin account will be created");
 
-            if (rolesService.getRoleByName(OTA_ROLE).isEmpty()) {
+            if (rolesService.getRoleByName(OTA_ROLE, RESERVED_DOMAIN).isEmpty()) {
                 log.info("Default role {} wasn't found and will be created", OTA_ROLE);
 
                 final RoleBO created = createRole(OTA_ROLE);
@@ -68,6 +69,7 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
         return AccountBO.builder()
                 .roles(Collections.singletonList(OTA_ROLE))
                 .active(true)
+                .domain(RESERVED_DOMAIN)
                 .build();
     }
 
@@ -95,6 +97,7 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
                 .addIdentifiers(UserIdentifierBO.builder()
                         .identifier(username)
                         .type(UserIdentifier.Type.USERNAME)
+                        .domain(RESERVED_DOMAIN)
                         .build())
                 .plainPassword(password)
                 .build();
@@ -102,6 +105,7 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
     private RoleBO createRole(final String roleName) {
         final RoleBO role = RoleBO.builder()
                 .name(roleName)
+                .domain(RESERVED_DOMAIN)
                 .build();
 
         return rolesService.create(role);

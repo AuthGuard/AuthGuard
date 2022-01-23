@@ -5,6 +5,7 @@ import com.nexblocks.authguard.api.dto.requests.AuthRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.Validator;
 import com.nexblocks.authguard.api.dto.validation.fluent.FluentValidator;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
+import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,6 +17,13 @@ public class AuthRequestValidator implements Validator<AuthRequestDTO> {
                 .validate("restrictions", obj.getRestrictions(), restrictions -> {
                     if (restrictions != null) {
                         return Validators.getForClass(TokenRestrictionsDTO.class).validate(restrictions);
+                    }
+
+                    return Collections.emptyList();
+                })
+                .validate("domain", obj.getDomain(), domain -> {
+                    if (obj.getIdentifier() != null && domain == null) {
+                        return Collections.singletonList(new Violation("domain", ViolationType.MISSING_REQUIRED_VALUE));
                     }
 
                     return Collections.emptyList();

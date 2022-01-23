@@ -14,7 +14,7 @@ import javax.persistence.*;
 // JPA
 @Entity
 @Table(name = "user_identifiers", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "identifier", name = "IDENTIFIER_DUP")
+        @UniqueConstraint(columnNames = { "identifier", "domain" }, name = "IDENTIFIER_DUP")
 })
 public class UserIdentifierDO {
     @Id
@@ -24,6 +24,7 @@ public class UserIdentifierDO {
     private Type type;
     private String identifier;
     private boolean active;
+    private String domain;
 
     public enum Type {
         USERNAME,
