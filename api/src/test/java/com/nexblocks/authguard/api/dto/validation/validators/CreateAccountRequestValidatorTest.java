@@ -16,6 +16,7 @@ class CreateAccountRequestValidatorTest {
     @Test
     void validateValidNoFields() {
         final CreateAccountRequestDTO request = CreateAccountRequestDTO.builder()
+                .domain("main")
                 .build();
 
         final Validator<CreateAccountRequestDTO> validator = Validators.getForClass(CreateAccountRequestDTO.class);
@@ -26,12 +27,25 @@ class CreateAccountRequestValidatorTest {
     }
 
     @Test
+    void validateNoDomain() {
+        final CreateAccountRequestDTO request = CreateAccountRequestDTO.builder()
+                .build();
+
+        final Validator<CreateAccountRequestDTO> validator = Validators.getForClass(CreateAccountRequestDTO.class);
+
+        final List<Violation> violations = validator.validate(request);
+
+        assertThat(violations).contains(new Violation("domain", ViolationType.MISSING_REQUIRED_VALUE));
+    }
+
+    @Test
     void validateValidEmail() {
         final CreateAccountRequestDTO request = CreateAccountRequestDTO.builder()
                 .externalId("external")
                 .email(AccountEmailDTO.builder()
                         .email("valid@valid.com")
                         .build())
+                .domain("main")
                 .build();
 
         final Validator<CreateAccountRequestDTO> validator = Validators.getForClass(CreateAccountRequestDTO.class);
@@ -48,6 +62,7 @@ class CreateAccountRequestValidatorTest {
                 .email(AccountEmailDTO.builder()
                         .email("invalid")
                         .build())
+                .domain("main")
                 .build();
 
         final Validator<CreateAccountRequestDTO> validator = Validators.getForClass(CreateAccountRequestDTO.class);
@@ -64,6 +79,7 @@ class CreateAccountRequestValidatorTest {
                 .backupEmail(AccountEmailDTO.builder()
                         .email("valid@valid.com")
                         .build())
+                .domain("main")
                 .build();
 
         final Validator<CreateAccountRequestDTO> validator = Validators.getForClass(CreateAccountRequestDTO.class);
@@ -80,6 +96,7 @@ class CreateAccountRequestValidatorTest {
                 .backupEmail(AccountEmailDTO.builder()
                         .email("invalid")
                         .build())
+                .domain("main")
                 .build();
 
         final Validator<CreateAccountRequestDTO> validator = Validators.getForClass(CreateAccountRequestDTO.class);

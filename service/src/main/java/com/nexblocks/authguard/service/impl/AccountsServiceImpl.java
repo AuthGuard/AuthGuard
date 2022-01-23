@@ -68,7 +68,7 @@ public class AccountsServiceImpl implements AccountsService {
     private AccountBO doCreate(final AccountBO account) {
         final AccountBO preProcessed = AccountPreProcessor.preProcess(account, accountConfig);
 
-        verifyRolesOrFail(preProcessed.getRoles());
+        verifyRolesOrFail(preProcessed.getRoles(), preProcessed.getDomain());
 
         final AccountBO created = persistenceService.create(preProcessed);
 
@@ -115,8 +115,8 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public Optional<AccountBO> getByEmail(final String email) {
-        return accountsRepository.getByEmail(email)
+    public Optional<AccountBO> getByEmail(final String email, final String domain) {
+        return accountsRepository.getByEmail(email, domain)
                 .join()
                 .map(serviceMapper::toBO);
     }
@@ -190,7 +190,11 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public AccountBO grantPermissions(final String accountId, final List<PermissionBO> permissions) {
-        final List<PermissionBO> verifiedPermissions = permissionsService.validate(permissions);
+        final AccountBO account = getById(accountId)
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
+                        + accountId + " was found"));
+
+        final List<PermissionBO> verifiedPermissions = permissionsService.validate(permissions, account.getDomain());
 
         if (verifiedPermissions.size() != permissions.size()) {
             final List<PermissionBO> difference = permissions.stream()
@@ -199,10 +203,6 @@ public class AccountsServiceImpl implements AccountsService {
 
             throw new ServiceException(ErrorCode.PERMISSION_DOES_NOT_EXIST, "The following permissions are not valid" + difference);
         }
-
-        final AccountBO account = getById(accountId)
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
-                        + accountId + " was found"));
 
         final List<PermissionBO> combinedPermissions = Stream.concat(account.getPermissions().stream(), verifiedPermissions.stream())
                 .distinct()
@@ -240,13 +240,13 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public AccountBO grantRoles(final String accountId, final List<String> roles) {
-        verifyRolesOrFail(roles);
-
         final AccountBO account = accountsRepository.getById(accountId)
                 .join()
                 .map(serviceMapper::toBO)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
                         + accountId + " was found"));
+
+        verifyRolesOrFail(roles, account.getDomain());
 
         final List<String> combinedRoles = Stream.concat(account.getRoles().stream(), roles.stream())
                 .distinct()
@@ -282,20 +282,20 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public List<AccountBO> getAdmins() {
-        return getByRole(accountConfig.getAuthguardAdminRole());
+        return getByRole(accountConfig.getAuthguardAdminRole(), "global");
     }
 
     @Override
-    public List<AccountBO> getByRole(final String role) {
-        return accountsRepository.getByRole(role)
+    public List<AccountBO> getByRole(final String role, final String domain) {
+        return accountsRepository.getByRole(role, domain)
                 .join()
                 .stream()
                 .map(serviceMapper::toBO)
                 .collect(Collectors.toList());
     }
 
-    private void verifyRolesOrFail(final Collection<String> roles) {
-        final List<String> verifiedRoles = rolesService.verifyRoles(roles);
+    private void verifyRolesOrFail(final Collection<String> roles, final String domain) {
+        final List<String> verifiedRoles = rolesService.verifyRoles(roles, domain);
 
         if (verifiedRoles.size() != roles.size()) {
             final List<String> difference = roles.stream()

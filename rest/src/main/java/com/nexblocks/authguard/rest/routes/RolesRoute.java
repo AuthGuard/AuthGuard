@@ -74,8 +74,9 @@ public class RolesRoute extends RolesApi {
 
     public void getByName(final Context context) {
         final String name = context.pathParam("name");
+        final String domain = context.pathParam("domain");
 
-        rolesService.getRoleByName(name)
+        rolesService.getRoleByName(name, domain)
                 .map(restMapper::toDTO)
                 .ifPresentOrElse(
                         role -> context.status(200).json(role),
@@ -88,7 +89,9 @@ public class RolesRoute extends RolesApi {
 
     @Override
     public void getAll(final Context context) {
-        final List<RoleDTO> roles = rolesService.getAll().stream()
+        final String domain = context.pathParam("domain");
+
+        final List<RoleDTO> roles = rolesService.getAll(domain).stream()
                 .map(restMapper::toDTO)
                 .collect(Collectors.toList());
 

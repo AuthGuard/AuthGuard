@@ -8,6 +8,7 @@ public interface AuthRequest {
     String getIdentifier();
     String getPassword();
     String getToken();
+    String getDomain();
     TokenRestrictionsBO getRestrictions();
     String getDeviceId();
     String getExternalSessionId();

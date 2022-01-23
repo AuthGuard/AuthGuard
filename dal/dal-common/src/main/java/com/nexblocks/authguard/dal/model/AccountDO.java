@@ -16,9 +16,9 @@ import java.util.Set;
 // JPA
 @Entity
 @Table(name = "accounts", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "email", name = "EMAIL_DUP"),
-        @UniqueConstraint(columnNames = "backup_email", name = "BACKUP_EMAIL_DUP"),
-        @UniqueConstraint(columnNames = "phone_number", name = "PHONE_NUMBER_DUP")
+        @UniqueConstraint(columnNames = { "email", "domain" }, name = "EMAIL_DUP"),
+        @UniqueConstraint(columnNames = { "backup_email", "domain" }, name = "BACKUP_EMAIL_DUP"),
+        @UniqueConstraint(columnNames = { "phone_number", "domain" }, name = "PHONE_NUMBER_DUP")
 })
 @NamedQuery(
         name = "accounts.getById",
@@ -39,14 +39,14 @@ import java.util.Set;
         query = "SELECT DISTINCT account FROM AccountDO account " +
                 "LEFT JOIN FETCH account.roles " +
                 "LEFT JOIN FETCH account.permissions " +
-                "WHERE (account.email.email = :email OR account.backupEmail.email = :email) AND account.deleted = false"
+                "WHERE (account.email.email = :email OR account.backupEmail.email = :email) AND account.domain = :domain AND account.deleted = false"
 )
 @NamedQuery(
         name = "accounts.getByRole",
         query = "SELECT DISTINCT account FROM AccountDO account " +
                 "LEFT JOIN FETCH account.permissions " +
                 "LEFT JOIN FETCH account.roles role " +
-                "WHERE role = :role AND account.deleted = false "
+                "WHERE role = :role AND account.domain = :domain AND account.deleted = false "
 )
 public class AccountDO extends AbstractDO {
     private String externalId;
@@ -55,6 +55,7 @@ public class AccountDO extends AbstractDO {
     private String middleName;
     private String lastName;
     private String fullName;
+    private String domain;
 
     private boolean social;
     private String identityProvider;

@@ -12,6 +12,7 @@ import com.nexblocks.authguard.api.dto.requests.UserIdentifiersRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.CredentialsApi;
+import com.nexblocks.authguard.rest.access.ActorDomainVerifier;
 import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestJsonMapper;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
@@ -54,12 +55,22 @@ public class CredentialsRoute extends CredentialsApi {
         final String idempotentKey = IdempotencyHeader.getKeyOrFail(context);
         final CreateCredentialsRequestDTO request = credentialsRequestBodyHandler.getValidated(context);
 
+        if (!ActorDomainVerifier.verifyActorDomain(context, request.getDomain())) {
+            return;
+        }
+
         final RequestContextBO requestContext = RequestContextBO.builder()
                 .idempotentKey(idempotentKey)
                 .source(context.ip())
                 .build();
 
-        final Optional<CredentialsDTO> created = Optional.of(restMapper.toBO(request))
+        final CredentialsBO credentials = restMapper.toBO(request);
+        final List<UserIdentifierBO> identifiers = credentials.getIdentifiers()
+                .stream()
+                .map(identifier -> identifier.withDomain(request.getDomain()))
+                .collect(Collectors.toList());
+
+        final Optional<CredentialsDTO> created = Optional.of(credentials.withIdentifiers(identifiers))
                 .map(credentialsBO -> credentialsService.create(credentialsBO, requestContext))
                 .map(restMapper::toDTO);
 
@@ -156,7 +167,8 @@ public class CredentialsRoute extends CredentialsApi {
 
     @Override
     public void getByIdentifier(final Context context) {
-        final Optional<CredentialsDTO> credentials = credentialsService.getByUsername(context.pathParam("identifier"))
+        final String domain = context.pathParam("domain");
+        final Optional<CredentialsDTO> credentials = credentialsService.getByUsername(context.pathParam("identifier"), domain)
                 .map(restMapper::toDTO);
 
         if (credentials.isPresent()) {
@@ -168,7 +180,13 @@ public class CredentialsRoute extends CredentialsApi {
 
     @Override
     public void identifierExists(final Context context) {
-        final boolean exists = credentialsService.getByUsername(context.pathParam("identifier"))
+        final String domain = context.pathParam("domain");
+
+        if (!ActorDomainVerifier.verifyActorDomain(context, domain)) {
+            return;
+        }
+
+        final boolean exists = credentialsService.getByUsername(context.pathParam("identifier"), domain)
                 .isPresent();
 
         if (exists) {
@@ -192,11 +210,16 @@ public class CredentialsRoute extends CredentialsApi {
     @Override
     public void createResetToken(final Context context) {
         final PasswordResetTokenRequestDTO request = passwordResetTokenRequestBodyHandler.getValidated(context);
+
+        if (!ActorDomainVerifier.verifyActorDomain(context, request.getDomain())) {
+            return;
+        }
+
         final AppBO actor = context.attribute("actor");
         final boolean isAuthClient = actor.getRoles().contains(AuthGuardRoles.AUTH_CLIENT);
 
         final PasswordResetTokenBO token = credentialsService
-                .generateResetToken(request.getIdentifier(), !isAuthClient); // prevent an auth client from seeing the reset token
+                .generateResetToken(request.getIdentifier(), !isAuthClient, request.getDomain()); // prevent an auth client from seeing the reset token
 
         context.json(restMapper.toDTO(token));
     }
@@ -205,13 +228,18 @@ public class CredentialsRoute extends CredentialsApi {
     public void resetPassword(final Context context) {
         final PasswordResetRequestDTO request = passwordResetRequestBodyHandler.getValidated(context);
 
+        if (request.getIdentifier() != null &&
+                !ActorDomainVerifier.verifyActorDomain(context, request.getDomain())) {
+            return;
+        }
+
         final Optional<CredentialsBO> updated;
 
         if (request.isByToken()) {
             updated = credentialsService.resetPasswordByToken(request.getResetToken(), request.getNewPassword());
         } else {
             updated = credentialsService.replacePassword(request.getIdentifier(), request.getOldPassword(),
-                    request.getNewPassword());
+                    request.getNewPassword(), request.getDomain());
         }
 
         if (updated.isPresent()) {

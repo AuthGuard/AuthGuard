@@ -18,6 +18,8 @@ import java.util.Base64;
 import java.util.Optional;
 
 public class BasicAuthProvider {
+    private static final String RESERVED_DOMAIN = "global";
+
     private final Logger LOG = LoggerFactory.getLogger(BasicAuthProvider.class);
 
     private final CredentialsService credentialsService;
@@ -37,7 +39,7 @@ public class BasicAuthProvider {
     }
 
     public Either<Exception, AccountBO> authenticateAndGetAccount(final AuthRequestBO authRequest) {
-        return verifyCredentialsAndGetAccount(authRequest.getIdentifier(), authRequest.getPassword());
+        return verifyCredentialsAndGetAccount(authRequest.getIdentifier(), authRequest.getPassword(), authRequest.getDomain());
     }
 
     public Either<Exception, AccountBO> authenticateAndGetAccount(final String basicToken) {
@@ -45,17 +47,7 @@ public class BasicAuthProvider {
     }
 
     public Either<Exception, AccountBO> getAccount(final AuthRequestBO request) {
-        return verifyCredentialsAndGetAccount(request.getIdentifier());
-    }
-
-    public Either<Exception, AccountBO> getAccount(final String basicToken) {
-        final String[] parts = TokensUtils.parseAuthorization(basicToken);
-
-        if (parts[0].equals("Basic")) {
-            return handleBasicAuthenticationNoPassword(parts[1]);
-        } else {
-            throw new ServiceException(ErrorCode.UNSUPPORTED_SCHEME, "Unsupported authorization scheme");
-        }
+        return verifyCredentialsAndGetAccount(request.getIdentifier(), request.getDomain());
     }
 
     private Either<Exception, AccountBO> handleBasicAuthentication(final String base64Credentials) {
@@ -68,23 +60,11 @@ public class BasicAuthProvider {
         final String username =  decoded[0];
         final String password = decoded[1];
 
-        return verifyCredentialsAndGetAccount(username, password);
+        return verifyCredentialsAndGetAccount(username, password, RESERVED_DOMAIN);
     }
 
-    private Either<Exception, AccountBO> handleBasicAuthenticationNoPassword(final String base64Credentials) {
-        final String[] decoded = new String(Base64.getDecoder().decode(base64Credentials)).split(":");
-
-        if (decoded.length != 1) {
-            return Either.left(new ServiceException(ErrorCode.INVALID_AUTHORIZATION_FORMAT, "Invalid format for basic authentication"));
-        }
-
-        final String username =  decoded[0];
-
-        return verifyCredentialsAndGetAccount(username);
-    }
-
-    private Either<Exception, AccountBO> verifyCredentialsAndGetAccount(final String username, final String password) {
-        final Optional<CredentialsBO> credentialsOpt = credentialsService.getByUsernameUnsafe(username);
+    private Either<Exception, AccountBO> verifyCredentialsAndGetAccount(final String username, final String password, final String domain) {
+        final Optional<CredentialsBO> credentialsOpt = credentialsService.getByUsernameUnsafe(username, domain);
 
         // TODO replace this with Either mapping
         if (credentialsOpt.isPresent()) {
@@ -154,8 +134,8 @@ public class BasicAuthProvider {
         return securePasswordProvider.getPreviousVersions().get(credentials.getPasswordVersion());
     }
 
-    private Either<Exception, AccountBO> verifyCredentialsAndGetAccount(final String username) {
-        final Optional<CredentialsBO> credentials = credentialsService.getByUsernameUnsafe(username);
+    private Either<Exception, AccountBO> verifyCredentialsAndGetAccount(final String username, final String domain) {
+        final Optional<CredentialsBO> credentials = credentialsService.getByUsernameUnsafe(username, domain);
 
         if (credentials.isPresent()) {
             final Optional<Exception> validationError = checkIdentifier(credentials.get(), username);

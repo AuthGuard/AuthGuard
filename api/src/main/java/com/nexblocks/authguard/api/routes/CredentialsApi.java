@@ -15,8 +15,8 @@ public abstract class CredentialsApi implements ApiRoute {
     @Override
     public void addEndpoints() {
         get("/:id", this::getById, ActorRoles.adminClient());
-        get("/identifier/:identifier", this::getByIdentifier, ActorRoles.adminClient());
-        get("/identifier/:identifier/exists", this::identifierExists, ActorRoles.adminOrAuthClient());
+        get("/domain/:domain/identifier/:identifier", this::getByIdentifier, ActorRoles.adminClient());
+        get("/domain/:domain/identifier/:identifier/exists", this::identifierExists, ActorRoles.adminOrAuthClient());
 
         post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin"));
 

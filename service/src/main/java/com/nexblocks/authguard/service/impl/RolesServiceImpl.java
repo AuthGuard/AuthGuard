@@ -34,8 +34,8 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public List<RoleBO> getAll() {
-        return rolesRepository.getAll()
+    public List<RoleBO> getAll(final String domain) {
+        return rolesRepository.getAll(domain)
                 .join()
                 .stream()
                 .map(serviceMapper::toBO)
@@ -44,7 +44,7 @@ public class RolesServiceImpl implements RolesService {
 
     @Override
     public RoleBO create(final RoleBO role) {
-        if (getRoleByName(role.getName()).isPresent()) {
+        if (getRoleByName(role.getName(), role.getDomain()).isPresent()) {
             throw new ServiceConflictException(ErrorCode.ROLE_ALREADY_EXISTS,
                     "Role " + role.getName() + " already exists");
         }
@@ -68,15 +68,15 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public Optional<RoleBO> getRoleByName(final String name) {
-        return rolesRepository.getByName(name)
+    public Optional<RoleBO> getRoleByName(final String name, final String domain) {
+        return rolesRepository.getByName(name, domain)
                 .thenApply(optional -> optional.map(serviceMapper::toBO))
                 .join();
     }
 
     @Override
-    public List<String> verifyRoles(final Collection<String> roles) {
-        return rolesRepository.getMultiple(roles)
+    public List<String> verifyRoles(final Collection<String> roles, final String domain) {
+        return rolesRepository.getMultiple(roles, domain)
                 .thenApply(found -> found.stream()
                         .map(RoleDO::getName)
                         .collect(Collectors.toList())

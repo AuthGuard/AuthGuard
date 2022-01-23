@@ -8,6 +8,7 @@ public interface UserIdentifier {
     Long getId(); // only useful for relational DBs
     Type getType();
     String getIdentifier();
+    String getDomain();
 
     @Value.Default
     default boolean isActive() {

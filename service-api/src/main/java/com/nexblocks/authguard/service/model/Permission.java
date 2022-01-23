@@ -7,6 +7,7 @@ import org.immutables.value.Value;
 public interface Permission extends Entity {
     String getGroup();
     String getName();
+    String getDomain();
 
     /**
      * Checks whether a permission is a wild card or not.
@@ -14,7 +15,6 @@ public interface Permission extends Entity {
      * permissions in a certain group. For example, a
      * wild card permission with group 'account' means that
      * it includes all permissions under group 'account'.
-     * @return
      */
     default boolean isWildCard() {
         return getName().equals("*");
