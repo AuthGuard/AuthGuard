@@ -6,6 +6,7 @@ import com.nexblocks.authguard.bootstrap.BootstrapStep;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.RolesService;
 import com.nexblocks.authguard.service.config.AccountConfig;
+import com.nexblocks.authguard.service.exceptions.ConfigurationException;
 import com.nexblocks.authguard.service.model.RoleBO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,8 +14,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 
 public class DefaultRolesBootstrap implements BootstrapStep {
-    private static final String RESERVED_DOMAIN = "global";
-
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final RolesService rolesService;
@@ -31,9 +30,13 @@ public class DefaultRolesBootstrap implements BootstrapStep {
     public void run() {
         final Set<String> defaultRoles = accountConfig.getDefaultRoles();
 
+        if (!defaultRoles.isEmpty()
+                && (accountConfig.getDefaultDomain() == null || accountConfig.getDefaultDomain().isBlank())) {
+            throw new ConfigurationException("Default roles were set but without a default domain");
+        }
+
         defaultRoles.forEach(role -> {
-            // TODO create the roles in another domain (read from config)
-            if (rolesService.getRoleByName(role, RESERVED_DOMAIN).isEmpty()) {
+            if (rolesService.getRoleByName(role, accountConfig.getDefaultDomain()).isEmpty()) {
                 log.info("Default role {} wasn't found and will be created", role);
 
                 final RoleBO created = createRole(role);
@@ -45,7 +48,7 @@ public class DefaultRolesBootstrap implements BootstrapStep {
     private RoleBO createRole(final String roleName) {
         final RoleBO role = RoleBO.builder()
                 .name(roleName)
-                .domain(RESERVED_DOMAIN)
+                .domain(accountConfig.getDefaultDomain())
                 .build();
 
         return rolesService.create(role);
