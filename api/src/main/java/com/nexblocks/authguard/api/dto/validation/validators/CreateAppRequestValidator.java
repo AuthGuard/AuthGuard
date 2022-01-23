@@ -14,6 +14,7 @@ public class CreateAppRequestValidator implements Validator<CreateAppRequest> {
                 .validate("externalId", obj.getExternalId(), Constraints.reasonableLength)
                 .validate("accountId", obj.getAccountId(), Constraints.reasonableLength)
                 .validate("name", obj.getName(), Constraints.required, Constraints.reasonableLength)
+                .validate("domain", obj.getDomain(), Constraints.required)
                 .getViolations();
     }
 }

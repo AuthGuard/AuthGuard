@@ -27,6 +27,7 @@ public interface Account {
     String getMiddleName();
     String getLastName();
     String getFullName();
+    String getDomain();
 
     List<PermissionDTO> getPermissions();
     List<String> getRoles();

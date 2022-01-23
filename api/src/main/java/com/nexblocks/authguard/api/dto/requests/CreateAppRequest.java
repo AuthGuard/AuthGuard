@@ -16,6 +16,7 @@ public interface CreateAppRequest {
     String getExternalId();
     String getName();
     String getAccountId();
+    String getDomain();
     List<PermissionDTO> getPermissions();
     List<String> getScopes();
     List<String> getRoles();

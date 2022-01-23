@@ -14,5 +14,6 @@ public interface AccountConfigInterface {
     boolean requirePhoneNumber();
     boolean verifyEmail();
     boolean verifyPhoneNumber();
+    String getDefaultDomain();
     Set<String> getDefaultRoles();
 }

@@ -2,24 +2,10 @@ package com.nexblocks.authguard.service;
 
 import com.nexblocks.authguard.service.model.PermissionBO;
 
-import java.util.Collection;
 import java.util.List;
 
-/**
- * Permissions service interface.
- */
 public interface PermissionsService extends CrudService<PermissionBO> {
-
-    /**
-     * Verify that permissions exist.
-     * @return A list containing only valid permissions.
-     */
-    List<PermissionBO> validate(List<PermissionBO> permissions);
-
-    /**
-     * @return A list containing all created permissions.
-     */
-    List<PermissionBO> getAll();
-
-    List<PermissionBO> getAllForGroup(String group);
+    List<PermissionBO> validate(List<PermissionBO> permissions, String domain);
+    List<PermissionBO> getAll(String domain);
+    List<PermissionBO> getAllForGroup(String group, String domain);
 }

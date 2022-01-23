@@ -10,7 +10,6 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.PermissionBO;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -35,7 +34,7 @@ public class PermissionsServiceImpl implements PermissionsService {
 
     @Override
     public PermissionBO create(final PermissionBO permission) {
-        if (permissionsRepository.search(permission.getGroup(), permission.getName()).join().isPresent()) {
+        if (permissionsRepository.search(permission.getGroup(), permission.getName(), permission.getDomain()).join().isPresent()) {
             throw new ServiceConflictException(ErrorCode.PERMISSION_ALREADY_EXIST,
                     "Permission " + permission.getFullName() + " already exists");
         }
@@ -53,9 +52,9 @@ public class PermissionsServiceImpl implements PermissionsService {
     }
 
     @Override
-    public List<PermissionBO> validate(final List<PermissionBO> permissions) {
+    public List<PermissionBO> validate(final List<PermissionBO> permissions, final String domain) {
         return permissions.stream()
-                .map(permission -> permissionsRepository.search(permission.getGroup(), permission.getName())
+                .map(permission -> permissionsRepository.search(permission.getGroup(), permission.getName(), domain)
                         .join()
                         .map(serviceMapper::toBO))
                 .filter(Optional::isPresent)
@@ -64,16 +63,16 @@ public class PermissionsServiceImpl implements PermissionsService {
     }
 
     @Override
-    public List<PermissionBO> getAll() {
-        return permissionsRepository.getAll().join()
+    public List<PermissionBO> getAll(final String domain) {
+        return permissionsRepository.getAll(domain).join()
                 .stream()
                 .map(serviceMapper::toBO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<PermissionBO> getAllForGroup(final String group) {
-        return permissionsRepository.getAllForGroup(group)
+    public List<PermissionBO> getAllForGroup(final String group, final String domain) {
+        return permissionsRepository.getAllForGroup(group, domain)
                 .join()
                 .stream()
                 .map(serviceMapper::toBO)

@@ -1,15 +1,12 @@
 package com.nexblocks.authguard.service.impl;
 
 import com.nexblocks.authguard.dal.model.PermissionDO;
-import com.nexblocks.authguard.dal.model.RoleDO;
 import com.nexblocks.authguard.dal.persistence.PermissionsRepository;
-import com.nexblocks.authguard.dal.persistence.RolesRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.PermissionsService;
 import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.PermissionBO;
-import com.nexblocks.authguard.service.model.RoleBO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -42,9 +39,10 @@ class PermissionsServiceImplTest {
         final PermissionBO request = PermissionBO.builder()
                 .group("test")
                 .name("read")
+                .domain("main")
                 .build();
 
-        Mockito.when(permissionsRepository.search(request.getGroup(), request.getName()))
+        Mockito.when(permissionsRepository.search(request.getGroup(), request.getName(), "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         Mockito.when(permissionsRepository.save(Mockito.any()))
@@ -63,9 +61,10 @@ class PermissionsServiceImplTest {
         final PermissionBO request = PermissionBO.builder()
                 .group("test")
                 .name("read")
+                .domain("main")
                 .build();
 
-        Mockito.when(permissionsRepository.search(request.getGroup(), request.getName()))
+        Mockito.when(permissionsRepository.search(request.getGroup(), request.getName(), "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(permission)));
 
         Mockito.when(permissionsRepository.save(Mockito.any()))
@@ -109,7 +108,7 @@ class PermissionsServiceImplTest {
                 PermissionDO.builder().group("test").name("write").build()
         );
 
-        Mockito.when(permissionsRepository.getAll())
+        Mockito.when(permissionsRepository.getAll("main"))
                 .thenReturn(CompletableFuture.completedFuture(permissions));
 
         final List<PermissionBO> expected = Arrays.asList(
@@ -117,7 +116,7 @@ class PermissionsServiceImplTest {
                 PermissionBO.builder().group("test").name("write").build()
         );
 
-        final List<PermissionBO> actual = permissionsService.getAll();
+        final List<PermissionBO> actual = permissionsService.getAll("main");
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -129,7 +128,7 @@ class PermissionsServiceImplTest {
                 PermissionDO.builder().group("test").name("write").build()
         );
 
-        Mockito.when(permissionsRepository.getAllForGroup("test"))
+        Mockito.when(permissionsRepository.getAllForGroup("test", "main"))
                 .thenReturn(CompletableFuture.completedFuture(permissions));
 
         final List<PermissionBO> expected = Arrays.asList(
@@ -137,7 +136,7 @@ class PermissionsServiceImplTest {
                 PermissionBO.builder().group("test").name("write").build()
         );
 
-        final List<PermissionBO> actual = permissionsService.getAllForGroup("test");
+        final List<PermissionBO> actual = permissionsService.getAllForGroup("test", "main");
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -175,17 +174,17 @@ class PermissionsServiceImplTest {
                 PermissionBO.builder().group("test").name("write").build()
         );
 
-        Mockito.when(permissionsRepository.search("test", "read"))
+        Mockito.when(permissionsRepository.search("test", "read", "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(existing.get(0))));
 
-        Mockito.when(permissionsRepository.search("test", "write"))
+        Mockito.when(permissionsRepository.search("test", "write", "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         final List<PermissionBO> expected = Collections.singletonList(
                 PermissionBO.builder().group("test").name("read").build()
         );
 
-        final List<PermissionBO> actual = permissionsService.validate(request);
+        final List<PermissionBO> actual = permissionsService.validate(request, "main");
 
         assertThat(actual).isEqualTo(expected);
     }

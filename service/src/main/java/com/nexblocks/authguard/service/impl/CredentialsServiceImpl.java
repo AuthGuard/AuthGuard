@@ -110,16 +110,16 @@ public class CredentialsServiceImpl implements CredentialsService {
     }
 
     @Override
-    public Optional<CredentialsBO> getByUsername(final String username) {
-        return credentialsRepository.findByIdentifier(username)
+    public Optional<CredentialsBO> getByUsername(final String username, final String domain) {
+        return credentialsRepository.findByIdentifier(username, domain)
                 .join()
                 .map(serviceMapper::toBO)
                 .map(this::removeSensitiveInformation);
     }
 
     @Override
-    public Optional<CredentialsBO> getByUsernameUnsafe(final String username) {
-        return credentialsRepository.findByIdentifier(username)
+    public Optional<CredentialsBO> getByUsernameUnsafe(final String username, final String domain) {
+        return credentialsRepository.findByIdentifier(username, domain)
                 .thenApply(optional -> optional.map(serviceMapper::toBO))
                 .join();
     }
@@ -158,7 +158,10 @@ public class CredentialsServiceImpl implements CredentialsService {
                 throw new ServiceConflictException(ErrorCode.IDENTIFIER_ALREADY_EXISTS, "Duplicate identifier for " + id);
             }
 
-            combined.add(identifier.withActive(true));
+            combined.add(UserIdentifierBO.builder().from(identifier)
+                    .active(true)
+                    .domain(existing.getDomain())
+                    .build());
         }
 
         final CredentialsBO updated = CredentialsBO.builder().from(existing)
@@ -211,6 +214,7 @@ public class CredentialsServiceImpl implements CredentialsService {
                                 .identifier(newIdentifier.getIdentifier())
                                 .active(newIdentifier.isActive())
                                 .type(identifier.getType())
+                                .domain(identifier.getDomain())
                                 .build();
                     }
 
@@ -224,8 +228,8 @@ public class CredentialsServiceImpl implements CredentialsService {
     }
 
     @Override
-    public PasswordResetTokenBO generateResetToken(final String identifier, final boolean returnToken) {
-        final CredentialsBO credentials = getByUsername(identifier)
+    public PasswordResetTokenBO generateResetToken(final String identifier, final boolean returnToken, final String domain) {
+        final CredentialsBO credentials = getByUsername(identifier, domain)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST, "Unknown identifier"));
         final AccountBO account = accountsService.getById(credentials.getAccountId())
                 .orElseThrow(() -> new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
@@ -276,8 +280,8 @@ public class CredentialsServiceImpl implements CredentialsService {
     @Override
     public Optional<CredentialsBO> replacePassword(final String identifier,
                                                    final String oldPassword,
-                                                   final String newPassword) {
-        final CredentialsBO credentials = getByUsernameUnsafe(identifier)
+                                                   final String newPassword, final String domain) {
+        final CredentialsBO credentials = getByUsernameUnsafe(identifier, domain)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST, "Unknown identifier"));
 
         if (!securePassword.verify(oldPassword, credentials.getHashedPassword())) {

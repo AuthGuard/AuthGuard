@@ -23,6 +23,7 @@ class CreateCredentialsRequestValidatorTest {
                         .identifier("username")
                         .build())
                 .plainPassword("password")
+                .domain("main")
                 .build();
 
         final Validator<CreateCredentialsRequestDTO> validator = Validators.getForClass(CreateCredentialsRequestDTO.class);
@@ -44,7 +45,8 @@ class CreateCredentialsRequestValidatorTest {
         assertThat(violations).containsExactlyInAnyOrder(
                 new Violation("accountId", ViolationType.MISSING_REQUIRED_VALUE),
                 new Violation("plainPassword", ViolationType.MISSING_REQUIRED_VALUE),
-                new Violation("identifiers", ViolationType.EMPTY_LIST)
+                new Violation("identifiers", ViolationType.EMPTY_LIST),
+                new Violation("domain", ViolationType.MISSING_REQUIRED_VALUE)
         );
     }
 
@@ -52,6 +54,7 @@ class CreateCredentialsRequestValidatorTest {
     void validateInvalidIdentifierFields() {
         final CreateCredentialsRequestDTO request = CreateCredentialsRequestDTO.builder()
                 .accountId("account")
+                .domain("main")
                 .addIdentifiers(UserIdentifierDTO.builder()
                         .build())
                 .plainPassword("password")

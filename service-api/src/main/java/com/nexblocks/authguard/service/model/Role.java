@@ -6,4 +6,5 @@ import org.immutables.value.Value;
 @BOStyle
 public interface Role extends Entity {
     String getName();
+    String getDomain();
 }

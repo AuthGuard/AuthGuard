@@ -16,4 +16,5 @@ public interface CreateCredentialsRequest {
     String getAccountId();
     List<UserIdentifierDTO> getIdentifiers();
     String getPlainPassword();
+    String getDomain();
 }

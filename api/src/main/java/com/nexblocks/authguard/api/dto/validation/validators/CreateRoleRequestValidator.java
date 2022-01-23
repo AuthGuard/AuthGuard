@@ -12,6 +12,7 @@ public class CreateRoleRequestValidator implements Validator<CreateRoleRequestDT
     public List<Violation> validate(final CreateRoleRequestDTO obj) {
         return FluentValidator.begin()
                 .validate("name", obj.getName(), Constraints.required, Constraints.reasonableLength)
+                .validate("domain", obj.getDomain(), Constraints.required)
                 .getViolations();
     }
 }

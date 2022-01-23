@@ -16,6 +16,7 @@ class CreateRoleRequestValidatorTest {
     void validateValidRequest() {
         final CreateRoleRequestDTO request = CreateRoleRequestDTO.builder()
                 .name("test-role")
+                .domain("main")
                 .build();
 
         final Validator<CreateRoleRequestDTO> validator = Validators.getForClass(CreateRoleRequestDTO.class);
@@ -26,8 +27,9 @@ class CreateRoleRequestValidatorTest {
     }
 
     @Test
-    void validateNoName() {
+    void validateNoNameOrDomain() {
         final CreateRoleRequestDTO request = CreateRoleRequestDTO.builder()
+                .domain("main")
                 .build();
 
         final Validator<CreateRoleRequestDTO> validator = Validators.getForClass(CreateRoleRequestDTO.class);

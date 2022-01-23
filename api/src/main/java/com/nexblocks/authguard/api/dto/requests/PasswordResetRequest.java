@@ -15,4 +15,5 @@ public interface PasswordResetRequest {
     String getIdentifier();
     String getOldPassword();
     String getNewPassword();
+    String getDomain();
 }

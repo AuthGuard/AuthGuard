@@ -19,6 +19,7 @@ public interface App {
     String getExternalId();
     String getName();
     String getAccountId();
+    String getDomain();
     List<PermissionDTO> getPermissions();
     List<String> getRoles();
     boolean isActive();

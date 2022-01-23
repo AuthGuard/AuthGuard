@@ -14,7 +14,6 @@ import com.nexblocks.authguard.dal.persistence.CredentialsRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.IdempotencyService;
-import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
@@ -205,10 +204,10 @@ class CredentialsServiceImplTest {
         final CredentialsDO credentialsDO = RANDOM.nextObject(CredentialsDO.class);
         final CredentialsBO credentialsBO = serviceMapper.toBO(credentialsDO);
 
-        Mockito.when(credentialsRepository.findByIdentifier(any()))
+        Mockito.when(credentialsRepository.findByIdentifier(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(credentialsDO)));
 
-        final Optional<CredentialsBO> retrieved = credentialsService.getByUsername("");
+        final Optional<CredentialsBO> retrieved = credentialsService.getByUsername("", "main");
 
         assertThat(retrieved).contains(credentialsBO
                 .withPlainPassword(null)
@@ -220,20 +219,20 @@ class CredentialsServiceImplTest {
         final CredentialsDO credentialsDO = createCredentialsDO();
         final CredentialsBO credentialsBO = serviceMapper.toBO(credentialsDO);
 
-        Mockito.when(credentialsRepository.findByIdentifier(any()))
+        Mockito.when(credentialsRepository.findByIdentifier(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(credentialsDO)));
 
-        final Optional<CredentialsBO> retrieved = credentialsService.getByUsernameUnsafe("");
+        final Optional<CredentialsBO> retrieved = credentialsService.getByUsernameUnsafe("", "main");
 
         assertThat(retrieved).contains(credentialsBO);
     }
 
     @Test
     void getByUsernameNotFound() {
-        Mockito.when(credentialsRepository.findByIdentifier(any()))
+        Mockito.when(credentialsRepository.findByIdentifier(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        Assertions.assertThat(credentialsService.getByUsername("")).isEmpty();
+        Assertions.assertThat(credentialsService.getByUsername("", "main")).isEmpty();
     }
 
     @Test
@@ -310,14 +309,14 @@ class CredentialsServiceImplTest {
                 .build();
 
         // mocks
-        Mockito.when(credentialsRepository.findByIdentifier(identifier))
+        Mockito.when(credentialsRepository.findByIdentifier(identifier, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
         Mockito.when(accountsService.getById(accountId)).thenReturn(Optional.of(account));
         Mockito.when(accountTokensRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
 
         // action
-        final PasswordResetTokenBO resetToken = credentialsService.generateResetToken(identifier, true);
+        final PasswordResetTokenBO resetToken = credentialsService.generateResetToken(identifier, true, "main");
 
         // verify
         final ArgumentCaptor<AccountTokenDO> accountTokenCaptor = ArgumentCaptor.forClass(AccountTokenDO.class);
@@ -351,14 +350,14 @@ class CredentialsServiceImplTest {
                 .build();
 
         // mocks
-        Mockito.when(credentialsRepository.findByIdentifier(identifier))
+        Mockito.when(credentialsRepository.findByIdentifier(identifier, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
         Mockito.when(accountsService.getById(accountId)).thenReturn(Optional.of(account));
         Mockito.when(accountTokensRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
 
         // action
-        final PasswordResetTokenBO resetToken = credentialsService.generateResetToken(identifier, false);
+        final PasswordResetTokenBO resetToken = credentialsService.generateResetToken(identifier, false, "main");
 
         // verify
         final ArgumentCaptor<AccountTokenDO> accountTokenCaptor = ArgumentCaptor.forClass(AccountTokenDO.class);
@@ -379,10 +378,10 @@ class CredentialsServiceImplTest {
     void generateResetTokenNoCredentials() {
         final String identifier = "identifier";
 
-        Mockito.when(credentialsRepository.findByIdentifier(identifier))
+        Mockito.when(credentialsRepository.findByIdentifier(identifier, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        assertThatThrownBy(() -> credentialsService.generateResetToken(identifier, true))
+        assertThatThrownBy(() -> credentialsService.generateResetToken(identifier, true, "main"))
                 .isInstanceOf(ServiceNotFoundException.class);
     }
 
@@ -398,11 +397,11 @@ class CredentialsServiceImplTest {
                 .identifiers(new HashSet<>())
                 .build();
 
-        Mockito.when(credentialsRepository.findByIdentifier(identifier))
+        Mockito.when(credentialsRepository.findByIdentifier(identifier, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
         Mockito.when(accountsService.getById(accountId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> credentialsService.generateResetToken(identifier, true))
+        assertThatThrownBy(() -> credentialsService.generateResetToken(identifier, true, "main"))
                 .isInstanceOf(ServiceException.class);
     }
 
@@ -527,7 +526,7 @@ class CredentialsServiceImplTest {
         final CredentialsDO credentialsDO = serviceMapper.toDO(credentialsBO);
 
         // mocks
-        Mockito.when(credentialsRepository.findByIdentifier(identifier))
+        Mockito.when(credentialsRepository.findByIdentifier(identifier, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(credentialsDO)));
         Mockito.when(credentialsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, CredentialsDO.class))));
@@ -542,7 +541,7 @@ class CredentialsServiceImplTest {
 
         // action
         final Optional<CredentialsBO> result =
-                credentialsService.replacePassword(identifier, oldPassword, newPassword);
+                credentialsService.replacePassword(identifier, oldPassword, newPassword, "main");
 
         // verify
         assertThat(result).isPresent();
@@ -575,7 +574,7 @@ class CredentialsServiceImplTest {
         final CredentialsDO credentialsDO = serviceMapper.toDO(credentialsBO);
 
         // mocks
-        Mockito.when(credentialsRepository.findByIdentifier(identifier))
+        Mockito.when(credentialsRepository.findByIdentifier(identifier, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(credentialsDO)));
         Mockito.when(credentialsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, CredentialsDO.class))));
@@ -589,7 +588,7 @@ class CredentialsServiceImplTest {
                 .thenReturn(false);
 
         // action
-        assertThatThrownBy(() -> credentialsService.replacePassword(identifier, oldPassword, newPassword))
+        assertThatThrownBy(() -> credentialsService.replacePassword(identifier, oldPassword, newPassword, "main"))
                 .isInstanceOf(ServiceException.class);
     }
 
@@ -613,7 +612,7 @@ class CredentialsServiceImplTest {
         final CredentialsDO credentialsDO = serviceMapper.toDO(credentialsBO);
 
         // mocks
-        Mockito.when(credentialsRepository.findByIdentifier(identifier))
+        Mockito.when(credentialsRepository.findByIdentifier(identifier, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(credentialsDO)));
         Mockito.when(credentialsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, CredentialsDO.class))));
@@ -627,7 +626,7 @@ class CredentialsServiceImplTest {
                 .thenReturn(true);
 
         // action
-        assertThatThrownBy(() -> credentialsService.replacePassword(identifier, oldPassword, newPassword))
+        assertThatThrownBy(() -> credentialsService.replacePassword(identifier, oldPassword, newPassword, "main"))
                 .isInstanceOf(ServiceInvalidPasswordException.class);
     }
 
