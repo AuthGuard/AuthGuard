@@ -63,7 +63,7 @@
         <vertx.version>3.9.12</vertx.version>
         <unbounded-ldap.version>5.1.4</unbounded-ldap.version>
         <javax-persistence.version>2.2</javax-persistence.version>
-        <vavr.version>0.9.0</vavr.version>
+        <vavr.version>0.10.4</vavr.version>
 
         <surefire.version>3.0.0-M3</surefire.version>
         <junit.version>5.5.1</junit.version>
