@@ -110,6 +110,11 @@ public class AccountsRoute extends AccountsApi {
         final AccountBO accountBO = restMapper.toBO(request.getAccount());
         final CredentialsBO credentialsBO = restMapper.toBO(request.getCredentials());
 
+        final List<UserIdentifierBO> identifiers = credentialsBO.getIdentifiers()
+                .stream()
+                .map(identifier -> identifier.withDomain(credentialsBO.getDomain()))
+                .collect(Collectors.toList());
+
         String accountId;
         String credentialsId;
 
@@ -124,7 +129,13 @@ public class AccountsRoute extends AccountsApi {
         }
 
         try {
-            credentialsId = credentialsService.create(credentialsBO.withAccountId(accountId), requestContext).getId();
+            final CredentialsBO withAdditionalInfo = CredentialsBO.builder()
+                    .from(credentialsBO)
+                    .identifiers(identifiers)
+                    .accountId(accountId)
+                    .build();
+
+            credentialsId = credentialsService.create(withAdditionalInfo, requestContext).getId();
         } catch (final CompletionException e) {
             if (e.getCause() instanceof IdempotencyException) {
                 credentialsId = ((IdempotencyException) e.getCause()).getIdempotentRecord().getEntityId();
