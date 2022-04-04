@@ -11,6 +11,7 @@ import com.nexblocks.authguard.service.model.RoleBO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.Set;
 
 public class DefaultRolesBootstrap implements BootstrapStep {
@@ -28,20 +29,22 @@ public class DefaultRolesBootstrap implements BootstrapStep {
 
     @Override
     public void run() {
-        final Set<String> defaultRoles = accountConfig.getDefaultRoles();
+        final Map<String, Set<String>> defaultRolesByDomain = accountConfig.getDefaultRolesByDomain();
 
-        if (!defaultRoles.isEmpty()
-                && (accountConfig.getDefaultDomain() == null || accountConfig.getDefaultDomain().isBlank())) {
-            throw new ConfigurationException("Default roles were set but without a default domain");
+        if (defaultRolesByDomain == null || defaultRolesByDomain.isEmpty()) {
+            log.info("No default roles were found");
+            return;
         }
 
-        defaultRoles.forEach(role -> {
-            if (rolesService.getRoleByName(role, accountConfig.getDefaultDomain()).isEmpty()) {
-                log.info("Default role {} wasn't found and will be created", role);
+        defaultRolesByDomain.forEach((domain, defaultRoles) -> {
+            defaultRoles.forEach(role -> {
+                if (rolesService.getRoleByName(role, accountConfig.getDefaultDomain()).isEmpty()) {
+                    log.info("Default role {} for domain {} wasn't found and will be created", role, domain);
 
-                final RoleBO created = createRole(role);
-                log.info("Created default role {}", created);
-            }
+                    final RoleBO created = createRole(role);
+                    log.info("Created default role {}", created);
+                }
+            });
         });
     }
 

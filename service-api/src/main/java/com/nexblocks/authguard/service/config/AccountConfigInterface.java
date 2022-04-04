@@ -3,6 +3,7 @@ package com.nexblocks.authguard.service.config;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
+import java.util.Map;
 import java.util.Set;
 
 @Value.Immutable
@@ -15,5 +16,5 @@ public interface AccountConfigInterface {
     boolean verifyEmail();
     boolean verifyPhoneNumber();
     String getDefaultDomain();
-    Set<String> getDefaultRoles();
+    Map<String, Set<String>> getDefaultRolesByDomain();
 }

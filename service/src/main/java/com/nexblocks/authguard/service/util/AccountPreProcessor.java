@@ -5,6 +5,8 @@ import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountBO;
 
+import java.util.Set;
+
 public class AccountPreProcessor {
     public static AccountBO preProcess(final AccountBO account, final AccountConfig accountConfig) {
         if (account.getEmail() == null && accountConfig.requireEmail()) {
@@ -16,11 +18,14 @@ public class AccountPreProcessor {
         }
 
         final boolean hasNoRoles = account.getRoles() == null || account.getRoles().isEmpty();
-        final boolean defaultsAvailable = accountConfig.getDefaultRoles() != null
-                && !accountConfig.getDefaultRoles().isEmpty();
+        final Set<String> defaultRoles = accountConfig.getDefaultRolesByDomain() != null ?
+                accountConfig.getDefaultRolesByDomain().get(account.getDomain()) :
+                null;
+
+        final boolean defaultsAvailable = defaultRoles != null && !defaultRoles.isEmpty();
 
         if (hasNoRoles && defaultsAvailable) {
-            return account.withRoles(accountConfig.getDefaultRoles());
+            return account.withRoles(defaultRoles);
         }
 
         return account;
