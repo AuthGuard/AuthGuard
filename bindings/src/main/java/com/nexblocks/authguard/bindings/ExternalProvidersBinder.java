@@ -25,12 +25,16 @@ public class ExternalProvidersBinder extends AbstractModule {
         Optional.ofNullable(subContext)
                 .map(context -> context.getAsBoolean("email"))
                 .filter(Boolean::booleanValue)
-                .ifPresent(ignored -> bindAndRegister(EmailProvider.class));
+                .ifPresentOrElse(
+                        ignored -> bindAndRegister(EmailProvider.class),
+                        () -> bind(EmailProvider.class).to(PlaceholderProviderSink.class));
 
         Optional.ofNullable(subContext)
                 .map(context -> context.getAsBoolean("sms"))
                 .filter(Boolean::booleanValue)
-                .ifPresent(ignored -> bindAndRegister(SmsProvider.class));
+                .ifPresentOrElse(
+                        ignored -> bindAndRegister(SmsProvider.class),
+                        () -> bind(SmsProvider.class).to(PlaceholderProviderSink.class));
     }
 
     private <T> void bindAndRegister(final Class<T> clazz) {

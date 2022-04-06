@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.google.common.collect.ImmutableMap;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.model.AccountDO;
 import com.nexblocks.authguard.dal.persistence.AccountsRepository;
@@ -58,7 +59,9 @@ class AccountsServiceImplTest {
         final AccountConfig accountConfig = AccountConfig.builder()
                 .verifyEmail(true)
                 .verifyPhoneNumber(true)
-                .defaultRoles(Collections.singleton("def-role"))
+                .defaultRolesByDomain(ImmutableMap.of(
+                        "unit", Collections.singleton("def-role"),
+                        "main", Collections.singleton("not-def-role")))
                 .build();
 
         Mockito.when(configContext.asConfigBean(AccountConfig.class))
@@ -133,6 +136,7 @@ class AccountsServiceImplTest {
     @Test
     void createWithoutRoles() {
         final AccountBO account = createAccountBO()
+                .withDomain("unit")
                 .withRoles(Collections.emptySet())
                 .withPermissions(Collections.emptySet())
                 .withId(null);
@@ -152,7 +156,7 @@ class AccountsServiceImplTest {
                     return CompletableFuture.completedFuture(invocation.getArgument(0, Supplier.class).get());
                 });
 
-        Mockito.when(rolesService.verifyRoles(new HashSet<>(defaultRoles), "main")).thenReturn(defaultRoles);
+        Mockito.when(rolesService.verifyRoles(new HashSet<>(defaultRoles), "unit")).thenReturn(defaultRoles);
 
         final AccountBO persisted = accountService.create(account, requestContext);
 
