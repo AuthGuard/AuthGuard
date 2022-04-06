@@ -38,20 +38,20 @@ public class DefaultRolesBootstrap implements BootstrapStep {
 
         defaultRolesByDomain.forEach((domain, defaultRoles) -> {
             defaultRoles.forEach(role -> {
-                if (rolesService.getRoleByName(role, accountConfig.getDefaultDomain()).isEmpty()) {
+                if (rolesService.getRoleByName(role, domain).isEmpty()) {
                     log.info("Default role {} for domain {} wasn't found and will be created", role, domain);
 
-                    final RoleBO created = createRole(role);
+                    final RoleBO created = createRole(role, domain);
                     log.info("Created default role {}", created);
                 }
             });
         });
     }
 
-    private RoleBO createRole(final String roleName) {
+    private RoleBO createRole(final String roleName, final String domain) {
         final RoleBO role = RoleBO.builder()
                 .name(roleName)
-                .domain(accountConfig.getDefaultDomain())
+                .domain(domain)
                 .build();
 
         return rolesService.create(role);
