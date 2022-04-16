@@ -99,4 +99,21 @@ class AuthenticationServiceImplTest {
                 .isInstanceOf(ServiceAuthorizationException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCOUNT_IS_LOCKED.getCode());
     }
+
+    @Test
+    void refresh() {
+        final AuthRequestBO authRequest = AuthRequestBO.builder()
+                .token("refresh_token")
+                .build();
+
+        final AuthResponseBO tokens = RANDOM.nextObject(AuthResponseBO.class);
+        final RequestContextBO requestContext = RequestContextBO.builder().build();
+
+        Mockito.when(exchangeService.exchange(authRequest, "refresh", "accessToken", requestContext))
+                .thenReturn(tokens);
+
+        final Optional<AuthResponseBO> result = authenticationService.refresh(authRequest, requestContext);
+
+        assertThat(result).isPresent().contains(tokens);
+    }
 }
