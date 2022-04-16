@@ -30,7 +30,6 @@ public class ServicesBinder extends AbstractModule {
         bind(IdempotencyService.class).to(IdempotencyServiceImpl.class);
         bind(ExchangeAttemptsService.class).to(ExchangeAttemptsServiceImpl.class);
         bind(AccountLocksService.class).to(AccountLocksServiceImpl.class);
-        bind(ActionTokenService.class).to(ActionTokenServiceImpl.class);
 
         // optional bindings
         if (configContext.get("verification") != null) {
@@ -39,6 +38,7 @@ public class ServicesBinder extends AbstractModule {
 
         if (configContext.get("otp") != null) {
             bind(OtpService.class).to(OtpServiceImpl.class);
+            bind(ActionTokenService.class).to(ActionTokenServiceImpl.class);
         }
 
         if (configContext.get("passwordless") != null) {

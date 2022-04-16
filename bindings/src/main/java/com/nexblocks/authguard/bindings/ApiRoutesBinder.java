@@ -32,7 +32,7 @@ public class ApiRoutesBinder extends AbstractModule {
                 .filter(routeClass -> dependsOnConfiguration(routeClass)
                         .map(property -> {
                             if (configContext.get(property) == null) {
-                                LOG.info("Route {} will be skipped because property '{}' wasn't found in the config",
+                                LOG.info("Route {} will be skipped because property '{}' wasn't found in the application configuration",
                                         routeClass.getSimpleName(), property);
                                 return false;
                             }
