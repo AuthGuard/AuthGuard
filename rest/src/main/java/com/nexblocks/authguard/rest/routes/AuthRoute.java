@@ -86,7 +86,7 @@ public class AuthRoute extends AuthApi {
         final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
         final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        final Optional<AuthResponseDTO> tokens = authenticationService.authenticate(restMapper.toBO(authenticationRequest), requestContext)
+        final Optional<AuthResponseDTO> tokens = authenticationService.refresh(restMapper.toBO(authenticationRequest), requestContext)
                 .map(restMapper::toDTO);
 
         if (tokens.isPresent()) {
