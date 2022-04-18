@@ -1,6 +1,7 @@
 package com.nexblocks.authguard.rest.routes;
 
 import com.google.inject.Inject;
+import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
 import com.nexblocks.authguard.api.dto.entities.ActionTokenRequestType;
 import com.nexblocks.authguard.api.dto.requests.ActionTokenRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
@@ -19,6 +20,7 @@ import io.vavr.control.Try;
 
 import java.util.Collections;
 
+@DependsOnConfiguration("otp")
 public class ActionTokensRoute extends ActionTokensApi {
     private final ActionTokenService actionTokenService;
     private final RestMapper restMapper;

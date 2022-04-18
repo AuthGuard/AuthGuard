@@ -18,7 +18,8 @@ import java.util.Collection;
 import java.util.Optional;
 
 public class AuthenticationServiceImpl implements AuthenticationService {
-    private static final String FROM_TOKEN_TYPE = "basic";
+    private static final String BASIC_TOKEN_TYPE = "basic";
+    private static final String REFRESH_TOKEN_TYPE = "refresh";
 
     private final ExchangeService exchangeService;
     private final AccountLocksService accountLocksService;
@@ -36,7 +37,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         this.generateTokenType = authenticationConfig.getGenerateToken();
         this.logoutTokenType = authenticationConfig.getLogoutToken();
 
-        if (!exchangeService.supportsExchange(FROM_TOKEN_TYPE, this.generateTokenType)) {
+        if (!exchangeService.supportsExchange(BASIC_TOKEN_TYPE, this.generateTokenType)) {
             throw new IllegalArgumentException("Unsupported exchange basic to "
                     + authenticationConfig.getGenerateToken());
         }
@@ -46,7 +47,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public Optional<AuthResponseBO> authenticate(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
-        final AuthResponseBO tokens = exchangeService.exchange(authRequest, FROM_TOKEN_TYPE, generateTokenType, requestContext);
+        final AuthResponseBO tokens = exchangeService.exchange(authRequest, BASIC_TOKEN_TYPE,
+                generateTokenType, requestContext);
         final Collection<AccountLockBO> locks = accountLocksService.getActiveLocksByAccountId(tokens.getEntityId());
 
         if (locks == null || locks.isEmpty()) {
@@ -60,6 +62,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public Optional<AuthResponseBO> logout(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
         return Optional.of(exchangeService.delete(authRequest, logoutTokenType));
+    }
+
+    @Override
+    public Optional<AuthResponseBO> refresh(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
+        final AuthResponseBO tokens = exchangeService.exchange(authRequest, REFRESH_TOKEN_TYPE,
+                generateTokenType, requestContext);
+
+        return Optional.of(tokens);
     }
 
 }

@@ -81,6 +81,21 @@ public class AuthRoute extends AuthApi {
                 );
     }
 
+    @Override
+    public void refresh(final Context context) {
+        final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
+        final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
+
+        final Optional<AuthResponseDTO> tokens = authenticationService.refresh(restMapper.toBO(authenticationRequest), requestContext)
+                .map(restMapper::toDTO);
+
+        if (tokens.isPresent()) {
+            context.json(tokens.get());
+        } else {
+            context.status(400).json(new Error("400", "Failed to refresh tokens"));
+        }
+    }
+
     public void exchange(final Context context) {
         final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
 

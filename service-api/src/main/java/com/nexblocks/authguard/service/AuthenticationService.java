@@ -13,4 +13,6 @@ public interface AuthenticationService {
     Optional<AuthResponseBO> authenticate(AuthRequestBO authRequest, RequestContextBO requestContext);
 
     Optional<AuthResponseBO> logout(AuthRequestBO authRequest, RequestContextBO requestContext);
+
+    Optional<AuthResponseBO> refresh(AuthRequestBO authRequest, RequestContextBO requestContext);
 }
