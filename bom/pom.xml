@@ -23,7 +23,7 @@
 
         <authguard.version>0.13.0</authguard.version>
         <guice.version>4.2.2</guice.version>
-        <jackson.version>2.12.6</jackson.version>
+        <jackson.version>2.12.6.1</jackson.version>
         <logback.version>1.2.3</logback.version>
 
         <surefire.version>3.0.0-M3</surefire.version>
