@@ -2,7 +2,7 @@ openapi: 3.0.3
 
 info:
   title: AuthGuard API
-  version: 0.12.0
+  version: 0.13.0
 
 security:
   - apiKey: []
@@ -887,6 +887,25 @@ paths:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
 
+  /auth/refresh:
+    post:
+      operationId: refresh
+      description: Perform an auth exchange from 'refresh' to what is specified in the configuration
+      tags:
+        - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref:  "#/components/schemas/AuthRequest"
+      responses:
+        200:
+          description: Success
+          $ref:  "#/components/responses/SuccessfulAuthResponse"
+        400:
+          description: Bad request
+          $ref:  "#/components/responses/ErrorResponse"
+
   /auth/logout:
     post:
       operationId: logout
@@ -1413,6 +1432,8 @@ components:
     AuthRequest:
       type: object
       properties:
+        domain:
+          type: string
         identifier:
           type: string
         password:
@@ -1427,6 +1448,21 @@ components:
           type: string
         userAgent:
           type: string
+        restrictions:
+          type: object
+          $ref: "#/components/schemas/TokenRestrictions"
+
+    TokenRestrictions:
+      type: object
+      properties:
+        permissions:
+          type: array
+          items: 
+            type: string
+        roles:
+          type: array
+          items:
+            type: string
   
     AuthResult:
       type: object
