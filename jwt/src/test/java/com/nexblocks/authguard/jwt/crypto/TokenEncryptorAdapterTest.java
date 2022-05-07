@@ -28,8 +28,8 @@ class TokenEncryptorAdapterTest {
         final JwtConfig jwtConfig = JwtConfig.builder()
                 .encryption(EncryptionConfig.builder()
                         .algorithm("EC")
-                        .publicKey("src/test/resources/ec256-public.pem")
-                        .privateKey("src/test/resources/ec256-private.pem")
+                        .publicKey("file:src/test/resources/ec256-public.pem")
+                        .privateKey("file:src/test/resources/ec256-private.pem")
                         .build())
                 .build();
 
@@ -46,7 +46,7 @@ class TokenEncryptorAdapterTest {
         final JwtConfig jwtConfig = JwtConfig.builder()
                 .encryption(EncryptionConfig.builder()
                         .algorithm("AES_CBC")
-                        .privateKey("src/test/resources/aes128.txt")
+                        .privateKey("file:src/test/resources/aes128.txt")
                         .build())
                 .build();
 
@@ -84,8 +84,8 @@ class TokenEncryptorAdapterTest {
         final JwtConfig jwtConfig = JwtConfig.builder()
                 .encryption(EncryptionConfig.builder()
                         .algorithm("EC")
-                        .publicKey("src/test/resources/none.pem")
-                        .privateKey("src/test/resources/none.pem")
+                        .publicKey("file:src/test/resources/none.pem")
+                        .privateKey("file:src/test/resources/none.pem")
                         .build())
                 .build();
 
@@ -97,8 +97,8 @@ class TokenEncryptorAdapterTest {
         final JwtConfig jwtConfig = JwtConfig.builder()
                 .encryption(EncryptionConfig.builder()
                         .algorithm("EC")
-                        .publicKey("src/test/resources/hmac256.pem")
-                        .privateKey("src/test/resources/hmac256.pem")
+                        .publicKey("file:src/test/resources/hmac256.pem")
+                        .privateKey("file:src/test/resources/hmac256.pem")
                         .build())
                 .build();
 

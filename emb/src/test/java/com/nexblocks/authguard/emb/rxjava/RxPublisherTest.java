@@ -5,6 +5,7 @@ import com.nexblocks.authguard.emb.model.EventType;
 import com.nexblocks.authguard.emb.model.Message;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +53,7 @@ class RxPublisherTest {
 
             publisher.publish(Message.builder()
                     .eventType(EventType.ENTITY_CREATED)
-                    .timestamp(OffsetDateTime.now())
+                    .timestamp(Instant.now())
                     .bodyType(String.class)
                     .messageBody(event)
                     .build());
@@ -76,7 +77,7 @@ class RxPublisherTest {
 
             publisher.publish(Message.builder()
                     .eventType(EventType.ENTITY_CREATED)
-                    .timestamp(OffsetDateTime.now())
+                    .timestamp(Instant.now())
                     .bodyType(String.class)
                     .messageBody(event)
                     .build());

@@ -23,7 +23,7 @@ class AesCbcTokenEncryptorTest {
 
     @Test
     void encryptAndDecrypt() {
-        final AesCbcTokenEncryptor encryptor = new AesCbcTokenEncryptor("src/test/resources/aes128.txt");
+        final AesCbcTokenEncryptor encryptor = new AesCbcTokenEncryptor("file:src/test/resources/aes128.txt");
 
         final String encrypted = encryptor.encryptAndEncode(TOKEN);
         final String decrypted = encryptor.decryptEncoded(encrypted);
@@ -33,7 +33,7 @@ class AesCbcTokenEncryptorTest {
 
     @Test
     void decryptInvalidFormat() {
-        final AesCbcTokenEncryptor encryptor = new AesCbcTokenEncryptor("src/test/resources/aes128.txt");
+        final AesCbcTokenEncryptor encryptor = new AesCbcTokenEncryptor("file:src/test/resources/aes128.txt");
 
         assertThatThrownBy(() -> encryptor.decryptEncoded("totally wrong"))
                 .isInstanceOf(ServiceException.class);

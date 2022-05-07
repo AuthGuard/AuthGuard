@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,7 +49,7 @@ class AccountLockerTest {
                 .eventType(EventType.AUTHENTICATION)
                 .bodyType(AuthMessage.class)
                 .messageBody(authMessage)
-                .timestamp(OffsetDateTime.now())
+                .timestamp(Instant.now())
                 .build();
 
         // mocks
@@ -82,7 +83,7 @@ class AccountLockerTest {
                 .eventType(EventType.AUTHENTICATION)
                 .bodyType(AuthMessage.class)
                 .messageBody(authMessage)
-                .timestamp(OffsetDateTime.now())
+                .timestamp(Instant.now())
                 .build();
 
         // mocks
@@ -127,7 +128,7 @@ class AccountLockerTest {
                 .eventType(EventType.EMAIL_VERIFICATION)
                 .bodyType(AuthMessage.class)
                 .messageBody(authMessage)
-                .timestamp(OffsetDateTime.now())
+                .timestamp(Instant.now())
                 .build();
 
         // call
@@ -147,7 +148,7 @@ class AccountLockerTest {
                 .eventType(EventType.AUTHENTICATION)
                 .bodyType(ImmutableAccountLockerConfig.class)
                 .messageBody(authMessage)
-                .timestamp(OffsetDateTime.now())
+                .timestamp(Instant.now())
                 .build();
 
         // call
@@ -167,7 +168,7 @@ class AccountLockerTest {
                 .eventType(EventType.AUTHENTICATION)
                 .bodyType(AuthMessage.class)
                 .messageBody(authMessage)
-                .timestamp(OffsetDateTime.now())
+                .timestamp(Instant.now())
                 .build();
 
         // call
