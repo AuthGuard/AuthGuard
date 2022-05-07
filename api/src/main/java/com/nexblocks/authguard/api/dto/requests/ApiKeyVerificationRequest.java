@@ -7,9 +7,9 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @DTOStyle
-@JsonSerialize(as = ApiKeyRequestDTO.class)
-@JsonDeserialize(as = ApiKeyRequestDTO.class)
-public interface ApiKeyRequest {
+@JsonSerialize(as = ApiKeyVerificationRequestDTO.class)
+@JsonDeserialize(as = ApiKeyVerificationRequestDTO.class)
+public interface ApiKeyVerificationRequest {
+    String getKey();
     String getKeyType();
-    String getAppId();
 }

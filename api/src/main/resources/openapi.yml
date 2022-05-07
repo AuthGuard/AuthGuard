@@ -622,7 +622,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AuthRequest"
+              $ref: "#/components/schemas/ApiKeyVerificationRequest"
       responses:
         200:
           description: Success
@@ -1599,8 +1599,22 @@ components:
       type: object
       required:
         - appId
+        - keyType
       properties:
         appId:
+          type: string
+        keyType:
+          type: string
+
+    ApiKeyVerificationRequest:
+      type: object
+      required:
+        - key
+        - keyType
+      properties:
+        key:
+          type: string
+        keyType:
           type: string
 
     CreateRoleRequest:

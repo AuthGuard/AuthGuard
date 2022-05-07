@@ -7,8 +7,10 @@ import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.ApplicationsService;
 import com.nexblocks.authguard.service.config.ApiKeyHashingConfig;
 import com.nexblocks.authguard.service.config.ApiKeysConfig;
+import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exchange.ApiKeyExchange;
+import com.nexblocks.authguard.service.exchange.KeyExchange;
 import com.nexblocks.authguard.service.keys.ApiKeyHash;
 import com.nexblocks.authguard.service.keys.ApiKeyHashProvider;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
@@ -40,6 +42,22 @@ class ApiKeysServiceImplTest {
     private ServiceMapper serviceMapper;
     private ApiKeysService apiKeysService;
 
+    @KeyExchange(keyType = "test")
+    private static class TestApiKeyExchange implements ApiKeyExchange {
+
+        @Override
+        public AuthResponseBO generateKey(final AppBO app) {
+            return AuthResponseBO.builder()
+                    .token("key")
+                    .build();
+        }
+
+        @Override
+        public CompletableFuture<Optional<String>> verifyAndGetAppId(final String apiKey) {
+            return CompletableFuture.completedFuture(Optional.of("app"));
+        }
+    }
+
     @BeforeEach
     void setup() {
         applicationsService = Mockito.mock(ApplicationsService.class);
@@ -59,8 +77,9 @@ class ApiKeysServiceImplTest {
 
         serviceMapper = new ServiceMapperImpl();
 
-        apiKeysService = new ApiKeysServiceImpl(applicationsService, apiKeyExchange, apiKeysRepository,
-                apiKeyHashProvider, messageBus, serviceMapper);
+        apiKeysService = new ApiKeysServiceImpl(applicationsService,
+                Collections.singletonList(new TestApiKeyExchange()),
+                apiKeysRepository, apiKeyHashProvider, messageBus, serviceMapper);
     }
 
     @Test
@@ -82,7 +101,7 @@ class ApiKeysServiceImplTest {
                         .token(key)
                         .build());
 
-        final ApiKeyBO actual = apiKeysService.generateApiKey(appId);
+        final ApiKeyBO actual = apiKeysService.generateApiKey(appId, "test");
 
         assertThat(actual.getAppId()).isEqualTo(appId);
         assertThat(actual.getKey()).isEqualTo(key);
@@ -105,8 +124,16 @@ class ApiKeysServiceImplTest {
         Mockito.when(applicationsService.getById(appId))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> apiKeysService.generateApiKey(appId))
+        assertThatThrownBy(() -> apiKeysService.generateApiKey(appId, "test"))
                 .isInstanceOf(ServiceNotFoundException.class);
+    }
+
+    @Test
+    void generateApiKeyInvalidType() {
+        final String appId = "app";
+
+        assertThatThrownBy(() -> apiKeysService.generateApiKey(appId, "none"))
+                .isInstanceOf(ServiceException.class);
     }
 
     @Test
@@ -141,7 +168,7 @@ class ApiKeysServiceImplTest {
         Mockito.when(applicationsService.getById(appId))
                 .thenReturn(Optional.of(app));
 
-        final Optional<AppBO> actual = apiKeysService.validateApiKey(key);
+        final Optional<AppBO> actual = apiKeysService.validateApiKey(key, "test");
 
         assertThat(actual).contains(app);
     }

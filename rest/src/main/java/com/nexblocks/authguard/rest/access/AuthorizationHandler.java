@@ -1,13 +1,11 @@
 package com.nexblocks.authguard.rest.access;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.basic.BasicAuthProvider;
 import com.nexblocks.authguard.service.ApiKeysService;
-import com.nexblocks.authguard.service.exceptions.ServiceException;
-import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AppBO;
-import com.google.inject.Inject;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.vavr.control.Either;
@@ -19,6 +17,8 @@ import java.util.Optional;
 
 public class AuthorizationHandler implements Handler {
     private static final Logger LOG = LoggerFactory.getLogger(AuthorizationHandler.class);
+
+    private static final String API_KEY_TYPE = "default";
 
     private final BasicAuthProvider basicAuth;
     private final ApiKeysService apiKeysService;
@@ -74,7 +74,7 @@ public class AuthorizationHandler implements Handler {
     }
 
     private void populateBearerActor(final Context context, final String apiKey) {
-        final Optional<AppBO> actorApp = apiKeysService.validateApiKey(apiKey);
+        final Optional<AppBO> actorApp = apiKeysService.validateApiKey(apiKey, API_KEY_TYPE);
 
         if (actorApp.isPresent()) {
             LOG.info("Authenticated actor {} with bearer token", actorApp.get().getId());

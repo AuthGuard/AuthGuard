@@ -6,9 +6,11 @@ import com.nexblocks.authguard.dal.persistence.ApiKeysRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.ApplicationsService;
+import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.exchange.ApiKeyExchange;
+import com.nexblocks.authguard.service.exchange.KeyExchange;
 import com.nexblocks.authguard.service.keys.ApiKeyHash;
 import com.nexblocks.authguard.service.keys.ApiKeyHashProvider;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
@@ -17,14 +19,16 @@ import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ApiKeysServiceImpl implements ApiKeysService {
     private static final String API_KEYS_CHANNELS = "api_keys";
 
     private final ApplicationsService applicationsService;
-    private final ApiKeyExchange apiKeyExchange;
+    private final Map<String, ApiKeyExchange> apiKeyExchangesByType;
     private final ApiKeysRepository apiKeysRepository;
     private final ApiKeyHash apiKeyHash;
     private final ServiceMapper serviceMapper;
@@ -32,16 +36,17 @@ public class ApiKeysServiceImpl implements ApiKeysService {
 
     @Inject
     public ApiKeysServiceImpl(final ApplicationsService applicationsService,
-                              final ApiKeyExchange apiKeyExchange,
+                              final List<ApiKeyExchange> apiKeyExchanges,
                               final ApiKeysRepository apiKeysRepository,
                               final ApiKeyHashProvider apiKeyHashProvider,
                               final MessageBus messageBus,
                               final ServiceMapper serviceMapper) {
         this.applicationsService = applicationsService;
-        this.apiKeyExchange = apiKeyExchange;
         this.apiKeysRepository = apiKeysRepository;
         this.apiKeyHash = apiKeyHashProvider.getHash();
         this.serviceMapper = serviceMapper;
+
+        this.apiKeyExchangesByType = mapExchanges(apiKeyExchanges);
 
         this.persistenceService = new PersistenceService<>(apiKeysRepository, messageBus,
                 serviceMapper::toDO, serviceMapper::toBO, API_KEYS_CHANNELS);
@@ -68,16 +73,18 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     }
 
     @Override
-    public ApiKeyBO generateApiKey(final String appId) {
+    public ApiKeyBO generateApiKey(final String appId, final String type) {
         final AppBO app = applicationsService.getById(appId)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST,
                         "No app with ID " + appId + " found"));
 
-        return generateApiKey(app);
+        return generateApiKey(app, type);
     }
 
     @Override
-    public ApiKeyBO generateApiKey(final AppBO app) {
+    public ApiKeyBO generateApiKey(final AppBO app, final String type) {
+        final ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
+
         final AuthResponseBO token = apiKeyExchange.generateKey(app);
         final String generatedKey = (String) token.getToken();
 
@@ -99,10 +106,34 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     }
 
     @Override
-    public Optional<AppBO> validateApiKey(final String key) {
+    public Optional<AppBO> validateApiKey(final String key, final String type) {
+        final ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
+
         return apiKeyExchange.verifyAndGetAppId(key)
                 .thenApply(optional -> optional.flatMap(applicationsService::getById))
                 .join();
 
+    }
+
+    private ApiKeyExchange getExchangeOrFail(final String type) {
+        return Optional.ofNullable(apiKeyExchangesByType.get(type))
+                .orElseThrow(() -> new ServiceException(
+                        ErrorCode.INVALID_API_KEY_TYPE,
+                        "API key type " + type + " does not exist"));
+    }
+
+    private Map<String, ApiKeyExchange> mapExchanges(final List<ApiKeyExchange> exchanges) {
+        return exchanges.stream()
+                .filter(exchange -> exchange.getClass().getAnnotation(KeyExchange.class) != null)
+                .collect(Collectors.toMap(
+                        this::keyExchangeToString,
+                        Function.identity()
+                ));
+    }
+
+    private String keyExchangeToString(final ApiKeyExchange exchange) {
+        final KeyExchange exchangeAnnotation = exchange.getClass().getAnnotation(KeyExchange.class);
+
+        return exchangeAnnotation.keyType();
     }
 }

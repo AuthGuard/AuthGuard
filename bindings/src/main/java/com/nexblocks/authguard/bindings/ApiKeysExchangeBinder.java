@@ -1,15 +1,17 @@
 package com.nexblocks.authguard.bindings;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.multibindings.Multibinder;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.injection.ClassSearch;
 import com.nexblocks.authguard.service.exchange.ApiKeyExchange;
+import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.KeyExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.Optional;
+import java.util.*;
 
 public class ApiKeysExchangeBinder extends AbstractModule {
     private static final Logger LOG = LoggerFactory.getLogger(ApiKeysExchangeBinder.class);
@@ -30,18 +32,28 @@ public class ApiKeysExchangeBinder extends AbstractModule {
             throw new IllegalStateException("No target API key type was specified in apiKeys.type. Nothing will be bound.");
         }
 
-        final Class<? extends ApiKeyExchange> exchangeClass = dynamicBinder.findAllBindingsFor(ApiKeyExchange.class)
-                .stream()
-                .filter(this::hasKeyExchangeAnnotation)
-                .filter(clazz -> getApiKeyType(clazz).equals(targetApiKey.get()))
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No exchange was found for API key type " + targetApiKey.get()));
+        final Set<Class<? extends ApiKeyExchange>> availableExchanges =
+                new HashSet<>(dynamicBinder.findAllBindingsFor(ApiKeyExchange.class));
 
-        LOG.info("Will bind API key exchange {}", exchangeClass);
+        final Multibinder<ApiKeyExchange> exchangeMultibinder =
+                Multibinder.newSetBinder(binder(), ApiKeyExchange.class);
 
-        PluginsRegistry.register(exchangeClass);
+        for (final Class<? extends  ApiKeyExchange> exchangeClass : availableExchanges) {
+            if (!hasKeyExchangeAnnotation(exchangeClass)) {
+                throw new IllegalStateException("API exchange " + exchangeClass.getName() + " does not have KeyExchange annotation");
+            }
 
-        bind(ApiKeyExchange.class).to(exchangeClass);
+            PluginsRegistry.register(exchangeClass);
+
+            LOG.info("Registered API exchange {}", exchangeClass.getCanonicalName());
+
+            exchangeMultibinder.addBinding().to(exchangeClass);
+        }
+    }
+
+    @Provides
+    List<ApiKeyExchange> exchangeList(final Set<ApiKeyExchange> exchangeSet) {
+        return new ArrayList<>(exchangeSet);
     }
 
     private boolean hasKeyExchangeAnnotation(final Class<? extends ApiKeyExchange> exchangeClass) {
