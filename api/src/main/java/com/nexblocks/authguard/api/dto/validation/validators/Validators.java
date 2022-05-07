@@ -34,6 +34,7 @@ public class Validators {
         classValidators.put(UserIdentifiersRequestDTO.class, new UserIdentifiersRequestValidator());
         classValidators.put(UserIdentifierDTO.class, new UserIdentifierValidator());
         classValidators.put(ApiKeyRequestDTO.class, new ApiKeysRequestValidator());
+        classValidators.put(ApiKeyVerificationRequestDTO.class, new ApiKeyVerificationRequestValidator());
         classValidators.put(ActionTokenRequestDTO.class, new ActionTokensRequestValidator());
 
         classValidators.put(PasswordResetTokenRequestDTO.class, new PasswordResetTokenRequestValidator());

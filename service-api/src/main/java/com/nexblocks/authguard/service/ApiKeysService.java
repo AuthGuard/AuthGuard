@@ -7,11 +7,11 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ApiKeysService extends CrudService<ApiKeyBO> {
-    ApiKeyBO generateApiKey(String appId);
+    ApiKeyBO generateApiKey(String appId, String type);
 
-    ApiKeyBO generateApiKey(AppBO app);
+    ApiKeyBO generateApiKey(AppBO app, String type);
 
     List<ApiKeyBO> getByAppId(String appId);
 
-    Optional<AppBO> validateApiKey(String key);
+    Optional<AppBO> validateApiKey(String key, String type);
 }
