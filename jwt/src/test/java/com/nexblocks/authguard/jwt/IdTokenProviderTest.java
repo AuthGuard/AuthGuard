@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class IdTokenProviderTest {
     private static final String ALGORITHM = "HMAC256";
-    private static final String KEY = "src/test/resources/hmac256.pem";
+    private static final String KEY = "file:src/test/resources/hmac256.pem";
     private static final String ISSUER = "test";
 
     private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters()

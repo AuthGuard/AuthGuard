@@ -22,8 +22,8 @@ class EciesTokenEncryptorTest {
     @Test
     void encryptAndDecrypt() {
         final EciesTokenEncryptor encryptor = new EciesTokenEncryptor(
-                "src/test/resources/ec256-public.pem",
-                "src/test/resources/ec256-private.pem");
+                "file:src/test/resources/ec256-public.pem",
+                "file:src/test/resources/ec256-private.pem");
 
         final String encrypted = encryptor.encryptAndEncode(TOKEN);
         final String decrypted = encryptor.decryptEncoded(encrypted);

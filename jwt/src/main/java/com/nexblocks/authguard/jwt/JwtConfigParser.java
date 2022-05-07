@@ -2,7 +2,9 @@ package com.nexblocks.authguard.jwt;
 
 import com.auth0.jwt.algorithms.Algorithm;
 import com.nexblocks.authguard.jwt.crypto.AsymmetricKeys;
+import com.nexblocks.authguard.jwt.crypto.KeyConfigValue;
 import com.nexblocks.authguard.jwt.crypto.KeyLoader;
+import com.nexblocks.authguard.jwt.crypto.KeysReader;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 
@@ -14,9 +16,9 @@ import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
 
 public class JwtConfigParser {
-
     public static Algorithm parseAlgorithm(final String algorithmName, final String publicKey,
                                            final String privateKey) {
 
@@ -32,7 +34,7 @@ public class JwtConfigParser {
     }
 
     private static Algorithm parseHmac(final String algorithmName, final String keyPath) {
-        final String key = new String(KeyLoader.readPemKeyFile(keyPath), StandardCharsets.UTF_8);
+        final String key = new String(KeyLoader.readPemFileOrValue(keyPath), StandardCharsets.UTF_8);
 
         switch (algorithmName) {
             case "HMAC256":
@@ -48,8 +50,8 @@ public class JwtConfigParser {
 
     private static Algorithm parseRsa(final String algorithmName, final String publicKeyPath,
                                       final String privateKeyPath) {
-        final byte[] publicKey = KeyLoader.readPemKeyFile(publicKeyPath);
-        final byte[] privateKey = KeyLoader.readPemKeyFile(privateKeyPath);
+        final byte[] publicKey = KeyLoader.readPemFileOrValue(publicKeyPath);
+        final byte[] privateKey = KeyLoader.readPemFileOrValue(privateKeyPath);
 
         final KeyPair keyPair = readRsaKeys(publicKey, privateKey);
 
@@ -67,8 +69,8 @@ public class JwtConfigParser {
 
     private static Algorithm parseEc(final String algorithmName, final String publicKeyPath,
                                      final String privateKeyPath) {
-        final byte[] publicKey = KeyLoader.readPemKeyFile(publicKeyPath);
-        final byte[] privateKey = KeyLoader.readPemKeyFile(privateKeyPath);
+        final byte[] publicKey = KeyLoader.readPemFileOrValue(publicKeyPath);
+        final byte[] privateKey = KeyLoader.readPemFileOrValue(privateKeyPath);
 
         final KeyPair keyPair = readEcKeys(publicKey, privateKey);
 

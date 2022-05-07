@@ -65,8 +65,8 @@ public class JwtSignatureAlgorithmsTest {
     @Test
     void generateAndVerifyEc256() {
         final String algorithm = "EC256";
-        final String privateKey = "src/test/resources/ec256-private.pem";
-        final String publicKey = "src/test/resources/ec256-public.pem";
+        final String privateKey = "file:src/test/resources/ec256-private.pem";
+        final String publicKey = "file:src/test/resources/ec256-public.pem";
 
         final String token = generateToken(jwtConfig(algorithm, publicKey, privateKey));
         final JwtTokenVerifier tokenVerifier = createVerifier(algorithm, publicKey, privateKey);
@@ -80,8 +80,8 @@ public class JwtSignatureAlgorithmsTest {
     @Test
     void generateAndVerifyEc256Secpk1() {
         final String algorithm = "EC256K";
-        final String privateKey = "src/test/resources/ec-secp256k1-private.pem";
-        final String publicKey = "src/test/resources/ec-secp256k1-public.pem";
+        final String privateKey = "file:src/test/resources/ec-secp256k1-private.pem";
+        final String publicKey = "file:src/test/resources/ec-secp256k1-public.pem";
 
         final String token = generateToken(jwtConfig(algorithm, publicKey, privateKey));
         final JwtTokenVerifier tokenVerifier = createVerifier(algorithm, publicKey, privateKey);
@@ -95,8 +95,8 @@ public class JwtSignatureAlgorithmsTest {
     @Test
     void generateAndVerifyEc512() {
         final String algorithm = "EC512";
-        final String privateKey = "src/test/resources/ec512-private.pem";
-        final String publicKey = "src/test/resources/ec512-public.pem";
+        final String privateKey = "file:src/test/resources/ec512-private.pem";
+        final String publicKey = "file:src/test/resources/ec512-public.pem";
 
         final String token = generateToken(jwtConfig(algorithm, publicKey, privateKey));
         final JwtTokenVerifier tokenVerifier = createVerifier(algorithm, publicKey, privateKey);
@@ -110,8 +110,8 @@ public class JwtSignatureAlgorithmsTest {
     @Test
     void generateAndVerifyRsa256() {
         final String algorithm = "RSA256";
-        final String privateKey = "src/test/resources/rsa256-private.pem";
-        final String publicKey = "src/test/resources/rsa256-public.pem";
+        final String privateKey = "file:src/test/resources/rsa256-private.pem";
+        final String publicKey = "file:src/test/resources/rsa256-public.pem";
 
         final String token = generateToken(jwtConfig(algorithm, publicKey, privateKey));
         final JwtTokenVerifier tokenVerifier = createVerifier(algorithm, publicKey, privateKey);
@@ -125,8 +125,8 @@ public class JwtSignatureAlgorithmsTest {
     @Test
     void generateAndVerifyRsa512() {
         final String algorithm = "RSA512";
-        final String privateKey = "src/test/resources/rsa512-private.pem";
-        final String publicKey = "src/test/resources/rsa512-public.pem";
+        final String privateKey = "file:src/test/resources/rsa512-private.pem";
+        final String publicKey = "file:src/test/resources/rsa512-public.pem";
 
         final String token = generateToken(jwtConfig(algorithm, publicKey, privateKey));
         final JwtTokenVerifier tokenVerifier = createVerifier(algorithm, publicKey, privateKey);

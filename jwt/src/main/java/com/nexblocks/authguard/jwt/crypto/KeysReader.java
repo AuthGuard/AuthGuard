@@ -10,8 +10,8 @@ import java.security.spec.InvalidKeySpecException;
 public class KeysReader {
     static KeyPair readKeyPair(final Cryptography.Algorithm algorithm,
                                final String publicKeyPath, final String privateKeyPath) {
-        final byte[] publicKeyBase64 = KeyLoader.readPemKeyFile(publicKeyPath);
-        final byte[] privateKeyBase64 = KeyLoader.readPemKeyFile(privateKeyPath);
+        final byte[] publicKeyBase64 = KeyLoader.readPemFileOrValue(publicKeyPath);
+        final byte[] privateKeyBase64 = KeyLoader.readPemFileOrValue(privateKeyPath);
 
         return readKeyPairForFail(algorithm, publicKeyBase64, privateKeyBase64);
     }
@@ -30,7 +30,7 @@ public class KeysReader {
     }
 
     static SecretKey readSecretKey(final Cryptography.Algorithm algorithm, final String keyPath) {
-        final byte[] keyBase64 = KeyLoader.readTextKeyFile(keyPath);
+        final byte[] keyBase64 = KeyLoader.readTexFileOrValue(keyPath);
 
         return readSecretKeyOrFail(algorithm, keyBase64);
     }

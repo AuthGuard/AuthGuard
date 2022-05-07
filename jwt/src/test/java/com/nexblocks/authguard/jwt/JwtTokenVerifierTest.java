@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class JwtTokenVerifierTest {
     private static final String ALGORITHM = "HMAC256";
-    private static final String KEY = "src/test/resources/hmac256.pem";
+    private static final String KEY = "file:src/test/resources/hmac256.pem";
     private static final String ISSUER = "test";
 
     private JtiProvider jtiProvider;
