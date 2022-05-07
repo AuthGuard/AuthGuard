@@ -3,6 +3,7 @@ package com.nexblocks.authguard.emb;
 import com.nexblocks.authguard.emb.model.EventType;
 import com.nexblocks.authguard.emb.model.Message;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 
 public class Messages {
@@ -45,7 +46,7 @@ public class Messages {
     public static Message basicMessage(final EventType eventType, final Object object) {
         return Message.builder()
                 .eventType(eventType)
-                .timestamp(OffsetDateTime.now())
+                .timestamp(Instant.now())
                 .bodyType(object.getClass())
                 .messageBody(object)
                 .build();
