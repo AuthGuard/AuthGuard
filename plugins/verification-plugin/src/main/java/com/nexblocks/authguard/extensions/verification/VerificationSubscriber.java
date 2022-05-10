@@ -14,6 +14,7 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.VerificationRequestBO;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.ID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ public class VerificationSubscriber implements MessageSubscriber {
     private final EmailProvider emailProvider;
     private final AccountTokensRepository accountTokensRepository;
     private final ImmutableVerificationConfig verificationConfig;
+    private final CryptographicRandom cryptographicRandom;
 
     private final Duration tokenTtl;
 
@@ -45,6 +47,7 @@ public class VerificationSubscriber implements MessageSubscriber {
         this.accountTokensRepository = accountTokensRepository;
         this.verificationConfig = verificationConfig.asConfigBean(ImmutableVerificationConfig.class);
 
+        this.cryptographicRandom = new CryptographicRandom();
         this.tokenTtl = ConfigParser.parseDuration(this.verificationConfig.getEmailVerificationLife());
     }
 
@@ -81,7 +84,7 @@ public class VerificationSubscriber implements MessageSubscriber {
             } else if (email.isVerified()) {
                 LOG.warn("Email is already verified. Skipping.");
             } else {
-                final String token = generateVerificationString();
+                final String token = cryptographicRandom.base64Url(64);
 
                 final AccountTokenDO accountToken = AccountTokenDO.builder()
                         .expiresAt(OffsetDateTime.now().plus(tokenTtl))
@@ -103,10 +106,5 @@ public class VerificationSubscriber implements MessageSubscriber {
                 LOG.info("Sent a verification email");
             }
         });
-    }
-
-    private String generateVerificationString() {
-        final byte[] verificationCode = ID.generate().getBytes();
-        return Base64.getEncoder().encodeToString(verificationCode);
     }
 }

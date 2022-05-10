@@ -4,6 +4,7 @@ import com.nexblocks.authguard.basic.config.OtpConfig;
 import com.nexblocks.authguard.basic.config.OtpConfigInterface;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.OtpRepository;
+import com.nexblocks.authguard.dal.model.OneTimePasswordDO;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.service.auth.AuthProvider;
@@ -20,6 +21,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.concurrent.CompletableFuture;
 
 @ProvidesToken("otp")
 public class OtpProvider implements AuthProvider {
@@ -49,23 +51,24 @@ public class OtpProvider implements AuthProvider {
             throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
         }
 
-        final String passwordId = ID.generate();
         final String password = generatePassword();
 
-        final AuthResponseBO token = createToken(passwordId, account.getId());
-
         final OneTimePasswordBO oneTimePassword = OneTimePasswordBO.builder()
-                .id(passwordId)
+                .id(ID.generate())
                 .accountId(account.getId())
                 .expiresAt(OffsetDateTime.now().plus(tokenTtl))
                 .password(password)
                 .build();
 
+        final OneTimePasswordBO persistedOtp = otpRepository.save(serviceMapper.toDO(oneTimePassword))
+                .thenApply(serviceMapper::toBO)
+                .join(); // TODO not a good idea, change the interface
+
         final OtpMessageBody messageBody = new OtpMessageBody(oneTimePassword, account,
                 otpConfig.getMethod() == OtpConfigInterface.Method.EMAIL,
                 otpConfig.getMethod() == OtpConfigInterface.Method.SMS);
 
-        otpRepository.save(serviceMapper.toDO(oneTimePassword));
+        final AuthResponseBO token = createToken(persistedOtp.getId(), account.getId());
 
         messageBus.publish(OTP_CHANNEL, Messages.otpGenerated(messageBody));
 

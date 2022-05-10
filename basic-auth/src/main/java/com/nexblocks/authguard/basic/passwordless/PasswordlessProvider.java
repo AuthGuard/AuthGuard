@@ -61,16 +61,16 @@ public class PasswordlessProvider implements AuthProvider {
                 .expiresAt(OffsetDateTime.now().plus(tokenTtl))
                 .build();
 
-        accountTokensRepository.save(accountToken);
+        final AccountTokenDO persistedToken = accountTokensRepository.save(accountToken).join();
 
         final PasswordlessMessageBody messageBody =
-                new PasswordlessMessageBody(accountToken, account);
+                new PasswordlessMessageBody(persistedToken, account);
 
         messageBus.publish(PASSWORDLESS_CHANNEL, Messages.passwordlessGenerated(messageBody));
 
         return AuthResponseBO.builder()
                 .type(TOKEN_TYPE)
-                .token(accountToken.getId())
+                .token(persistedToken.getId())
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .build();

@@ -25,7 +25,7 @@ class BasicJtiProviderTest {
     @Test
     void generate() {
         Mockito.when(repository.save(any()))
-                .thenReturn(CompletableFuture.completedFuture(AccountTokenDO.builder().build()));
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
 
         assertThat(provider.next()).isNotNull();
     }
