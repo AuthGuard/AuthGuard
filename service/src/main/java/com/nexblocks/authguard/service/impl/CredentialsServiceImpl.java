@@ -90,7 +90,6 @@ public class CredentialsServiceImpl implements CredentialsService {
         final CredentialsBO credentialsHashedPassword = CredentialsBO.builder()
                 .from(credentials)
                 .hashedPassword(hashedPassword)
-                .id(ID.generate())
                 .passwordUpdatedAt(OffsetDateTime.now())
                 .passwordVersion(passwordVersion)
                 .build();
@@ -247,15 +246,15 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .expiresAt(now.plus(TOKEN_LIFETIME))
                 .build();
 
-        accountTokensRepository.save(accountToken).join();
+        final AccountTokenDO persistedToken = accountTokensRepository.save(accountToken).join();
 
         messageBus.publish(CREDENTIALS_CHANNEL,
-                Messages.resetTokenGenerated(new ResetTokenMessage(account, accountToken)));
+                Messages.resetTokenGenerated(new ResetTokenMessage(account, persistedToken)));
 
         return PasswordResetTokenBO.builder()
-                .token(returnToken ? accountToken.getToken() : null)
+                .token(returnToken ? persistedToken.getToken() : null)
                 .issuedAt(now.toEpochSecond())
-                .expiresAt(accountToken.getExpiresAt().toEpochSecond())
+                .expiresAt(persistedToken.getExpiresAt().toEpochSecond())
                 .build();
     }
 

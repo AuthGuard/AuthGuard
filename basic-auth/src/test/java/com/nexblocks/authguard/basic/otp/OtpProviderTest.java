@@ -19,6 +19,7 @@ import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,6 +43,8 @@ class OtpProviderTest {
         final ConfigContext configContext = Mockito.mock(ConfigContext.class);
 
         Mockito.when(configContext.asConfigBean(OtpConfig.class)).thenReturn(otpConfig);
+        Mockito.when(mockOtpRepository.save(Mockito.any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, OneTimePasswordDO.class)));
 
         otpProvider = new OtpProvider(mockOtpRepository, new ServiceMapperImpl(), messageBus, configContext);
     }

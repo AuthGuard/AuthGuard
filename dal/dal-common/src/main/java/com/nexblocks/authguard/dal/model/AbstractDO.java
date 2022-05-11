@@ -6,8 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
+import javax.persistence.*;
 import java.time.OffsetDateTime;
 
 @Data
@@ -18,6 +17,7 @@ import java.time.OffsetDateTime;
 @MappedSuperclass
 public abstract class AbstractDO {
     @Id
+    @Convert(converter = LongToStringConverter.class)
     private String id;
     private boolean deleted;
     private OffsetDateTime createdAt;

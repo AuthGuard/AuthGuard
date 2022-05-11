@@ -78,7 +78,8 @@ class ActionTokenServiceImplTest {
                 .build();
 
         Mockito.when(basicAuthProvider.getAccount(authRequest)).thenReturn(Either.right(account));
-        Mockito.when(accountTokensRepository.save(Mockito.any())).thenReturn(CompletableFuture.completedFuture(null));
+        Mockito.when(accountTokensRepository.save(Mockito.any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
 
         final Try<ActionTokenBO> actual = actionTokenService.generateFromBasicAuth(authRequest, "something");
         final ActionTokenBO expected = ActionTokenBO.builder()
@@ -101,7 +102,8 @@ class ActionTokenServiceImplTest {
 
         Mockito.when(otpVerifier.verifyAccountToken(otpToken)).thenReturn(Either.right(account.getId()));
         Mockito.when(accountsService.getById("account")).thenReturn(Optional.of(account));
-        Mockito.when(accountTokensRepository.save(Mockito.any())).thenReturn(CompletableFuture.completedFuture(null));
+        Mockito.when(accountTokensRepository.save(Mockito.any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
 
         final Try<ActionTokenBO> actual = actionTokenService.generateFromOtp("password-id", "otp", "something");
         final ActionTokenBO expected = ActionTokenBO.builder()

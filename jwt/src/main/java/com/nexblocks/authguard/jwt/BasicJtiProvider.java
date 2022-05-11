@@ -20,14 +20,13 @@ public class BasicJtiProvider implements JtiProvider {
 
     @Override
     public String next() {
-        final String id = ID.generate();
-
-        accountTokensRepository.save(AccountTokenDO.builder()
+        final AccountTokenDO persistedToken = accountTokensRepository.save(AccountTokenDO.builder()
                 .id(ID.generate())
-                .token(id)
-                .build()).join();
+                .token(ID.generate())
+                .build())
+                .join();
 
-        return id;
+        return persistedToken.getToken();
     }
 
     @Override
