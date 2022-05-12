@@ -19,4 +19,12 @@ public class PasswordlessMessageBody {
     public AccountBO getAccount() {
         return account;
     }
+
+    @Override
+    public String toString() {
+        return "PasswordlessMessageBody{" +
+                "accountToken=" + accountToken +
+                ", account=" + account +
+                '}';
+    }
 }
