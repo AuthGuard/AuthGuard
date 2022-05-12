@@ -32,4 +32,14 @@ public class OtpMessageBody {
     public boolean isBySms() {
         return bySms;
     }
+
+    @Override
+    public String toString() {
+        return "OtpMessageBody{" +
+                "otp=" + otp +
+                ", account=" + account +
+                ", byEmail=" + byEmail +
+                ", bySms=" + bySms +
+                '}';
+    }
 }
