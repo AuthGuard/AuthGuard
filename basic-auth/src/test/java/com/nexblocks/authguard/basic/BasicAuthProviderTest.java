@@ -5,19 +5,20 @@ import com.google.common.collect.ImmutableMap;
 import com.nexblocks.authguard.basic.passwords.SecurePassword;
 import com.nexblocks.authguard.basic.passwords.SecurePasswordProvider;
 import com.nexblocks.authguard.service.AccountsService;
-import com.nexblocks.authguard.service.CredentialsService;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
-import com.nexblocks.authguard.service.model.*;
+import com.nexblocks.authguard.service.model.AccountBO;
+import com.nexblocks.authguard.service.model.HashedPasswordBO;
+import com.nexblocks.authguard.service.model.UserIdentifier;
+import com.nexblocks.authguard.service.model.UserIdentifierBO;
 import io.vavr.control.Either;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Optional;
 
@@ -27,7 +28,6 @@ import static org.mockito.ArgumentMatchers.eq;
 
 class BasicAuthProviderTest {
     private AccountsService accountsService;
-    private CredentialsService credentialsService;
     private SecurePasswordProvider securePasswordProvider;
     private SecurePassword securePassword;
     private SecurePassword previousSecurePassword;
@@ -37,7 +37,6 @@ class BasicAuthProviderTest {
     @BeforeEach
     void setup() {
         accountsService = Mockito.mock(AccountsService.class);
-        credentialsService = Mockito.mock(CredentialsService.class);
         securePassword = Mockito.mock(SecurePassword.class);
         previousSecurePassword = Mockito.mock(SecurePassword.class);
 
@@ -49,18 +48,13 @@ class BasicAuthProviderTest {
         Mockito.when(securePasswordProvider.getCurrentVersion())
                 .thenReturn(1);
 
-        basicAuth = new BasicAuthProvider(credentialsService, accountsService, securePasswordProvider);
+        basicAuth = new BasicAuthProvider(accountsService, securePasswordProvider);
     }
 
-    @AfterEach
-    void resetMocks() {
-        Mockito.reset(accountsService);
-        Mockito.reset(credentialsService);
-    }
-
-    private CredentialsBO createCredentials(final String username) {
-        return CredentialsBO.builder()
+    private AccountBO createCredentials(final String username) {
+        return AccountBO.builder()
                 .id("credentials")
+                .active(true)
                 .addIdentifiers(UserIdentifierBO.builder()
                         .identifier(username)
                         .type(UserIdentifier.Type.USERNAME)
@@ -82,18 +76,15 @@ class BasicAuthProviderTest {
         final String password = "password";
         final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final AccountBO account = AccountBO.builder()
-                .active(true)
-                .build();
-        final CredentialsBO credentials = createCredentials(username);
+        final AccountBO credentials = createCredentials(username);
 
-        Mockito.when(credentialsService.getByUsernameUnsafe(username, "global")).thenReturn(Optional.of(credentials));
-        Mockito.when(accountsService.getById(credentials.getAccountId())).thenReturn(Optional.of(account));
+        Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
+                .thenReturn(Optional.of(credentials));
         Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(true);
 
         final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
 
-        assertThat(result.get()).isEqualTo(account);
+        assertThat(result.get()).isEqualTo(credentials);
     }
 
     @Test
@@ -102,13 +93,10 @@ class BasicAuthProviderTest {
         final String password = "password";
         final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final AccountBO account = AccountBO.builder()
-                .active(false)
-                .build();
-        final CredentialsBO credentials = createCredentials(username);
+        final AccountBO credentials = createCredentials(username)
+                .withActive(false);
 
-        Mockito.when(credentialsService.getByUsernameUnsafe(username, "main")).thenReturn(Optional.of(credentials));
-        Mockito.when(accountsService.getById(credentials.getAccountId())).thenReturn(Optional.of(account));
+        Mockito.when(accountsService.getByIdentifierUnsafe(username, "main")).thenReturn(Optional.of(credentials));
         Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(true);
 
         final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
@@ -122,14 +110,14 @@ class BasicAuthProviderTest {
         final String password = "password";
         final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final CredentialsBO credentials = createCredentials(username)
+        final AccountBO credentials = createCredentials(username)
                 .withIdentifiers(UserIdentifierBO.builder()
                         .identifier(username)
                         .type(UserIdentifier.Type.USERNAME)
                         .active(false)
                         .build());
 
-        Mockito.when(credentialsService.getByUsernameUnsafe(username, "main")).thenReturn(Optional.of(credentials));
+        Mockito.when(accountsService.getByIdentifierUnsafe(username, "main")).thenReturn(Optional.of(credentials));
 
         final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
 
@@ -143,7 +131,7 @@ class BasicAuthProviderTest {
         final String password = "password";
         final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        Mockito.when(credentialsService.getByUsername(username, "main")).thenReturn(Optional.empty());
+        Mockito.when(accountsService.getByIdentifierUnsafe(username, "main")).thenReturn(Optional.empty());
 
         assertThat(basicAuth.authenticateAndGetAccount(authorization)).isEmpty();
     }
@@ -154,9 +142,9 @@ class BasicAuthProviderTest {
         final String password = "password";
         final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final CredentialsBO credentials = createCredentials(username);
+        final AccountBO credentials = createCredentials(username);
 
-        Mockito.when(credentialsService.getByUsernameUnsafe(username, "main")).thenReturn(Optional.of(credentials));
+        Mockito.when(accountsService.getByIdentifierUnsafe(username, "main")).thenReturn(Optional.of(credentials));
         Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(false);
 
         final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
@@ -171,10 +159,10 @@ class BasicAuthProviderTest {
         final String password = "password";
         final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final CredentialsBO credentials = createCredentials(username)
-                .withPasswordUpdatedAt(OffsetDateTime.now().minusMinutes(5));
+        final AccountBO credentials = createCredentials(username)
+                .withPasswordUpdatedAt(Instant.now().minus(Duration.ofMinutes(5)));
 
-        Mockito.when(credentialsService.getByUsernameUnsafe(username, "main")).thenReturn(Optional.of(credentials));
+        Mockito.when(accountsService.getByIdentifierUnsafe(username, "main")).thenReturn(Optional.of(credentials));
         Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(true);
 
         Mockito.when(securePasswordProvider.passwordsExpire()).thenReturn(true);
@@ -192,21 +180,18 @@ class BasicAuthProviderTest {
         final String password = "password";
         final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final AccountBO account = AccountBO.builder()
-                .active(true)
-                .build();
-        final CredentialsBO credentials = createCredentials(username)
+        final AccountBO credentials = createCredentials(username)
+                .withActive(true)
                 .withPasswordVersion(0);
 
-        Mockito.when(credentialsService.getByUsernameUnsafe(username, "global"))
+        Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
                 .thenReturn(Optional.of(credentials));
-        Mockito.when(accountsService.getById(credentials.getAccountId())).thenReturn(Optional.of(account));
         Mockito.when(previousSecurePassword.verify(eq(password), eq(credentials.getHashedPassword())))
                 .thenReturn(true);
 
         final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
 
-        assertThat(result.get()).isEqualTo(account);
+        assertThat(result.get()).isEqualTo(credentials);
     }
 
     @Test
@@ -215,15 +200,12 @@ class BasicAuthProviderTest {
         final String password = "password";
         final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final AccountBO account = AccountBO.builder()
-                .active(true)
-                .build();
-        final CredentialsBO credentials = createCredentials(username)
+        final AccountBO credentials = createCredentials(username)
+                .withActive(true)
                 .withPasswordVersion(0);
 
-        Mockito.when(credentialsService.getByUsernameUnsafe(username, credentials.getDomain()))
+        Mockito.when(accountsService.getByIdentifierUnsafe(username, credentials.getDomain()))
                 .thenReturn(Optional.of(credentials));
-        Mockito.when(accountsService.getById(credentials.getAccountId())).thenReturn(Optional.of(account));
         Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(true);
         Mockito.when(previousSecurePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(false);
 

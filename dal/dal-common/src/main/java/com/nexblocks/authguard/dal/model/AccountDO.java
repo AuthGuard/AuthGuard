@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import javax.persistence.*;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,6 +26,7 @@ import java.util.Set;
         query = "SELECT DISTINCT account FROM AccountDO account " +
                 "LEFT JOIN FETCH account.roles " +
                 "LEFT JOIN FETCH account.permissions " +
+                "LEFT JOIN FETCH account.identifiers identifier " +
                 "WHERE account.id = :id AND account.deleted = false"
 )
 @NamedQuery(
@@ -32,6 +34,7 @@ import java.util.Set;
         query = "SELECT DISTINCT account FROM AccountDO account " +
                 "LEFT JOIN FETCH account.roles " +
                 "LEFT JOIN FETCH account.permissions " +
+                "LEFT JOIN FETCH account.identifiers identifier " +
                 "WHERE account.externalId = :externalId AND account.deleted = false"
 )
 @NamedQuery(
@@ -39,6 +42,7 @@ import java.util.Set;
         query = "SELECT DISTINCT account FROM AccountDO account " +
                 "LEFT JOIN FETCH account.roles " +
                 "LEFT JOIN FETCH account.permissions " +
+                "LEFT JOIN FETCH account.identifiers identifier " +
                 "WHERE (account.email.email = :email OR account.backupEmail.email = :email) AND account.domain = :domain AND account.deleted = false"
 )
 @NamedQuery(
@@ -47,6 +51,14 @@ import java.util.Set;
                 "LEFT JOIN FETCH account.permissions " +
                 "LEFT JOIN FETCH account.roles role " +
                 "WHERE role = :role AND account.domain = :domain AND account.deleted = false "
+)
+@NamedQuery(
+        name = "accounts.getByIdentifier",
+        query = "SELECT account FROM AccountDO account " +
+                "LEFT JOIN FETCH account.roles " +
+                "LEFT JOIN FETCH account.permissions " +
+                "LEFT JOIN FETCH account.identifiers identifier " +
+                "WHERE identifier.identifier = :identifier AND identifier.domain = :domain AND account.deleted = false"
 )
 public class AccountDO extends AbstractDO {
     private String externalId;
@@ -91,6 +103,16 @@ public class AccountDO extends AbstractDO {
             @AttributeOverride(name = "active", column = @Column(name = "phone_number_active"))
     })
     private PhoneNumberDO phoneNumber;
+
+    // credentials
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    private Set<UserIdentifierDO> identifiers;
+
+    @Embedded
+    private PasswordDO hashedPassword;
+
+    private Instant passwordUpdatedAt;
+    private int passwordVersion;
 
     private boolean active;
 

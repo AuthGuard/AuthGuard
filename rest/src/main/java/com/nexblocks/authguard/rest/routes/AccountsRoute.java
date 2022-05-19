@@ -23,14 +23,12 @@ import io.javalin.http.Context;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 public class AccountsRoute extends AccountsApi {
     private final AccountsService accountsService;
-    private final CredentialsService credentialsService;
     private final ApplicationsService applicationsService;
     private final AccountLocksService accountLocksService;
     private final RestMapper restMapper;
@@ -43,12 +41,10 @@ public class AccountsRoute extends AccountsApi {
 
     @Inject
     AccountsRoute(final AccountsService accountsService,
-                  final CredentialsService credentialsService,
                   final ApplicationsService applicationsService,
                   final AccountLocksService accountLocksService,
                   final RestMapper restMapper) {
         this.accountsService = accountsService;
-        this.credentialsService = credentialsService;
         this.applicationsService = applicationsService;
         this.accountLocksService = accountLocksService;
         this.restMapper = restMapper;
@@ -65,6 +61,7 @@ public class AccountsRoute extends AccountsApi {
                 .build();
     }
 
+    @Override
     public void create(final Context context) {
         final String idempotentKey = IdempotencyHeader.getKeyOrFail(context);
         final CreateAccountRequestDTO request = accountRequestBodyHandler.getValidated(context);
@@ -80,7 +77,14 @@ public class AccountsRoute extends AccountsApi {
                 .source(context.ip())
                 .build();
 
-        final Optional<AccountDTO> createdAccount = Optional.of(restMapper.toBO(request))
+        final AccountBO account = restMapper.toBO(request);
+
+        final List<UserIdentifierBO> identifiers = account.getIdentifiers()
+                .stream()
+                .map(identifier -> identifier.withDomain(request.getDomain()))
+                .collect(Collectors.toList());
+
+        final Optional<AccountDTO> createdAccount = Optional.of(account.withIdentifiers(identifiers))
                 .map(accountBO -> accountsService.create(accountBO, requestContext))
                 .map(restMapper::toDTO);
 
@@ -92,6 +96,7 @@ public class AccountsRoute extends AccountsApi {
     }
 
     @Override
+    @Deprecated
     public void createComplete(final Context context) {
         final String idempotentKey = IdempotencyHeader.getKeyOrFail(context);
         final CreateCompleteAccountRequestDTO request = completeAccountRequestBodyHandler.getValidated(context);
@@ -102,56 +107,59 @@ public class AccountsRoute extends AccountsApi {
             return;
         }
 
-        final RequestContextBO requestContext = RequestContextBO.builder()
-                .idempotentKey(idempotentKey)
-                .source(context.ip())
-                .build();
+        context.status(500).json(new Error("", "Not there"));
 
-        final AccountBO accountBO = restMapper.toBO(request.getAccount());
-        final CredentialsBO credentialsBO = restMapper.toBO(request.getCredentials());
-
-        final List<UserIdentifierBO> identifiers = credentialsBO.getIdentifiers()
-                .stream()
-                .map(identifier -> identifier.withDomain(credentialsBO.getDomain()))
-                .collect(Collectors.toList());
-
-        String accountId;
-        String credentialsId;
-
-        try {
-            accountId = accountsService.create(accountBO, requestContext).getId();
-        } catch (final CompletionException e) {
-            if (e.getCause() instanceof IdempotencyException) {
-                accountId = ((IdempotencyException) e.getCause()).getIdempotentRecord().getEntityId();
-            } else {
-                throw e;
-            }
-        }
-
-        try {
-            final CredentialsBO withAdditionalInfo = CredentialsBO.builder()
-                    .from(credentialsBO)
-                    .identifiers(identifiers)
-                    .accountId(accountId)
-                    .build();
-
-            credentialsId = credentialsService.create(withAdditionalInfo, requestContext).getId();
-        } catch (final CompletionException e) {
-            if (e.getCause() instanceof IdempotencyException) {
-                credentialsId = ((IdempotencyException) e.getCause()).getIdempotentRecord().getEntityId();
-            } else {
-                throw e;
-            }
-        }
-
-        final CreateCompleteAccountResponseDTO response = CreateCompleteAccountResponseDTO.builder()
-                .accountId(accountId)
-                .credentialsId(credentialsId)
-                .build();
-
-        context.status(201).json(response);
+//        final RequestContextBO requestContext = RequestContextBO.builder()
+//                .idempotentKey(idempotentKey)
+//                .source(context.ip())
+//                .build();
+//
+//        final AccountBO accountBO = restMapper.toBO(request.getAccount());
+//        final CredentialsBO credentialsBO = restMapper.toBO(request.getCredentials());
+//
+//        final List<UserIdentifierBO> identifiers = credentialsBO.getIdentifiers()
+//                .stream()
+//                .map(identifier -> identifier.withDomain(credentialsBO.getDomain()))
+//                .collect(Collectors.toList());
+//
+//        String accountId;
+//        String credentialsId;
+//
+//        try {
+//            accountId = accountsService.create(accountBO, requestContext).getId();
+//        } catch (final CompletionException e) {
+//            if (e.getCause() instanceof IdempotencyException) {
+//                accountId = ((IdempotencyException) e.getCause()).getIdempotentRecord().getEntityId();
+//            } else {
+//                throw e;
+//            }
+//        }
+//
+//        try {
+//            final CredentialsBO withAdditionalInfo = CredentialsBO.builder()
+//                    .from(credentialsBO)
+//                    .identifiers(identifiers)
+//                    .accountId(accountId)
+//                    .build();
+//
+//            credentialsId = credentialsService.create(withAdditionalInfo, requestContext).getId();
+//        } catch (final CompletionException e) {
+//            if (e.getCause() instanceof IdempotencyException) {
+//                credentialsId = ((IdempotencyException) e.getCause()).getIdempotentRecord().getEntityId();
+//            } else {
+//                throw e;
+//            }
+//        }
+//
+//        final CreateCompleteAccountResponseDTO response = CreateCompleteAccountResponseDTO.builder()
+//                .accountId(accountId)
+//                .credentialsId(credentialsId)
+//                .build();
+//
+//        context.status(201).json(response);
     }
 
+    @Override
     public void getById(final Context context) {
         final String accountId = context.pathParam("id");
 
@@ -171,10 +179,7 @@ public class AccountsRoute extends AccountsApi {
         final String identifier = context.pathParam("identifier");
         final String domain = context.pathParam("domain");
 
-        final Optional<AccountBO> account = credentialsService.getByUsername(identifier, domain)
-                .map(CredentialsBO::getAccountId)
-                .filter(Objects::nonNull)
-                .flatMap(accountsService::getById);
+        final Optional<AccountBO> account = accountsService.getByIdentifier(identifier, domain);
 
         if (account.isPresent()) {
             context.status(200).json(account.get());
@@ -184,6 +189,27 @@ public class AccountsRoute extends AccountsApi {
         }
     }
 
+    @Override
+    public void identifierExists(final Context context) {
+        final String domain = context.pathParam("domain");
+
+        if (!ActorDomainVerifier.verifyActorDomain(context, domain)) {
+            return;
+        }
+
+        final String identifier = context.pathParam("identifier");
+
+        final boolean exists = accountsService.getByIdentifier(identifier, domain)
+                .isPresent();
+
+        if (exists) {
+            context.status(200);
+        } else {
+            context.status(404);
+        }
+    }
+
+    @Override
     public void deleteAccount(final Context context) {
         final String accountId = context.pathParam("id");
 
@@ -214,6 +240,7 @@ public class AccountsRoute extends AccountsApi {
         }
     }
 
+    @Override
     public void getByExternalId(final Context context) {
         final String accountId = context.pathParam("id");
 
@@ -262,6 +289,7 @@ public class AccountsRoute extends AccountsApi {
         }
     }
 
+    @Override
     public void updatePermissions(final Context context) {
         final String accountId = context.pathParam("id");
         final PermissionsRequestDTO request = permissionsRequestBodyHandler.getValidated(context);
@@ -281,6 +309,7 @@ public class AccountsRoute extends AccountsApi {
         context.json(updatedAccount);
     }
 
+    @Override
     public void updateRoles(final Context context) {
         final String accountId = context.pathParam("id");
         final RolesRequestDTO request = rolesRequestBodyHandler.getValidated(context);
@@ -296,6 +325,7 @@ public class AccountsRoute extends AccountsApi {
         context.json(updatedAccount);
     }
 
+    @Override
     public void getApps(final Context context) {
         final String accountId = context.pathParam("id");
 
@@ -307,6 +337,7 @@ public class AccountsRoute extends AccountsApi {
         context.status(200).json(apps);
     }
 
+    @Override
     public void activate(final Context context) {
         final String accountId = context.pathParam("id");
 
@@ -320,6 +351,7 @@ public class AccountsRoute extends AccountsApi {
         }
     }
 
+    @Override
     public void deactivate(final Context context) {
         final String accountId = context.pathParam("id");
 

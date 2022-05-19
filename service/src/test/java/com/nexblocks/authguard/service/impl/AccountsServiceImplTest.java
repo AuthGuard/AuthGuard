@@ -1,6 +1,11 @@
 package com.nexblocks.authguard.service.impl;
 
 import com.google.common.collect.ImmutableMap;
+import com.nexblocks.authguard.basic.config.PasswordConditions;
+import com.nexblocks.authguard.basic.config.PasswordsConfig;
+import com.nexblocks.authguard.basic.passwords.PasswordValidator;
+import com.nexblocks.authguard.basic.passwords.SecurePassword;
+import com.nexblocks.authguard.basic.passwords.SecurePasswordProvider;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.model.AccountDO;
 import com.nexblocks.authguard.dal.persistence.AccountsRepository;
@@ -15,6 +20,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.*;
+import com.nexblocks.authguard.service.util.CredentialsManager;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,11 +46,20 @@ class AccountsServiceImplTest {
     private RolesService rolesService;
     private MessageBus messageBus;
     private AccountsServiceImpl accountService;
+    private SecurePassword securePassword;
+    private SecurePasswordProvider securePasswordProvider;
     private ServiceMapper serviceMapper;
+    private CredentialsManager credentialsManager;
 
     private final static EasyRandom RANDOM = new EasyRandom(
             new EasyRandomParameters().collectionSizeRange(3, 5)
     );
+
+    private void compareAccounts(final AccountBO actual, final AccountBO expected) {
+        assertThat(actual).isEqualToIgnoringGivenFields(expected, "id",
+                        "createdAt", "lastModified", "plainPassword", "hashedPassword",
+                        "passwordUpdatedAt");
+    }
 
     @BeforeEach
     void setup() {
@@ -52,6 +67,8 @@ class AccountsServiceImplTest {
         permissionsService = Mockito.mock(PermissionsService.class);
         rolesService = Mockito.mock(RolesService.class);
         idempotencyService = Mockito.mock(IdempotencyService.class);
+        securePassword = Mockito.mock(SecurePassword.class);
+        securePasswordProvider = Mockito.mock(SecurePasswordProvider.class);
         messageBus = Mockito.mock(MessageBus.class);
 
         final ConfigContext configContext = Mockito.mock(ConfigContext.class);
@@ -67,9 +84,18 @@ class AccountsServiceImplTest {
         Mockito.when(configContext.asConfigBean(AccountConfig.class))
                 .thenReturn(accountConfig);
 
+        Mockito.when(securePasswordProvider.get()).thenReturn(securePassword);
+        Mockito.when(securePasswordProvider.getCurrentVersion())
+                .thenReturn(1);
+
+        final PasswordValidator passwordValidator = new PasswordValidator(PasswordsConfig.builder()
+                .conditions(PasswordConditions.builder().build()).build());
+
+        credentialsManager = new CredentialsManager(securePasswordProvider, passwordValidator);
+
         serviceMapper = new ServiceMapperImpl();
         accountService = new AccountsServiceImpl(accountsRepository, permissionsService,rolesService,
-                idempotencyService, serviceMapper, messageBus, configContext);
+                credentialsManager, idempotencyService, serviceMapper, messageBus, configContext);
     }
 
     private AccountBO createAccountBO() {
@@ -106,6 +132,11 @@ class AccountsServiceImplTest {
                     return CompletableFuture.completedFuture(invocation.getArgument(0, Supplier.class).get());
                 });
 
+        Mockito.when(securePassword.hash(any())).thenReturn(HashedPasswordBO.builder()
+                .password("hashed")
+                .salt("salted")
+                .build());
+
         Mockito.when(rolesService.verifyRoles(account.getRoles(), "main"))
                 .thenReturn(new ArrayList<>(account.getRoles()));
 
@@ -115,8 +146,9 @@ class AccountsServiceImplTest {
                 .collect(Collectors.toList());
 
         assertThat(persisted).isNotNull();
-        assertThat(persisted)
-                .isEqualToIgnoringGivenFields(account.withPermissions(expectedPermissions), "id", "createdAt", "lastModified");
+        compareAccounts(persisted, account.withPermissions(expectedPermissions).withPasswordVersion(1));
+        assertThat(persisted.getHashedPassword()).isNull();
+        assertThat(persisted.getPlainPassword()).isNull();
 
         // need better assertion
         final ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
@@ -161,8 +193,7 @@ class AccountsServiceImplTest {
         final AccountBO persisted = accountService.create(account, requestContext);
 
         assertThat(persisted).isNotNull();
-        assertThat(persisted)
-                .isEqualToIgnoringGivenFields(account.withRoles("def-role"), "id", "createdAt", "lastModified");
+        compareAccounts(persisted, account.withRoles("def-role").withPasswordVersion(1));
 
         // need better assertion
         final ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
@@ -193,7 +224,7 @@ class AccountsServiceImplTest {
                 .collect(Collectors.toList());
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualTo(accountBO.withPermissions(expectedPermissions));
+        compareAccounts(retrieved.get(), accountBO.withPermissions(expectedPermissions));
     }
 
     @Test
@@ -210,7 +241,7 @@ class AccountsServiceImplTest {
                 .collect(Collectors.toList());
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualTo(accountBO.withPermissions(expectedPermissions));
+        compareAccounts(retrieved.get(), accountBO.withPermissions(expectedPermissions));
     }
 
     @Test
@@ -417,7 +448,7 @@ class AccountsServiceImplTest {
                 .collect(Collectors.toList());
 
         assertThat(updated).isPresent();
-        assertThat(updated.get()).isEqualToIgnoringGivenFields(expected.withPermissions(expectedPermissions), "lastModified");
+        compareAccounts(updated.get(), expected.withPermissions(expectedPermissions));
         assertThat(updated.get().getLastModified()).isAfter(expected.getLastModified());
 
         // need better assertion
@@ -444,8 +475,7 @@ class AccountsServiceImplTest {
                 .collect(Collectors.toList());
 
         assertThat(updated).isNotNull();
-        assertThat(updated)
-                .isEqualToIgnoringGivenFields(accountBO.withPermissions(expectedPermissions), "id", "createdAt", "lastModified", "active");
+        compareAccounts(updated, accountBO.withPermissions(expectedPermissions));
         assertThat(updated.isActive()).isTrue();
     }
 
@@ -465,8 +495,7 @@ class AccountsServiceImplTest {
         final AccountBO updated = accountService.deactivate(accountDO.getId()).orElse(null);
 
         assertThat(updated).isNotNull();
-        assertThat(updated)
-                .isEqualToIgnoringGivenFields(accountBO.withPermissions(expectedPermissions), "id", "createdAt", "lastModified", "active");
+        compareAccounts(updated, accountBO.withPermissions(expectedPermissions).withActive(false));
         assertThat(updated.isActive()).isFalse();
     }
 }

@@ -4,16 +4,18 @@ import com.google.inject.Inject;
 import com.nexblocks.authguard.basic.passwords.SecurePassword;
 import com.nexblocks.authguard.basic.passwords.SecurePasswordProvider;
 import com.nexblocks.authguard.service.AccountsService;
-import com.nexblocks.authguard.service.CredentialsService;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
-import com.nexblocks.authguard.service.model.*;
+import com.nexblocks.authguard.service.model.AccountBO;
+import com.nexblocks.authguard.service.model.AuthRequestBO;
+import com.nexblocks.authguard.service.model.EntityType;
+import com.nexblocks.authguard.service.model.UserIdentifierBO;
 import io.vavr.control.Either;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Optional;
 
@@ -22,15 +24,13 @@ public class BasicAuthProvider {
 
     private final Logger LOG = LoggerFactory.getLogger(BasicAuthProvider.class);
 
-    private final CredentialsService credentialsService;
     private final AccountsService accountsService;
     private final SecurePassword securePassword;
     private final SecurePasswordProvider securePasswordProvider;
 
     @Inject
-    public BasicAuthProvider(final CredentialsService credentialsService, final AccountsService accountsService,
+    public BasicAuthProvider(final AccountsService accountsService,
                              final SecurePasswordProvider securePasswordProvider) {
-        this.credentialsService = credentialsService;
         this.securePassword = securePasswordProvider.get();
         this.accountsService = accountsService;
         this.securePasswordProvider = securePasswordProvider;
@@ -64,11 +64,11 @@ public class BasicAuthProvider {
     }
 
     private Either<Exception, AccountBO> verifyCredentialsAndGetAccount(final String username, final String password, final String domain) {
-        final Optional<CredentialsBO> credentialsOpt = credentialsService.getByUsernameUnsafe(username, domain);
+        final Optional<AccountBO> credentialsOpt = accountsService.getByIdentifierUnsafe(username, domain);
 
         // TODO replace this with Either mapping
         if (credentialsOpt.isPresent()) {
-            final CredentialsBO credentials = credentialsOpt.get();
+            final AccountBO credentials = credentialsOpt.get();
             final Optional<Exception> validationError = checkIdentifier(credentials, username);
 
             if (validationError.isPresent()) {
@@ -76,56 +76,55 @@ public class BasicAuthProvider {
             }
 
             return checkIfExpired(credentials)
-                    .flatMap(valid -> checkPasswordsMatch(valid, password))
-                    .flatMap(valid -> getAccountById(valid.getAccountId()));
+                    .flatMap(valid -> checkPasswordsMatch(valid, password));
         } else {
             return Either.left(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
                     "Identifier " + username + " does not exist"));
         }
     }
 
-    private Either<Exception, CredentialsBO> checkIfExpired(final CredentialsBO credentials) {
+    private Either<Exception, AccountBO> checkIfExpired(final AccountBO credentials) {
         // check if expired
         if (securePasswordProvider.passwordsExpire()) {
             if (credentials.getPasswordUpdatedAt() == null) {
                 return Either.left(new IllegalStateException("Credentials " + credentials.getId() + " passwordUpdatedAt was null"));
             }
 
-            final OffsetDateTime expiresAt = credentials.getPasswordUpdatedAt()
+            final Instant expiresAt = credentials.getPasswordUpdatedAt()
                     .plus(securePasswordProvider.getPasswordTtl());
 
-            if (expiresAt.isBefore(OffsetDateTime.now())) {
+            if (expiresAt.isBefore(Instant.now())) {
                 return Either.left(new ServiceAuthorizationException(ErrorCode.PASSWORD_EXPIRED,
-                        "Password has already expired", EntityType.ACCOUNT, credentials.getAccountId()));
+                        "Password has already expired", EntityType.ACCOUNT, credentials.getId()));
             }
         }
 
         // check if the version is too old
         if (credentials.getPasswordVersion() < securePasswordProvider.getMinimumVersion()) {
             return Either.left(new ServiceAuthorizationException(ErrorCode.PASSWORD_EXPIRED,
-                    "Password has already expired", EntityType.ACCOUNT, credentials.getAccountId()));
+                    "Password has already expired", EntityType.ACCOUNT, credentials.getId()));
         }
 
         return Either.right(credentials);
     }
 
-    private Either<Exception, CredentialsBO> checkPasswordsMatch(final CredentialsBO credentials, final String password) {
+    private Either<Exception, AccountBO> checkPasswordsMatch(final AccountBO credentials, final String password) {
         final SecurePassword securePasswordImplementation = getPasswordImplementation(credentials);
 
         if (securePasswordImplementation == null) {
             return Either.left(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
-                    "Unable to map password version", EntityType.ACCOUNT, credentials.getAccountId()));
+                    "Unable to map password version", EntityType.ACCOUNT, credentials.getId()));
         }
 
         if (securePasswordImplementation.verify(password, credentials.getHashedPassword())) {
             return Either.right(credentials);
         } else {
             return Either.left(new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH,
-                    "Passwords do not match", EntityType.ACCOUNT, credentials.getAccountId()));
+                    "Passwords do not match", EntityType.ACCOUNT, credentials.getId()));
         }
     }
 
-    private SecurePassword getPasswordImplementation(final CredentialsBO credentials) {
+    private SecurePassword getPasswordImplementation(final AccountBO credentials) {
         if (credentials.getPasswordVersion() == null
                 || credentials.getPasswordVersion().equals(securePasswordProvider.getCurrentVersion())) {
             return securePassword;
@@ -135,7 +134,7 @@ public class BasicAuthProvider {
     }
 
     private Either<Exception, AccountBO> verifyCredentialsAndGetAccount(final String username, final String domain) {
-        final Optional<CredentialsBO> credentials = credentialsService.getByUsernameUnsafe(username, domain);
+        final Optional<AccountBO> credentials = accountsService.getByIdentifierUnsafe(username, domain);
 
         if (credentials.isPresent()) {
             final Optional<Exception> validationError = checkIdentifier(credentials.get(), username);
@@ -144,14 +143,14 @@ public class BasicAuthProvider {
                 return Either.left(validationError.get());
             }
 
-            return getAccountById(credentials.get().getAccountId());
+            return Either.right(credentials.get());
         } else {
             return Either.left(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
                     "Identifier " + username + " does not exist"));
         }
     }
 
-    private Optional<Exception> checkIdentifier(final CredentialsBO credentials,
+    private Optional<Exception> checkIdentifier(final AccountBO credentials,
                                                 final String identifier) {
         final Optional<UserIdentifierBO> matchedIdentifier = credentials.getIdentifiers()
                 .stream()
@@ -164,23 +163,9 @@ public class BasicAuthProvider {
 
         if (!matchedIdentifier.get().isActive()) {
             return Optional.of(new ServiceAuthorizationException(ErrorCode.INACTIVE_IDENTIFIER,
-                    "Identifier is not active", EntityType.ACCOUNT, credentials.getAccountId()));
+                    "Identifier is not active", EntityType.ACCOUNT, credentials.getId()));
         }
 
         return Optional.empty();
-    }
-
-    private Either<Exception, AccountBO> getAccountById(final String accountId) {
-        return accountsService.getById(accountId)
-                .<Either<Exception, AccountBO>>map(account -> {
-                    if (account.isActive()) {
-                        return Either.right(account);
-                    }
-
-                    return Either.left(new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE,
-                            "Account " + accountId + " was deactivated"));
-                })
-                .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
-                        "Account " + accountId + " does not exist")));
     }
 }

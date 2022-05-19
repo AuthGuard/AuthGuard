@@ -13,6 +13,8 @@ import javax.persistence.TypedQuery;
 import java.util.Collections;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AccountJpaTest {
     private EntityManager entityManager;
@@ -22,8 +24,10 @@ class AccountJpaTest {
     @BeforeAll
     void setup() {
         final H2 h2 = new H2().withMappedClass(AccountDO.class)
+                .withMappedClass(UserIdentifierDO.class)
                 .withMappedClass(PermissionDO.class)
                 .withMappedClass(RoleDO.class)
+                .withMappedClass(PasswordDO.class)
                 .prepare();
 
         entityManager = h2.getEntityManager();
@@ -57,6 +61,15 @@ class AccountJpaTest {
                         .build())
                 .metadata(ImmutableMap.of("meta-1", "value-1"))
                 .domain("main")
+                .hashedPassword(PasswordDO.builder()
+                        .password("password")
+                        .salt("salt")
+                        .build())
+                .identifiers(Collections.singleton(UserIdentifierDO.builder()
+                        .identifier("username")
+                        .type(UserIdentifierDO.Type.USERNAME)
+                        .domain("main")
+                        .build()))
                 .build();
 
         deletedAccount = AccountDO.builder()
@@ -71,6 +84,15 @@ class AccountJpaTest {
                         .email("deleted@emails.com")
                         .build())
                 .domain("main")
+                .hashedPassword(PasswordDO.builder()
+                        .password("password")
+                        .salt("salt")
+                        .build())
+                .identifiers(Collections.singleton(UserIdentifierDO.builder()
+                        .identifier("deleted-username")
+                        .type(UserIdentifierDO.Type.USERNAME)
+                        .domain("main")
+                        .build()))
                 .build();
 
         entityManager.persist(createdAccount);
@@ -176,5 +198,59 @@ class AccountJpaTest {
 
         final List<AccountDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).isEmpty();
+    }
+
+    @Test
+    void getByIdentifier() {
+        final TypedQuery<AccountDO> query = entityManager.createNamedQuery("accounts.getByIdentifier", AccountDO.class)
+                .setParameter("identifier", "username")
+                .setParameter("domain", "main");
+
+        final List<AccountDO> retrieved = query.getResultList();
+        assertThat(retrieved).containsExactly(createdAccount);
+    }
+
+    @Test
+    void getByNonexistentIdentifier() {
+        final TypedQuery<AccountDO> query = entityManager.createNamedQuery("accounts.getByIdentifier", AccountDO.class)
+                .setParameter("identifier", "nonsense")
+                .setParameter("domain", "main");
+
+        final List<AccountDO> retrieved = query.getResultList();
+        assertThat(retrieved).isEmpty();
+    }
+
+    @Test
+    void createDuplicate() {
+        final AccountDO duplicate = AccountDO.builder()
+                .id("duplicate-credentials")
+                .hashedPassword(PasswordDO.builder()
+                        .password("password")
+                        .salt("salt")
+                        .build())
+                .identifiers(Collections.singleton(UserIdentifierDO.builder()
+                        .identifier("username")
+                        .type(UserIdentifierDO.Type.USERNAME)
+                        .domain("main")
+                        .build()))
+                .build();
+
+        entityManager.getTransaction().begin();
+
+        try {
+            entityManager.persist(duplicate);
+            entityManager.getTransaction().commit();
+        } catch (final PersistenceException persistenceException) {
+            final Throwable cause = persistenceException.getCause();
+
+            if (cause instanceof ConstraintViolationException) {
+                assertThat(((ConstraintViolationException) cause).getConstraintName())
+                        .contains("IDENTIFIER_DUP");
+            } else {
+                throw persistenceException;
+            }
+        } finally {
+            entityManager.getTransaction().rollback();
+        }
     }
 }

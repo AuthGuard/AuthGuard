@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.api.dto.validation.validators;
 
+import com.nexblocks.authguard.api.dto.entities.UserIdentifierDTO;
 import com.nexblocks.authguard.api.dto.requests.CreateAccountRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.Validator;
 import com.nexblocks.authguard.api.dto.validation.fluent.FluentValidator;
@@ -16,6 +17,8 @@ public class CreateAccountRequestValidator implements Validator<CreateAccountReq
                 .validate("email", obj.getEmail(), Constraints.validEmail)
                 .validate("backupEmail", obj.getBackupEmail(), Constraints.validEmail)
                 .validate("domain", obj.getDomain(), Constraints.required)
+                .validate("identifiers", obj.getIdentifiers(), Constraints.required, Constraints.hasItems)
+                .validateCollection("identifiers", obj.getIdentifiers(), Validators.getForClass(UserIdentifierDTO.class))
                 .getViolations();
     }
 }
