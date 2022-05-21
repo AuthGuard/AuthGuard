@@ -47,11 +47,13 @@ class AccountJpaTest {
         entityManager.getTransaction().begin();
 
         createdAccount = AccountDO.builder()
-                .id("test-account")
+                .id("1")
                 .roles(Collections.singleton("test"))
                 .externalId("test-account-external")
                 .permissions(Collections.singleton(PermissionDO.builder()
                         .id("read-posts-permission")
+                        .group("posts")
+                        .name("read")
                         .build()))
                 .email(EmailDO.builder()
                         .email("primary@emails.com")

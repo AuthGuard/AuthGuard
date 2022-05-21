@@ -45,9 +45,9 @@ public class CredentialsManager {
                 .build();
     }
 
-    public Account addOrReplaceIdentifier(final AccountBO account, final String oldValue, final String newValue,
-                                          final UserIdentifier.Type type) {
-        if (oldValue == null) {
+    public AccountBO addOrReplaceIdentifier(final AccountBO account, final String oldValue, final String newValue,
+                                            final UserIdentifier.Type type) {
+        if (!hasIdentifier(account, oldValue)) {
             return addIdentifiers(account, UserIdentifierBO.builder()
                     .identifier(newValue)
                     .type(type)
@@ -94,15 +94,6 @@ public class CredentialsManager {
 
     public AccountBO replaceIdentifier(final AccountBO existing, final String oldIdentifier,
                                        final UserIdentifierBO newIdentifier) {
-        final boolean hasIdentifier = existing.getIdentifiers()
-                .stream()
-                .anyMatch(identifier -> identifier.getIdentifier().equals(oldIdentifier));
-
-        if (!hasIdentifier) {
-            throw new ServiceException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST,
-                    "Account " + existing.getId() + " has no identifier " + oldIdentifier);
-        }
-
         final Set<UserIdentifierBO> newIdentifiers = existing.getIdentifiers()
                 .stream()
                 .map(identifier -> {
@@ -120,5 +111,11 @@ public class CredentialsManager {
                 .collect(Collectors.toSet());
 
         return existing.withIdentifiers(newIdentifiers);
+    }
+
+    private boolean hasIdentifier(final AccountBO account, final String identifier) {
+        return account.getIdentifiers()
+                .stream()
+                .anyMatch(userIdentifier -> userIdentifier.getIdentifier().equals(identifier));
     }
 }

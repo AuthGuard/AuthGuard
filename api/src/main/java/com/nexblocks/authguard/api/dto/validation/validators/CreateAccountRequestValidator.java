@@ -5,7 +5,9 @@ import com.nexblocks.authguard.api.dto.requests.CreateAccountRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.Validator;
 import com.nexblocks.authguard.api.dto.validation.fluent.FluentValidator;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
+import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 
+import java.util.Collections;
 import java.util.List;
 
 public class CreateAccountRequestValidator implements Validator<CreateAccountRequestDTO> {
@@ -17,7 +19,17 @@ public class CreateAccountRequestValidator implements Validator<CreateAccountReq
                 .validate("email", obj.getEmail(), Constraints.validEmail)
                 .validate("backupEmail", obj.getBackupEmail(), Constraints.validEmail)
                 .validate("domain", obj.getDomain(), Constraints.required)
-                .validate("identifiers", obj.getIdentifiers(), Constraints.required, Constraints.hasItems)
+                .validate("identifiers", obj.getIdentifiers(), identifiers -> {
+                    if (identifiers == null || identifiers.isEmpty()) {
+                        if (obj.getEmail() == null && obj.getPhoneNumber() == null) {
+                            return Collections.singletonList(
+                                    new Violation("identifiers", ViolationType.MISSING_REQUIRED_VALUE)
+                            );
+                        }
+                    }
+
+                    return Collections.emptyList();
+                })
                 .validateCollection("identifiers", obj.getIdentifiers(), Validators.getForClass(UserIdentifierDTO.class))
                 .getViolations();
     }

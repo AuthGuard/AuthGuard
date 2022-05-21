@@ -179,13 +179,38 @@ public class AccountsServiceImpl implements AccountsService {
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID "
                         + accountId + " was found"));
 
-        final AccountBO merged = AccountUpdateMerger.merge(existing, account);
+        AccountBO merged = AccountUpdateMerger.merge(existing, account);
 
         final boolean emailUpdated = !ValueComparator.emailsEqual(existing.getEmail(), merged.getEmail());
         final boolean backupEmailUpdated = !ValueComparator.emailsEqual(existing.getBackupEmail(), merged.getBackupEmail());
         final boolean phoneNumberUpdated = !ValueComparator.phoneNumbersEqual(existing.getPhoneNumber(), merged.getPhoneNumber());
 
-        final Optional<AccountBO> updated = update(merged);
+        if (emailUpdated) {
+            final String oldEmail = Optional.ofNullable(existing.getEmail())
+                    .map(AccountEmailBO::getEmail)
+                    .orElse(null);
+
+            merged = credentialsManager.addOrReplaceIdentifier(
+                    merged,
+                    oldEmail,
+                    merged.getEmail().getEmail(),
+                    UserIdentifier.Type.EMAIL);
+        }
+
+        if (phoneNumberUpdated) {
+            final String oldPhoneNumber = Optional.ofNullable(existing.getPhoneNumber())
+                    .map(PhoneNumberBO::getNumber)
+                    .orElse(null);
+
+            merged = credentialsManager.addOrReplaceIdentifier(
+                    merged,
+                    oldPhoneNumber,
+                    merged.getPhoneNumber().getNumber(),
+                    UserIdentifier.Type.PHONE_NUMBER);
+        }
+
+        final AccountBO accountUpdate = merged;
+        final Optional<AccountBO> updated = update(accountUpdate);
 
         updated.ifPresent(updatedAccount -> {
             // we could merge both email and backup email messages, but we kept them separate for now
@@ -193,7 +218,7 @@ public class AccountsServiceImpl implements AccountsService {
                 messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(
                         VerificationRequestBO.builder()
                                 .account(updatedAccount)
-                                .emails(Collections.singletonList(merged.getEmail()))
+                                .emails(Collections.singletonList(accountUpdate.getEmail()))
                                 .build()));
             }
 
@@ -201,7 +226,7 @@ public class AccountsServiceImpl implements AccountsService {
                 messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(
                         VerificationRequestBO.builder()
                                 .account(updatedAccount)
-                                .emails(Collections.singletonList(merged.getBackupEmail()))
+                                .emails(Collections.singletonList(accountUpdate.getBackupEmail()))
                                 .build()));
             }
 

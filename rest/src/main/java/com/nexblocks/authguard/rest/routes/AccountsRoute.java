@@ -2,10 +2,9 @@ package com.nexblocks.authguard.rest.routes;
 
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.access.AuthGuardRoles;
-import com.nexblocks.authguard.api.dto.entities.AccountDTO;
-import com.nexblocks.authguard.api.dto.entities.AccountLockDTO;
-import com.nexblocks.authguard.api.dto.entities.AppDTO;
+import com.nexblocks.authguard.api.dto.entities.*;
 import com.nexblocks.authguard.api.dto.entities.Error;
+import com.nexblocks.authguard.api.dto.entities.UserIdentifier;
 import com.nexblocks.authguard.api.dto.requests.*;
 import com.nexblocks.authguard.api.routes.AccountsApi;
 import com.nexblocks.authguard.rest.access.ActorDomainVerifier;
@@ -412,6 +411,22 @@ public class AccountsRoute extends AccountsApi {
 
         if (actor.getDomain() == null || !actor.getDomain().equals(request.getDomain())) {
             return false;
+        }
+
+        /*
+         * If identifiers are set, then only a single USERNAME identifier
+         * is allowed.
+         */
+        if (request.getIdentifiers() != null) {
+            if (request.getIdentifiers().size() != 1) {
+                return false;
+            }
+
+            final UserIdentifierDTO identifier = request.getIdentifiers().get(0);
+
+            if (identifier.getType() != UserIdentifier.Type.USERNAME) {
+                return false;
+            }
         }
 
         return request.getPermissions() == null || request.getPermissions().isEmpty();

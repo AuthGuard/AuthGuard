@@ -1,6 +1,7 @@
 package com.nexblocks.authguard.service.impl;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Streams;
 import com.nexblocks.authguard.basic.config.PasswordConditions;
 import com.nexblocks.authguard.basic.config.PasswordsConfig;
 import com.nexblocks.authguard.basic.passwords.PasswordValidator;
@@ -33,6 +34,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -141,12 +143,38 @@ class AccountsServiceImplTest {
                 .thenReturn(new ArrayList<>(account.getRoles()));
 
         final AccountBO persisted = accountService.create(account, requestContext);
+
         final List<PermissionBO> expectedPermissions = account.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
                 .collect(Collectors.toList());
 
+        final AccountBO expectedAccount = AccountBO.builder()
+                .from(account)
+                .identifiers(
+                        Streams.concat(
+                                account.getIdentifiers().stream(),
+                                Stream.of(
+                                        UserIdentifierBO.builder()
+                                                .domain(account.getDomain())
+                                                .active(true)
+                                                .identifier(account.getEmail().getEmail())
+                                                .type(UserIdentifier.Type.EMAIL)
+                                                .build(),
+                                        UserIdentifierBO.builder()
+                                                .domain(account.getDomain())
+                                                .active(true)
+                                                .identifier(account.getPhoneNumber().getNumber())
+                                                .type(UserIdentifier.Type.PHONE_NUMBER)
+                                                .build()
+                                )
+                        ).collect(Collectors.toList())
+                )
+                .permissions(expectedPermissions)
+                .passwordVersion(1)
+                .build();
+
         assertThat(persisted).isNotNull();
-        compareAccounts(persisted, account.withPermissions(expectedPermissions).withPasswordVersion(1));
+        compareAccounts(persisted, expectedAccount);
         assertThat(persisted.getHashedPassword()).isNull();
         assertThat(persisted.getPlainPassword()).isNull();
 
@@ -190,10 +218,35 @@ class AccountsServiceImplTest {
 
         Mockito.when(rolesService.verifyRoles(new HashSet<>(defaultRoles), "unit")).thenReturn(defaultRoles);
 
+        final AccountBO expectedAccount = AccountBO.builder()
+                .from(account)
+                .identifiers(
+                        Streams.concat(
+                                account.getIdentifiers().stream(),
+                                Stream.of(
+                                        UserIdentifierBO.builder()
+                                                .domain(account.getDomain())
+                                                .active(true)
+                                                .identifier(account.getEmail().getEmail())
+                                                .type(UserIdentifier.Type.EMAIL)
+                                                .build(),
+                                        UserIdentifierBO.builder()
+                                                .domain(account.getDomain())
+                                                .active(true)
+                                                .identifier(account.getPhoneNumber().getNumber())
+                                                .type(UserIdentifier.Type.PHONE_NUMBER)
+                                                .build()
+                                )
+                        ).collect(Collectors.toList())
+                )
+                .roles(Collections.singleton("def-role"))
+                .passwordVersion(1)
+                .build();
+
         final AccountBO persisted = accountService.create(account, requestContext);
 
         assertThat(persisted).isNotNull();
-        compareAccounts(persisted, account.withRoles("def-role").withPasswordVersion(1));
+        compareAccounts(persisted, expectedAccount);
 
         // need better assertion
         final ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
@@ -408,8 +461,9 @@ class AccountsServiceImplTest {
     }
 
     @Test
-    void patch() {
+    void patchNoIdentifiers() {
         final AccountBO accountBO = createAccountBO()
+                .withIdentifiers(Collections.emptyList())
                 .withCreatedAt(OffsetDateTime.now())
                 .withLastModified(OffsetDateTime.now());
 
@@ -437,12 +491,235 @@ class AccountsServiceImplTest {
 
         final Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update);
         final AccountBO expected = accountBO
+                .withIdentifiers(Arrays.asList(
+                        UserIdentifierBO.builder()
+                                .identifier(update.getEmail().getEmail())
+                                .type(UserIdentifier.Type.EMAIL)
+                                .domain("main")
+                                .active(true)
+                                .build(),
+                        UserIdentifierBO.builder()
+                                .identifier(update.getPhoneNumber().getNumber())
+                                .type(UserIdentifier.Type.PHONE_NUMBER)
+                                .domain("main")
+                                .active(true)
+                                .build()
+                ))
                 .withFirstName(update.getFirstName())
                 .withMiddleName(update.getMiddleName())
                 .withLastName(update.getLastName())
                 .withPhoneNumber(update.getPhoneNumber())
                 .withEmail(update.getEmail())
                 .withBackupEmail(update.getBackupEmail());
+        final List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
+                .map(permission -> permission.withEntityType(null))
+                .collect(Collectors.toList());
+
+        assertThat(updated).isPresent();
+        compareAccounts(updated.get(), expected.withPermissions(expectedPermissions));
+        assertThat(updated.get().getLastModified()).isAfter(expected.getLastModified());
+
+        // need better assertion
+        Mockito.verify(messageBus, Mockito.times(1))
+                .publish(eq("accounts"), any());
+
+        Mockito.verify(messageBus, Mockito.times(3))
+                .publish(eq("verification"), any());
+    }
+
+    @Test
+    void addEmail() {
+        final AccountBO accountBO = createAccountBO()
+                .withEmail(null)
+                .withIdentifiers(Collections.emptyList());
+
+        final AccountBO update = AccountBO.builder()
+                .email(AccountEmailBO.builder()
+                        .email("new_primary")
+                        .build())
+                .build();
+
+        final AccountDO accountDO = serviceMapper.toDO(accountBO);
+
+        Mockito.when(accountsRepository.getById(accountDO.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
+        Mockito.when(accountsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
+
+        final Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update);
+
+        final List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
+                .map(permission -> permission.withEntityType(null))
+                .collect(Collectors.toList());
+
+        final AccountBO expected = accountBO
+                .withIdentifiers(Arrays.asList(
+                        UserIdentifierBO.builder()
+                                .identifier(update.getEmail().getEmail())
+                                .type(UserIdentifier.Type.EMAIL)
+                                .domain("main")
+                                .active(true)
+                                .build()
+                ))
+                .withEmail(update.getEmail())
+                .withPermissions(expectedPermissions);
+
+        assertThat(updated).isPresent();
+        compareAccounts(updated.get(), expected);
+    }
+
+    @Test
+    void addBackupEmail() {
+        final AccountBO accountBO = createAccountBO()
+                .withBackupEmail(null)
+                .withIdentifiers(Collections.emptyList());
+
+        final AccountBO update = AccountBO.builder()
+                .backupEmail(AccountEmailBO.builder()
+                        .email("new_backup")
+                        .build())
+                .build();
+
+        final AccountDO accountDO = serviceMapper.toDO(accountBO);
+
+        Mockito.when(accountsRepository.getById(accountDO.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
+        Mockito.when(accountsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
+
+        final Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update);
+
+        final List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
+                .map(permission -> permission.withEntityType(null))
+                .collect(Collectors.toList());
+
+        final AccountBO expected = accountBO
+                .withBackupEmail(update.getBackupEmail())
+                .withPermissions(expectedPermissions);
+
+        assertThat(updated).isPresent();
+        compareAccounts(updated.get(), expected);
+    }
+
+    @Test
+    void addPhoneNumber() {
+        final AccountBO accountBO = createAccountBO()
+                .withPhoneNumber(null)
+                .withIdentifiers(Collections.emptyList());
+
+        final AccountBO update = AccountBO.builder()
+                .phoneNumber(PhoneNumberBO.builder()
+                        .number("new_number")
+                        .build())
+                .build();
+
+        final AccountDO accountDO = serviceMapper.toDO(accountBO);
+
+        Mockito.when(accountsRepository.getById(accountDO.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
+        Mockito.when(accountsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
+
+        final Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update);
+
+        final List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
+                .map(permission -> permission.withEntityType(null))
+                .collect(Collectors.toList());
+
+        final AccountBO expected = accountBO
+                .withIdentifiers(Arrays.asList(
+                        UserIdentifierBO.builder()
+                                .identifier(update.getPhoneNumber().getNumber())
+                                .type(UserIdentifier.Type.PHONE_NUMBER)
+                                .domain("main")
+                                .active(true)
+                                .build()
+                ))
+                .withPhoneNumber(update.getPhoneNumber())
+                .withPermissions(expectedPermissions);
+
+        assertThat(updated).isPresent();
+        compareAccounts(updated.get(), expected);
+    }
+
+    @Test
+    void patchWithIdentifiers() {
+        AccountBO accountBO = createAccountBO()
+                .withCreatedAt(OffsetDateTime.now())
+                .withLastModified(OffsetDateTime.now());
+
+        accountBO = accountBO.withIdentifiers(Arrays.asList(
+                UserIdentifierBO.builder()
+                        .identifier("username")
+                        .type(UserIdentifier.Type.USERNAME)
+                        .domain("main")
+                        .active(true)
+                        .build(),
+                UserIdentifierBO.builder()
+                        .identifier(accountBO.getEmail().getEmail())
+                        .type(UserIdentifier.Type.EMAIL)
+                        .domain("main")
+                        .active(true)
+                        .build(),
+                UserIdentifierBO.builder()
+                        .identifier(accountBO.getPhoneNumber().getNumber())
+                        .type(UserIdentifier.Type.PHONE_NUMBER)
+                        .domain("main")
+                        .active(true)
+                        .build()
+        ));
+
+        final AccountBO update = AccountBO.builder()
+                .firstName("first_name")
+                .middleName("middle_name")
+                .lastName("last_name")
+                .phoneNumber(PhoneNumberBO.builder()
+                        .number("new_number")
+                        .build())
+                .email(AccountEmailBO.builder()
+                        .email("new_primary")
+                        .build())
+                .backupEmail(AccountEmailBO.builder()
+                        .email("new_backup")
+                        .build())
+                .build();
+
+        final AccountDO accountDO = serviceMapper.toDO(accountBO);
+
+        Mockito.when(accountsRepository.getById(accountDO.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
+        Mockito.when(accountsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
+
+        final Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update);
+        final AccountBO expected = accountBO
+                .withIdentifiers(Arrays.asList(
+                        UserIdentifierBO.builder()
+                                .identifier("username")
+                                .type(UserIdentifier.Type.USERNAME)
+                                .domain("main")
+                                .active(true)
+                                .build(),
+                        UserIdentifierBO.builder()
+                                .identifier(update.getEmail().getEmail())
+                                .type(UserIdentifier.Type.EMAIL)
+                                .domain("main")
+                                .active(true)
+                                .build(),
+                        UserIdentifierBO.builder()
+                                .identifier(update.getPhoneNumber().getNumber())
+                                .type(UserIdentifier.Type.PHONE_NUMBER)
+                                .domain("main")
+                                .active(true)
+                                .build()
+                ))
+                .withFirstName(update.getFirstName())
+                .withMiddleName(update.getMiddleName())
+                .withLastName(update.getLastName())
+                .withPhoneNumber(update.getPhoneNumber())
+                .withEmail(update.getEmail())
+                .withBackupEmail(update.getBackupEmail());
+
         final List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
                 .collect(Collectors.toList());
