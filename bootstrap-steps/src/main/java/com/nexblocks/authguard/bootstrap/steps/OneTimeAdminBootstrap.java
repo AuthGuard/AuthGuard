@@ -5,7 +5,6 @@ import com.google.inject.name.Named;
 import com.nexblocks.authguard.bootstrap.BootstrapStep;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.AccountsService;
-import com.nexblocks.authguard.service.CredentialsService;
 import com.nexblocks.authguard.service.RolesService;
 import com.nexblocks.authguard.service.exceptions.ConfigurationException;
 import com.nexblocks.authguard.service.model.*;
@@ -23,17 +22,14 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final AccountsService accountsService;
-    private final CredentialsService credentialsService;
     private final RolesService rolesService;
     private final ConfigContext oneTimeAdminConfig;
 
     @Inject
     public OneTimeAdminBootstrap(final AccountsService accountsService,
-                                 final CredentialsService credentialsService,
                                  final RolesService rolesService,
                                  @Named("oneTimeAdmin") final ConfigContext oneTimeAdminConfig) {
         this.accountsService = accountsService;
-        this.credentialsService = credentialsService;
         this.rolesService = rolesService;
         this.oneTimeAdminConfig = oneTimeAdminConfig;
     }

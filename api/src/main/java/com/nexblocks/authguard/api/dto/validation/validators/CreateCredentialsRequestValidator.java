@@ -8,6 +8,7 @@ import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 
 import java.util.List;
 
+@Deprecated
 public class CreateCredentialsRequestValidator implements Validator<CreateCredentialsRequestDTO> {
 
     @Override

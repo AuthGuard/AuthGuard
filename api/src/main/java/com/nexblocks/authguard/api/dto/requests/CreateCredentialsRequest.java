@@ -12,6 +12,7 @@ import java.util.List;
 @DTOStyle
 @JsonDeserialize(as = CreateCredentialsRequestDTO.class)
 @JsonSerialize(as = CreateCredentialsRequestDTO.class)
+@Deprecated
 public interface CreateCredentialsRequest {
     String getAccountId();
     List<UserIdentifierDTO> getIdentifiers();

@@ -72,11 +72,11 @@ public class AccountDO extends AbstractDO {
     private boolean social;
     private String identityProvider;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @JoinTable(name = "account_roles")
     private Set<String> roles;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "account_permissions")
     private Set<PermissionDO> permissions;
 

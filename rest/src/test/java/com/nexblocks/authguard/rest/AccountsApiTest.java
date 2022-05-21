@@ -7,7 +7,6 @@ import com.nexblocks.authguard.api.dto.entities.UserIdentifierDTO;
 import com.nexblocks.authguard.api.dto.requests.CreateAccountRequestDTO;
 import com.nexblocks.authguard.rest.util.IdempotencyHeader;
 import com.nexblocks.authguard.service.AccountsService;
-import com.nexblocks.authguard.service.CredentialsService;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 import io.restassured.http.ContentType;
@@ -37,12 +36,10 @@ class AccountsApiTest extends AbstractRouteTest {
     }
 
     private AccountsService accountsService;
-    private CredentialsService credentialsService;
 
     @BeforeAll
     void setup() {
         accountsService = mockService(AccountsService.class);
-        credentialsService = mockService(CredentialsService.class);
     }
 
     @BeforeEach

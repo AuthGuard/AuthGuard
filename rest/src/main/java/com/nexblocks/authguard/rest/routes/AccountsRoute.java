@@ -2,9 +2,9 @@ package com.nexblocks.authguard.rest.routes;
 
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.access.AuthGuardRoles;
-import com.nexblocks.authguard.api.dto.entities.*;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.UserIdentifier;
+import com.nexblocks.authguard.api.dto.entities.*;
 import com.nexblocks.authguard.api.dto.requests.*;
 import com.nexblocks.authguard.api.routes.AccountsApi;
 import com.nexblocks.authguard.rest.access.ActorDomainVerifier;
@@ -14,8 +14,6 @@ import com.nexblocks.authguard.rest.util.IdempotencyHeader;
 import com.nexblocks.authguard.service.AccountLocksService;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.ApplicationsService;
-import com.nexblocks.authguard.service.CredentialsService;
-import com.nexblocks.authguard.service.exceptions.IdempotencyException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
 import io.javalin.http.Context;
@@ -23,7 +21,6 @@ import io.javalin.http.Context;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 public class AccountsRoute extends AccountsApi {

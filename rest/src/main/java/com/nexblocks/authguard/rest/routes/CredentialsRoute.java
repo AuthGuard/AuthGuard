@@ -4,9 +4,7 @@ import com.google.inject.Inject;
 import com.nexblocks.authguard.api.access.AuthGuardRoles;
 import com.nexblocks.authguard.api.dto.entities.AccountDTO;
 import com.nexblocks.authguard.api.dto.entities.CredentialsDTO;
-import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.UserIdentifierDTO;
-import com.nexblocks.authguard.api.dto.requests.CreateCredentialsRequestDTO;
 import com.nexblocks.authguard.api.dto.requests.PasswordResetRequestDTO;
 import com.nexblocks.authguard.api.dto.requests.PasswordResetTokenRequestDTO;
 import com.nexblocks.authguard.api.dto.requests.UserIdentifiersRequestDTO;
@@ -18,10 +16,11 @@ import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestJsonMapper;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
-import com.nexblocks.authguard.rest.util.IdempotencyHeader;
 import com.nexblocks.authguard.service.AccountCredentialsService;
-import com.nexblocks.authguard.service.CredentialsService;
-import com.nexblocks.authguard.service.model.*;
+import com.nexblocks.authguard.service.model.AccountBO;
+import com.nexblocks.authguard.service.model.AppBO;
+import com.nexblocks.authguard.service.model.PasswordResetTokenBO;
+import com.nexblocks.authguard.service.model.UserIdentifierBO;
 import io.javalin.http.Context;
 
 import java.util.Collections;
@@ -33,7 +32,6 @@ public class CredentialsRoute extends CredentialsApi {
     private final RestMapper restMapper;
     private final AccountCredentialsService credentialsService;
 
-    private final BodyHandler<CreateCredentialsRequestDTO> credentialsRequestBodyHandler;
     private final BodyHandler<UserIdentifiersRequestDTO> userIdentifiersRequestBodyHandler;
     private final BodyHandler<PasswordResetTokenRequestDTO> passwordResetTokenRequestBodyHandler;
     private final BodyHandler<PasswordResetRequestDTO> passwordResetRequestBodyHandler;
@@ -43,8 +41,6 @@ public class CredentialsRoute extends CredentialsApi {
         this.restMapper = restMapper;
         this.credentialsService = credentialsService;
 
-        this.credentialsRequestBodyHandler = new BodyHandler.Builder<>(CreateCredentialsRequestDTO.class)
-                .build();
         this.userIdentifiersRequestBodyHandler = new BodyHandler.Builder<>(UserIdentifiersRequestDTO.class)
                 .build();
         this.passwordResetTokenRequestBodyHandler = new BodyHandler.Builder<>(PasswordResetTokenRequestDTO.class)
@@ -52,58 +48,6 @@ public class CredentialsRoute extends CredentialsApi {
         this.passwordResetRequestBodyHandler = new BodyHandler.Builder<>(PasswordResetRequestDTO.class)
                 .build();
     }
-
-//    public void create(final Context context) {
-//        final String idempotentKey = IdempotencyHeader.getKeyOrFail(context);
-//        final CreateCredentialsRequestDTO request = credentialsRequestBodyHandler.getValidated(context);
-//
-//        if (!ActorDomainVerifier.verifyActorDomain(context, request.getDomain())) {
-//            return;
-//        }
-//
-//        final RequestContextBO requestContext = RequestContextBO.builder()
-//                .idempotentKey(idempotentKey)
-//                .source(context.ip())
-//                .build();
-//
-//        final CredentialsBO credentials = restMapper.toBO(request);
-//        final List<UserIdentifierBO> identifiers = credentials.getIdentifiers()
-//                .stream()
-//                .map(identifier -> identifier.withDomain(request.getDomain()))
-//                .collect(Collectors.toList());
-//
-//        final Optional<CredentialsDTO> created = Optional.of(credentials.withIdentifiers(identifiers))
-//                .map(credentialsBO -> credentialsService.create(credentialsBO, requestContext))
-//                .map(restMapper::toDTO);
-//
-//        if (created.isPresent()) {
-//            context.status(201).json(created.get());
-//        } else {
-//            context.status(400).json(new Error("400", "Failed to create credentials"));
-//        }
-//    }
-//
-//    public void update(final Context context) {
-//        final CredentialsDTO credentials = RestJsonMapper.asClass(context.body(), CredentialsDTO.class);
-//
-//        if (credentials.getPlainPassword() != null) {
-//            context.status(400).json(new Error("400", "Password cannot be updated using regular update"));
-//            return;
-//        }
-//
-//        final String credentialsId = context.pathParam("id");
-//
-//        final Optional<CredentialsDTO> updated = Optional.of(credentials.withId(credentialsId))
-//                .map(restMapper::toBO)
-//                .flatMap(credentialsService::update)
-//                .map(restMapper::toDTO);
-//
-//        if (updated.isPresent()) {
-//            context.status(200).json(updated.get());
-//        } else {
-//            context.status(404);
-//        }
-//    }
 
     public void updatePassword(final Context context) {
         final CredentialsDTO credentials = RestJsonMapper.asClass(context.body(), CredentialsDTO.class);
@@ -155,59 +99,6 @@ public class CredentialsRoute extends CredentialsApi {
                 .map(restMapper::toDTO)
                 .ifPresentOrElse(context::json, () -> context.status(404));
     }
-
-//    public void getById(final Context context) {
-//        final Optional<CredentialsDTO> credentials = credentialsService.getById(context.pathParam("id"))
-//                .map(restMapper::toDTO);
-//
-//        if (credentials.isPresent()) {
-//            context.json(credentials.get());
-//        } else {
-//            context.status(404);
-//        }
-//    }
-
-//    @Override
-//    public void getByIdentifier(final Context context) {
-//        final String domain = context.pathParam("domain");
-//        final Optional<CredentialsDTO> credentials = credentialsService.getByUsername(context.pathParam("identifier"), domain)
-//                .map(restMapper::toDTO);
-//
-//        if (credentials.isPresent()) {
-//            context.json(credentials.get());
-//        } else {
-//            context.status(404);
-//        }
-//    }
-//
-//    @Override
-//    public void identifierExists(final Context context) {
-//        final String domain = context.pathParam("domain");
-//
-//        if (!ActorDomainVerifier.verifyActorDomain(context, domain)) {
-//            return;
-//        }
-//
-//        final boolean exists = credentialsService.getByUsername(context.pathParam("identifier"), domain)
-//                .isPresent();
-//
-//        if (exists) {
-//            context.status(200);
-//        } else {
-//            context.status(404);
-//        }
-//    }
-
-//    public void removeById(final Context context) {
-//        final Optional<CredentialsDTO> credentials = credentialsService.delete(context.pathParam("id"))
-//                .map(restMapper::toDTO);
-//
-//        if (credentials.isPresent()) {
-//            context.json(credentials.get());
-//        } else {
-//            context.status(404);
-//        }
-//    }
 
     @Override
     public void createResetToken(final Context context) {
