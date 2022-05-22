@@ -19,6 +19,7 @@ import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.AccountPreProcessor;
 import com.nexblocks.authguard.service.util.AccountUpdateMerger;
+import com.nexblocks.authguard.service.util.CredentialsManager;
 import com.nexblocks.authguard.service.util.ValueComparator;
 
 import java.util.*;
@@ -32,6 +33,7 @@ public class AccountsServiceImpl implements AccountsService {
     private final AccountsRepository accountsRepository;
     private final PermissionsService permissionsService;
     private final RolesService rolesService;
+    private final CredentialsManager credentialsManager;
     private final IdempotencyService idempotencyService;
     private final AccountConfig accountConfig;
     private final ServiceMapper serviceMapper;
@@ -42,6 +44,7 @@ public class AccountsServiceImpl implements AccountsService {
     public AccountsServiceImpl(final AccountsRepository accountsRepository,
                                final PermissionsService permissionsService,
                                final RolesService rolesService,
+                               final CredentialsManager credentialsManager,
                                final IdempotencyService idempotencyService,
                                final ServiceMapper serviceMapper,
                                final MessageBus messageBus,
@@ -49,6 +52,7 @@ public class AccountsServiceImpl implements AccountsService {
         this.accountsRepository = accountsRepository;
         this.permissionsService = permissionsService;
         this.rolesService = rolesService;
+        this.credentialsManager = credentialsManager;
         this.idempotencyService = idempotencyService;
         this.serviceMapper = serviceMapper;
         this.messageBus = messageBus;
@@ -66,7 +70,8 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     private AccountBO doCreate(final AccountBO account) {
-        final AccountBO preProcessed = AccountPreProcessor.preProcess(account, accountConfig);
+        final AccountBO withHashedPasswords = credentialsManager.verifyAndHashPlainPassword(account);
+        final AccountBO preProcessed = AccountPreProcessor.preProcess(withHashedPasswords, accountConfig);
 
         verifyRolesOrFail(preProcessed.getRoles(), preProcessed.getDomain());
 
@@ -99,24 +104,47 @@ public class AccountsServiceImpl implements AccountsService {
                     .build()));
         }
 
-        return created;
+        return credentialsManager.removeSensitiveInformation(created);
     }
 
     @Override
     public Optional<AccountBO> getById(final String accountId) {
-        return persistenceService.getById(accountId);
+        return persistenceService.getById(accountId)
+                .map(credentialsManager::removeSensitiveInformation);
+    }
+
+    @Override
+    public Optional<AccountBO> getByIdUnsafe(final String id) {
+        return persistenceService.getById(id);
     }
 
     @Override
     public Optional<AccountBO> getByExternalId(final String externalId) {
         return accountsRepository.getByExternalId(externalId)
                 .join()
-                .map(serviceMapper::toBO);
+                .map(serviceMapper::toBO)
+                .map(credentialsManager::removeSensitiveInformation);
     }
 
     @Override
     public Optional<AccountBO> getByEmail(final String email, final String domain) {
         return accountsRepository.getByEmail(email, domain)
+                .join()
+                .map(serviceMapper::toBO)
+                .map(credentialsManager::removeSensitiveInformation);
+    }
+
+    @Override
+    public Optional<AccountBO> getByIdentifier(final String identifier, final String domain) {
+        return accountsRepository.findByIdentifier(identifier, domain)
+                .join()
+                .map(serviceMapper::toBO)
+                .map(credentialsManager::removeSensitiveInformation);
+    }
+
+    @Override
+    public Optional<AccountBO> getByIdentifierUnsafe(final String identifier, final String domain) {
+        return accountsRepository.findByIdentifier(identifier, domain)
                 .join()
                 .map(serviceMapper::toBO);
     }
@@ -133,31 +161,56 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public Optional<AccountBO> activate(final String accountId) {
-        return getById(accountId)
+        return getByIdUnsafe(accountId)
                 .map(account -> account.withActive(true))
                 .flatMap(this::update);
     }
 
     @Override
     public Optional<AccountBO> deactivate(final String accountId) {
-        return getById(accountId)
+        return getByIdUnsafe(accountId)
                 .map(account -> account.withActive(false))
                 .flatMap(this::update);
     }
 
     @Override
     public Optional<AccountBO> patch(final String accountId, final AccountBO account) {
-        final AccountBO existing = getById(accountId)
+        final AccountBO existing = getByIdUnsafe(accountId)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID "
                         + accountId + " was found"));
 
-        final AccountBO merged = AccountUpdateMerger.merge(existing, account);
+        AccountBO merged = AccountUpdateMerger.merge(existing, account);
 
         final boolean emailUpdated = !ValueComparator.emailsEqual(existing.getEmail(), merged.getEmail());
         final boolean backupEmailUpdated = !ValueComparator.emailsEqual(existing.getBackupEmail(), merged.getBackupEmail());
         final boolean phoneNumberUpdated = !ValueComparator.phoneNumbersEqual(existing.getPhoneNumber(), merged.getPhoneNumber());
 
-        final Optional<AccountBO> updated = update(merged);
+        if (emailUpdated) {
+            final String oldEmail = Optional.ofNullable(existing.getEmail())
+                    .map(AccountEmailBO::getEmail)
+                    .orElse(null);
+
+            merged = credentialsManager.addOrReplaceIdentifier(
+                    merged,
+                    oldEmail,
+                    merged.getEmail().getEmail(),
+                    UserIdentifier.Type.EMAIL);
+        }
+
+        if (phoneNumberUpdated) {
+            final String oldPhoneNumber = Optional.ofNullable(existing.getPhoneNumber())
+                    .map(PhoneNumberBO::getNumber)
+                    .orElse(null);
+
+            merged = credentialsManager.addOrReplaceIdentifier(
+                    merged,
+                    oldPhoneNumber,
+                    merged.getPhoneNumber().getNumber(),
+                    UserIdentifier.Type.PHONE_NUMBER);
+        }
+
+        final AccountBO accountUpdate = merged;
+        final Optional<AccountBO> updated = update(accountUpdate);
 
         updated.ifPresent(updatedAccount -> {
             // we could merge both email and backup email messages, but we kept them separate for now
@@ -165,7 +218,7 @@ public class AccountsServiceImpl implements AccountsService {
                 messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(
                         VerificationRequestBO.builder()
                                 .account(updatedAccount)
-                                .emails(Collections.singletonList(merged.getEmail()))
+                                .emails(Collections.singletonList(accountUpdate.getEmail()))
                                 .build()));
             }
 
@@ -173,7 +226,7 @@ public class AccountsServiceImpl implements AccountsService {
                 messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(
                         VerificationRequestBO.builder()
                                 .account(updatedAccount)
-                                .emails(Collections.singletonList(merged.getBackupEmail()))
+                                .emails(Collections.singletonList(accountUpdate.getBackupEmail()))
                                 .build()));
             }
 
@@ -190,7 +243,7 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public AccountBO grantPermissions(final String accountId, final List<PermissionBO> permissions) {
-        final AccountBO account = getById(accountId)
+        final AccountBO account = getByIdUnsafe(accountId)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
                         + accountId + " was found"));
 

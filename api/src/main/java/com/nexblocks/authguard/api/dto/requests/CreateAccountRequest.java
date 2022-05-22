@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.nexblocks.authguard.api.dto.entities.AccountEmailDTO;
 import com.nexblocks.authguard.api.dto.entities.PermissionDTO;
 import com.nexblocks.authguard.api.dto.entities.PhoneNumberDTO;
+import com.nexblocks.authguard.api.dto.entities.UserIdentifierDTO;
 import com.nexblocks.authguard.api.dto.style.DTOStyle;
 import org.immutables.value.Value;
 
@@ -30,6 +31,10 @@ public interface CreateAccountRequest {
 
     List<PermissionDTO> getPermissions();
     List<String> getRoles();
+
+    List<UserIdentifierDTO> getIdentifiers();
+    String getPlainPassword();
+
     Map<String, String> getMetadata();
 
     @Value.Default

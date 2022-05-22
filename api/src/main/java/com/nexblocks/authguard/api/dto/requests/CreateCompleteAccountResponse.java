@@ -9,6 +9,7 @@ import org.immutables.value.Value;
 @DTOStyle
 @JsonDeserialize(as = CreateCompleteAccountResponseDTO.class)
 @JsonSerialize(as = CreateCompleteAccountResponseDTO.class)
+@Deprecated
 public interface CreateCompleteAccountResponse {
     String getAccountId();
     String getCredentialsId();

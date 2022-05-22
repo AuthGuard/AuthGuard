@@ -1,10 +1,7 @@
 package com.nexblocks.authguard.bindings;
 
-import com.nexblocks.authguard.config.ConfigContext;
-import com.nexblocks.authguard.service.*;
-import com.nexblocks.authguard.basic.passwords.SCryptPassword;
-import com.nexblocks.authguard.basic.passwords.SecurePassword;
 import com.google.inject.AbstractModule;
+import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.*;
 import com.nexblocks.authguard.service.impl.*;
 
@@ -18,7 +15,7 @@ public class ServicesBinder extends AbstractModule {
     @Override
     public void configure() {
         // essential bindings
-        bind(CredentialsService.class).to(CredentialsServiceImpl.class);
+        bind(AccountCredentialsService.class).to(AccountCredentialsServiceImpl.class);
         bind(AuthenticationService.class).to(AuthenticationServiceImpl.class);
         bind(ExchangeService.class).to(ExchangeServiceImpl.class);
         bind(AccountsService.class).to(AccountsServiceImpl.class);

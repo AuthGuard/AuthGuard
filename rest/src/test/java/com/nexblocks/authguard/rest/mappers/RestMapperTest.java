@@ -48,7 +48,7 @@ class RestMapperTest {
 
     @Test
     void toAccountDTOAndBack() {
-        convertAndBack(AccountBO.class, restMapper::toDTO, restMapper::toBO, ".*entityType");
+        convertAndBack(AccountBO.class, restMapper::toDTO, restMapper::toBO, ".*entityType", ".*hashedPassword", ".*plainPassword");
     }
 
     @Test
@@ -149,9 +149,11 @@ class RestMapperTest {
                 .active(requestDTO.isActive())
                 .metadata(requestDTO.getMetadata())
                 .domain(requestDTO.getDomain())
+                .identifiers(requestDTO.getIdentifiers())
                 .build();
 
-        final AccountBO expected = restMapper.toBO(accountDTO); // verified in another test case
+        final AccountBO expected = restMapper.toBO(accountDTO)
+                .withPlainPassword(requestDTO.getPlainPassword()); // verified in another test case
         final AccountBO actual = restMapper.toBO(requestDTO);
 
         assertThat(actual).isEqualTo(expected);

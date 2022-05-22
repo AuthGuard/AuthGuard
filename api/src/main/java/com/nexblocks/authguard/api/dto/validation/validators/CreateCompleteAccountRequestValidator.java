@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Deprecated
 public class CreateCompleteAccountRequestValidator implements Validator<CreateCompleteAccountRequestDTO> {
     private final Validator<CreateAccountRequestDTO> accountRequestValidator;
 

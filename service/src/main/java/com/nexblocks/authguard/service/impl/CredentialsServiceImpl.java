@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Deprecated
 public class CredentialsServiceImpl implements CredentialsService {
     private static final String CREDENTIALS_CHANNEL = "credentials";
     private static final int RESET_TOKEN_SIZE = 128;

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,11 @@ public interface Account {
     AccountEmailDTO getEmail();
     AccountEmailDTO getBackupEmail();
     PhoneNumberDTO getPhoneNumber();
+
+    Instant getPasswordUpdatedAt();
+    List<UserIdentifierDTO> getIdentifiers();
+    Integer getPasswordVersion();
+
     Map<String, String> getMetadata();
 
     boolean isActive();

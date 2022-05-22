@@ -11,4 +11,5 @@ public interface AccountsRepository extends Repository<AccountDO> {
     CompletableFuture<Optional<AccountDO>> getByExternalId(String externalId);
     CompletableFuture<Optional<AccountDO>> getByEmail(String email, String domain);
     CompletableFuture<List<AccountDO>> getByRole(String role, String domain);
+    CompletableFuture<Optional<AccountDO>> findByIdentifier(String identifier, final String domain);
 }

@@ -2,6 +2,8 @@ package com.nexblocks.authguard.service.model;
 
 import org.immutables.value.Value;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,6 +26,13 @@ public interface Account extends Entity {
     AccountEmailBO getEmail();
     AccountEmailBO getBackupEmail();
     PhoneNumberBO getPhoneNumber();
+
+    // credentials
+    Set<UserIdentifierBO> getIdentifiers();
+    String getPlainPassword();
+    HashedPasswordBO getHashedPassword();
+    Instant getPasswordUpdatedAt();
+    Integer getPasswordVersion();
 
     Map<String, String> getMetadata();
 

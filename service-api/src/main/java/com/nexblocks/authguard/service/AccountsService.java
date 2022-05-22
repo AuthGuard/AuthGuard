@@ -11,10 +11,14 @@ import java.util.Optional;
  * AccountDO service interface.
  */
 public interface AccountsService extends IdempotentCrudService<AccountBO> {
+    Optional<AccountBO> getByIdUnsafe(String id);
 
     Optional<AccountBO> getByExternalId(String externalId);
 
     Optional<AccountBO> getByEmail(String email, String domain);
+
+    Optional<AccountBO> getByIdentifier(String identifier, String domain);
+    Optional<AccountBO> getByIdentifierUnsafe(String identifier, String domain);
 
     Optional<AccountBO> activate(String accountId);
 
