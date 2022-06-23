@@ -172,6 +172,16 @@ public class AccessTokenProvider implements AuthProvider {
             jwtBuilder.withArrayClaim("roles", account.getRoles().toArray(new String[] {}));
         }
 
+        if (strategy.includeVerification()) {
+            if (account.getEmail() != null) {
+                jwtBuilder.withClaim("emailVerified", account.getEmail().isVerified());
+            }
+
+            if (account.getPhoneNumber() != null) {
+                jwtBuilder.withClaim("phoneVerified", account.getPhoneNumber().isVerified());
+            }
+        }
+
         if (options != null && options.getSource() != null) {
             jwtBuilder.withClaim("source", options.getSource());
         }
