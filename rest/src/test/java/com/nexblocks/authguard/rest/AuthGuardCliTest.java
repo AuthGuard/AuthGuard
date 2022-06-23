@@ -39,7 +39,7 @@ class AuthGuardCliTest {
         assertThat(exitCode).isEqualTo(0);
 
         Mockito.verify(configurationLoader).loadFromFile("/path/to/file.yaml");
-        Mockito.verify(serverRunner).run(configContext);
+        Mockito.verify(serverRunner).run(configContext, false, false);
     }
 
     @Test
@@ -51,7 +51,7 @@ class AuthGuardCliTest {
         assertThat(exitCode).isEqualTo(0);
 
         Mockito.verify(configurationLoader).loadFromFile("/path/to/file.yaml");
-        Mockito.verify(serverRunner).run(configContext);
+        Mockito.verify(serverRunner).run(configContext, false, false);
     }
 
     @Test
