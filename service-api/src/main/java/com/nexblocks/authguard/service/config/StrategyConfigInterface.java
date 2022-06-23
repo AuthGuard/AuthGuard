@@ -13,4 +13,5 @@ public interface StrategyConfigInterface {
     boolean includePermissions();
     boolean includeRoles();
     boolean includeExternalId();
+    boolean includeVerification();
 }
