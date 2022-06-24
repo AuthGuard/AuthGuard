@@ -29,6 +29,11 @@ public class DefaultRolesBootstrap implements BootstrapStep {
 
     @Override
     public void run() {
+        if (accountConfig == null) {
+            log.info("No account config was provided. Skipping.");
+            return;
+        }
+
         final Map<String, Set<String>> defaultRolesByDomain = accountConfig.getDefaultRolesByDomain();
 
         if (defaultRolesByDomain == null || defaultRolesByDomain.isEmpty()) {

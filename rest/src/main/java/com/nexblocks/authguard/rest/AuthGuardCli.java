@@ -48,8 +48,14 @@ public class AuthGuardCli {
         log.debug("Loaded configuration: {}", configContext);
 
         // run the server
+        if (cmd.hasOption("disable-bootstrap") && cmd.hasOption("disable-server")) {
+            log.error("Options 'disable-bootstrap' and 'disable-server' cannot be used together");
+
+            return 1;
+        }
+
         try {
-            serverRunner.run(configContext);
+            serverRunner.run(configContext, cmd.hasOption("disable-bootstrap"), cmd.hasOption("disable-server"));
         } catch (final ProvisionException | CreationException e) {
             if (e.getCause() != null) {
                 if (e.getCause().getMessage() != null) {
@@ -76,6 +82,16 @@ public class AuthGuardCli {
     private Options cliOption() {
         return new Options()
                 .addOption("c", "config", true, "The path to the configuration file")
+                .addOption(Option.builder()
+                        .longOpt("disable-bootstrap")
+                        .hasArg(false)
+                        .desc("Skip bootstrap")
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt("disable-server")
+                        .hasArg(false)
+                        .desc("Don't run the server")
+                        .build())
                 .addOption("h", "help", false, "Show help and usage");
     }
 

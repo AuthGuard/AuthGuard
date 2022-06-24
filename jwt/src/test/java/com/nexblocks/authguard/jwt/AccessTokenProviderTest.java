@@ -67,6 +67,8 @@ class AccessTokenProviderTest {
                 .refreshTokenLife("20m")
                 .useJti(false)
                 .includePermissions(true)
+                .includeRoles(true)
+                .includeVerification(true)
                 .build();
     }
 
@@ -75,7 +77,6 @@ class AccessTokenProviderTest {
                 .tokenLife("5m")
                 .refreshTokenLife("20m")
                 .useJti(true)
-                .includePermissions(true)
                 .build();
     }
 
