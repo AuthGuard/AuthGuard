@@ -96,7 +96,7 @@ class AccountsServiceImplTest {
         credentialsManager = new CredentialsManager(securePasswordProvider, passwordValidator);
 
         serviceMapper = new ServiceMapperImpl();
-        accountService = new AccountsServiceImpl(accountsRepository, permissionsService,rolesService,
+        accountService = new AccountsServiceImpl(accountsRepository, permissionsService, rolesService,
                 credentialsManager, idempotencyService, serviceMapper, messageBus, configContext);
     }
 
@@ -119,6 +119,7 @@ class AccountsServiceImplTest {
     @Test
     void create() {
         final AccountBO account = createAccountBO()
+                .withPlainPassword("test-password")
                 .withId(null);
 
         final String idempotentKey = "idempotent-key";
