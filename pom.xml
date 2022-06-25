@@ -44,20 +44,19 @@
         <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
         <maven-source-plugin.version>3.2.0</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
-
         <javalin.version>3.13.12</javalin.version>
-        <logback.version>1.2.7</logback.version>
+        <logback.version>1.2.10</logback.version>
         <jackson.version>2.13.1</jackson.version>
-        <immutables.version>2.7.4</immutables.version>
+        <immutables.version>2.9.0</immutables.version>
         <jetbrains-annotations.version>13.0</jetbrains-annotations.version>
         <auth0-jwt.version>3.18.3</auth0-jwt.version>
         <apache-commons.version>3.12.0</apache-commons.version>
         <commons-validator.version>1.7</commons-validator.version>
         <commons-cli.version>1.5.0</commons-cli.version>
-        <mapstruct.version>1.3.0.Final</mapstruct.version>
+        <mapstruct.version>1.4.2.Final</mapstruct.version>
         <bouncy-castle.version>1.70</bouncy-castle.version>
         <reflections.version>0.10.2</reflections.version>
-        <guice.version>5.0.1</guice.version>
+        <guice.version>5.1.0</guice.version>
         <rxjava.version>3.1.3</rxjava.version>
         <okhttp.version>4.9.3</okhttp.version>
         <vertx.version>3.9.12</vertx.version>
