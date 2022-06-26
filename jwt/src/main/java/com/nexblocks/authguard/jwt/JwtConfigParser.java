@@ -81,9 +81,6 @@ public class JwtConfigParser {
             case "EC512":
                 return Algorithm.ECDSA512((ECPublicKey) keyPair.getPublic(), (ECPrivateKey) keyPair.getPrivate());
 
-            case "EC256K":
-                return Algorithm.ECDSA256K((ECPublicKey) keyPair.getPublic(), (ECPrivateKey) keyPair.getPrivate());
-
             default:
                 throw new ServiceException(ErrorCode.UNSUPPORTED_JWT_ALGORITHM, "Unsupported algorithm " + algorithmName);
         }
