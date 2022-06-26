@@ -53,7 +53,7 @@
         <apache-commons.version>3.12.0</apache-commons.version>
         <commons-validator.version>1.7</commons-validator.version>
         <commons-cli.version>1.5.0</commons-cli.version>
-        <mapstruct.version>1.4.2.Final</mapstruct.version>
+        <mapstruct.version>1.5.2.Final</mapstruct.version>
         <bouncy-castle.version>1.70</bouncy-castle.version>
         <reflections.version>0.10.2</reflections.version>
         <guice.version>5.1.0</guice.version>
@@ -66,10 +66,10 @@
 
         <surefire.version>3.0.0-M3</surefire.version>
         <junit.version>5.5.1</junit.version>
-        <assertj.version>3.13.0</assertj.version>
+        <assertj.version>3.23.1</assertj.version>
         <easy-random.version>4.0.0</easy-random.version>
         <mockito.version>3.0.0</mockito.version>
-        <rest-assured.version>4.0.0</rest-assured.version>
+        <rest-assured.version>4.3.0</rest-assured.version>
         <wiremock.version>2.27.2</wiremock.version>
     </properties>
 
