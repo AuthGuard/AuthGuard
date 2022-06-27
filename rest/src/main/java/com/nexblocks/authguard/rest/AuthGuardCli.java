@@ -57,15 +57,7 @@ public class AuthGuardCli {
         try {
             serverRunner.run(configContext, cmd.hasOption("disable-bootstrap"), cmd.hasOption("disable-server"));
         } catch (final ProvisionException | CreationException e) {
-            if (e.getCause() != null) {
-                if (e.getCause().getMessage() != null) {
-                    log.error("Failed to initialize the server. Error: {}", e.getCause().getMessage());
-                } else {
-                    log.error("Failed to initialize the server. Error: ", e.getCause());
-                }
-            } else {
-                log.error("Failed to initialize the server. Error: ", e);
-            }
+            log.error("Failed to initialize the server. Error: ", e);
 
             return 1;
         } catch (final ConfigurationException e) {
