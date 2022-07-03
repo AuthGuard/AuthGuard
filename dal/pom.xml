@@ -20,7 +20,7 @@
     </modules>
 
     <properties>
-        <lombok.version>1.18.22</lombok.version>
+        <lombok.version>1.18.24</lombok.version>
         <h2.version>1.4.200</h2.version>
         <hibernate-orm.version>5.4.21.Final</hibernate-orm.version>
     </properties>
