@@ -25,7 +25,7 @@ public class JwtPermissionsMapper {
                 .filter(restrictions.getPermissions()::contains);
     }
 
-    private static String permissionToString(final PermissionBO permission) {
+    static String permissionToString(final PermissionBO permission) {
         return permission.getGroup() + ":" + permission.getName();
     }
 }
