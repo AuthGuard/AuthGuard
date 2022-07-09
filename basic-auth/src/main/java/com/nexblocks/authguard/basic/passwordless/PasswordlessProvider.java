@@ -18,6 +18,7 @@ import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.ID;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 
 @ProvidesToken("passwordless")
@@ -55,7 +56,7 @@ public class PasswordlessProvider implements AuthProvider {
                 .id(ID.generate())
                 .associatedAccountId(account.getId())
                 .token(token)
-                .expiresAt(OffsetDateTime.now().plus(tokenTtl))
+                .expiresAt(Instant.now().plus(tokenTtl))
                 .build();
 
         final AccountTokenDO persistedToken = accountTokensRepository.save(accountToken).join();

@@ -20,6 +20,7 @@ import com.nexblocks.authguard.service.util.ID;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.concurrent.CompletableFuture;
 
@@ -56,7 +57,7 @@ public class OtpProvider implements AuthProvider {
         final OneTimePasswordBO oneTimePassword = OneTimePasswordBO.builder()
                 .id(ID.generate())
                 .accountId(account.getId())
-                .expiresAt(OffsetDateTime.now().plus(tokenTtl))
+                .expiresAt(Instant.now().plus(tokenTtl))
                 .password(password)
                 .build();
 

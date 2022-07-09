@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 @Value.Immutable
 @DTOStyle
@@ -13,8 +13,8 @@ import java.time.OffsetDateTime;
 @JsonDeserialize(as = PermissionDTO.class)
 public interface Permission {
     String getId();
-    OffsetDateTime getCreatedAt();
-    OffsetDateTime getLastModified();
+    Instant getCreatedAt();
+    Instant getLastModified();
     String getGroup();
     String getName();
     String getDomain();

@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.service.AccountsService;
@@ -8,9 +9,8 @@ import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountBO;
-import com.google.inject.Inject;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Optional;
 
 public class VerificationServiceImpl implements VerificationService {
@@ -34,7 +34,7 @@ public class VerificationServiceImpl implements VerificationService {
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
                         "AccountDO token " + verificationToken + " does not exist"));
 
-        if (accountToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
+        if (accountToken.getExpiresAt().isBefore(Instant.now())) {
             throw new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token " + verificationToken + " has expired");
         }
 

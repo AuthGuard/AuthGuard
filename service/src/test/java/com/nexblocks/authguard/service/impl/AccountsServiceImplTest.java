@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
@@ -465,8 +465,8 @@ class AccountsServiceImplTest {
     void patchNoIdentifiers() {
         final AccountBO accountBO = createAccountBO()
                 .withIdentifiers(Collections.emptyList())
-                .withCreatedAt(OffsetDateTime.now())
-                .withLastModified(OffsetDateTime.now());
+                .withCreatedAt(Instant.now())
+                .withLastModified(Instant.now());
 
         final AccountBO update = AccountBO.builder()
                 .firstName("first_name")
@@ -646,8 +646,8 @@ class AccountsServiceImplTest {
     @Test
     void patchWithIdentifiers() {
         AccountBO accountBO = createAccountBO()
-                .withCreatedAt(OffsetDateTime.now())
-                .withLastModified(OffsetDateTime.now());
+                .withCreatedAt(Instant.now())
+                .withLastModified(Instant.now());
 
         accountBO = accountBO.withIdentifiers(Arrays.asList(
                 UserIdentifierBO.builder()

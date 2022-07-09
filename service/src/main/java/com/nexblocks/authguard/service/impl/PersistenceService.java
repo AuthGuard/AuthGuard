@@ -7,7 +7,7 @@ import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.service.model.Entity;
 import com.nexblocks.authguard.service.util.ID;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -31,7 +31,7 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
     }
 
     public BO create(final BO entity) {
-        final OffsetDateTime now = OffsetDateTime.now();
+        final Instant now = Instant.now();
         final DO mappedDo = boToDo.apply(entity);
 
         mappedDo.setId(ID.generate());
@@ -57,7 +57,7 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
     }
 
     public Optional<BO> update(final BO entity) {
-        final OffsetDateTime now = OffsetDateTime.now();
+        final Instant now = Instant.now();
         final DO mappedDo = boToDo.apply(entity);
 
         mappedDo.setLastModified(now);

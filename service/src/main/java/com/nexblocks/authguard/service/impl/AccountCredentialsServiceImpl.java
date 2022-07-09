@@ -23,7 +23,7 @@ import com.nexblocks.authguard.service.util.ID;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -171,7 +171,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
         final AccountBO account = accountsService.getByIdentifier(identifier, domain)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "Unknown identifier"));
 
-        final OffsetDateTime now = OffsetDateTime.now();
+        final Instant now = Instant.now();
 
         final AccountTokenDO accountToken = AccountTokenDO
                 .builder()
@@ -188,8 +188,8 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
 
         return PasswordResetTokenBO.builder()
                 .token(returnToken ? persistedToken.getToken() : null)
-                .issuedAt(now.toEpochSecond())
-                .expiresAt(persistedToken.getExpiresAt().toEpochSecond())
+                .issuedAt(now.toEpochMilli() / 1000)
+                .expiresAt(persistedToken.getExpiresAt().toEpochMilli() / 1000)
                 .build();
     }
 
@@ -200,7 +200,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
                         "AccountDO token " + token + " does not exist"));
 
-        if (accountToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
+        if (accountToken.getExpiresAt().isBefore(Instant.now())) {
             throw new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token " + token + " has expired");
         }
 

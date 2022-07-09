@@ -21,7 +21,7 @@ import io.vavr.control.Either;
 import io.vavr.control.Try;
 
 import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Optional;
 
 public class ActionTokenServiceImpl implements ActionTokenService {
@@ -112,7 +112,7 @@ public class ActionTokenServiceImpl implements ActionTokenService {
             return Try.failure(new ServiceException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST, "Token was not found"));
         }
 
-        final OffsetDateTime now = OffsetDateTime.now();
+        final Instant now = Instant.now();
 
         if (persisted.get().getExpiresAt().isBefore(now)) {
             return Try.failure(new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token has expired"));
@@ -132,7 +132,7 @@ public class ActionTokenServiceImpl implements ActionTokenService {
     }
 
     private AccountTokenDO generateToken(final AccountBO account, final String action) {
-        final OffsetDateTime now = OffsetDateTime.now();
+        final Instant now = Instant.now();
 
         final AccountTokenDO accountToken = AccountTokenDO
                 .builder()

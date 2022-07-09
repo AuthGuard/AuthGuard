@@ -24,7 +24,7 @@ import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.ID;
 
 import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -91,7 +91,7 @@ public class CredentialsServiceImpl implements CredentialsService {
         final CredentialsBO credentialsHashedPassword = CredentialsBO.builder()
                 .from(credentials)
                 .hashedPassword(hashedPassword)
-                .passwordUpdatedAt(OffsetDateTime.now())
+                .passwordUpdatedAt(Instant.now())
                 .passwordVersion(passwordVersion)
                 .build();
 
@@ -137,7 +137,7 @@ public class CredentialsServiceImpl implements CredentialsService {
         final HashedPasswordBO newPassword = verifyAndHashPassword(plainPassword);
         final CredentialsBO update = existing
                 .withHashedPassword(newPassword)
-                .withPasswordUpdatedAt(OffsetDateTime.now());
+                .withPasswordUpdatedAt(Instant.now());
 
         return doUpdate(existing, update, true);
     }
@@ -236,7 +236,7 @@ public class CredentialsServiceImpl implements CredentialsService {
                         "Credentials found for the identifier but no account was associated with it. This could be the " +
                                 "result of deleting an account without deleting its credentials"));
 
-        final OffsetDateTime now = OffsetDateTime.now();
+        final Instant now = Instant.now();
 
         final AccountTokenDO accountToken = AccountTokenDO
                 .builder()
@@ -254,8 +254,8 @@ public class CredentialsServiceImpl implements CredentialsService {
 
         return PasswordResetTokenBO.builder()
                 .token(returnToken ? persistedToken.getToken() : null)
-                .issuedAt(now.toEpochSecond())
-                .expiresAt(persistedToken.getExpiresAt().toEpochSecond())
+                .issuedAt(now.toEpochMilli() / 1000)
+                .expiresAt(persistedToken.getExpiresAt().toEpochMilli() / 1000)
                 .build();
     }
 
@@ -266,7 +266,7 @@ public class CredentialsServiceImpl implements CredentialsService {
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
                         "AccountDO token " + token + " does not exist"));
 
-        if (accountToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
+        if (accountToken.getExpiresAt().isBefore(Instant.now())) {
             throw new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token " + token + " has expired");
         }
 
@@ -291,7 +291,7 @@ public class CredentialsServiceImpl implements CredentialsService {
         final HashedPasswordBO newHashedPassword = verifyAndHashPassword(newPassword);
         final CredentialsBO update = credentials
                 .withHashedPassword(newHashedPassword)
-                .withPasswordUpdatedAt(OffsetDateTime.now());
+                .withPasswordUpdatedAt(Instant.now());
 
         return doUpdate(credentials, update, true);
     }
