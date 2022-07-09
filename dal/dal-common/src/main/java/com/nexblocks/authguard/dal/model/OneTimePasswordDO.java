@@ -20,4 +20,9 @@ public class OneTimePasswordDO extends AbstractDO {
     private String accountId;
     private String password;
     private Instant expiresAt;
+    private String deviceId;
+    private String clientId;
+    private String externalSessionId;
+    private String sourceIp;
+    private String userAgent;
 }

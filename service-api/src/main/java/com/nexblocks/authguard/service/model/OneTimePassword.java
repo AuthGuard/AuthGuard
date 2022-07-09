@@ -11,4 +11,9 @@ public interface OneTimePassword {
     String getAccountId();
     String getPassword();
     Instant getExpiresAt();
+    String getDeviceId();
+    String getClientId();
+    String getExternalSessionId();
+    String getSourceIp();
+    String getUserAgent();
 }

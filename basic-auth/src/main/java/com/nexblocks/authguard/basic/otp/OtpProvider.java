@@ -59,6 +59,11 @@ public class OtpProvider implements AuthProvider {
                 .accountId(account.getId())
                 .expiresAt(Instant.now().plus(tokenTtl))
                 .password(password)
+                .clientId(options.getClientId())
+                .deviceId(options.getDeviceId())
+                .externalSessionId(options.getExternalSessionId())
+                .sourceIp(options.getSourceIp())
+                .userAgent(options.getUserAgent())
                 .build();
 
         final OneTimePasswordBO persistedOtp = otpRepository.save(serviceMapper.toDO(oneTimePassword))

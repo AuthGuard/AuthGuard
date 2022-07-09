@@ -7,6 +7,7 @@ import org.immutables.value.Value;
 public interface TokenOptions {
     String getSource();
     String getDeviceId();
+    String getClientId();
     String getExternalSessionId();
     String getUserAgent();
     String getSourceIp();

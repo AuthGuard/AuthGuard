@@ -49,6 +49,7 @@ public class AuthRoute extends AuthApi {
                 .build();
     }
 
+    @Override
     public void authenticate(final Context context) {
         final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
 
