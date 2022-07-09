@@ -11,6 +11,7 @@ import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.EntityType;
+import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
@@ -67,7 +68,9 @@ class OtpProviderTest {
                 .entityId(account.getId())
                 .build();
 
-        final AuthResponseBO generated = otpProvider.generateToken(account);
+        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+
+        final AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions);
 
         assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(generated.getToken()).isNotNull();
@@ -108,7 +111,9 @@ class OtpProviderTest {
                 .entityId(account.getId())
                 .build();
 
-        final AuthResponseBO generated = otpProvider.generateToken(account);
+        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+
+        final AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions);
 
         assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(generated.getToken()).isNotNull();
@@ -147,13 +152,15 @@ class OtpProviderTest {
 
         final AccountBO account = random.nextObject(AccountBO.class).withActive(true);
 
+        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+
         final AuthResponseBO expected = AuthResponseBO.builder()
                 .type("otp")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .build();
 
-        final AuthResponseBO generated = otpProvider.generateToken(account);
+        final AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions);
 
         assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(generated.getToken()).isNotNull();
@@ -191,7 +198,9 @@ class OtpProviderTest {
         setup(otpConfig);
 
         final AccountBO account = random.nextObject(AccountBO.class).withActive(false);
+        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
 
-        assertThatThrownBy(() -> otpProvider.generateToken(account)).isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> otpProvider.generateToken(account, tokenOptions))
+                .isInstanceOf(ServiceAuthorizationException.class);
     }
 }

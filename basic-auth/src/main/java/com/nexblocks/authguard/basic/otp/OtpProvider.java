@@ -46,7 +46,7 @@ public class OtpProvider implements AuthProvider {
     }
 
     @Override
-    public AuthResponseBO generateToken(final AccountBO account) {
+    public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO options) {
         if (!account.isActive()) {
             throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
         }
@@ -65,6 +65,7 @@ public class OtpProvider implements AuthProvider {
                 .join(); // TODO not a good idea, change the interface
 
         final OtpMessageBody messageBody = new OtpMessageBody(oneTimePassword, account,
+                options,
                 otpConfig.getMethod() == OtpConfigInterface.Method.EMAIL,
                 otpConfig.getMethod() == OtpConfigInterface.Method.SMS);
 
@@ -73,6 +74,11 @@ public class OtpProvider implements AuthProvider {
         messageBus.publish(OTP_CHANNEL, Messages.otpGenerated(messageBody));
 
         return token;
+    }
+
+    @Override
+    public AuthResponseBO generateToken(final AccountBO account) {
+        throw new UnsupportedOperationException("Use the method which accepts TokenOptionsBO");
     }
 
     @Override

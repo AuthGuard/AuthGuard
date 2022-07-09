@@ -9,6 +9,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.EntityType;
+import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -55,13 +56,15 @@ class PasswordlessProviderTest {
                 .active(true)
                 .build();
 
+        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+
         final AuthResponseBO expected = AuthResponseBO.builder()
                 .type("passwordless")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .build();
 
-        final AuthResponseBO generated = passwordlessProvider.generateToken(account);
+        final AuthResponseBO generated = passwordlessProvider.generateToken(account, tokenOptions);
 
         assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(generated.getToken()).isNotNull();
@@ -96,6 +99,9 @@ class PasswordlessProviderTest {
                 .active(false)
                 .build();
 
-        assertThatThrownBy(() -> passwordlessProvider.generateToken(account)).isInstanceOf(ServiceAuthorizationException.class);
+        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+
+        assertThatThrownBy(() -> passwordlessProvider.generateToken(account, tokenOptions))
+                .isInstanceOf(ServiceAuthorizationException.class);
     }
 }

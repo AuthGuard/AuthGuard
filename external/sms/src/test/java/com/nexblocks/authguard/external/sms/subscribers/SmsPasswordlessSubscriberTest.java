@@ -10,6 +10,7 @@ import com.nexblocks.authguard.external.sms.ImmutableTextMessage;
 import com.nexblocks.authguard.external.sms.SmsProvider;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.PhoneNumberBO;
+import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -30,7 +31,7 @@ class SmsPasswordlessSubscriberTest {
     }
 
     @Test
-    void onValidMessage() {
+    void onValidMessageWithEmptyTokenOptions() {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token("token")
                 .build();
@@ -42,7 +43,9 @@ class SmsPasswordlessSubscriberTest {
                 .lastName("second")
                 .build();
 
-        final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account);
+        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+
+        final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, tokenOptions);
         final Message message = Messages.passwordlessGenerated(messageBody);
         final ImmutableTextMessage expectedSms = ImmutableTextMessage.builder()
                 .to(account.getPhoneNumber().getNumber())
@@ -50,6 +53,45 @@ class SmsPasswordlessSubscriberTest {
                         "token", accountToken.getToken(),
                         "firstName", account.getFirstName(),
                         "lastName", account.getLastName()))
+                .build();
+
+        smsPasswordlessSubscriber.onMessage(message);
+
+        final ArgumentCaptor<ImmutableTextMessage> sentSmsCaptor = ArgumentCaptor.forClass(ImmutableTextMessage.class);
+
+        Mockito.verify(smsProvider).send(sentSmsCaptor.capture());
+
+        assertThat(sentSmsCaptor.getValue()).isEqualTo(expectedSms);
+    }
+
+    @Test
+    void onValidMessageWithTokenOptions() {
+        final AccountTokenDO accountToken = AccountTokenDO.builder()
+                .token("token")
+                .build();
+        final AccountBO account = AccountBO.builder()
+                .phoneNumber(PhoneNumberBO.builder()
+                        .number("+178945632")
+                        .build())
+                .firstName("first")
+                .lastName("second")
+                .build();
+
+        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder()
+                .sourceIp("127.0.0.1")
+                .userAgent("Firefox")
+                .build();
+
+        final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, tokenOptions);
+        final Message message = Messages.passwordlessGenerated(messageBody);
+        final ImmutableTextMessage expectedSms = ImmutableTextMessage.builder()
+                .to(account.getPhoneNumber().getNumber())
+                .parameters(ImmutableMap.of(
+                        "token", accountToken.getToken(),
+                        "firstName", account.getFirstName(),
+                        "lastName", account.getLastName(),
+                        "sourceIp", tokenOptions.getSourceIp(),
+                        "userAgent", tokenOptions.getUserAgent()))
                 .build();
 
         smsPasswordlessSubscriber.onMessage(message);
@@ -72,7 +114,7 @@ class SmsPasswordlessSubscriberTest {
                         .build())
                 .build();
 
-        final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account);
+        final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, null);
         final Message message = Messages.passwordlessGenerated(messageBody)
                 .withEventType(EventType.ADMIN);
 
@@ -89,7 +131,7 @@ class SmsPasswordlessSubscriberTest {
         final AccountBO account = AccountBO.builder()
                 .build();
 
-        final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account);
+        final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, null);
         final Message message = Messages.passwordlessGenerated(messageBody);
 
         smsPasswordlessSubscriber.onMessage(message);

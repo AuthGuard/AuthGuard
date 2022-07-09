@@ -39,7 +39,7 @@ public class AuthorizationCodeToAccessToken implements Exchange {
 
     private Either<Exception, AuthResponseBO> generateToken(final AccountTokenDO accountToken) {
         final TokenOptionsBO options = TokenOptionsBO.builder()
-                .source("aut_code")
+                .source("auth_code")
                 .build();
 
         final TokenRestrictionsBO restrictions = getRestrictions(accountToken);
