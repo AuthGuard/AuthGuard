@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import javax.persistence.*;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Map;
 
 @Data
@@ -25,7 +25,7 @@ import java.util.Map;
 public class SessionDO extends AbstractDO {
     private String sessionToken;
     private String accountId;
-    private OffsetDateTime expiresAt;
+    private Instant expiresAt;
 
     @ElementCollection(fetch = FetchType.EAGER)
     private Map<String, String> data;

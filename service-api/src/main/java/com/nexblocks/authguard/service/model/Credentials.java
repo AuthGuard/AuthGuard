@@ -2,7 +2,7 @@ package com.nexblocks.authguard.service.model;
 
 import org.immutables.value.Value;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Set;
 
 @Value.Immutable
@@ -12,7 +12,7 @@ public interface Credentials extends Entity {
     Set<UserIdentifierBO> getIdentifiers();
     String getPlainPassword();
     HashedPasswordBO getHashedPassword();
-    OffsetDateTime getPasswordUpdatedAt();
+    Instant getPasswordUpdatedAt();
     Integer getPasswordVersion();
     String getDomain();
 

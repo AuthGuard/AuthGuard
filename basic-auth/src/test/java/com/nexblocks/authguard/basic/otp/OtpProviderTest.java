@@ -11,6 +11,7 @@ import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.EntityType;
+import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
@@ -18,7 +19,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,7 +68,9 @@ class OtpProviderTest {
                 .entityId(account.getId())
                 .build();
 
-        final AuthResponseBO generated = otpProvider.generateToken(account);
+        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+
+        final AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions);
 
         assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(generated.getToken()).isNotNull();
@@ -80,8 +83,8 @@ class OtpProviderTest {
 
         assertThat(persisted.getAccountId()).isEqualTo(account.getId());
         assertThat(persisted.getExpiresAt())
-                .isAfter(OffsetDateTime.now())
-                .isBefore(OffsetDateTime.now().plus(Duration.ofMinutes(6)));
+                .isAfter(Instant.now())
+                .isBefore(Instant.now().plus(Duration.ofMinutes(6)));
         assertThat(persisted.getId()).isNotNull();
         assertThat(persisted.getPassword()).isNotNull();
         assertThat(persisted.getPassword()).hasSize(6);
@@ -108,7 +111,9 @@ class OtpProviderTest {
                 .entityId(account.getId())
                 .build();
 
-        final AuthResponseBO generated = otpProvider.generateToken(account);
+        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+
+        final AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions);
 
         assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(generated.getToken()).isNotNull();
@@ -121,8 +126,8 @@ class OtpProviderTest {
 
         assertThat(persisted.getAccountId()).isEqualTo(account.getId());
         assertThat(persisted.getExpiresAt())
-                .isAfter(OffsetDateTime.now())
-                .isBefore(OffsetDateTime.now().plus(Duration.ofMinutes(6)));
+                .isAfter(Instant.now())
+                .isBefore(Instant.now().plus(Duration.ofMinutes(6)));
         assertThat(persisted.getId()).isNotNull();
         assertThat(persisted.getPassword()).isNotNull();
         assertThat(persisted.getPassword()).hasSize(6);
@@ -147,13 +152,15 @@ class OtpProviderTest {
 
         final AccountBO account = random.nextObject(AccountBO.class).withActive(true);
 
+        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+
         final AuthResponseBO expected = AuthResponseBO.builder()
                 .type("otp")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .build();
 
-        final AuthResponseBO generated = otpProvider.generateToken(account);
+        final AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions);
 
         assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(generated.getToken()).isNotNull();
@@ -166,8 +173,8 @@ class OtpProviderTest {
 
         assertThat(persisted.getAccountId()).isEqualTo(account.getId());
         assertThat(persisted.getExpiresAt())
-                .isAfter(OffsetDateTime.now())
-                .isBefore(OffsetDateTime.now().plus(Duration.ofMinutes(6)));
+                .isAfter(Instant.now())
+                .isBefore(Instant.now().plus(Duration.ofMinutes(6)));
         assertThat(persisted.getId()).isNotNull();
         assertThat(persisted.getPassword()).isNotNull();
         assertThat(persisted.getPassword()).hasSize(6);
@@ -191,7 +198,9 @@ class OtpProviderTest {
         setup(otpConfig);
 
         final AccountBO account = random.nextObject(AccountBO.class).withActive(false);
+        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
 
-        assertThatThrownBy(() -> otpProvider.generateToken(account)).isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> otpProvider.generateToken(account, tokenOptions))
+                .isInstanceOf(ServiceAuthorizationException.class);
     }
 }

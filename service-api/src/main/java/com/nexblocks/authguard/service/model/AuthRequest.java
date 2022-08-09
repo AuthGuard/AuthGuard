@@ -14,4 +14,5 @@ public interface AuthRequest {
     String getExternalSessionId();
     String getUserAgent();
     String getSourceIp();
+    String getClientId();
 }

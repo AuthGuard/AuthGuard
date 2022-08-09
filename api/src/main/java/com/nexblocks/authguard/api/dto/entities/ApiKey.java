@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.nexblocks.authguard.api.dto.style.DTOStyle;
 import org.immutables.value.Value;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 @Value.Immutable
 @DTOStyle
@@ -13,8 +13,8 @@ import java.time.OffsetDateTime;
 @JsonDeserialize(as = ApiKeyDTO.class)
 public interface ApiKey {
     String getId();
-    OffsetDateTime getCreatedAt();
-    OffsetDateTime getLastModified();
+    Instant getCreatedAt();
+    Instant getLastModified();
     String getAppId();
     String getKey();
 }

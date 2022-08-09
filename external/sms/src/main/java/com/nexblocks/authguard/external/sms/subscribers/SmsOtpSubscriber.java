@@ -11,6 +11,7 @@ import com.nexblocks.authguard.external.sms.ImmutableTextMessage;
 import com.nexblocks.authguard.external.sms.SmsProvider;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.OneTimePasswordBO;
+import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,33 +29,27 @@ public class SmsOtpSubscriber implements MessageSubscriber {
     @Override
     public void onMessage(final Message message) {
         if (message.getEventType() == EventType.OTP_GENERATED) {
-            final OtpMessageBody messageBody = (OtpMessageBody) message.getMessageBody();
-            final AccountBO account = messageBody.getAccount();
-            final OneTimePasswordBO otp = messageBody.getOtp();
+            final OtpMessageBody body = (OtpMessageBody) message.getMessageBody();
 
-            if (messageBody.isByEmail()) {
-                sendEmail(account, otp);
+            if (body.isBySms()) {
+                sendSms(body.getAccount(), body.getOtp(), body.getTokenOptions());
             } else {
-                LOG.warn("Email OTP subscriber is enabled but a OTP event was received not to be sent by email");
+                LOG.warn("SMS OTP subscriber is enabled but a OTP event was received not to be sent by SMS");
             }
         }
     }
 
-    private void sendEmail(final AccountBO account, final OneTimePasswordBO otp) {
+    private void sendSms(final AccountBO account, final OneTimePasswordBO otp,
+                         final TokenOptionsBO tokenOptions) {
         if (account.getPhoneNumber() != null) {
-            final ImmutableMap.Builder<String, String> parameters = ImmutableMap.builder();
+            final ImmutableMap.Builder<String, String> parameters
+                    = SmsParametersHelper.getForAccount(account, tokenOptions);
 
-            if (account.getFirstName() != null) {
-                parameters.put("firstName", account.getFirstName());
-            }
-
-            if (account.getLastName() != null) {
-                parameters.put("lastName", account.getLastName());
-            }
+            parameters.put("password", otp.getPassword());
 
             final ImmutableTextMessage sms = ImmutableTextMessage.builder()
                     .to(account.getPhoneNumber().getNumber())
-                    .parameters(parameters.put("password", otp.getPassword()).build())
+                    .parameters(parameters.build())
                     .build();
 
             smsProvider.send(sms);

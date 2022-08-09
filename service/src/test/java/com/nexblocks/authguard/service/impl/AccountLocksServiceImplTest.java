@@ -9,7 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.time.OffsetDateTime;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,18 +32,18 @@ class AccountLocksServiceImplTest {
 
     @Test
     void getActiveLocksByAccountId() {
-        final OffsetDateTime now = OffsetDateTime.now();
+        final Instant now = Instant.now();
 
         Mockito.when(repository.findByAccountId("account"))
                 .thenReturn(CompletableFuture.completedFuture(
                         Arrays.asList(
                                 AccountLockDO.builder()
                                         .accountId("account")
-                                        .expiresAt(now.plusMinutes(5))
+                                        .expiresAt(now.plus(Duration.ofMinutes(5)))
                                         .build(),
                                 AccountLockDO.builder()
                                         .accountId("account")
-                                        .expiresAt(now.minusMinutes(1))
+                                        .expiresAt(now.minus(Duration.ofMinutes(1)))
                                         .build()
                         )
                 ));
@@ -50,7 +51,7 @@ class AccountLocksServiceImplTest {
         final Collection<AccountLockBO> actual = service.getActiveLocksByAccountId("account");
         final Collection<AccountLockBO> expected = Collections.singletonList(AccountLockBO.builder()
                 .accountId("account")
-                .expiresAt(now.plusMinutes(5))
+                .expiresAt(now.plus(Duration.ofMinutes(5)))
                 .build());
 
         assertThat(actual).isEqualTo(expected);
@@ -58,20 +59,20 @@ class AccountLocksServiceImplTest {
 
     @Test
     void delete() {
-        final OffsetDateTime now = OffsetDateTime.now();
+        final Instant now = Instant.now();
 
         Mockito.when(repository.delete("lock"))
                 .thenReturn(CompletableFuture.completedFuture(
                         Optional.of(AccountLockDO.builder()
                                 .accountId("account")
-                                .expiresAt(now.plusMinutes(5))
+                                .expiresAt(now.plus(Duration.ofMinutes(5)))
                                 .build())
                 ));
 
         final Optional<AccountLockBO> actual = service.delete("lock");
         final AccountLockBO expected = AccountLockBO.builder()
                 .accountId("account")
-                .expiresAt(now.plusMinutes(5))
+                .expiresAt(now.plus(Duration.ofMinutes(5)))
                 .build();
 
         assertThat(actual).contains(expected);

@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -26,7 +26,7 @@ class AuthorizationCodeVerifierTest {
         final String authorizationCode = "authorization-code";
 
         final AccountTokenDO accountToken = AccountTokenDO.builder()
-                .expiresAt(OffsetDateTime.now().plus(Duration.ofMinutes(5)))
+                .expiresAt(Instant.now().plus(Duration.ofMinutes(5)))
                 .associatedAccountId(accountId)
                 .token(authorizationCode)
                 .build();
@@ -62,7 +62,7 @@ class AuthorizationCodeVerifierTest {
         final String authorizationCode = "authorization-code";
 
         final AccountTokenDO accountToken = AccountTokenDO.builder()
-                .expiresAt(OffsetDateTime.now().minus(Duration.ofMinutes(5)))
+                .expiresAt(Instant.now().minus(Duration.ofMinutes(5)))
                 .associatedAccountId(accountId)
                 .token(authorizationCode)
                 .build();

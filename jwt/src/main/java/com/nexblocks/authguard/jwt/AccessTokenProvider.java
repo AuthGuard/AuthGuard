@@ -21,7 +21,7 @@ import com.nexblocks.authguard.service.util.ID;
 import io.vavr.control.Either;
 
 import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Optional;
 
 @ProvidesToken("accessToken")
@@ -195,7 +195,7 @@ public class AccessTokenProvider implements AuthProvider {
                 : token;
     }
 
-    private OffsetDateTime refreshTokenExpiry() {
-        return OffsetDateTime.now().plus(refreshTokenTtl);
+    private Instant refreshTokenExpiry() {
+        return Instant.now().plus(refreshTokenTtl);
     }
 }

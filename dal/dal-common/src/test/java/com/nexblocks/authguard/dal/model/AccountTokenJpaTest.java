@@ -8,7 +8,7 @@ import org.junit.jupiter.api.TestInstance;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,7 +29,7 @@ public class AccountTokenJpaTest {
         createdAccountToken = AccountTokenDO.builder()
                 .id("account-token-id")
                 .token("test-token")
-                .expiresAt(OffsetDateTime.now())
+                .expiresAt(Instant.now())
                 .associatedAccountId("account")
                 .additionalInformation(ImmutableMap.of("key", "value"))
                 .build();

@@ -11,10 +11,9 @@ import com.nexblocks.authguard.emb.model.Message;
 import com.nexblocks.authguard.external.email.EmailProvider;
 import com.nexblocks.authguard.external.email.ImmutableEmail;
 import com.nexblocks.authguard.service.model.AccountBO;
+import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
 
 @Channel("passwordless")
 public class EmailPasswordlessSubscriber implements MessageSubscriber {
@@ -30,29 +29,23 @@ public class EmailPasswordlessSubscriber implements MessageSubscriber {
     @Override
     public void onMessage(final Message message) {
         if (message.getEventType() == EventType.PASSWORDLESS_GENERATED) {
-            final PasswordlessMessageBody messageBody = (PasswordlessMessageBody) message.getMessageBody();
-            final AccountBO account = messageBody.getAccount();
-            final AccountTokenDO accountToken = messageBody.getAccountToken();
+            final PasswordlessMessageBody body = (PasswordlessMessageBody) message.getMessageBody();
 
-            sendEmail(account, accountToken);
+            sendEmail(body.getAccount(), body.getAccountToken(), body.getTokenOptions());
         }
     }
 
-    private void sendEmail(final AccountBO account, final AccountTokenDO accountToken) {
+    private void sendEmail(final AccountBO account, final AccountTokenDO accountToken,
+                           final TokenOptionsBO tokenOptions) {
         if (account.getEmail() != null) {
-            final ImmutableMap.Builder<String, String> parameters = ImmutableMap.builder();
+            final ImmutableMap.Builder<String, String> parameters
+                    = EmailParametersHelper.getForAccount(account, tokenOptions);
 
-            if (account.getFirstName() != null) {
-                parameters.put("firstName", account.getFirstName());
-            }
-
-            if (account.getLastName() != null) {
-                parameters.put("lastName", account.getLastName());
-            }
+            parameters.put("token", accountToken.getToken());
 
             final ImmutableEmail email = ImmutableEmail.builder()
                     .template("passwordless")
-                    .parameters(parameters.put("token", accountToken.getToken()).build())
+                    .parameters(parameters.build())
                     .to(account.getEmail().getEmail())
                     .build();
 
