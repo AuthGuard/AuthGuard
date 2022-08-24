@@ -23,9 +23,8 @@ public class EciesTokenEncryptor implements TokenEncryptor {
 
         final byte[] raw = token.getBytes(StandardCharsets.UTF_8);
         final byte[] encrypted = Cryptography.doCipher(raw, cipher);
-        final String encoded = Base64.getEncoder().encodeToString(encrypted);
 
-        return encoded;
+        return Base64.getEncoder().encodeToString(encrypted);
     }
 
     /**
