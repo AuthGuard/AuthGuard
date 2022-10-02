@@ -46,7 +46,7 @@
         <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
         <javalin.version>3.13.12</javalin.version>
         <logback.version>1.2.11</logback.version>
-        <jackson.version>2.13.3</jackson.version>
+        <jackson.version>2.13.4</jackson.version>
         <immutables.version>2.9.0</immutables.version>
         <jetbrains-annotations.version>13.0</jetbrains-annotations.version>
         <auth0-jwt.version>3.18.3</auth0-jwt.version>
