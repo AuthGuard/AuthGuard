@@ -48,6 +48,7 @@ public class SmsOtpSubscriber implements MessageSubscriber {
             parameters.put("password", otp.getPassword());
 
             final ImmutableTextMessage sms = ImmutableTextMessage.builder()
+                    .template("otp")
                     .to(account.getPhoneNumber().getNumber())
                     .parameters(parameters.build())
                     .build();
