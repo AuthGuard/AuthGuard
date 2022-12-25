@@ -23,7 +23,6 @@ import com.nexblocks.authguard.service.util.ID;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -78,7 +77,12 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                 .withHashedPassword(newPassword)
                 .withPasswordUpdatedAt(Instant.now());
 
-        return doUpdate(existing, update, true);
+        return doUpdate(existing, update)
+                .map(result -> {
+                    storePasswordUpdateRecord(existing);
+
+                    return result;
+                });
     }
 
     @Override
@@ -107,7 +111,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                 .identifiers(combined)
                 .build();
 
-        return doUpdate(existing, updated, false);
+        return doUpdate(existing, updated);
     }
 
     @Override
@@ -129,7 +133,13 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                 .identifiers(updatedIdentifiers)
                 .build();
 
-        return doUpdate(existing, updated, false);
+        return doUpdate(existing, updated)
+                .map(result -> {
+                    updatedIdentifiers.forEach(oldIdentifier ->
+                            storeIdentifierUpdateRecord(existing, oldIdentifier, CredentialsAudit.Action.DEACTIVATED));
+
+                    return result;
+                });
     }
 
     @Override
@@ -137,11 +147,12 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
         final AccountBO credentials = getByIdUnsafe(id)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No account with ID " + id));
 
-        final boolean hasIdentifier = credentials.getIdentifiers()
+        final Optional<UserIdentifierBO> matchedIdentifier = credentials.getIdentifiers()
                 .stream()
-                .anyMatch(identifier -> identifier.getIdentifier().equals(oldIdentifier));
+                .filter(identifier -> identifier.getIdentifier().equals(oldIdentifier))
+                .findFirst();
 
-        if (!hasIdentifier) {
+        if (matchedIdentifier.isEmpty()) {
             throw new ServiceException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "Credentials " + id + " has no identifier " + oldIdentifier);
         }
 
@@ -163,7 +174,12 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
 
         final AccountBO update = credentials.withIdentifiers(newIdentifiers);
 
-        return doUpdate(credentials, update, false);
+        return doUpdate(credentials, update)
+                .map(result -> {
+                    storeIdentifierUpdateRecord(credentials, matchedIdentifier.get(), CredentialsAudit.Action.UPDATED);
+
+                    return result;
+                });
     }
 
     @Override
@@ -223,25 +239,19 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                 .withHashedPassword(newHashedPassword)
                 .withPasswordUpdatedAt(Instant.now());
 
-        return doUpdate(credentials, update, true);
+        return doUpdate(credentials, update)
+                .map(result -> {
+                    storePasswordUpdateRecord(credentials);
+
+                    return result;
+                });
     }
 
-    private Optional<AccountBO> doUpdate(final AccountBO existing, final AccountBO updated, boolean storePasswordAudit) {
-        storeAuditRecord(credentialsManager.removeSensitiveInformation(existing),
-                credentialsManager.removeSensitiveInformation(updated),
-                CredentialsAudit.Action.ATTEMPT);
+    private Optional<AccountBO> doUpdate(final AccountBO existing, final AccountBO updated) {
+        storeAuditAttempt(existing);
 
         return accountsService.update(updated)
                 .map(c -> {
-                    if (storePasswordAudit) {
-                        storeAuditRecord(existing, updated, CredentialsAudit.Action.UPDATED);
-                    } else {
-                        storeAuditRecord(
-                                credentialsManager.removeSensitiveInformation(existing),
-                                credentialsManager.removeSensitiveInformation(updated),
-                                CredentialsAudit.Action.UPDATED);
-                    }
-
                     messageBus.publish(CREDENTIALS_CHANNEL, Messages.updated(c));
 
                     return c;
@@ -249,21 +259,34 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                 .map(credentialsManager::removeSensitiveInformation);
     }
 
-    private void storeAuditRecord(final AccountBO credentials, final AccountBO update,
-                                  final CredentialsAudit.Action action) {
+    private void storeIdentifierUpdateRecord(final AccountBO credentials, final UserIdentifierBO update,
+                                             final CredentialsAudit.Action action) {
         final CredentialsAuditBO audit = CredentialsAuditBO.builder()
                 .id(ID.generate())
                 .credentialsId(credentials.getId())
                 .action(action)
-                .before(CredentialsBO.builder()
-                        .identifiers(credentials.getIdentifiers())
-                        .passwordVersion(credentials.getPasswordVersion())
-                        .build())
-                .after(CredentialsBO.builder()
-                        .identifiers(update.getIdentifiers())
-                        .passwordVersion(update.getPasswordVersion())
-                        .build())
+                .identifier(update.getIdentifier())
+                .build();
+
+        credentialsAuditRepository.save(serviceMapper.toDO(audit));
+    }
+
+    private void storePasswordUpdateRecord(final AccountBO credentials) {
+        final CredentialsAuditBO audit = CredentialsAuditBO.builder()
+                .id(ID.generate())
+                .credentialsId(credentials.getId())
+                .action(CredentialsAudit.Action.UPDATED)
                 .password(credentials.getHashedPassword())
+                .build();
+
+        credentialsAuditRepository.save(serviceMapper.toDO(audit));
+    }
+
+    private void storeAuditAttempt(final AccountBO credentials) {
+        final CredentialsAuditBO audit = CredentialsAuditBO.builder()
+                .id(ID.generate())
+                .credentialsId(credentials.getId())
+                .action(CredentialsAudit.Action.ATTEMPT)
                 .build();
 
         credentialsAuditRepository.save(serviceMapper.toDO(audit));

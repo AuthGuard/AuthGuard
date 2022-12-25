@@ -31,7 +31,6 @@ public class AccountsRoute extends AccountsApi {
 
     private final BodyHandler<CreateAccountRequestDTO> accountRequestBodyHandler;
     private final BodyHandler<UpdateAccountRequestDTO> updateAccountRequestBodyHandler;
-    private final BodyHandler<CreateCompleteAccountRequestDTO> completeAccountRequestBodyHandler;
     private final BodyHandler<PermissionsRequestDTO> permissionsRequestBodyHandler;
     private final BodyHandler<RolesRequestDTO> rolesRequestBodyHandler;
 
@@ -48,8 +47,6 @@ public class AccountsRoute extends AccountsApi {
         this.accountRequestBodyHandler = new BodyHandler.Builder<>(CreateAccountRequestDTO.class)
                 .build();
         this.updateAccountRequestBodyHandler = new BodyHandler.Builder<>(UpdateAccountRequestDTO.class)
-                .build();
-        this.completeAccountRequestBodyHandler = new BodyHandler.Builder<>(CreateCompleteAccountRequestDTO.class)
                 .build();
         this.permissionsRequestBodyHandler = new BodyHandler.Builder<>(PermissionsRequestDTO.class)
                 .build();
