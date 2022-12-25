@@ -51,6 +51,7 @@ class SmsOtpSubscriberTest {
         final Message message = Messages.otpGenerated(messageBody);
         final ImmutableTextMessage expectedEmail = ImmutableTextMessage.builder()
                 .to(account.getPhoneNumber().getNumber())
+                .template("otp")
                 .parameters(ImmutableMap.of(
                         "password", otp.getPassword(),
                         "firstName", account.getFirstName(),
@@ -89,6 +90,7 @@ class SmsOtpSubscriberTest {
         final Message message = Messages.otpGenerated(messageBody);
         final ImmutableTextMessage expectedEmail = ImmutableTextMessage.builder()
                 .to(account.getPhoneNumber().getNumber())
+                .template("otp")
                 .parameters(ImmutableMap.of(
                         "password", otp.getPassword(),
                         "firstName", account.getFirstName(),

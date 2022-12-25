@@ -20,6 +20,7 @@ public interface App {
     String getName();
     String getAccountId();
     String getDomain();
+    String getBaseUrl();
     List<PermissionDTO> getPermissions();
     List<String> getRoles();
     boolean isActive();

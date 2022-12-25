@@ -49,6 +49,7 @@ class SmsPasswordlessSubscriberTest {
         final Message message = Messages.passwordlessGenerated(messageBody);
         final ImmutableTextMessage expectedSms = ImmutableTextMessage.builder()
                 .to(account.getPhoneNumber().getNumber())
+                .template("passwordless")
                 .parameters(ImmutableMap.of(
                         "token", accountToken.getToken(),
                         "firstName", account.getFirstName(),
@@ -86,6 +87,7 @@ class SmsPasswordlessSubscriberTest {
         final Message message = Messages.passwordlessGenerated(messageBody);
         final ImmutableTextMessage expectedSms = ImmutableTextMessage.builder()
                 .to(account.getPhoneNumber().getNumber())
+                .template("passwordless")
                 .parameters(ImmutableMap.of(
                         "token", accountToken.getToken(),
                         "firstName", account.getFirstName(),

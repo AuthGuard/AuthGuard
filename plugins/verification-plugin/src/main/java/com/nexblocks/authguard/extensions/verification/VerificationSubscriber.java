@@ -50,12 +50,13 @@ public class VerificationSubscriber implements MessageSubscriber {
 
     @Override
     public void onMessage(final Message message) {
+        if (message.getBodyType() != VerificationRequestBO.class) {
+            LOG.error("Received an event of type {} but the body type was invalid", message.getEventType());
+            return;
+        }
+
         if (message.getEventType() == EventType.EMAIL_VERIFICATION) {
-            if (message.getBodyType() != VerificationRequestBO.class) {
-                LOG.error("Received an event of type {} but the body type was invalid", message.getEventType());
-            } else {
-                sendVerificationEmails((VerificationRequestBO) message.getMessageBody());
-            }
+            sendVerificationEmails((VerificationRequestBO) message.getMessageBody());
         } else {
             LOG.warn("An event of type {} was published to the verification channel and cannot be processed", message.getEventType());
         }

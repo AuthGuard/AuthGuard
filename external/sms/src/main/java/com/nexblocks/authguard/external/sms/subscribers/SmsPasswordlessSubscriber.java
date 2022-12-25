@@ -44,6 +44,7 @@ public class SmsPasswordlessSubscriber implements MessageSubscriber {
             parameters.put("token", accountToken.getToken());
 
             final ImmutableTextMessage sms = ImmutableTextMessage.builder()
+                    .template("passwordless")
                     .to(account.getPhoneNumber().getNumber())
                     .parameters(parameters.build())
                     .build();

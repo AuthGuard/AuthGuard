@@ -32,6 +32,7 @@ public class AppDO extends AbstractDO {
     private String name;
     private String parentAccountId;
     private String domain;
+    private String baseUrl;
 
     @ElementCollection(fetch = FetchType.EAGER)
     private Set<String> roles;

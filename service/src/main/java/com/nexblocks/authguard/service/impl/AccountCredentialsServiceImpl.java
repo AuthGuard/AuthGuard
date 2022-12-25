@@ -209,8 +209,8 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
 
     @Override
     public Optional<AccountBO> replacePassword(final String identifier,
-                                                   final String oldPassword,
-                                                   final String newPassword, final String domain) {
+                                               final String oldPassword,
+                                               final String newPassword, final String domain) {
         final AccountBO credentials = accountsService.getByIdentifierUnsafe(identifier, domain)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST, "Unknown identifier"));
 

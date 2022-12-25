@@ -13,6 +13,7 @@ public interface App extends Entity {
     Set<PermissionBO> getPermissions();
     Set<String> getRoles();
     String getDomain();
+    String getBaseUrl();
     boolean isActive();
     boolean isDeleted();
 

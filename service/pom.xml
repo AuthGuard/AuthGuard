@@ -51,6 +51,12 @@
 
         <dependency>
             <groupId>com.nexblocks.authguard</groupId>
+            <artifactId>sms</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nexblocks.authguard</groupId>
             <artifactId>basic-auth</artifactId>
             <version>${project.version}</version>
         </dependency>

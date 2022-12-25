@@ -8,6 +8,6 @@ import java.util.Map;
 @Value.Style(validationMethod = Value.Style.ValidationMethod.NONE)
 public interface TextMessage {
     String getTo();
-    String getBody();
+    String getTemplate();
     Map<String, Object> getParameters();
 }

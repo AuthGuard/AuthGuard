@@ -1,31 +1,53 @@
 package com.nexblocks.authguard.service.impl;
 
 import com.google.inject.Inject;
+import com.nexblocks.authguard.basic.otp.OtpProvider;
+import com.nexblocks.authguard.basic.otp.OtpVerifier;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
+import com.nexblocks.authguard.external.sms.ImmutableTextMessage;
+import com.nexblocks.authguard.external.sms.SmsProvider;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.VerificationService;
+import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
+import com.nexblocks.authguard.service.model.PhoneNumberBO;
+import io.vavr.control.Either;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 
 public class VerificationServiceImpl implements VerificationService {
+    private static final Logger LOG = LoggerFactory.getLogger(VerificationServiceImpl.class);
+
     private static final String TARGET_EMAIL_PROPERTY = "email";
+    private static final String SMS_TEMPLATE = "verify-phone-number";
 
     private final AccountTokensRepository accountTokensRepository;
     private final AccountsService accountsService;
+    private final SmsProvider smsProvider;
+    private final OtpProvider otpProvider;
+    private final OtpVerifier otpVerifier;
 
     @Inject
     public VerificationServiceImpl(final AccountTokensRepository accountTokensRepository,
-                                   final AccountsService accountsService) {
+                                   final AccountsService accountsService,
+                                   final SmsProvider smsProvider,
+                                   final OtpProvider otpProvider,
+                                   final OtpVerifier otpVerifier) {
         this.accountTokensRepository = accountTokensRepository;
         this.accountsService = accountsService;
+        this.smsProvider = smsProvider;
+        this.otpProvider = otpProvider;
+        this.otpVerifier = otpVerifier;
     }
-
 
     @Override
     public void verifyEmail(final String verificationToken) {
@@ -44,7 +66,7 @@ public class VerificationServiceImpl implements VerificationService {
 
         final AccountBO account = accountsService.getById(accountToken.getAssociatedAccountId())
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
-                        "AccountDO " + accountToken.getAssociatedAccountId() + " does not exist"));
+                        "Account " + accountToken.getAssociatedAccountId() + " does not exist"));
 
         final AccountBO updated;
 
@@ -57,6 +79,74 @@ public class VerificationServiceImpl implements VerificationService {
                     "email associated with the verification token");
         }
 
-        accountsService.update(updated);
+        try {
+            accountsService.update(updated);
+        } catch (final Exception e) {
+            LOG.error("Failed to update account after email verification", e);
+        }
+    }
+
+    @Override
+    public AuthResponseBO sendPhoneNumberVerification(final String accountId) {
+        final AccountBO account = accountsService.getById(accountId)
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
+                        "Account " + accountId + " does not exist"));
+
+        return sendVerificationSms(account);
+    }
+
+    @Override
+    public AuthResponseBO sendPhoneNumberVerificationByIdentifier(final String identifier, final String domain) {
+        final AccountBO account = accountsService.getByIdentifier(identifier, domain)
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
+                        "No account with that identifier exists"));
+
+        return sendVerificationSms(account);
+    }
+
+    @Override
+    public void verifyPhoneNumber(final String passwordId, final String otp, final String phoneNumber) {
+        final String token = passwordId + ":" + otp;
+        final Either<Exception, String> either = otpVerifier.verifyAccountToken(token);
+
+        if (either.isLeft()) {
+            throw new ServiceException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST, "Invalid token");
+        }
+
+        final Optional<AccountBO> account = accountsService.getById(either.get());
+
+        if (account.isEmpty()) {
+            throw new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "The account associated with that token no longer exists");
+        }
+
+        if (account.get().getPhoneNumber() == null
+                || !Objects.equals(account.get().getPhoneNumber().getNumber(), phoneNumber)) {
+            throw new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "The provided phone number does not match the one in the account");
+        }
+
+        final AccountBO updated = account.get().withPhoneNumber(PhoneNumberBO.builder()
+                .number(account.get().getPhoneNumber().getNumber())
+                .verified(true)
+                .build());
+
+        try {
+            accountsService.update(updated);
+        } catch (final Exception e) {
+            LOG.error("Failed to update account after phone number verification", e);
+        }
+    }
+
+    private AuthResponseBO sendVerificationSms(final AccountBO account) {
+        final AuthResponseBO otp = otpProvider.generateToken(account);
+        final ImmutableTextMessage message = ImmutableTextMessage.builder()
+                .template(SMS_TEMPLATE)
+                .to(account.getPhoneNumber().getNumber())
+                .putParameters("account", account)
+                .putParameters("otp", otp.getToken())
+                .build();
+
+        smsProvider.send(message);
+
+        return otp;
     }
 }
