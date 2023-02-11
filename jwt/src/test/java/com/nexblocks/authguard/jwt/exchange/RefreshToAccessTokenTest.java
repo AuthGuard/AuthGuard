@@ -16,7 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.time.OffsetDateTime;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -53,7 +54,7 @@ class RefreshToAccessTokenTest {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token(refreshToken)
                 .associatedAccountId(accountId)
-                .expiresAt(OffsetDateTime.now().plusMinutes(1))
+                .expiresAt(Instant.now().plus(Duration.ofMinutes(1)))
                 .build();
 
         final AccountBO account = AccountBO.builder()
@@ -99,7 +100,7 @@ class RefreshToAccessTokenTest {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token(refreshToken)
                 .associatedAccountId(accountId)
-                .expiresAt(OffsetDateTime.now().plusMinutes(1))
+                .expiresAt(Instant.now().plus(Duration.ofMinutes(1)))
                 .tokenRestrictions(TokenRestrictionsDO.builder()
                         .permissions(Collections.singleton(restrictionPermission))
                         .scopes(Collections.emptySet())
@@ -149,7 +150,7 @@ class RefreshToAccessTokenTest {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token(refreshToken)
                 .associatedAccountId(accountId)
-                .expiresAt(OffsetDateTime.now().minusMinutes(1))
+                .expiresAt(Instant.now().minus(Duration.ofMinutes(1)))
                 .build();
 
         // mock
@@ -179,7 +180,7 @@ class RefreshToAccessTokenTest {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token(refreshToken)
                 .associatedAccountId(accountId)
-                .expiresAt(OffsetDateTime.now().plusMinutes(1))
+                .expiresAt(Instant.now().plus(Duration.ofMinutes(1)))
                 .build();
 
         // mock

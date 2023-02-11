@@ -7,7 +7,7 @@ import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.AccountLockBO;
 import com.google.inject.Inject;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -34,7 +34,7 @@ public class AccountLocksServiceImpl implements AccountLocksService {
 
     @Override
     public Collection<AccountLockBO> getActiveLocksByAccountId(final String accountId) {
-        final OffsetDateTime now = OffsetDateTime.now();
+        final Instant now = Instant.now();
 
         return accountLocksRepository.findByAccountId(accountId)
                 .thenApply(locks -> locks.stream()

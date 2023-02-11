@@ -26,8 +26,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -195,8 +196,8 @@ class AccountCredentialsServiceImplTest {
 
         assertThat(resetToken.getToken()).isEqualTo(persistedToken.getToken());
         assertThat(persistedToken.getExpiresAt())
-                .isAfter(OffsetDateTime.now())
-                .isBefore(OffsetDateTime.now().plusMinutes(31));
+                .isAfter(Instant.now())
+                .isBefore(Instant.now().plus(Duration.ofMinutes(31)));
     }
 
     @Test
@@ -227,8 +228,8 @@ class AccountCredentialsServiceImplTest {
 
         assertThat(resetToken.getToken()).isNull();
         assertThat(persistedToken.getExpiresAt())
-                .isAfter(OffsetDateTime.now())
-                .isBefore(OffsetDateTime.now().plusMinutes(31));
+                .isAfter(Instant.now())
+                .isBefore(Instant.now().plus(Duration.ofMinutes(31)));
     }
 
     @Test
@@ -258,7 +259,7 @@ class AccountCredentialsServiceImplTest {
 
         final AccountTokenDO persistedToken = AccountTokenDO.builder()
                 .associatedAccountId(accountId)
-                .expiresAt(OffsetDateTime.now().plusMinutes(4))
+                .expiresAt(Instant.now().plus(Duration.ofMinutes(4)))
                 .build();
 
         final String newPassword = "new_password";
@@ -322,7 +323,7 @@ class AccountCredentialsServiceImplTest {
         final String accountId = "account";
 
         final AccountTokenDO persistedToken = AccountTokenDO.builder()
-                .expiresAt(OffsetDateTime.now().minusMinutes(4))
+                .expiresAt(Instant.now().minus(Duration.ofMinutes(31)))
                 .additionalInformation(ImmutableMap.of("accountId", accountId))
                 .build();
 

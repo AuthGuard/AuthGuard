@@ -9,6 +9,7 @@ import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.AuthApi;
 import com.nexblocks.authguard.rest.access.ActorDomainVerifier;
+import com.nexblocks.authguard.rest.access.Requester;
 import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
@@ -17,12 +18,13 @@ import com.nexblocks.authguard.service.AuthenticationService;
 import com.nexblocks.authguard.service.ExchangeAttemptsService;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
+import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.ExchangeAttemptsQueryBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 import io.javalin.http.Context;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Collection;
 import java.util.Collections;
@@ -49,17 +51,18 @@ public class AuthRoute extends AuthApi {
                 .build();
     }
 
+    @Override
     public void authenticate(final Context context) {
-        final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
+        final Optional<AuthRequestDTO> authRequest = getValidRequestOrFail(context);
 
-        if (authenticationRequest.getDomain() != null
-                && !ActorDomainVerifier.verifyActorDomain(context, authenticationRequest.getDomain())) {
+        if (authRequest.isEmpty()) {
             return;
         }
 
         final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        final Optional<AuthResponseDTO> tokens = authenticationService.authenticate(restMapper.toBO(authenticationRequest), requestContext)
+        final Optional<AuthResponseDTO> tokens = authenticationService
+                .authenticate(restMapper.toBO(authRequest.get()), requestContext)
                 .map(restMapper::toDTO);
 
         if (tokens.isPresent()) {
@@ -96,11 +99,11 @@ public class AuthRoute extends AuthApi {
         }
     }
 
+    @Override
     public void exchange(final Context context) {
-        final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
+        final Optional<AuthRequestDTO> authRequest = getValidRequestOrFail(context);
 
-        if (authenticationRequest.getDomain() != null
-                && !ActorDomainVerifier.verifyActorDomain(context, authenticationRequest.getDomain())) {
+        if (authRequest.isEmpty()) {
             return;
         }
 
@@ -109,7 +112,8 @@ public class AuthRoute extends AuthApi {
 
         final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        final AuthResponseBO tokens = exchangeService.exchange(restMapper.toBO(authenticationRequest), from, to, requestContext);
+        final AuthResponseBO tokens = exchangeService
+                .exchange(restMapper.toBO(authRequest.get()), from, to, requestContext);
 
         context.json(restMapper.toDTO(tokens));
     }
@@ -132,7 +136,7 @@ public class AuthRoute extends AuthApi {
     @Override
     public void getExchangeAttempts(final Context context) {
         final String entityId = context.queryParam("entityId");
-        final OffsetDateTime fromTimestamp = parseOffsetDateTime(context.queryParam("fromTimestamp"));
+        final Instant fromTimestamp = parseOffsetDateTime(context.queryParam("fromTimestamp"));
         final String fromExchange = context.queryParam("fromExchange");
 
         // take care of checking the parameters
@@ -167,9 +171,46 @@ public class AuthRoute extends AuthApi {
         context.json(attempts);
     }
 
-    private OffsetDateTime parseOffsetDateTime(final String str) {
+    private Optional<AuthRequestDTO> getValidRequestOrFail(final Context context) {
+        AuthRequestDTO authRequest = authRequestBodyHandler.getValidated(context);
+
+        final Optional<AppBO> actor = Requester.getIfApp(context);
+
+        if (actor.isPresent()) {
+            final AppBO app = actor.get();
+            final boolean isAuthClient = Requester.isAuthClient(app);
+
+            if (isAuthClient) {
+                if (!Requester.authClientCanPerform(authRequest)) {
+                    context.status(403)
+                            .json(new Error("", "Auth clients can't set user agent or source IP of an auth request"));
+
+                    return Optional.empty();
+                }
+
+                if (authRequest.getDomain() != null
+                    && !ActorDomainVerifier.verifyAuthClientDomain(app, context, authRequest.getDomain())) {
+                    return Optional.empty();
+                }
+            }
+
+            if (authRequest.getSourceIp() == null) {
+                authRequest = authRequest.withSourceIp(context.ip());
+            }
+
+            if (authRequest.getUserAgent() == null && context.userAgent() != null) {
+                authRequest = authRequest.withUserAgent(context.userAgent());
+            }
+
+            return Optional.of(authRequest.withClientId(app.getId()));
+        }
+
+        return Optional.of(authRequest);
+    }
+
+    private Instant parseOffsetDateTime(final String str) {
         try {
-            return str == null ? null : OffsetDateTime.parse(str);
+            return str == null ? null : Instant.parse(str);
         } catch (final DateTimeParseException e) {
             throw new RequestValidationException(Collections.singletonList(
                     new Violation("fromTimestamp", ViolationType.INVALID_VALUE)

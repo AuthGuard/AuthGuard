@@ -11,10 +11,9 @@ import com.nexblocks.authguard.emb.model.Message;
 import com.nexblocks.authguard.external.sms.ImmutableTextMessage;
 import com.nexblocks.authguard.external.sms.SmsProvider;
 import com.nexblocks.authguard.service.model.AccountBO;
+import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 @Channel("passwordless")
 public class SmsPasswordlessSubscriber implements MessageSubscriber {
@@ -30,29 +29,24 @@ public class SmsPasswordlessSubscriber implements MessageSubscriber {
     @Override
     public void onMessage(final Message message) {
         if (message.getEventType() == EventType.PASSWORDLESS_GENERATED) {
-            final PasswordlessMessageBody messageBody = (PasswordlessMessageBody) message.getMessageBody();
-            final AccountBO account = messageBody.getAccount();
-            final AccountTokenDO accountToken = messageBody.getAccountToken();
+            final PasswordlessMessageBody body = (PasswordlessMessageBody) message.getMessageBody();
 
-            sendEmail(account, accountToken);
+            sendSms(body.getAccount(), body.getAccountToken(), body.getTokenOptions());
         }
     }
 
-    private void sendEmail(final AccountBO account, final AccountTokenDO accountToken) {
+    private void sendSms(final AccountBO account, final AccountTokenDO accountToken,
+                         final TokenOptionsBO tokenOptions) {
         if (account.getPhoneNumber() != null) {
-            final ImmutableMap.Builder<String, String> parameters = ImmutableMap.builder();
+            final ImmutableMap.Builder<String, String> parameters
+                    = SmsParametersHelper.getForAccount(account, tokenOptions);
 
-            if (account.getFirstName() != null) {
-                parameters.put("firstName", account.getFirstName());
-            }
-
-            if (account.getLastName() != null) {
-                parameters.put("lastName", account.getLastName());
-            }
+            parameters.put("token", accountToken.getToken());
 
             final ImmutableTextMessage sms = ImmutableTextMessage.builder()
+                    .template("passwordless")
                     .to(account.getPhoneNumber().getNumber())
-                    .parameters(parameters.put("token", accountToken.getToken()).build())
+                    .parameters(parameters.build())
                     .build();
 
             smsProvider.send(sms);

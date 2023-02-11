@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,7 +25,7 @@ class SessionVerifierTest {
                 .id("session-id")
                 .sessionToken("token")
                 .accountId("account-id")
-                .expiresAt(OffsetDateTime.now().plus(Duration.ofMinutes(20)))
+                .expiresAt(Instant.now().plus(Duration.ofMinutes(20)))
                 .build();
 
         Mockito.when(sessionsService.getByToken(session.getSessionToken()))
@@ -59,7 +59,7 @@ class SessionVerifierTest {
                 .id("session-id")
                 .sessionToken("token")
                 .accountId("account-id")
-                .expiresAt(OffsetDateTime.now().minus(Duration.ofMinutes(20)))
+                .expiresAt(Instant.now().minus(Duration.ofMinutes(20)))
                 .build();
 
         Mockito.when(sessionsService.getByToken(session.getSessionToken()))

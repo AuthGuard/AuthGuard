@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -27,11 +27,11 @@ class IdempotencyServiceImplTest {
 
     static class TestEntity implements Entity {
         private final String id;
-        private final OffsetDateTime now;
+        private final Instant now;
 
         TestEntity(final String id) {
             this.id = id;
-            this.now = OffsetDateTime.now();
+            this.now = Instant.now();
         }
 
         @Override
@@ -40,12 +40,12 @@ class IdempotencyServiceImplTest {
         }
 
         @Override
-        public OffsetDateTime getCreatedAt() {
+        public Instant getCreatedAt() {
             return now;
         }
 
         @Override
-        public OffsetDateTime getLastModified() {
+        public Instant getLastModified() {
             return now;
         }
 
