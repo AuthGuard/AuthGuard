@@ -1,5 +1,7 @@
 package com.nexblocks.authguard.extensions;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.persistence.ExchangeAttemptsRepository;
 import com.nexblocks.authguard.emb.MessageSubscriber;
@@ -11,12 +13,11 @@ import com.nexblocks.authguard.service.AccountLocksService;
 import com.nexblocks.authguard.service.messaging.AuthMessage;
 import com.nexblocks.authguard.service.model.AccountLockBO;
 import com.nexblocks.authguard.service.model.EntityType;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.OffsetDateTime;
+import java.time.Duration;
+import java.time.Instant;
 
 @Channel("auth")
 public class AccountLocker implements MessageSubscriber {
@@ -60,8 +61,8 @@ public class AccountLocker implements MessageSubscriber {
 
     private void processAuthMessage(final AuthMessage authMessage) {
         if (authMessage.getEntityType() == EntityType.ACCOUNT) {
-            final OffsetDateTime now = OffsetDateTime.now();
-            final OffsetDateTime from = now.minusMinutes(config.getCheckPeriod());
+            final Instant now = Instant.now();
+            final Instant from = now.minus(Duration.ofMinutes(config.getCheckPeriod()));
 
             exchangeAttemptsRepository.findByEntityAndTimestamp(authMessage.getEntityId(), from)
                     .thenAccept(attempts -> {
@@ -75,7 +76,7 @@ public class AccountLocker implements MessageSubscriber {
 
                             final AccountLockBO lock = AccountLockBO.builder()
                                     .accountId(authMessage.getEntityId())
-                                    .expiresAt(now.plusMinutes(config.getLockPeriod()))
+                                    .expiresAt(now.plus(Duration.ofMinutes(config.getLockPeriod())))
                                     .build();
 
                             accountLocksService.create(lock);

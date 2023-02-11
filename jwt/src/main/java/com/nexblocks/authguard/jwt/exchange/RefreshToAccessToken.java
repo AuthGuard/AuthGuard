@@ -13,7 +13,7 @@ import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
 import io.vavr.control.Either;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 @TokenExchange(from = "refresh", to = "accessToken")
 public class RefreshToAccessToken implements Exchange {
@@ -76,7 +76,7 @@ public class RefreshToAccessToken implements Exchange {
     }
 
     private boolean validateExpirationDateTime(final AccountTokenDO accountToken) {
-        final OffsetDateTime now = OffsetDateTime.now();
+        final Instant now = Instant.now();
 
         return now.isBefore(accountToken.getExpiresAt());
     }

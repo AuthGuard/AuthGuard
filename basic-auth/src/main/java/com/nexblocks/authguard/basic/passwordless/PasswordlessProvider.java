@@ -13,14 +13,12 @@ import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ConfigParser;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AppBO;
-import com.nexblocks.authguard.service.model.AuthResponseBO;
-import com.nexblocks.authguard.service.model.EntityType;
+import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.ID;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 
 @ProvidesToken("passwordless")
@@ -47,7 +45,7 @@ public class PasswordlessProvider implements AuthProvider {
     }
 
     @Override
-    public AuthResponseBO generateToken(final AccountBO account) {
+    public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO tokenOptions) {
         if (!account.isActive()) {
             throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
         }
@@ -58,13 +56,13 @@ public class PasswordlessProvider implements AuthProvider {
                 .id(ID.generate())
                 .associatedAccountId(account.getId())
                 .token(token)
-                .expiresAt(OffsetDateTime.now().plus(tokenTtl))
+                .expiresAt(Instant.now().plus(tokenTtl))
                 .build();
 
         final AccountTokenDO persistedToken = accountTokensRepository.save(accountToken).join();
 
         final PasswordlessMessageBody messageBody =
-                new PasswordlessMessageBody(persistedToken, account);
+                new PasswordlessMessageBody(persistedToken, account, tokenOptions);
 
         messageBus.publish(PASSWORDLESS_CHANNEL, Messages.passwordlessGenerated(messageBody));
 
@@ -74,6 +72,11 @@ public class PasswordlessProvider implements AuthProvider {
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .build();
+    }
+
+    @Override
+    public AuthResponseBO generateToken(final AccountBO account) {
+        throw new UnsupportedOperationException("Use the method which accepts TokenOptionsBO");
     }
 
     @Override

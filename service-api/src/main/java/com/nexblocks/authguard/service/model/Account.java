@@ -3,7 +3,6 @@ package com.nexblocks.authguard.service.model;
 import org.immutables.value.Value;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Set;
 

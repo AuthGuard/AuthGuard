@@ -9,4 +9,5 @@ import java.util.List;
 public interface VerificationRequest {
     AccountBO getAccount();
     List<AccountEmailBO> getEmails(); // we might not need to verify all emails
+    PhoneNumberBO getPhoneNumber();
 }

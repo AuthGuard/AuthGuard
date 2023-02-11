@@ -10,6 +10,7 @@ import com.nexblocks.authguard.external.email.ImmutableEmail;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AccountEmailBO;
 import com.nexblocks.authguard.service.model.OneTimePasswordBO;
+import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -30,7 +31,7 @@ public class EmailOtpSubscriberTest {
     }
 
     @Test
-    void onValidMessage() {
+    void onValidMessageWithTokenOptions() {
         final OneTimePasswordBO otp = OneTimePasswordBO.builder()
                 .password("password")
                 .build();
@@ -43,7 +44,50 @@ public class EmailOtpSubscriberTest {
                 .lastName("second")
                 .build();
 
-        final OtpMessageBody messageBody = new OtpMessageBody(otp, account, true, false);
+        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder()
+                .sourceIp("127.0.0.1")
+                .userAgent("Firefox")
+                .build();
+
+        final OtpMessageBody messageBody = new OtpMessageBody(otp, account,  tokenOptions,true, false);
+        final Message message = Messages.otpGenerated(messageBody);
+        final ImmutableEmail expectedEmail = ImmutableEmail.builder()
+                .template("otp")
+                .to(account.getEmail().getEmail())
+                .parameters(ImmutableMap.of(
+                        "password", otp.getPassword(),
+                        "firstName", account.getFirstName(),
+                        "lastName", account.getLastName(),
+                        "sourceIp", tokenOptions.getSourceIp(),
+                        "userAgent", tokenOptions.getUserAgent()))
+                .build();
+
+        otpSubscriber.onMessage(message);
+
+        final ArgumentCaptor<ImmutableEmail> sentEmailCaptor = ArgumentCaptor.forClass(ImmutableEmail.class);
+
+        Mockito.verify(emailProvider).send(sentEmailCaptor.capture());
+
+        assertThat(sentEmailCaptor.getValue()).isEqualTo(expectedEmail);
+    }
+
+    @Test
+    void onValidMessageWithEmptyTokenOptions() {
+        final OneTimePasswordBO otp = OneTimePasswordBO.builder()
+                .password("password")
+                .build();
+
+        final AccountBO account = AccountBO.builder()
+                .email(AccountEmailBO.builder()
+                        .email("user@test.net")
+                        .build())
+                .firstName("first")
+                .lastName("second")
+                .build();
+
+        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+
+        final OtpMessageBody messageBody = new OtpMessageBody(otp, account,  tokenOptions,true, false);
         final Message message = Messages.otpGenerated(messageBody);
         final ImmutableEmail expectedEmail = ImmutableEmail.builder()
                 .template("otp")
@@ -75,7 +119,7 @@ public class EmailOtpSubscriberTest {
                         .build())
                 .build();
 
-        final OtpMessageBody messageBody = new OtpMessageBody(otp, account, true, false);
+        final OtpMessageBody messageBody = new OtpMessageBody(otp, account, null,true, false);
         final Message message = Messages.otpGenerated(messageBody)
                 .withEventType(EventType.ADMIN);
 
@@ -93,7 +137,7 @@ public class EmailOtpSubscriberTest {
         final AccountBO account = AccountBO.builder()
                 .build();
 
-        final OtpMessageBody messageBody = new OtpMessageBody(otp, account, true, false);
+        final OtpMessageBody messageBody = new OtpMessageBody(otp, account, null,true, false);
         final Message message = Messages.otpGenerated(messageBody);
 
         otpSubscriber.onMessage(message);

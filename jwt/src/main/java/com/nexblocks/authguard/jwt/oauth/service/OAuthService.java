@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,7 @@ public class OAuthService {
                 .orElseThrow(() -> new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid identity provider"));
 
         return CompletableFuture.supplyAsync(() -> sessionsService.create(SessionBO.builder()
-                .expiresAt(OffsetDateTime.now().plus(stateTtl))
+                .expiresAt(Instant.now().plus(stateTtl))
                 .build()))
                 .thenApply(session -> client.createAuthorizationUrl(session.getSessionToken(), ResponseType.CODE));
     }
@@ -120,7 +121,7 @@ public class OAuthService {
     private CompletableFuture<TokensResponse> doExchange(final OAuthServiceClient client,
                                                          final String authorizationCode,
                                                          final SessionBO session) {
-        if (session.getExpiresAt().isAfter(OffsetDateTime.now())) {
+        if (session.getExpiresAt().isAfter(Instant.now())) {
             return client.authorize(authorizationCode);
         } else {
             throw new ServiceAuthorizationException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,

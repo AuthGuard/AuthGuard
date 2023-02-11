@@ -20,6 +20,7 @@ import com.nexblocks.authguard.service.util.ID;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.concurrent.CompletableFuture;
 
@@ -46,7 +47,7 @@ public class OtpProvider implements AuthProvider {
     }
 
     @Override
-    public AuthResponseBO generateToken(final AccountBO account) {
+    public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO options) {
         if (!account.isActive()) {
             throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
         }
@@ -56,8 +57,13 @@ public class OtpProvider implements AuthProvider {
         final OneTimePasswordBO oneTimePassword = OneTimePasswordBO.builder()
                 .id(ID.generate())
                 .accountId(account.getId())
-                .expiresAt(OffsetDateTime.now().plus(tokenTtl))
+                .expiresAt(Instant.now().plus(tokenTtl))
                 .password(password)
+                .clientId(options.getClientId())
+                .deviceId(options.getDeviceId())
+                .externalSessionId(options.getExternalSessionId())
+                .sourceIp(options.getSourceIp())
+                .userAgent(options.getUserAgent())
                 .build();
 
         final OneTimePasswordBO persistedOtp = otpRepository.save(serviceMapper.toDO(oneTimePassword))
@@ -65,6 +71,7 @@ public class OtpProvider implements AuthProvider {
                 .join(); // TODO not a good idea, change the interface
 
         final OtpMessageBody messageBody = new OtpMessageBody(oneTimePassword, account,
+                options,
                 otpConfig.getMethod() == OtpConfigInterface.Method.EMAIL,
                 otpConfig.getMethod() == OtpConfigInterface.Method.SMS);
 
@@ -73,6 +80,11 @@ public class OtpProvider implements AuthProvider {
         messageBus.publish(OTP_CHANNEL, Messages.otpGenerated(messageBody));
 
         return token;
+    }
+
+    @Override
+    public AuthResponseBO generateToken(final AccountBO account) {
+        throw new UnsupportedOperationException("Use the method which accepts TokenOptionsBO");
     }
 
     @Override

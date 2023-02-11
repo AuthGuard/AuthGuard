@@ -67,20 +67,22 @@ public class BasicAuthProvider {
         final Optional<AccountBO> credentialsOpt = accountsService.getByIdentifierUnsafe(username, domain);
 
         // TODO replace this with Either mapping
-        if (credentialsOpt.isPresent()) {
-            final AccountBO credentials = credentialsOpt.get();
-            final Optional<Exception> validationError = checkIdentifier(credentials, username);
+        return credentialsOpt
+                .map(account -> tryVerifyCredentials(account, username, password))
+                .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
+                        "Identifier " + username + " does not exist")));
+    }
 
-            if (validationError.isPresent()) {
-                return Either.left(validationError.get());
-            }
+    private Either<Exception, AccountBO> tryVerifyCredentials(final AccountBO account, final String identifier,
+                                                              final String password) {
+        final Optional<Exception> validationError = checkIdentifier(account, identifier);
 
-            return checkIfExpired(credentials)
-                    .flatMap(valid -> checkPasswordsMatch(valid, password));
-        } else {
-            return Either.left(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
-                    "Identifier " + username + " does not exist"));
+        if (validationError.isPresent()) {
+            return Either.left(validationError.get());
         }
+
+        return checkIfExpired(account)
+                .flatMap(valid -> checkPasswordsMatch(valid, password));
     }
 
     private Either<Exception, AccountBO> checkIfExpired(final AccountBO credentials) {

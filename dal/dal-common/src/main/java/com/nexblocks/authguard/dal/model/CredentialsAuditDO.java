@@ -25,12 +25,15 @@ public class CredentialsAuditDO extends AbstractDO {
     private Action action;
     private String credentialsId;
 
+    private String identifier;
+
     @Embedded
     private PasswordDO password;
 
     public enum Action {
         ATTEMPT,
         UPDATED,
-        DELETED
+        DELETED,
+        DEACTIVATED
     }
 }

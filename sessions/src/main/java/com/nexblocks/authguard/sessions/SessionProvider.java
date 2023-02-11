@@ -13,7 +13,7 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
 
 import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -67,7 +67,7 @@ public class SessionProvider implements AuthProvider {
 
         final SessionBO session = SessionBO.builder()
                 .accountId(account.getId())
-                .expiresAt(OffsetDateTime.now().plus(sessionTtl))
+                .expiresAt(Instant.now().plus(sessionTtl))
                 .data(data)
                 .build();
 

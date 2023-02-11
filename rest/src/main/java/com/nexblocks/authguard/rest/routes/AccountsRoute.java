@@ -31,7 +31,6 @@ public class AccountsRoute extends AccountsApi {
 
     private final BodyHandler<CreateAccountRequestDTO> accountRequestBodyHandler;
     private final BodyHandler<UpdateAccountRequestDTO> updateAccountRequestBodyHandler;
-    private final BodyHandler<CreateCompleteAccountRequestDTO> completeAccountRequestBodyHandler;
     private final BodyHandler<PermissionsRequestDTO> permissionsRequestBodyHandler;
     private final BodyHandler<RolesRequestDTO> rolesRequestBodyHandler;
 
@@ -48,8 +47,6 @@ public class AccountsRoute extends AccountsApi {
         this.accountRequestBodyHandler = new BodyHandler.Builder<>(CreateAccountRequestDTO.class)
                 .build();
         this.updateAccountRequestBodyHandler = new BodyHandler.Builder<>(UpdateAccountRequestDTO.class)
-                .build();
-        this.completeAccountRequestBodyHandler = new BodyHandler.Builder<>(CreateCompleteAccountRequestDTO.class)
                 .build();
         this.permissionsRequestBodyHandler = new BodyHandler.Builder<>(PermissionsRequestDTO.class)
                 .build();
@@ -89,70 +86,6 @@ public class AccountsRoute extends AccountsApi {
         } else {
             context.status(400).json(new Error("400", "Failed to create account"));
         }
-    }
-
-    @Override
-    @Deprecated
-    public void createComplete(final Context context) {
-        final String idempotentKey = IdempotencyHeader.getKeyOrFail(context);
-        final CreateCompleteAccountRequestDTO request = completeAccountRequestBodyHandler.getValidated(context);
-
-        if (!canPerform(context, request.getAccount())) {
-            context.status(403)
-                    .json(new Error("", "An auth client violated its restrictions in the request"));
-            return;
-        }
-
-        context.status(500).json(new Error("", "Not there"));
-
-//        final RequestContextBO requestContext = RequestContextBO.builder()
-//                .idempotentKey(idempotentKey)
-//                .source(context.ip())
-//                .build();
-//
-//        final AccountBO accountBO = restMapper.toBO(request.getAccount());
-//        final CredentialsBO credentialsBO = restMapper.toBO(request.getCredentials());
-//
-//        final List<UserIdentifierBO> identifiers = credentialsBO.getIdentifiers()
-//                .stream()
-//                .map(identifier -> identifier.withDomain(credentialsBO.getDomain()))
-//                .collect(Collectors.toList());
-//
-//        String accountId;
-//        String credentialsId;
-//
-//        try {
-//            accountId = accountsService.create(accountBO, requestContext).getId();
-//        } catch (final CompletionException e) {
-//            if (e.getCause() instanceof IdempotencyException) {
-//                accountId = ((IdempotencyException) e.getCause()).getIdempotentRecord().getEntityId();
-//            } else {
-//                throw e;
-//            }
-//        }
-//
-//        try {
-//            final CredentialsBO withAdditionalInfo = CredentialsBO.builder()
-//                    .from(credentialsBO)
-//                    .identifiers(identifiers)
-//                    .accountId(accountId)
-//                    .build();
-//
-//            credentialsId = credentialsService.create(withAdditionalInfo, requestContext).getId();
-//        } catch (final CompletionException e) {
-//            if (e.getCause() instanceof IdempotencyException) {
-//                credentialsId = ((IdempotencyException) e.getCause()).getIdempotentRecord().getEntityId();
-//            } else {
-//                throw e;
-//            }
-//        }
-//
-//        final CreateCompleteAccountResponseDTO response = CreateCompleteAccountResponseDTO.builder()
-//                .accountId(accountId)
-//                .credentialsId(credentialsId)
-//                .build();
-//
-//        context.status(201).json(response);
     }
 
     @Override

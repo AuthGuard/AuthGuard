@@ -14,8 +14,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
@@ -60,14 +61,18 @@ class AccountLockerTest {
         accountLocker.onMessage(message);
 
         // verify
-        final ArgumentCaptor<OffsetDateTime> timeArgumentCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
+        final ArgumentCaptor<Instant> timeArgumentCaptor = ArgumentCaptor.forClass(Instant.class);
 
         Mockito.verify(exchangeAttemptsRepository)
                 .findByEntityAndTimestamp(Mockito.eq("account"), timeArgumentCaptor.capture());
 
         assertThat(timeArgumentCaptor.getValue()).isBetween(
-                OffsetDateTime.now().minusMinutes(config.getCheckPeriod()).minusMinutes(1),
-                OffsetDateTime.now().minusMinutes(config.getCheckPeriod()).plusMinutes(1)
+                Instant.now()
+                        .minus(Duration.ofMinutes(config.getCheckPeriod()))
+                        .minus(Duration.ofMinutes(1)),
+                Instant.now()
+                        .minus(Duration.ofMinutes(config.getCheckPeriod()))
+                        .plus(Duration.ofMinutes(1))
         );
 
         Mockito.verifyZeroInteractions(accountLocksService);
@@ -98,23 +103,31 @@ class AccountLockerTest {
         accountLocker.onMessage(message);
 
         // verify
-        final ArgumentCaptor<OffsetDateTime> timeArgumentCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
+        final ArgumentCaptor<Instant> timeArgumentCaptor = ArgumentCaptor.forClass(Instant.class);
         final ArgumentCaptor<AccountLockBO> accountLockArgumentCaptor = ArgumentCaptor.forClass(AccountLockBO.class);
 
         Mockito.verify(exchangeAttemptsRepository)
                 .findByEntityAndTimestamp(Mockito.eq("account"), timeArgumentCaptor.capture());
 
         assertThat(timeArgumentCaptor.getValue()).isBetween(
-                OffsetDateTime.now().minusMinutes(config.getCheckPeriod()).minusMinutes(1),
-                OffsetDateTime.now().minusMinutes(config.getCheckPeriod()).plusMinutes(1)
+                Instant.now()
+                        .minus(Duration.ofMinutes(config.getCheckPeriod()))
+                        .minus(Duration.ofMinutes(1)),
+                Instant.now()
+                        .minus(Duration.ofMinutes(config.getCheckPeriod()))
+                        .plus(Duration.ofMinutes(1))
         );
 
         Mockito.verify(accountLocksService).create(accountLockArgumentCaptor.capture());
 
         assertThat(accountLockArgumentCaptor.getValue().getAccountId()).isEqualTo(authMessage.getEntityId());
         assertThat(accountLockArgumentCaptor.getValue().getExpiresAt()).isBetween(
-                OffsetDateTime.now().plusMinutes(config.getLockPeriod()).minusMinutes(1),
-                OffsetDateTime.now().plusMinutes(config.getLockPeriod()).plusMinutes(1)
+                Instant.now()
+                        .plus(Duration.ofMinutes(config.getLockPeriod()))
+                        .minus(Duration.ofMinutes(1)),
+                Instant.now()
+                        .plus(Duration.ofMinutes(config.getLockPeriod()))
+                        .plus(Duration.ofMinutes(1))
         );
     }
 

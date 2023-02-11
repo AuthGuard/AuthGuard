@@ -15,7 +15,7 @@ import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.ID;
 
 import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 @ProvidesToken("authorizationCode")
 public class AuthorizationCodeProvider implements AuthProvider {
@@ -64,7 +64,7 @@ public class AuthorizationCodeProvider implements AuthProvider {
                 .id(ID.generate())
                 .token(code)
                 .associatedAccountId(account.getId())
-                .expiresAt(OffsetDateTime.now().plus(tokenTtl))
+                .expiresAt(Instant.now().plus(tokenTtl))
                 .tokenRestrictions(serviceMapper.toDO(restrictions))
                 .build();
 

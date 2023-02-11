@@ -1,5 +1,7 @@
 package com.nexblocks.authguard.extensions.verification;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
@@ -12,19 +14,14 @@ import com.nexblocks.authguard.external.email.ImmutableEmail;
 import com.nexblocks.authguard.service.config.ConfigParser;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.VerificationRequestBO;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
-import com.nexblocks.authguard.service.util.ID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.time.OffsetDateTime;
-import java.util.Base64;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Objects;
-import java.util.UUID;
 
 @Channel("verification")
 public class VerificationSubscriber implements MessageSubscriber {
@@ -53,12 +50,13 @@ public class VerificationSubscriber implements MessageSubscriber {
 
     @Override
     public void onMessage(final Message message) {
+        if (message.getBodyType() != VerificationRequestBO.class) {
+            LOG.error("Received an event of type {} but the body type was invalid", message.getEventType());
+            return;
+        }
+
         if (message.getEventType() == EventType.EMAIL_VERIFICATION) {
-            if (message.getBodyType() != VerificationRequestBO.class) {
-                LOG.error("Received an event of type {} but the body type was invalid", message.getEventType());
-            } else {
-                sendVerificationEmails((VerificationRequestBO) message.getMessageBody());
-            }
+            sendVerificationEmails((VerificationRequestBO) message.getMessageBody());
         } else {
             LOG.warn("An event of type {} was published to the verification channel and cannot be processed", message.getEventType());
         }
@@ -87,7 +85,7 @@ public class VerificationSubscriber implements MessageSubscriber {
                 final String token = cryptographicRandom.base64Url(64);
 
                 final AccountTokenDO accountToken = AccountTokenDO.builder()
-                        .expiresAt(OffsetDateTime.now().plus(tokenTtl))
+                        .expiresAt(Instant.now().plus(tokenTtl))
                         .associatedAccountId(account.getId())
                         .token(token)
                         .additionalInformation(Collections.singletonMap("email", email.getEmail()))

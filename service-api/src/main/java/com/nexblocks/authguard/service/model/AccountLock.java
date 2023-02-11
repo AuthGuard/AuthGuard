@@ -2,11 +2,11 @@ package com.nexblocks.authguard.service.model;
 
 import org.immutables.value.Value;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 @Value.Immutable
 @BOStyle
 public interface AccountLock {
     String getAccountId();
-    OffsetDateTime getExpiresAt();
+    Instant getExpiresAt();
 }
