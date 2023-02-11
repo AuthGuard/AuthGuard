@@ -87,10 +87,11 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     public ApiKeyBO generateApiKey(final AppBO app, final String type, final Duration duration) {
         final ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
 
-        final AuthResponseBO token = apiKeyExchange.generateKey(app);
+        final Instant expirationInstant = getExpirationInstant(duration);
+        final AuthResponseBO token = apiKeyExchange.generateKey(app, expirationInstant);
         final String generatedKey = (String) token.getToken();
         final String hashedKey = apiKeyHash.hash(generatedKey);
-        final ApiKeyBO toCreate = mapApiKey(app.getId(), hashedKey, type, duration);
+        final ApiKeyBO toCreate = mapApiKey(app.getId(), hashedKey, type, expirationInstant);
 
         final ApiKeyBO persisted = create(toCreate);
 
@@ -116,17 +117,25 @@ public class ApiKeysServiceImpl implements ApiKeysService {
 
     }
 
-    private ApiKeyBO mapApiKey(final String appId, final String key, final String type, final Duration duration) {
+    private ApiKeyBO mapApiKey(final String appId, final String key, final String type, final Instant expiresAt) {
         final ApiKeyBO.Builder builder = ApiKeyBO.builder()
                 .appId(appId)
                 .key(key)
                 .type(type);
 
-        if (duration != null && !duration.isZero()) {
-            builder.expiresAt(Instant.now().plus(duration));
+        if (expiresAt != null) {
+            builder.expiresAt(expiresAt);
         }
 
         return builder.build();
+    }
+
+    private Instant getExpirationInstant(final Duration duration) {
+        if (duration != null && !duration.isZero()) {
+            return Instant.now().plus(duration);
+        }
+
+        return null;
     }
 
     private ApiKeyExchange getExchangeOrFail(final String type) {

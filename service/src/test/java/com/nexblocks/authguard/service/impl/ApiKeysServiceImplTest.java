@@ -48,7 +48,7 @@ class ApiKeysServiceImplTest {
     private static class TestApiKeyExchange implements ApiKeyExchange {
 
         @Override
-        public AuthResponseBO generateKey(final AppBO app) {
+        public AuthResponseBO generateKey(final AppBO app, Instant expiresAt) {
             return AuthResponseBO.builder()
                     .token("key")
                     .build();
@@ -98,7 +98,7 @@ class ApiKeysServiceImplTest {
         Mockito.when(apiKeysRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, ApiKeyDO.class)));
 
-        Mockito.when(apiKeyExchange.generateKey(app))
+        Mockito.when(apiKeyExchange.generateKey(app, null))
                 .thenReturn(AuthResponseBO.builder()
                         .token(key)
                         .build());
@@ -137,7 +137,7 @@ class ApiKeysServiceImplTest {
         Mockito.when(apiKeysRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, ApiKeyDO.class)));
 
-        Mockito.when(apiKeyExchange.generateKey(app))
+        Mockito.when(apiKeyExchange.generateKey(app, null))
                 .thenReturn(AuthResponseBO.builder()
                         .token(key)
                         .build());

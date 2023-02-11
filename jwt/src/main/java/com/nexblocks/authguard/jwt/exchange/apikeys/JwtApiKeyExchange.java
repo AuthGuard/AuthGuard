@@ -8,6 +8,7 @@ import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.google.inject.Inject;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -24,8 +25,10 @@ public class JwtApiKeyExchange implements ApiKeyExchange {
     }
 
     @Override
-    public AuthResponseBO generateKey(final AppBO app) {
-        return tokenProvider.generateToken(app);
+    public AuthResponseBO generateKey(final AppBO app, final Instant expiresAt) {
+        return expiresAt == null ?
+                tokenProvider.generateToken(app) :
+                tokenProvider.generateToken(app, expiresAt);
     }
 
     @Override
