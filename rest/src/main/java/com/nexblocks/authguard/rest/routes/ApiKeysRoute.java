@@ -14,6 +14,7 @@ import com.nexblocks.authguard.service.model.ApiKeyBO;
 import com.nexblocks.authguard.service.model.AppBO;
 import io.javalin.http.Context;
 
+import java.time.Duration;
 import java.util.Optional;
 
 public class ApiKeysRoute extends ApiKeysApi {
@@ -34,10 +35,12 @@ public class ApiKeysRoute extends ApiKeysApi {
                 .build();
     }
 
+    @Override
     public void generate(final Context context) {
         final ApiKeyRequestDTO request = apiKeyRequestBodyHandler.getValidated(context);
+        final Duration validFor = request.getValidFor() == null ? Duration.ZERO : request.getValidFor().toDuration();
 
-        final ApiKeyBO key = apiKeysService.generateApiKey(request.getAppId(), request.getKeyType());
+        final ApiKeyBO key = apiKeysService.generateApiKey(request.getAppId(), request.getKeyType(), validFor);
 
         context.status(201).json(restMapper.toDTO(key));
     }

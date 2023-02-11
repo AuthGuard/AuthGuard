@@ -11,6 +11,7 @@ import com.nexblocks.authguard.service.keys.DefaultApiKeysProvider;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -29,13 +30,27 @@ public class DefaultApiKeyExchange implements ApiKeyExchange {
     }
 
     @Override
-    public AuthResponseBO generateKey(final AppBO app) {
-        return provider.generateToken(app);
+    public AuthResponseBO generateKey(final AppBO app, Instant expiresAt) {
+        return provider.generateToken(app); // expiry time isn't reflected in the key itself, so we don't care about it here
     }
 
     @Override
     public CompletableFuture<Optional<String>> verifyAndGetAppId(final String apiKey) {
         return repository.getByKey(apiKeyHash.hash(apiKey))
-                .thenApply(optional -> optional.map(ApiKeyDO::getAppId));
+                .thenApply(optional -> optional
+                        .filter(this::isValid)
+                        .map(ApiKeyDO::getAppId));
+    }
+
+    private boolean isValid(final ApiKeyDO apiKeyDO) {
+        if (apiKeyDO.isDeleted()) {
+            return false;
+        }
+
+        if (apiKeyDO.getExpiresAt() == null) {
+            return true;
+        }
+
+        return apiKeyDO.getExpiresAt().isAfter(Instant.now());
     }
 }

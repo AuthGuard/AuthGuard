@@ -15,6 +15,8 @@ import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.time.Instant;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -100,6 +102,31 @@ class JwtApiKeyProviderTest {
 
         assertThat(decodedJWT.getClaim("permissions").asArray(String.class))
                 .containsExactly("test:read");
+    }
+
+    @Test
+    void generateTokenWithExpiry() {
+        final JtiProvider jtiProvider = Mockito.mock(JtiProvider.class);
+        final JwtApiKeyProvider tokenProvider = newProviderInstance(jtiProvider, false);
+
+        final String jti = "tokenId";
+        final AppBO app = RANDOM.nextObject(AppBO.class);
+        final Instant expiresAt = Instant.now().plusSeconds(5);
+
+        Mockito.when(jtiProvider.next()).thenReturn(jti);
+
+        final AuthResponseBO tokens = tokenProvider.generateToken(app, expiresAt);
+
+        assertThat(tokens).isNotNull();
+        assertThat(tokens.getToken()).isNotNull();
+        assertThat(tokens.getRefreshToken()).isNull();
+
+        final DecodedJWT decodedJWT = verifyAndGetDecodedToken(tokens.getToken().toString(), app.getId(), jti);
+
+        assertThat(decodedJWT.getExpiresAt()).isNotNull();
+        assertThat(decodedJWT.getExpiresAt()).isBetween(
+                Instant.now().minusSeconds(1),
+                Instant.now().plusSeconds(6));
     }
 
     private void verifyToken(final String token, final String subject, final String jti) {

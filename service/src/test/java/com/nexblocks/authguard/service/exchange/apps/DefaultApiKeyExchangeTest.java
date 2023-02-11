@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -53,7 +54,7 @@ class DefaultApiKeyExchangeTest {
                 .entityId(app.getId())
                 .build();
 
-        final AuthResponseBO actual = exchange.generateKey(app);
+        final AuthResponseBO actual = exchange.generateKey(app, null);
 
         assertThat(actual).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(actual.getToken()).isNotNull();
@@ -85,6 +86,46 @@ class DefaultApiKeyExchangeTest {
 
         Mockito.when(repository.getByKey(hashedKey))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+
+        final Optional<String> retrieved = exchange.verifyAndGetAppId(key).join();
+
+        assertThat(retrieved).isEmpty();
+    }
+
+    @Test
+    void verifyAndGetAppIdValidKey() {
+        final String key = "key";
+        final String hashedKey = apiKeyHashProvider.getHash().hash(key);
+        final String appId = "app";
+
+        final ApiKeyDO apiKeyDO = ApiKeyDO.builder()
+                .key(hashedKey)
+                .appId(appId)
+                .expiresAt(Instant.now().plusSeconds(5))
+                .build();
+
+        Mockito.when(repository.getByKey(hashedKey))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
+
+        final Optional<String> retrieved = exchange.verifyAndGetAppId(key).join();
+
+        assertThat(retrieved).contains(appId);
+    }
+
+    @Test
+    void verifyAndGetAppIdExpiredKey() {
+        final String key = "key";
+        final String hashedKey = apiKeyHashProvider.getHash().hash(key);
+        final String appId = "app";
+
+        final ApiKeyDO apiKeyDO = ApiKeyDO.builder()
+                .key(hashedKey)
+                .appId(appId)
+                .expiresAt(Instant.now().minusSeconds(1))
+                .build();
+
+        Mockito.when(repository.getByKey(hashedKey))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
 
         final Optional<String> retrieved = exchange.verifyAndGetAppId(key).join();
 

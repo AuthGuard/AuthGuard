@@ -15,6 +15,9 @@ import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.EntityType;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,7 +51,7 @@ public class JwtApiKeyProvider implements AuthProvider {
 
     @Override
     public AuthResponseBO generateToken(final AppBO app) {
-        final JwtTokenBuilder tokenBuilder = generateApiToken(app);
+        final JwtTokenBuilder tokenBuilder = generateApiToken(app, null);
         final String token = tokenBuilder.getBuilder().sign(algorithm);
 
         return AuthResponseBO.builder()
@@ -59,13 +62,30 @@ public class JwtApiKeyProvider implements AuthProvider {
                 .build();
     }
 
-    private JwtTokenBuilder generateApiToken(final AppBO app) {
+    @Override
+    public AuthResponseBO generateToken(final AppBO app, final Instant expiresAt) {
+        final JwtTokenBuilder tokenBuilder = generateApiToken(app, expiresAt);
+        final String token = tokenBuilder.getBuilder().sign(algorithm);
+
+        return AuthResponseBO.builder()
+                .type(TOKEN_TYPE)
+                .token(token)
+                .entityType(EntityType.APPLICATION)
+                .entityId(app.getId())
+                .build();
+    }
+
+    private JwtTokenBuilder generateApiToken(final AppBO app, final Instant expiresAt) {
         final String keyId = jti.next();
 
         final JWTCreator.Builder jwtBuilder = JWT.create()
                 .withSubject(app.getId())
                 .withJWTId(keyId)
                 .withClaim("type", "API");
+
+        if (expiresAt != null) {
+            jwtBuilder.withExpiresAt(Date.from(expiresAt));
+        }
 
         if (strategyConfig.includeRoles() && app.getRoles() != null) {
             jwtBuilder.withArrayClaim("roles", app.getRoles().toArray(new String[0]));

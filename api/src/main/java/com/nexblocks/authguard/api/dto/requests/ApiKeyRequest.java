@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.nexblocks.authguard.api.dto.style.DTOStyle;
 import org.immutables.value.Value;
 
+import java.time.Instant;
+
 @Value.Immutable
 @DTOStyle
 @JsonSerialize(as = ApiKeyRequestDTO.class)
@@ -12,4 +14,6 @@ import org.immutables.value.Value;
 public interface ApiKeyRequest {
     String getKeyType();
     String getAppId();
+    Instant getExpiresAt();
+    DurationRequestDTO getValidFor();
 }
