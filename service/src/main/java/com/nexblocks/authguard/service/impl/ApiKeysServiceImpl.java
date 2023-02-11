@@ -18,6 +18,8 @@ import com.nexblocks.authguard.service.model.ApiKeyBO;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -73,27 +75,26 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     }
 
     @Override
-    public ApiKeyBO generateApiKey(final String appId, final String type) {
+    public ApiKeyBO generateApiKey(final String appId, final String type, final Duration duration) {
         final AppBO app = applicationsService.getById(appId)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST,
                         "No app with ID " + appId + " found"));
 
-        return generateApiKey(app, type);
+        return generateApiKey(app, type, duration);
     }
 
     @Override
-    public ApiKeyBO generateApiKey(final AppBO app, final String type) {
+    public ApiKeyBO generateApiKey(final AppBO app, final String type, final Duration duration) {
         final ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
 
         final AuthResponseBO token = apiKeyExchange.generateKey(app);
         final String generatedKey = (String) token.getToken();
+        final String hashedKey = apiKeyHash.hash(generatedKey);
+        final ApiKeyBO toCreate = mapApiKey(app.getId(), hashedKey, type, duration);
 
-        final ApiKeyBO persisted = create(ApiKeyBO.builder()
-                .appId(app.getId())
-                .key(apiKeyHash.hash(generatedKey))
-                .build());
+        final ApiKeyBO persisted = create(toCreate);
 
-        return persisted.withKey(generatedKey); // we store the hashed version but we return back the clear version
+        return persisted.withKey(generatedKey); // we store the hashed version, but we return the clear version
     }
 
     @Override
@@ -113,6 +114,19 @@ public class ApiKeysServiceImpl implements ApiKeysService {
                 .thenApply(optional -> optional.flatMap(applicationsService::getById))
                 .join();
 
+    }
+
+    private ApiKeyBO mapApiKey(final String appId, final String key, final String type, final Duration duration) {
+        final ApiKeyBO.Builder builder = ApiKeyBO.builder()
+                .appId(appId)
+                .key(key)
+                .type(type);
+
+        if (duration != null && !duration.isZero()) {
+            builder.expiresAt(Instant.now().plus(duration));
+        }
+
+        return builder.build();
     }
 
     private ApiKeyExchange getExchangeOrFail(final String type) {

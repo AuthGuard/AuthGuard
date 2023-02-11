@@ -10,6 +10,7 @@ import javax.persistence.Entity;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+import java.time.Instant;
 
 @Data
 @Setter
@@ -39,4 +40,6 @@ import javax.persistence.UniqueConstraint;
 public class ApiKeyDO extends AbstractDO {
     private String key;
     private String appId;
+    private String type;
+    private Instant expiresAt;
 }

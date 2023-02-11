@@ -17,4 +17,6 @@ public interface ApiKey {
     Instant getLastModified();
     String getAppId();
     String getKey();
+    String getType();
+    Instant getExpiresAt();
 }
