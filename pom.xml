@@ -59,7 +59,7 @@
         <guice.version>5.1.0</guice.version>
         <rxjava.version>3.1.5</rxjava.version>
         <okhttp.version>4.9.3</okhttp.version>
-        <vertx.version>3.9.12</vertx.version>
+        <vertx.version>3.9.13</vertx.version>
         <unbounded-ldap.version>5.1.4</unbounded-ldap.version>
         <javax-persistence.version>2.2</javax-persistence.version>
         <vavr.version>0.10.4</vavr.version>
