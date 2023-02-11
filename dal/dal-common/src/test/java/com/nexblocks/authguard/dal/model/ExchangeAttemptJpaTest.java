@@ -7,7 +7,8 @@ import org.junit.jupiter.api.TestInstance;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import java.time.OffsetDateTime;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -32,7 +33,7 @@ public class ExchangeAttemptJpaTest {
                 .entityId("account")
                 .exchangeFrom("basic")
                 .exchangeTo("unknown")
-                .createdAt(OffsetDateTime.now().minusHours(3))
+                .createdAt(Instant.now().minus(Duration.ofHours(3)))
                 .build();
 
         secondAttempt = ExchangeAttemptDO.builder()
@@ -40,7 +41,7 @@ public class ExchangeAttemptJpaTest {
                 .entityId("account")
                 .exchangeFrom("jwt")
                 .exchangeTo("unknown")
-                .createdAt(OffsetDateTime.now().minusHours(1))
+                .createdAt(Instant.now().minus(Duration.ofHours(1)))
                 .build();
 
         thirdAttempt = ExchangeAttemptDO.builder()
@@ -48,7 +49,7 @@ public class ExchangeAttemptJpaTest {
                 .entityId("application")
                 .exchangeFrom("id")
                 .exchangeTo("api")
-                .createdAt(OffsetDateTime.now().minusHours(1))
+                .createdAt(Instant.now().minus(Duration.ofHours(1)))
                 .build();
 
         entityManager.persist(firstAttempt);
@@ -72,7 +73,7 @@ public class ExchangeAttemptJpaTest {
         final TypedQuery<ExchangeAttemptDO> query = entityManager.createNamedQuery(
                 "exchange_attempts.getByEntityIdFromTimestamp", ExchangeAttemptDO.class)
                 .setParameter("entityId", "account")
-                .setParameter("timestamp", OffsetDateTime.now().minusHours(2));
+                .setParameter("timestamp", Instant.now().minus(Duration.ofHours(2)));
 
         final List<ExchangeAttemptDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(secondAttempt);
@@ -83,7 +84,7 @@ public class ExchangeAttemptJpaTest {
         final TypedQuery<ExchangeAttemptDO> query = entityManager.createNamedQuery(
                 "exchange_attempts.getByEntityIdAndExchangeFromTimestamp", ExchangeAttemptDO.class)
                 .setParameter("entityId", "account")
-                .setParameter("timestamp", OffsetDateTime.now().minusHours(4))
+                .setParameter("timestamp", Instant.now().minus(Duration.ofHours(4)))
                 .setParameter("exchangeFrom", "basic");
 
         final List<ExchangeAttemptDO> retrieved = query.getResultList();

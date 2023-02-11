@@ -11,7 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
@@ -58,7 +58,7 @@ class ExchangeAttemptsServiceImplTest {
 
     @Test
     void findByEntityIdAndFromTimestamp() {
-        final OffsetDateTime now = OffsetDateTime.now();
+        final Instant now = Instant.now();
         final ExchangeAttemptsQueryBO query = ExchangeAttemptsQueryBO.builder()
                 .entityId("account")
                 .fromTimestamp(now)
@@ -85,7 +85,7 @@ class ExchangeAttemptsServiceImplTest {
 
     @Test
     void findByEntityIdAndFromTimestampAndExchange() {
-        final OffsetDateTime now = OffsetDateTime.now();
+        final Instant now = Instant.now();
         final ExchangeAttemptsQueryBO query = ExchangeAttemptsQueryBO.builder()
                 .entityId("account")
                 .fromTimestamp(now)

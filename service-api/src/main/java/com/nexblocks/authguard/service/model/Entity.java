@@ -1,10 +1,10 @@
 package com.nexblocks.authguard.service.model;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 public interface Entity {
     String getId();
-    OffsetDateTime getCreatedAt();
-    OffsetDateTime getLastModified();
+    Instant getCreatedAt();
+    Instant getLastModified();
     String getEntityType();
 }

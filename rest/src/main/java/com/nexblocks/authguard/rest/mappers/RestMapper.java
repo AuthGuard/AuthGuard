@@ -14,7 +14,6 @@ public interface RestMapper {
     AccountBO toBO(AccountDTO accountDTO);
     AccountDTO toDTO(AccountBO accountBO);
 
-    CredentialsBO toBO(CreateCredentialsRequestDTO createAccountRequestDTO);
     CredentialsBO toBO(CredentialsDTO credentialsDTO);
     CredentialsDTO toDTO(CredentialsBO credentialsBO);
 

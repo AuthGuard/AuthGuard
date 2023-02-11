@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Value.Immutable
@@ -14,12 +14,13 @@ import java.util.List;
 @JsonDeserialize(as = AppDTO.class)
 public interface App {
     String getId();
-    OffsetDateTime getCreatedAt();
-    OffsetDateTime getLastModified();
+    Instant getCreatedAt();
+    Instant getLastModified();
     String getExternalId();
     String getName();
     String getAccountId();
     String getDomain();
+    String getBaseUrl();
     List<PermissionDTO> getPermissions();
     List<String> getRoles();
     boolean isActive();

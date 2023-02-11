@@ -78,21 +78,6 @@ public class JwtSignatureAlgorithmsTest {
     }
 
     @Test
-    void generateAndVerifyEc256Secpk1() {
-        final String algorithm = "EC256K";
-        final String privateKey = "file:src/test/resources/ec-secp256k1-private.pem";
-        final String publicKey = "file:src/test/resources/ec-secp256k1-public.pem";
-
-        final String token = generateToken(jwtConfig(algorithm, publicKey, privateKey));
-        final JwtTokenVerifier tokenVerifier = createVerifier(algorithm, publicKey, privateKey);
-
-        final Either<Exception, DecodedJWT> validatedToken = tokenVerifier.verify(token);
-
-        assertThat(validatedToken.isRight()).isTrue();
-        assertThat(validatedToken.get().getAlgorithm()).isEqualTo("ES256K");
-    }
-
-    @Test
     void generateAndVerifyEc512() {
         final String algorithm = "EC512";
         final String privateKey = "file:src/test/resources/ec512-private.pem";

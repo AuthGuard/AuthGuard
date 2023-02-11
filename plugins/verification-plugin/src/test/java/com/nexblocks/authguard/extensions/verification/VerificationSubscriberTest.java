@@ -42,7 +42,7 @@ class VerificationSubscriberTest {
     }
 
     @Test
-    void onMessage() {
+    void onEmailVerificationMessage() {
         final AccountBO account = AccountBO.builder()
                 .id("account-id")
                 .email(AccountEmailBO.builder()

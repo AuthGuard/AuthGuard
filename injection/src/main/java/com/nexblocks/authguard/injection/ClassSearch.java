@@ -21,29 +21,6 @@ public class ClassSearch {
         this.reflections = reflections;
     }
 
-    @SuppressWarnings("unchecked")
-    public Set<Class<? extends AbstractModule>> getInjectorModules() throws InvalidInjectorModule {
-        if (injectorModules == null) {
-            final Set<Class<?>> modules = reflections.getTypesAnnotatedWith(InjectorModule.class);
-            final Set<Class<? extends AbstractModule>> validModules = new HashSet<>(modules.size());
-
-            for (final Class<?> module : modules) {
-                if (AbstractModule.class.isAssignableFrom(module)) {
-                    validModules.add((Class<? extends AbstractModule>) module);
-                } else {
-                    throw new InvalidInjectorModule(
-                            String.format("Class %s is annotated with %s but does not extend %s", module.getName(),
-                                    InjectorModule.class.getSimpleName(), AbstractModule.class.getSimpleName())
-                    );
-                }
-            }
-
-            injectorModules = validModules;
-        }
-
-        return injectorModules;
-    }
-
     public <T> Class<? extends T> findImplementationClass(final Class<T> base) throws NoImplementationFoundException {
         final Set<Class<? extends T>> implementations = reflections.getSubTypesOf(base);
 

@@ -8,7 +8,7 @@ import lombok.experimental.SuperBuilder;
 import javax.persistence.Entity;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -24,5 +24,5 @@ import java.time.OffsetDateTime;
 )
 public class AccountLockDO extends AbstractDO {
     private String accountId;
-    private OffsetDateTime expiresAt;
+    private Instant expiresAt;
 }

@@ -22,7 +22,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -114,7 +114,7 @@ class AccessTokenProviderTest {
         assertThat(accountTokenCaptor.getValue().getAssociatedAccountId()).isEqualTo(account.getId());
         assertThat(accountTokenCaptor.getValue().getToken()).isEqualTo(tokens.getRefreshToken());
         assertThat(accountTokenCaptor.getValue().getExpiresAt()).isNotNull()
-                .isAfter(OffsetDateTime.now());
+                .isAfter(Instant.now());
 
         verifyToken(tokens.getToken().toString(), account.getId(), null, null);
     }
@@ -152,7 +152,7 @@ class AccessTokenProviderTest {
         assertThat(accountTokenCaptor.getValue().getAssociatedAccountId()).isEqualTo(account.getId());
         assertThat(accountTokenCaptor.getValue().getToken()).isEqualTo(tokens.getRefreshToken());
         assertThat(accountTokenCaptor.getValue().getExpiresAt()).isNotNull()
-                .isAfter(OffsetDateTime.now());
+                .isAfter(Instant.now());
 
         // token cannot be verified directly since it's encrypted
     }
@@ -186,7 +186,7 @@ class AccessTokenProviderTest {
         assertThat(accountTokenCaptor.getValue().getAssociatedAccountId()).isEqualTo(account.getId());
         assertThat(accountTokenCaptor.getValue().getToken()).isEqualTo(tokens.getRefreshToken());
         assertThat(accountTokenCaptor.getValue().getExpiresAt()).isNotNull()
-                .isAfter(OffsetDateTime.now());
+                .isAfter(Instant.now());
         assertThat(accountTokenCaptor.getValue().getTokenRestrictions())
                 .isEqualToComparingFieldByField(restrictions);
 

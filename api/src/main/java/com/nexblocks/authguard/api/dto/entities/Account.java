@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -16,8 +16,8 @@ import java.util.Map;
 @JsonDeserialize(as = AccountDTO.class)
 public interface Account {
     String getId();
-    OffsetDateTime getCreatedAt();
-    OffsetDateTime getLastModified();
+    Instant getCreatedAt();
+    Instant getLastModified();
 
     String getExternalId();
 

@@ -41,4 +41,5 @@ public class ExchangeAttemptDO extends AbstractDO {
     private String clientId;
     private String externalSessionId;
     private String sourceIp;
+    private String userAgent;
 }

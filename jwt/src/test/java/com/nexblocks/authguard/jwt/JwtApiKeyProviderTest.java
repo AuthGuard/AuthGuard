@@ -2,11 +2,14 @@ package com.nexblocks.authguard.jwt;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.impl.NullClaim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.nexblocks.authguard.service.config.JwtConfig;
+import com.nexblocks.authguard.service.config.StrategyConfig;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
+import com.nexblocks.authguard.service.model.PermissionBO;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
@@ -28,13 +31,20 @@ class JwtApiKeyProviderTest {
                 .build();
     }
 
+    private JwtApiKeyProvider newProviderInstance(final JtiProvider jtiProvider,
+                                                  final boolean includeAccessDetails) {
+        final StrategyConfig strategyConfig = StrategyConfig.builder()
+                .includeRoles(includeAccessDetails)
+                .includePermissions(includeAccessDetails)
+                .includeExternalId(includeAccessDetails)
+                .build();
 
-    private JwtApiKeyProvider newProviderInstance(final JtiProvider jtiProvider) {
-        return new JwtApiKeyProvider(jwtConfig(), jtiProvider);
+        return new JwtApiKeyProvider(jwtConfig(), jtiProvider, strategyConfig);
     }
+
     @Test
     void generateTokenAccount() {
-        final JwtApiKeyProvider tokenProvider = newProviderInstance(Mockito.mock(JtiProvider.class));
+        final JwtApiKeyProvider tokenProvider = newProviderInstance(Mockito.mock(JtiProvider.class), false);
         assertThatThrownBy(() -> tokenProvider.generateToken(RANDOM.nextObject(AccountBO.class)))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
@@ -42,7 +52,7 @@ class JwtApiKeyProviderTest {
     @Test
     void generateTokenApp() {
         final JtiProvider jtiProvider = Mockito.mock(JtiProvider.class);
-        final JwtApiKeyProvider tokenProvider = newProviderInstance(jtiProvider);
+        final JwtApiKeyProvider tokenProvider = newProviderInstance(jtiProvider, false);
 
         final String jti = "tokenId";
         final AppBO app = RANDOM.nextObject(AppBO.class);
@@ -58,6 +68,40 @@ class JwtApiKeyProviderTest {
         verifyToken(tokens.getToken().toString(), app.getId(), jti);
     }
 
+    @Test
+    void generateTokenAppWithAccessDetails() {
+        final JtiProvider jtiProvider = Mockito.mock(JtiProvider.class);
+        final JwtApiKeyProvider tokenProvider = newProviderInstance(jtiProvider, true);
+
+        final String jti = "tokenId";
+        final AppBO app = RANDOM.nextObject(AppBO.class)
+                .withExternalId("externalId")
+                .withRoles("test-role")
+                .withPermissions(PermissionBO.builder()
+                        .group("test")
+                        .name("read")
+                        .build());
+
+        Mockito.when(jtiProvider.next()).thenReturn(jti);
+
+        final AuthResponseBO tokens = tokenProvider.generateToken(app);
+
+        assertThat(tokens).isNotNull();
+        assertThat(tokens.getToken()).isNotNull();
+        assertThat(tokens.getRefreshToken()).isNull();
+
+        final DecodedJWT decodedJWT = verifyAndGetDecodedToken(tokens.getToken().toString(), app.getId(), jti);
+
+        assertThat(decodedJWT.getClaim("eid").asString())
+                .isEqualTo("externalId");
+
+        assertThat(decodedJWT.getClaim("roles").asArray(String.class))
+                .containsExactly("test-role");
+
+        assertThat(decodedJWT.getClaim("permissions").asArray(String.class))
+                .containsExactly("test:read");
+    }
+
     private void verifyToken(final String token, final String subject, final String jti) {
         final JWTVerifier verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
                 .withSubject(subject)
@@ -66,16 +110,22 @@ class JwtApiKeyProviderTest {
 
         final DecodedJWT decodedJWT = verifier.verify(token);
 
+        assertThat(decodedJWT.getClaim("roles")).isInstanceOf(NullClaim.class);
         assertThat(decodedJWT.getClaim("type").asString()).isEqualTo("API");
     }
 
-    private void verifyToken(final DecodedJWT decodedJWT, final String subject, final String jti) {
+    private DecodedJWT verifyAndGetDecodedToken(final String token,
+                                                final String subject,
+                                                final String jti) {
         final JWTVerifier verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
+                .withSubject(subject)
+                .withJWTId(jti)
                 .build();
 
-        verifier.verify(decodedJWT);
+        final DecodedJWT decodedJWT = verifier.verify(token);
 
-        assertThat(decodedJWT.getSubject()).isEqualTo(subject);
-        assertThat(decodedJWT.getId()).isEqualTo(jti);
+        assertThat(decodedJWT.getClaim("type").asString()).isEqualTo("API");
+
+        return decodedJWT;
     }
 }

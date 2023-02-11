@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -63,7 +63,7 @@ class ActionTokenServiceImplTest {
 
         final Try<AuthResponseBO> response = actionTokenService.generateOtp("account");
 
-        assertThat(response.isSuccess());
+        assertThat(response.isSuccess()).isTrue();
         assertThat(response.get()).isEqualTo(otpResponse);
     }
 
@@ -87,7 +87,7 @@ class ActionTokenServiceImplTest {
                 .validFor(Duration.ofMinutes(5).toSeconds())
                 .build();
 
-        assertThat(actual.isSuccess());
+        assertThat(actual.isSuccess()).isTrue();
         assertThat(actual.get()).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(actual.get().getToken()).isNotNull();
     }
@@ -111,7 +111,7 @@ class ActionTokenServiceImplTest {
                 .validFor(Duration.ofMinutes(5).toSeconds())
                 .build();
 
-        assertThat(actual.isSuccess());
+        assertThat(actual.isSuccess()).isTrue();
         assertThat(actual.get()).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(actual.get().getToken()).isNotNull();
     }
@@ -119,7 +119,7 @@ class ActionTokenServiceImplTest {
     @Test
     void verifyToken() {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
-                .expiresAt(OffsetDateTime.now().plusMinutes(1))
+                .expiresAt(Instant.now().plus(Duration.ofMinutes(1)))
                 .additionalInformation(ImmutableMap.of("action", "something"))
                 .build();
 
@@ -128,13 +128,13 @@ class ActionTokenServiceImplTest {
 
         final Try<ActionTokenBO> actual = actionTokenService.verifyToken("action-token", "something");
 
-        assertThat(actual.isSuccess());
+        assertThat(actual.isSuccess()).isTrue();
     }
 
     @Test
     void verifyTokenWrongAction() {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
-                .expiresAt(OffsetDateTime.now().plusMinutes(1))
+                .expiresAt(Instant.now().plus(Duration.ofMinutes(1)))
                 .additionalInformation(ImmutableMap.of("action", "something"))
                 .build();
 
@@ -150,7 +150,7 @@ class ActionTokenServiceImplTest {
     @Test
     void verifyTokenExpired() {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
-                .expiresAt(OffsetDateTime.now().minusMinutes(1))
+                .expiresAt(Instant.now().minus(Duration.ofMinutes(1)))
                 .additionalInformation(ImmutableMap.of("action", "something"))
                 .build();
 
@@ -159,7 +159,7 @@ class ActionTokenServiceImplTest {
 
         final Try<ActionTokenBO> actual = actionTokenService.verifyToken("action-token", "something");
 
-        assertThat(actual.isFailure());
+        assertThat(actual.isFailure()).isTrue();
         assertThat(((ServiceException) actual.getCause()).getErrorCode())
                 .isEqualTo(ErrorCode.EXPIRED_TOKEN.getCode());
     }
@@ -171,7 +171,7 @@ class ActionTokenServiceImplTest {
 
         final Try<ActionTokenBO> actual = actionTokenService.verifyToken("action-token", "something");
 
-        assertThat(actual.isFailure());
+        assertThat(actual.isFailure()).isTrue();
         assertThat(((ServiceException) actual.getCause()).getErrorCode())
                 .isEqualTo(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST.getCode());
     }
