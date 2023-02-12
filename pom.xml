@@ -47,7 +47,7 @@
         <javalin.version>3.13.13</javalin.version>
         <logback.version>1.4.5</logback.version>
         <jackson.version>2.14.0</jackson.version>
-        <immutables.version>2.9.0</immutables.version>
+        <immutables.version>2.9.3</immutables.version>
         <jetbrains-annotations.version>13.0</jetbrains-annotations.version>
         <auth0-jwt.version>3.19.3</auth0-jwt.version>
         <apache-commons.version>3.12.0</apache-commons.version>
