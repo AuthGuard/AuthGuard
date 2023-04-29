@@ -9,7 +9,6 @@ import com.nexblocks.authguard.external.sms.ImmutableTextMessage;
 import com.nexblocks.authguard.external.sms.SmsProvider;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.VerificationService;
-import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
@@ -57,8 +56,14 @@ public class VerificationServiceImpl implements VerificationService {
                         "AccountDO token " + verificationToken + " does not exist"));
 
         if (accountToken.getExpiresAt().isBefore(Instant.now())) {
+            LOG.info("Email verification request with expired token. tokenId={}, expiresAt={}, accountId={}",
+                    accountToken.getId(), accountToken.getExpiresAt(), accountToken.getAssociatedAccountId());
+
             throw new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token " + verificationToken + " has expired");
         }
+
+        LOG.info("Email verification request. tokenId={}, expiresAt={}, accountId={}",
+                accountToken.getId(), accountToken.getExpiresAt(), accountToken.getAssociatedAccountId());
 
         final String verifiedEmail = Optional.ofNullable(accountToken.getAdditionalInformation())
                 .map(additional -> additional.get(TARGET_EMAIL_PROPERTY))
@@ -110,19 +115,29 @@ public class VerificationServiceImpl implements VerificationService {
         final Either<Exception, String> either = otpVerifier.verifyAccountToken(token);
 
         if (either.isLeft()) {
+            LOG.info("Phone number verification request with expired OTP. passwordId={}", passwordId);
+
             throw new ServiceException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST, "Invalid token");
         }
 
         final Optional<AccountBO> account = accountsService.getById(either.get());
 
         if (account.isEmpty()) {
+            LOG.info("Phone number verification request for deleted account. passwordId={}, accountId={}", passwordId, either.get());
+
             throw new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "The account associated with that token no longer exists");
         }
 
         if (account.get().getPhoneNumber() == null
                 || !Objects.equals(account.get().getPhoneNumber().getNumber(), phoneNumber)) {
+            LOG.warn("Phone number verification request with the wrong phone number. accountId={}, passwordId={}",
+                    either.get(), passwordId);
+
             throw new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "The provided phone number does not match the one in the account");
         }
+
+        LOG.info("Phone number verification request. accountId={}, domain={}, passwordId={}",
+                passwordId, account.get().getDomain(), account.get().getId());
 
         final AccountBO updated = account.get().withPhoneNumber(PhoneNumberBO.builder()
                 .number(account.get().getPhoneNumber().getNumber())

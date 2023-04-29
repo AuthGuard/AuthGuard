@@ -12,12 +12,16 @@ import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ApplicationsServiceImpl implements ApplicationsService {
+    private static final Logger LOG = LoggerFactory.getLogger(ApplicationsServiceImpl.class);
+
     private static final String APPS_CHANNEL = "apps";
 
     private final ApplicationsRepository applicationsRepository;
@@ -74,27 +78,55 @@ public class ApplicationsServiceImpl implements ApplicationsService {
 
     @Override
     public Optional<AppBO> update(final AppBO app) {
+        LOG.info("Application update request. accountId={}", app.getId());
+
         // FIXME accountId cannot be updated
         return persistenceService.update(app);
     }
 
     @Override
     public Optional<AppBO> delete(final String id) {
+        LOG.info("Application delete request. accountId={}", id);
+
         return persistenceService.delete(id);
     }
 
     @Override
     public Optional<AppBO> activate(final String id) {
         return getById(id)
-                .map(app -> app.withActive(true))
-                .flatMap(this::update);
+                .flatMap(app -> {
+                    LOG.info("Activate application request. appId={}, domain={}", app.getId(), app.getDomain());
+
+                    AppBO activated = app.withActive(true);
+                    Optional<AppBO> persisted = this.update(activated);
+
+                    if (persisted.isPresent()) {
+                        LOG.info("Application activated. appId={}, domain={}", app.getId(), app.getDomain());
+                    } else {
+                        LOG.info("Failed to activate application. appId={}, domain={}", app.getId(), app.getDomain());
+                    }
+
+                    return persisted;
+                });
     }
 
     @Override
     public Optional<AppBO> deactivate(final String id) {
         return getById(id)
-                .map(app -> app.withActive(false))
-                .flatMap(this::update);
+                .flatMap(app -> {
+                    LOG.info("Deactivate application request. appId={}, domain={}", app.getId(), app.getDomain());
+
+                    AppBO deactivated = app.withActive(false);
+                    Optional<AppBO> persisted = this.update(deactivated);
+
+                    if (persisted.isPresent()) {
+                        LOG.info("Application deactivated. appId={}, domain={}", app.getId(), app.getDomain());
+                    } else {
+                        LOG.info("Failed to deactivate application. appId={}, domain={}", app.getId(), app.getDomain());
+                    }
+
+                    return persisted;
+                });
     }
 
     @Override

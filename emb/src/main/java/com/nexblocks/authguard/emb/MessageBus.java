@@ -51,7 +51,7 @@ public class MessageBus {
         final MessagePublisher publisher = get(channel);
 
         if (publisher == null) {
-            LOG.warn("Attempt to publish to non-existing channel " + channel);
+            LOG.debug("Attempt to publish to non-existing channel " + channel);
         } else {
             publisher.publish(message);
         }

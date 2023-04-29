@@ -17,6 +17,8 @@ import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.ApiKeyBO;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -27,6 +29,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ApiKeysServiceImpl implements ApiKeysService {
+    private static final Logger LOG = LoggerFactory.getLogger(ApiKeysServiceImpl.class);
+
     private static final String API_KEYS_CHANNELS = "api_keys";
 
     private final ApplicationsService applicationsService;
@@ -71,6 +75,8 @@ public class ApiKeysServiceImpl implements ApiKeysService {
 
     @Override
     public Optional<ApiKeyBO> delete(final String id) {
+        LOG.info("API key delete request. accountId={}", id);
+
         return persistenceService.delete(id);
     }
 
@@ -87,6 +93,9 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     public ApiKeyBO generateApiKey(final AppBO app, final String type, final Duration duration) {
         final ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
 
+        LOG.info("API key request. appId={}, domain={}, type={}, duration={}",
+                app.getId(), app.getDomain(), type, duration);
+
         final Instant expirationInstant = getExpirationInstant(duration);
         final AuthResponseBO token = apiKeyExchange.generateKey(app, expirationInstant);
         final String generatedKey = (String) token.getToken();
@@ -94,6 +103,9 @@ public class ApiKeysServiceImpl implements ApiKeysService {
         final ApiKeyBO toCreate = mapApiKey(app.getId(), hashedKey, type, expirationInstant);
 
         final ApiKeyBO persisted = create(toCreate);
+
+        LOG.info("API key generated. appId={}, domain={}, type={}, keyId={}, expiresAt={}",
+                app.getId(), app.getDomain(), type, persisted.getId(), persisted.getExpiresAt());
 
         return persisted.withKey(generatedKey); // we store the hashed version, but we return the clear version
     }

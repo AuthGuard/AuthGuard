@@ -9,12 +9,16 @@ import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.PermissionBO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class PermissionsServiceImpl implements PermissionsService {
+    private static final Logger LOG = LoggerFactory.getLogger(PermissionsServiceImpl.class);
+
     private static final String PERMISSIONS_CHANNEL = "permissions";
 
     private final PermissionsRepository permissionsRepository;
@@ -34,11 +38,17 @@ public class PermissionsServiceImpl implements PermissionsService {
 
     @Override
     public PermissionBO create(final PermissionBO permission) {
+        LOG.debug("New permission request. permission={}, domain={}", permission.getFullName(), permission.getDomain());
+
         if (permissionsRepository.search(permission.getGroup(), permission.getName(), permission.getDomain()).join().isPresent()) {
             throw new ServiceConflictException(ErrorCode.PERMISSION_ALREADY_EXIST,
                     "Permission " + permission.getFullName() + " already exists");
         }
-        return persistenceService.create(permission);
+        PermissionBO persisted = persistenceService.create(permission);
+
+        LOG.info("New permission created. permission={}, domain={}", permission.getFullName(), permission.getDomain());
+
+        return persisted;
     }
 
     @Override
@@ -81,6 +91,8 @@ public class PermissionsServiceImpl implements PermissionsService {
 
     @Override
     public Optional<PermissionBO> delete(final String id) {
+        LOG.info("Request to delete permission. permissionId={}", id);
+
         return persistenceService.delete(id);
     }
 }

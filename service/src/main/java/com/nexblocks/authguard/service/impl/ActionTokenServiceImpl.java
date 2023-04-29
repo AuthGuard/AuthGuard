@@ -19,12 +19,16 @@ import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.ID;
 import io.vavr.control.Either;
 import io.vavr.control.Try;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
 public class ActionTokenServiceImpl implements ActionTokenService {
+    private static final Logger LOG = LoggerFactory.getLogger(ActionTokenServiceImpl.class);
+
     private static final int ACTION_TOKEN_SIZE = 128;
     private static final Duration TOKEN_LIFETIME = Duration.ofMinutes(5);
 
@@ -57,6 +61,8 @@ public class ActionTokenServiceImpl implements ActionTokenService {
             return Try.failure(new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "Account does not exist"));
         }
 
+        LOG.info("Generate OTP for action token request. accountId={}, domain={}", account.getId(), account.getDomain());
+
         return Try.success(otpProvider.generateToken(account));
     }
 
@@ -65,11 +71,17 @@ public class ActionTokenServiceImpl implements ActionTokenService {
         final Either<Exception, AccountBO> authResult = basicAuthProvider.getAccount(authRequest);
 
         if (authResult.isLeft()) {
+            LOG.info("Failed action token from credentials request. domain={}, error={}",
+                    authRequest.getDomain(), authResult.getLeft().getMessage());
+
             return Try.failure(authResult.getLeft());
         }
 
         final AccountBO account = authResult.get();
         final AccountTokenDO token = generateToken(account, action);
+
+        LOG.info("Action token from credentials request. accountId={}, domain={}, tokenId={}, expiresAt={}",
+                account.getId(), account.getDomain(), token.getId(), token.getExpiresAt());
 
         return Try.success(ActionTokenBO.builder()
                 .accountId(account.getId())
@@ -85,17 +97,26 @@ public class ActionTokenServiceImpl implements ActionTokenService {
                 .map(accountsService::getById);
 
         if (otpResult.isLeft()) {
+            LOG.info("Failed generate action token from OTP request. passwordId={}, error={}",
+                    passwordId, otpResult.getLeft().getMessage());
             return Try.failure(otpResult.getLeft());
         }
 
         final AccountBO account = otpResult.get().orElse(null);
 
         if (account == null) {
-            return Try.failure(new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
-                    "The account associated with that OTP no longer exists"));
+            ServiceException error = new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
+                    "The account associated with that OTP no longer exists");
+
+            LOG.info("Failed generate action token from OTP request. passwordId={}, error={}",
+                    passwordId, error.getMessage());
+
+            return Try.failure(error);
         }
 
         final AccountTokenDO token = generateToken(account, action);
+        LOG.info("Generated action token from OTP request. passwordId={}, tokenId={}, expiresAt={}",
+                passwordId, token.getId(), token.getExpiresAt());
 
         return Try.success(ActionTokenBO.builder()
                 .accountId(account.getId())
@@ -124,6 +145,8 @@ public class ActionTokenServiceImpl implements ActionTokenService {
             return Try.failure(new ServiceException(ErrorCode.INVALID_TOKEN, "Token was created for a different action"));
         }
 
+        LOG.info("Action token verified. tokenId={}, action={}", persisted.get().getId(), action);
+
         return Try.success(ActionTokenBO.builder()
                 .accountId(persisted.get().getAssociatedAccountId())
                 .token(token)
@@ -137,6 +160,7 @@ public class ActionTokenServiceImpl implements ActionTokenService {
         final AccountTokenDO accountToken = AccountTokenDO
                 .builder()
                 .id(ID.generate())
+                .createdAt(now)
                 .token(cryptographicRandom.base64Url(ACTION_TOKEN_SIZE))
                 .associatedAccountId(account.getId())
                 .additionalInformation(ImmutableMap.of("action", action))

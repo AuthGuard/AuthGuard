@@ -19,6 +19,8 @@ import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.ID;
 import io.vavr.control.Either;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -26,6 +28,8 @@ import java.util.Optional;
 
 @ProvidesToken("accessToken")
 public class AccessTokenProvider implements AuthProvider {
+    private static final Logger LOG = LoggerFactory.getLogger(AccessTokenProvider.class);
+
     private static final String TOKEN_TYPE = "accessToken";
 
     private final AccountTokensRepository accountTokensRepository;
@@ -93,16 +97,26 @@ public class AccessTokenProvider implements AuthProvider {
     public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
                                         final TokenOptionsBO options) {
         if (!account.isActive()) {
+            LOG.warn("Access token request for an inactive account. accountId={}, domain={}",
+                    account.getId(), account.getDomain());
+
             throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
         }
 
+        LOG.debug("Access token request. accountId={}, domain={}", account.getId(), account.getDomain());
+
         final JwtTokenBuilder tokenBuilder = generateAccessToken(account, restrictions, options);
+
+        LOG.info("Generated access token. accountId={}, domain={}", account.getId(), account.getDomain());
 
         final String signedToken = tokenBuilder.getBuilder().sign(algorithm);
         final String finalToken = encryptIfNeeded(signedToken);
         final String refreshToken = jwtGenerator.generateRandomRefreshToken();
 
-        storeRefreshToken(account.getId(), refreshToken, restrictions);
+        final AccountTokenDO persisted = storeRefreshToken(account.getId(), refreshToken, restrictions);
+
+        LOG.info("Generated refresh token. accountId={}, domain={}, tokenId={}, expiresAt={}",
+                account.getId(), account.getDomain(), persisted.getId(), persisted.getExpiresAt());
 
         return AuthResponseBO.builder()
                 .id(tokenBuilder.getId().orElse(null))
@@ -132,16 +146,17 @@ public class AccessTokenProvider implements AuthProvider {
                 .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid refresh token"));
     }
 
-    private void storeRefreshToken(final String accountId, final String refreshToken, final TokenRestrictionsBO tokenRestrictions) {
+    private AccountTokenDO storeRefreshToken(final String accountId, final String refreshToken, final TokenRestrictionsBO tokenRestrictions) {
         final AccountTokenDO accountToken = AccountTokenDO.builder()
                 .id(ID.generate())
+                .createdAt(Instant.now())
                 .token(refreshToken)
                 .associatedAccountId(accountId)
                 .expiresAt(refreshTokenExpiry())
                 .tokenRestrictions(serviceMapper.toDO(tokenRestrictions)) // Mapstruct already checks for null
                 .build();
 
-        accountTokensRepository.save(accountToken)
+        return accountTokensRepository.save(accountToken)
                 .join();
     }
 

@@ -9,6 +9,8 @@ import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.RoleBO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
@@ -16,6 +18,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class RolesServiceImpl implements RolesService {
+    private static final Logger LOG = LoggerFactory.getLogger(RolesServiceImpl.class);
+
     private static final String ROLES_CHANNEL = "roles";
 
     private final RolesRepository rolesRepository;
@@ -44,12 +48,20 @@ public class RolesServiceImpl implements RolesService {
 
     @Override
     public RoleBO create(final RoleBO role) {
+        LOG.debug("New role request. role={}, domain={}", role.getName(), role.getDomain());
+
         if (getRoleByName(role.getName(), role.getDomain()).isPresent()) {
+            LOG.info("Role already exists. role={}, domain={}", role.getName(), role.getDomain());
+
             throw new ServiceConflictException(ErrorCode.ROLE_ALREADY_EXISTS,
                     "Role " + role.getName() + " already exists");
         }
 
-        return persistenceService.create(role);
+        RoleBO persisted = persistenceService.create(role);
+
+        LOG.info("New role created. role={}, domain={}", role.getName(), role.getDomain());
+
+        return persisted;
     }
 
     @Override
@@ -64,6 +76,8 @@ public class RolesServiceImpl implements RolesService {
 
     @Override
     public Optional<RoleBO> delete(final String id) {
+        LOG.info("Request to delete role. roleId={}", id);
+
         return persistenceService.delete(id);
     }
 

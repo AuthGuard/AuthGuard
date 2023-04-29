@@ -15,6 +15,8 @@ import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.messaging.AuthMessage;
 import com.nexblocks.authguard.service.model.*;
 import io.vavr.control.Either;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ExchangeServiceImpl implements ExchangeService {
+    private final static Logger LOG = LoggerFactory.getLogger(ExchangeServiceImpl.class);
+
     static final String CHANNEL = "auth";
 
     private final Map<String, Exchange> exchanges;
@@ -47,12 +51,16 @@ public class ExchangeServiceImpl implements ExchangeService {
         final Exchange exchange = exchanges.get(key);
 
         if (exchange == null) {
+            LOG.warn("A request was made for an unknown exchange. fromTokenType={}, toTokenType={}",
+                    fromTokenType, toTokenType);
+
             throw new ServiceException(ErrorCode.UNKNOWN_EXCHANGE, "Unknown token exchange " + fromTokenType + " to " + toTokenType);
         }
 
         final Either<Exception, AuthResponseBO> result = exchange.exchange(authRequest);
 
         if (result.isRight()) {
+            LOG.info("Successful exchange. request={}", authRequest);
             final AuthResponseBO tokens = result.get();
 
             exchangeSuccess(authRequest, requestContext, tokens, fromTokenType, toTokenType);
@@ -60,6 +68,8 @@ public class ExchangeServiceImpl implements ExchangeService {
             return tokens;
         } else {
             final Exception e = result.getLeft();
+
+            LOG.info("Unsuccessful exchange. request={}, error={}", authRequest, e.getMessage());
 
             exchangeFailure(authRequest, requestContext, e, fromTokenType, toTokenType);
 
