@@ -21,12 +21,16 @@ import com.nexblocks.authguard.service.util.AccountPreProcessor;
 import com.nexblocks.authguard.service.util.AccountUpdateMerger;
 import com.nexblocks.authguard.service.util.CredentialsManager;
 import com.nexblocks.authguard.service.util.ValueComparator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class AccountsServiceImpl implements AccountsService {
+    private static final Logger LOG = LoggerFactory.getLogger(AccountsServiceImpl.class);
+
     private static final String ACCOUNTS_CHANNEL = "accounts";
     private static final String VERIFICATION_CHANNEL = "verification";
 
@@ -151,26 +155,52 @@ public class AccountsServiceImpl implements AccountsService {
 
     @Override
     public Optional<AccountBO> update(final AccountBO account) {
+        LOG.info("Account update request. accountId={}, domain={}", account.getId(), account.getDomain());
+
         return persistenceService.update(account);
     }
 
     @Override
     public Optional<AccountBO> delete(final String accountId) {
+        LOG.info("Account delete request. accountId={}", accountId);
+
         return persistenceService.delete(accountId);
     }
 
     @Override
     public Optional<AccountBO> activate(final String accountId) {
         return getByIdUnsafe(accountId)
-                .map(account -> account.withActive(true))
-                .flatMap(this::update);
+                .flatMap(account -> {
+                    LOG.info("Activate account request. accountId={}, domain={}", account.getId(), account.getDomain());
+                    final AccountBO activated = account.withActive(true);
+                    final Optional<AccountBO> persisted = this.update(activated);
+
+                    if (persisted.isPresent()) {
+                        LOG.info("Account activated. accountId={}, domain={}", account.getId(), account.getDomain());
+                    } else {
+                        LOG.info("Failed to activate account. accountId={}, domain={}", account.getId(), account.getDomain());
+                    }
+
+                    return persisted;
+                });
     }
 
     @Override
     public Optional<AccountBO> deactivate(final String accountId) {
         return getByIdUnsafe(accountId)
-                .map(account -> account.withActive(false))
-                .flatMap(this::update);
+                .flatMap(account -> {
+                    LOG.info("Deactivate account request. accountId={}, domain={}", account.getId(), account.getDomain());
+                    final AccountBO deactivated = account.withActive(false);
+                    final Optional<AccountBO> persisted = this.update(deactivated);
+
+                    if (persisted.isPresent()) {
+                        LOG.info("Account deactivated. accountId={}, domain={}", account.getId(), account.getDomain());
+                    } else {
+                        LOG.info("Failed to deactivate account. accountId={}, domain={}", account.getId(), account.getDomain());
+                    }
+
+                    return persisted;
+                });
     }
 
     @Override
@@ -184,6 +214,9 @@ public class AccountsServiceImpl implements AccountsService {
         final boolean emailUpdated = !ValueComparator.emailsEqual(existing.getEmail(), merged.getEmail());
         final boolean backupEmailUpdated = !ValueComparator.emailsEqual(existing.getBackupEmail(), merged.getBackupEmail());
         final boolean phoneNumberUpdated = !ValueComparator.phoneNumbersEqual(existing.getPhoneNumber(), merged.getPhoneNumber());
+
+        LOG.info("Account patch request. accountId={}, domain={}, emailUpdate={}, backupEmailUpdate={}, phoneNumberUpdate={}",
+                existing.getId(), existing.getDomain(), emailUpdated, backupEmailUpdated, phoneNumberUpdated);
 
         if (emailUpdated) {
             final String oldEmail = Optional.ofNullable(existing.getEmail())
@@ -249,6 +282,9 @@ public class AccountsServiceImpl implements AccountsService {
 
         final List<PermissionBO> verifiedPermissions = permissionsService.validate(permissions, account.getDomain());
 
+        LOG.info("Grant account permissions request. accountId={}, domain={}, permissions={}",
+                account.getId(), account.getDomain(), verifiedPermissions);
+
         if (verifiedPermissions.size() != permissions.size()) {
             final List<PermissionBO> difference = permissions.stream()
                     .filter(permission -> !verifiedPermissions.contains(permission))
@@ -265,6 +301,9 @@ public class AccountsServiceImpl implements AccountsService {
 
         accountsRepository.update(serviceMapper.toDO(updated));
 
+        LOG.info("Granted account permissions. accountId={}, domain={}, permissions={}",
+                account.getId(), account.getDomain(), verifiedPermissions);
+
         return updated;
     }
 
@@ -280,6 +319,9 @@ public class AccountsServiceImpl implements AccountsService {
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
                         + accountId + " was found"));
 
+        LOG.info("Revoke account permissions request. accountId={}, domain={}, permissions={}",
+                account.getId(), account.getDomain(), permissionsFullNames);
+
         final List<PermissionBO> filteredPermissions = account.getPermissions().stream()
                 .filter(permission -> !permissionsFullNames.contains(permission.getFullName()))
                 .collect(Collectors.toList());
@@ -287,6 +329,9 @@ public class AccountsServiceImpl implements AccountsService {
         final AccountBO updated = account.withPermissions(filteredPermissions);
 
         accountsRepository.update(serviceMapper.toDO(updated));
+
+        LOG.info("Revoked account permissions. accountId={}, domain={}, permissions={}",
+                account.getId(), account.getDomain(), permissionsFullNames);
 
         return updated;
     }
@@ -301,6 +346,9 @@ public class AccountsServiceImpl implements AccountsService {
 
         verifyRolesOrFail(roles, account.getDomain());
 
+        LOG.info("Grant account roles request. accountId={}, domain={}, permissions={}",
+                account.getId(), account.getDomain(), roles);
+
         final List<String> combinedRoles = Stream.concat(account.getRoles().stream(), roles.stream())
                 .distinct()
                 .collect(Collectors.toList());
@@ -309,7 +357,12 @@ public class AccountsServiceImpl implements AccountsService {
 
         return accountsRepository.update(serviceMapper.toDO(updated))
                 .join()
-                .map(serviceMapper::toBO)
+                .map(accountDO -> {
+                    LOG.info("Granted account roles request. accountId={}, domain={}, permissions={}",
+                            account.getId(), account.getDomain(), roles);
+
+                    return serviceMapper.toBO(accountDO);
+                })
                 .orElseThrow(IllegalStateException::new);
     }
 
@@ -321,6 +374,9 @@ public class AccountsServiceImpl implements AccountsService {
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
                         + accountId + " was found"));
 
+        LOG.info("Revoke account roles request. accountId={}, domain={}, permissions={}",
+                account.getId(), account.getDomain(), roles);
+
         final List<String> filteredRoles = account.getRoles().stream()
                 .filter(role -> !roles.contains(role))
                 .collect(Collectors.toList());
@@ -329,7 +385,12 @@ public class AccountsServiceImpl implements AccountsService {
 
         return accountsRepository.update(serviceMapper.toDO(updated))
                 .join()
-                .map(serviceMapper::toBO)
+                .map(accountDO -> {
+                    LOG.info("Revoked account roles. accountId={}, domain={}, permissions={}",
+                            account.getId(), account.getDomain(), roles);
+
+                    return serviceMapper.toBO(accountDO);
+                })
                 .orElseThrow(IllegalStateException::new);
     }
 

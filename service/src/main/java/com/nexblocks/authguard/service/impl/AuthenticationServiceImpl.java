@@ -13,11 +13,15 @@ import com.nexblocks.authguard.service.model.AccountLockBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Optional;
 
 public class AuthenticationServiceImpl implements AuthenticationService {
+    private static final Logger LOG = LoggerFactory.getLogger(AuthenticationServiceImpl.class);
+
     private static final String BASIC_TOKEN_TYPE = "basic";
     private static final String REFRESH_TOKEN_TYPE = "refresh";
 

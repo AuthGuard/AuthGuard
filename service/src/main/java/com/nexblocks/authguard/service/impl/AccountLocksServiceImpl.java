@@ -6,6 +6,8 @@ import com.nexblocks.authguard.service.AccountLocksService;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.AccountLockBO;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -13,6 +15,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class AccountLocksServiceImpl implements AccountLocksService {
+    private static final Logger LOG = LoggerFactory.getLogger(AccountLocksServiceImpl.class);
+
     private final AccountLocksRepository accountLocksRepository;
     private final ServiceMapper serviceMapper;
 
@@ -26,6 +30,8 @@ public class AccountLocksServiceImpl implements AccountLocksService {
     @Override
     public AccountLockBO create(final AccountLockBO accountLock) {
         final AccountLockDO accountLockDO = serviceMapper.toDO(accountLock);
+
+        LOG.info("Locking an account. accountId={}, expiresAt={}", accountLock.getAccountId(), accountLock.getExpiresAt());
 
         return accountLocksRepository.save(accountLockDO)
                 .thenApply(serviceMapper::toBO)

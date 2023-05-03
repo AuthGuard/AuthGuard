@@ -6,7 +6,9 @@ import org.immutables.value.Value;
 @BOStyle
 public interface AuthRequest {
     String getIdentifier();
+    @Value.Redacted
     String getPassword();
+    @Value.Redacted
     String getToken();
     String getDomain();
     TokenRestrictionsBO getRestrictions();
