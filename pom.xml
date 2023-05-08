@@ -63,6 +63,7 @@
         <unbounded-ldap.version>5.1.4</unbounded-ldap.version>
         <javax-persistence.version>2.2</javax-persistence.version>
         <vavr.version>0.10.4</vavr.version>
+        <slf4j.version>2.0.0</slf4j.version>
 
         <surefire.version>3.0.0-M3</surefire.version>
         <junit.version>5.5.1</junit.version>
@@ -76,9 +77,9 @@
     <dependencies>
         <!-- logging -->
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>${logback.version}</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
         </dependency>
 
         <!-- used for generating entities across the board -->
