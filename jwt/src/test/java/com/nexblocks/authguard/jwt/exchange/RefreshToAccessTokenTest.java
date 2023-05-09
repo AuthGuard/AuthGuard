@@ -132,7 +132,7 @@ class RefreshToAccessTokenTest {
 
         // assert
         assertThat(actual.isRight()).isTrue();
-        assertThat(actual.right().get()).isEqualTo(newTokens);
+        assertThat(actual.get()).isEqualTo(newTokens);
 
         Mockito.verify(accountTokensRepository).deleteToken(refreshToken);
     }
@@ -162,7 +162,7 @@ class RefreshToAccessTokenTest {
 
         // assert
         assertThat(actual.isLeft()).isTrue();
-        assertThat(actual.left().get()).isInstanceOf(ServiceAuthorizationException.class);
+        assertThat(actual.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
 
         Mockito.verify(accountTokensRepository).deleteToken(refreshToken);
     }
@@ -195,7 +195,7 @@ class RefreshToAccessTokenTest {
 
         // assert
         assertThat(actual.isLeft()).isTrue();
-        assertThat(actual.left().get()).isInstanceOf(ServiceAuthorizationException.class);
+        assertThat(actual.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
 
         Mockito.verify(accountTokensRepository).deleteToken(refreshToken);
     }
@@ -218,6 +218,6 @@ class RefreshToAccessTokenTest {
 
         // assert
         assertThat(actual.isLeft()).isTrue();
-        assertThat(actual.left().get()).isInstanceOf(ServiceAuthorizationException.class);
+        assertThat(actual.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
     }
 }
