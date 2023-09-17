@@ -1,18 +1,24 @@
 package com.nexblocks.authguard.rest.access;
 
 import com.nexblocks.authguard.api.access.ActorRole;
-import com.nexblocks.authguard.service.model.AppBO;
+import com.nexblocks.authguard.api.access.AuthGuardRoles;
+import com.nexblocks.authguard.service.model.AccountBO;
+import com.nexblocks.authguard.service.model.Client;
+import com.nexblocks.authguard.service.model.ClientBO;
 import io.javalin.core.security.AccessManager;
 import io.javalin.core.security.Role;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import com.nexblocks.authguard.service.model.AccountBO;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.Set;
 
 public class RolesAccessManager implements AccessManager {
+    private static Logger LOG = LoggerFactory.getLogger(RolesAccessManager.class);
+
     @Override
     public void manage(@NotNull final Handler handler, @NotNull final Context context,
                        @NotNull final Set<Role> set) throws Exception {
@@ -28,8 +34,8 @@ public class RolesAccessManager implements AccessManager {
     private boolean isPermitted(final Object actor, final Set<Role> permittedRoles) {
         if (actor instanceof AccountBO) {
             return isPermitted((AccountBO) actor, permittedRoles);
-        } else if (actor instanceof AppBO) {
-            return isPermitted((AppBO) actor, permittedRoles);
+        } else if (actor instanceof ClientBO) {
+            return isPermitted((ClientBO) actor, permittedRoles);
         }
 
         return false;
@@ -48,16 +54,21 @@ public class RolesAccessManager implements AccessManager {
         return matchedRole.isPresent();
     }
 
-    private boolean isPermitted(final AppBO actor, final Set<Role> permittedRoles) {
+    private boolean isPermitted(final ClientBO actor, final Set<Role> permittedRoles) {
         if (actor == null) {
             return false;
         }
 
-        final Optional<ActorRole> matchedRole = actor.getRoles().stream()
-                .map(ActorRole::of)
-                .filter(permittedRoles::contains)
-                .findFirst(); // we only need to have one valid role to access the endpoint
+        if (actor.getClientType() == Client.ClientType.AUTH) {
+            return permittedRoles.contains(ActorRole.of(AuthGuardRoles.AUTH_CLIENT));
+        }
 
-        return matchedRole.isPresent();
+        if (actor.getClientType() == Client.ClientType.ADMIN) {
+            return permittedRoles.contains(ActorRole.of(AuthGuardRoles.ADMIN_CLIENT));
+        }
+
+        LOG.error("Undefined client type " + actor.getClientType());
+
+        return false;
     }
 }

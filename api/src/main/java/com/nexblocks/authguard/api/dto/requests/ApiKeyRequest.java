@@ -12,6 +12,7 @@ import java.time.Instant;
 @JsonSerialize(as = ApiKeyRequestDTO.class)
 @JsonDeserialize(as = ApiKeyRequestDTO.class)
 public interface ApiKeyRequest {
+    boolean isForClient();
     String getKeyType();
     String getAppId();
     Instant getExpiresAt();

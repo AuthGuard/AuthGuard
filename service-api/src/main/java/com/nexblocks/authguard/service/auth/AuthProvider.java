@@ -25,7 +25,15 @@ public interface AuthProvider {
 
     AuthResponseBO generateToken(AppBO app);
 
+    default AuthResponseBO generateToken(ClientBO client) {
+        throw new UnsupportedOperationException("Cannot generate token for a client");
+    }
+
     default AuthResponseBO generateToken(AppBO app, Instant expiresAt) {
+        throw new UnsupportedOperationException("Cannot generate token with expiry");
+    }
+
+    default AuthResponseBO generateToken(ClientBO client, Instant expiresAt) {
         throw new UnsupportedOperationException("Cannot generate token with expiry");
     }
 

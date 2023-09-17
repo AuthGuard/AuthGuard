@@ -6,10 +6,7 @@ import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.auth.AuthProvider;
 import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ApiKeysConfig;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AppBO;
-import com.nexblocks.authguard.service.model.AuthResponseBO;
-import com.nexblocks.authguard.service.model.EntityType;
+import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
 
 @ProvidesToken("apiKey")
@@ -47,6 +44,18 @@ public class DefaultApiKeysProvider implements AuthProvider {
                 .token(token)
                 .entityType(EntityType.APPLICATION)
                 .entityId(app.getId())
+                .build();
+    }
+
+    @Override
+    public AuthResponseBO generateToken(ClientBO client) {
+        final String token = cryptographicRandom.base64Url(config.getRandomSize());
+
+        return AuthResponseBO.builder()
+                .type(TOKEN_TYPE)
+                .token(token)
+                .entityType(EntityType.CLIENT)
+                .entityId(client.getId())
                 .build();
     }
 }

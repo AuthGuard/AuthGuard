@@ -9,15 +9,18 @@ import java.time.Instant;
 
 @Value.Immutable
 @DTOStyle
-@JsonSerialize(as = ApiKeyDTO.class)
-@JsonDeserialize(as = ApiKeyDTO.class)
-public interface ApiKey {
+@JsonSerialize(as = ClientDTO.class)
+@JsonDeserialize(as = ClientDTO.class)
+public interface Client {
     String getId();
     Instant getCreatedAt();
     Instant getLastModified();
-    String getAppId();
-    String getKey();
-    String getType();
-    boolean isForClient();
-    Instant getExpiresAt();
+    String getExternalId();
+    String getName();
+    String getAccountId();
+    String getDomain();
+    String getBaseUrl();
+    String getClientType();
+    boolean isActive();
+    boolean isDeleted();
 }

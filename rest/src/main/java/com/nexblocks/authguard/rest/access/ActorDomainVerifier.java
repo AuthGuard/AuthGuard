@@ -1,15 +1,15 @@
 package com.nexblocks.authguard.rest.access;
 
-import com.nexblocks.authguard.api.access.AuthGuardRoles;
 import com.nexblocks.authguard.api.dto.entities.Error;
-import com.nexblocks.authguard.service.model.AppBO;
+import com.nexblocks.authguard.service.model.Client;
+import com.nexblocks.authguard.service.model.ClientBO;
 import io.javalin.http.Context;
 
 // TODO move to Requester
 public class ActorDomainVerifier {
     public static boolean verifyActorDomain(final Context context, final String domain) {
-        if (context.attribute("actor") instanceof AppBO) {
-            final AppBO actor = context.attribute("actor");
+        if (context.attribute("actor") instanceof ClientBO) {
+            final ClientBO actor = context.attribute("actor");
 
             if (actor == null) {
                 context.status(401)
@@ -24,9 +24,9 @@ public class ActorDomainVerifier {
         return true;
     }
 
-    public static boolean verifyActorDomain(final AppBO actor, final Context context,
+    public static boolean verifyActorDomain(final ClientBO actor, final Context context,
                                             final String requestDomain) {
-        final boolean isAuthClient = actor.getRoles().contains(AuthGuardRoles.AUTH_CLIENT);
+        final boolean isAuthClient = actor.getClientType() == Client.ClientType.AUTH;
 
         if (isAuthClient && !actor.getDomain().equals(requestDomain)) {
             context.status(403)
@@ -38,7 +38,7 @@ public class ActorDomainVerifier {
         return true;
     }
 
-    public static boolean verifyAuthClientDomain(final AppBO actor, final Context context,
+    public static boolean verifyAuthClientDomain(final ClientBO actor, final Context context,
                                                  final String requestDomain) {
         if (!actor.getDomain().equals(requestDomain)) {
             context.status(403)

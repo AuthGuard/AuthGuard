@@ -48,7 +48,7 @@ class AuthRouteTest extends AbstractRouteTest {
     void authenticate() {
         final AuthRequestDTO requestDTO = randomObject(AuthRequestDTO.class);
         final AuthRequestBO requestBO = restMapper.toBO(requestDTO)
-                .withClientId("valid-test-app");
+                .withClientId("valid-test-client");
         final AuthResponseBO tokensBO = AuthResponseBO.builder()
                 .token("token")
                 .build();
@@ -76,7 +76,7 @@ class AuthRouteTest extends AbstractRouteTest {
     void authenticateAuthClient() {
         final AuthRequestDTO requestDTO = randomObject(AuthRequestDTO.class);
         final AuthRequestBO requestBO = restMapper.toBO(requestDTO)
-                .withClientId("valid-test-app");
+                .withClientId("valid-test-client");
         final AuthResponseBO tokensBO = AuthResponseBO.builder()
                 .token("token")
                 .build();

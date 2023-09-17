@@ -17,10 +17,7 @@ import com.nexblocks.authguard.rest.mappers.RestJsonMapper;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.service.AccountCredentialsService;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AppBO;
-import com.nexblocks.authguard.service.model.PasswordResetTokenBO;
-import com.nexblocks.authguard.service.model.UserIdentifierBO;
+import com.nexblocks.authguard.service.model.*;
 import io.javalin.http.Context;
 
 import java.util.Collections;
@@ -108,8 +105,8 @@ public class CredentialsRoute extends CredentialsApi {
             return;
         }
 
-        final AppBO actor = context.attribute("actor");
-        final boolean isAuthClient = actor.getRoles().contains(AuthGuardRoles.AUTH_CLIENT);
+        final ClientBO actor = context.attribute("actor");
+        final boolean isAuthClient = actor.getClientType() == Client.ClientType.AUTH;
 
         final PasswordResetTokenBO token = credentialsService
                 .generateResetToken(request.getIdentifier(), !isAuthClient, request.getDomain()); // prevent an auth client from seeing the reset token

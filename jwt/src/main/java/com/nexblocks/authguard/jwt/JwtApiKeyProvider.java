@@ -10,10 +10,7 @@ import com.nexblocks.authguard.service.auth.AuthProvider;
 import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AppBO;
-import com.nexblocks.authguard.service.model.AuthResponseBO;
-import com.nexblocks.authguard.service.model.EntityType;
+import com.nexblocks.authguard.service.model.*;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -63,6 +60,19 @@ public class JwtApiKeyProvider implements AuthProvider {
     }
 
     @Override
+    public AuthResponseBO generateToken(ClientBO client) {
+        final JwtTokenBuilder tokenBuilder = generateApiToken(client, null);
+        final String token = tokenBuilder.getBuilder().sign(algorithm);
+
+        return AuthResponseBO.builder()
+                .type(TOKEN_TYPE)
+                .token(token)
+                .entityType(EntityType.CLIENT)
+                .entityId(client.getId())
+                .build();
+    }
+
+    @Override
     public AuthResponseBO generateToken(final AppBO app, final Instant expiresAt) {
         final JwtTokenBuilder tokenBuilder = generateApiToken(app, expiresAt);
         final String token = tokenBuilder.getBuilder().sign(algorithm);
@@ -102,6 +112,29 @@ public class JwtApiKeyProvider implements AuthProvider {
 
         if (strategyConfig.includeExternalId() && app.getExternalId() != null) {
             jwtBuilder.withClaim("eid", app.getExternalId());
+        }
+
+        return JwtTokenBuilder.builder()
+                .id(keyId)
+                .builder(jwtBuilder)
+                .build();
+    }
+
+    private JwtTokenBuilder generateApiToken(final ClientBO client, final Instant expiresAt) {
+        final String keyId = jti.next();
+
+        final JWTCreator.Builder jwtBuilder = JWT.create()
+                .withSubject(client.getId())
+                .withJWTId(keyId)
+                .withClaim("type", "API")
+                .withClaim("clientType", client.getClientType().name());
+
+        if (expiresAt != null) {
+            jwtBuilder.withExpiresAt(Date.from(expiresAt));
+        }
+
+        if (strategyConfig.includeExternalId() && client.getExternalId() != null) {
+            jwtBuilder.withClaim("eid", client.getExternalId());
         }
 
         return JwtTokenBuilder.builder()

@@ -10,6 +10,7 @@ import com.nexblocks.authguard.service.keys.ApiKeyHashProvider;
 import com.nexblocks.authguard.service.keys.DefaultApiKeysProvider;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
+import com.nexblocks.authguard.service.model.ClientBO;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -35,11 +36,21 @@ public class DefaultApiKeyExchange implements ApiKeyExchange {
     }
 
     @Override
+    public AuthResponseBO generateKey(ClientBO client, Instant expiresAt) {
+        return provider.generateToken(client);
+    }
+
+    @Override
     public CompletableFuture<Optional<String>> verifyAndGetAppId(final String apiKey) {
         return repository.getByKey(apiKeyHash.hash(apiKey))
                 .thenApply(optional -> optional
                         .filter(this::isValid)
                         .map(ApiKeyDO::getAppId));
+    }
+
+    @Override
+    public CompletableFuture<Optional<String>> verifyAndGetClientId(String apiKey) {
+        return verifyAndGetAppId(apiKey);
     }
 
     private boolean isValid(final ApiKeyDO apiKeyDO) {
