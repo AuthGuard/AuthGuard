@@ -17,28 +17,36 @@ import java.util.Optional;
 import java.util.Set;
 
 public class RolesAccessManager implements AccessManager {
-    private static Logger LOG = LoggerFactory.getLogger(RolesAccessManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RolesAccessManager.class);
+    private final Set<String> unprotectedPaths;
+
+    public RolesAccessManager(Set<String> unprotectedPaths) {
+        this.unprotectedPaths = unprotectedPaths;
+    }
 
     @Override
     public void manage(@NotNull final Handler handler, @NotNull final Context context,
-                       @NotNull final Set<Role> set) throws Exception {
+                       @NotNull final Set<Role> permittedRoles) throws Exception {
         final Object actor = context.attribute("actor");
 
-        if (isPermitted(actor, set)) {
+        if (isPermitted(actor, permittedRoles, context)) {
             handler.handle(context);
         } else {
             context.status(401).result("");
         }
     }
 
-    private boolean isPermitted(final Object actor, final Set<Role> permittedRoles) {
+    private boolean isPermitted(final Object actor, final Set<Role> permittedRoles,
+                                final Context context) {
         if (actor instanceof AccountBO) {
             return isPermitted((AccountBO) actor, permittedRoles);
         } else if (actor instanceof ClientBO) {
             return isPermitted((ClientBO) actor, permittedRoles);
         }
 
-        return false;
+        final String[] pathParts = context.path().split("/");
+
+        return unprotectedPaths.contains(pathParts[1]);
     }
 
     private boolean isPermitted(final AccountBO actor, final Set<Role> permittedRoles) {
