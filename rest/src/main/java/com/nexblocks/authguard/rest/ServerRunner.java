@@ -69,7 +69,7 @@ public class ServerRunner {
 
             config.server(() -> new JettyServerProvider(serverConfig).get());
 
-            config.accessManager(new RolesAccessManager());
+            config.accessManager(new RolesAccessManager(serverConfig.getUnprotectedPaths()));
         }));
     }
 }
