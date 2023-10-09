@@ -18,10 +18,7 @@ import com.nexblocks.authguard.service.AuthenticationService;
 import com.nexblocks.authguard.service.ExchangeAttemptsService;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
-import com.nexblocks.authguard.service.model.AppBO;
-import com.nexblocks.authguard.service.model.AuthResponseBO;
-import com.nexblocks.authguard.service.model.ExchangeAttemptsQueryBO;
-import com.nexblocks.authguard.service.model.RequestContextBO;
+import com.nexblocks.authguard.service.model.*;
 import io.javalin.http.Context;
 
 import java.time.Instant;
@@ -174,11 +171,11 @@ public class AuthRoute extends AuthApi {
     private Optional<AuthRequestDTO> getValidRequestOrFail(final Context context) {
         AuthRequestDTO authRequest = authRequestBodyHandler.getValidated(context);
 
-        final Optional<AppBO> actor = Requester.getIfApp(context);
+        final Optional<ClientBO> actor = Requester.getIfApp(context);
 
         if (actor.isPresent()) {
-            final AppBO app = actor.get();
-            final boolean isAuthClient = Requester.isAuthClient(app);
+            final ClientBO client = actor.get();
+            final boolean isAuthClient = Requester.isAuthClient(client);
 
             if (isAuthClient) {
                 if (!Requester.authClientCanPerform(authRequest)) {
@@ -189,7 +186,7 @@ public class AuthRoute extends AuthApi {
                 }
 
                 if (authRequest.getDomain() != null
-                    && !ActorDomainVerifier.verifyAuthClientDomain(app, context, authRequest.getDomain())) {
+                    && !ActorDomainVerifier.verifyAuthClientDomain(client, context, authRequest.getDomain())) {
                     return Optional.empty();
                 }
             }
@@ -202,7 +199,7 @@ public class AuthRoute extends AuthApi {
                 authRequest = authRequest.withUserAgent(context.userAgent());
             }
 
-            return Optional.of(authRequest.withClientId(app.getId()));
+            return Optional.of(authRequest.withClientId(client.getId()));
         }
 
         return Optional.of(authRequest);

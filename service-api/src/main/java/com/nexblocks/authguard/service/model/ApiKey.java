@@ -10,6 +10,7 @@ public interface ApiKey extends Entity {
     String getAppId();
     String getKey();
     String getType();
+    boolean isForClient();
     Instant getExpiresAt();
 
     @Override

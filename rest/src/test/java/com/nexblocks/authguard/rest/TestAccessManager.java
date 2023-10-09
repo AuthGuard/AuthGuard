@@ -2,6 +2,8 @@ package com.nexblocks.authguard.rest;
 
 import com.nexblocks.authguard.api.access.AuthGuardRoles;
 import com.nexblocks.authguard.service.model.AppBO;
+import com.nexblocks.authguard.service.model.Client;
+import com.nexblocks.authguard.service.model.ClientBO;
 import io.javalin.core.security.AccessManager;
 import io.javalin.core.security.Role;
 import io.javalin.http.Context;
@@ -14,22 +16,22 @@ public class TestAccessManager implements AccessManager {
     @Override
     public void manage(@NotNull final Handler handler, @NotNull final Context context,
                        @NotNull final Set<Role> set) throws Exception {
-        final AppBO app;
+        final ClientBO client;
 
         if ("auth-client".equals(context.header("Authorization"))) {
-            app = AppBO.builder()
-                    .id("valid-test-app")
-                    .addRoles(AuthGuardRoles.AUTH_CLIENT)
+            client = ClientBO.builder()
+                    .id("valid-test-client")
+                    .clientType(Client.ClientType.AUTH)
                     .domain("test")
                     .build();
         } else {
-            app = AppBO.builder()
-                    .id("valid-test-app")
-                    .addRoles(AuthGuardRoles.ADMIN_CLIENT)
+            client = ClientBO.builder()
+                    .id("valid-test-client")
+                    .clientType(Client.ClientType.ADMIN)
                     .build();
         }
 
-        context.attribute("actor", app);
+        context.attribute("actor", client);
 
         handler.handle(context);
     }

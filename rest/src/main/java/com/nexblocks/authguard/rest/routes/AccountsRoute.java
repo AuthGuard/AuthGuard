@@ -16,6 +16,7 @@ import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.ApplicationsService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
+import com.nexblocks.authguard.service.model.Client;
 import io.javalin.http.Context;
 
 import java.util.Collection;
@@ -307,13 +308,13 @@ public class AccountsRoute extends AccountsApi {
     }
 
     private boolean canPerform(final Context context, final CreateAccountRequestDTO request) {
-        if (context.attribute("actor") instanceof AppBO) {
-            final AppBO actor = context.attribute("actor");
-            final boolean isAuthClient = actor.getRoles().contains(AuthGuardRoles.AUTH_CLIENT);
+        if (context.attribute("actor") instanceof ClientBO) {
+            final ClientBO actor = context.attribute("actor");
+            final boolean isAuthClient = actor.getClientType() == Client.ClientType.AUTH;
 
             /*
              * Clients shouldn't have both auth and admin client
-             * client roles. If that was the case then it'll still
+             * roles. If that was the case then it'll still
              * be treated as an auth client and not an admin client.
              */
             return !isAuthClient || canPerform(actor, request);
@@ -322,7 +323,7 @@ public class AccountsRoute extends AccountsApi {
         return true;
     }
 
-    private boolean canPerform(final AppBO actor, final CreateAccountRequestDTO request) {
+    private boolean canPerform(final ClientBO actor, final CreateAccountRequestDTO request) {
         if (request.getEmail() != null && request.getEmail().isVerified()) {
             return false;
         }

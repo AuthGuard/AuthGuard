@@ -1,9 +1,7 @@
 package com.nexblocks.authguard.rest.util;
 
-import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
-import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AppBO;
+import com.nexblocks.authguard.service.model.ClientBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 import io.javalin.http.Context;
 import org.slf4j.Logger;
@@ -30,10 +28,10 @@ public class RequestContextExtractor {
     }
 
     private static RequestContextBO extractWithoutIdempotentKey(final Context context, final Object actor) {
-        if (actor instanceof AppBO) {
+        if (actor instanceof ClientBO) {
             return RequestContextBO.builder()
                     .source(context.ip())
-                    .clientId(((AppBO) actor).getId())
+                    .clientId(((ClientBO) actor).getId())
                     .userAgent(context.userAgent())
                     .build();
         }

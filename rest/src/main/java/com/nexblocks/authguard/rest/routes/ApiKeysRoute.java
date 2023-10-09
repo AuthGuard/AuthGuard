@@ -40,7 +40,9 @@ public class ApiKeysRoute extends ApiKeysApi {
         final ApiKeyRequestDTO request = apiKeyRequestBodyHandler.getValidated(context);
         final Duration validFor = request.getValidFor() == null ? Duration.ZERO : request.getValidFor().toDuration();
 
-        final ApiKeyBO key = apiKeysService.generateApiKey(request.getAppId(), request.getKeyType(), validFor);
+        final ApiKeyBO key = request.isForClient() ?
+                apiKeysService.generateClientApiKey(request.getAppId(), request.getKeyType(), validFor) :
+                apiKeysService.generateApiKey(request.getAppId(), request.getKeyType(), validFor);
 
         context.status(201).json(restMapper.toDTO(key));
     }

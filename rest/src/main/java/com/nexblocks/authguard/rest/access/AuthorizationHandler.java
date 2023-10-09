@@ -5,7 +5,7 @@ import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.basic.BasicAuthProvider;
 import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AppBO;
+import com.nexblocks.authguard.service.model.ClientBO;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.vavr.control.Either;
@@ -74,11 +74,11 @@ public class AuthorizationHandler implements Handler {
     }
 
     private void populateBearerActor(final Context context, final String apiKey) {
-        final Optional<AppBO> actorApp = apiKeysService.validateApiKey(apiKey, API_KEY_TYPE);
+        final Optional<ClientBO> actorClient = apiKeysService.validateClientApiKey(apiKey, API_KEY_TYPE);
 
-        if (actorApp.isPresent()) {
-            LOG.info("Authenticated actor {} with bearer token", actorApp.get().getId());
-            context.attribute("actor", actorApp.get());
+        if (actorClient.isPresent()) {
+            LOG.info("Authenticated actor {} with bearer token", actorClient.get().getId());
+            context.attribute("actor", actorClient.get());
         } else {
             LOG.info("Failed to authenticate actor with bearer token");
             context.status(401).json(new Error("401", "Failed to authenticate with bearer scheme"));

@@ -6,6 +6,7 @@ import com.nexblocks.authguard.dal.persistence.ApiKeysRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.ApplicationsService;
+import com.nexblocks.authguard.service.ClientsService;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
@@ -17,6 +18,7 @@ import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.ApiKeyBO;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
+import com.nexblocks.authguard.service.model.ClientBO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +36,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     private static final String API_KEYS_CHANNELS = "api_keys";
 
     private final ApplicationsService applicationsService;
+    private final ClientsService clientsService;
     private final Map<String, ApiKeyExchange> apiKeyExchangesByType;
     private final ApiKeysRepository apiKeysRepository;
     private final ApiKeyHash apiKeyHash;
@@ -42,12 +45,13 @@ public class ApiKeysServiceImpl implements ApiKeysService {
 
     @Inject
     public ApiKeysServiceImpl(final ApplicationsService applicationsService,
-                              final List<ApiKeyExchange> apiKeyExchanges,
+                              ClientsService clientsService, final List<ApiKeyExchange> apiKeyExchanges,
                               final ApiKeysRepository apiKeysRepository,
                               final ApiKeyHashProvider apiKeyHashProvider,
                               final MessageBus messageBus,
                               final ServiceMapper serviceMapper) {
         this.applicationsService = applicationsService;
+        this.clientsService = clientsService;
         this.apiKeysRepository = apiKeysRepository;
         this.apiKeyHash = apiKeyHashProvider.getHash();
         this.serviceMapper = serviceMapper;
@@ -90,6 +94,15 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     }
 
     @Override
+    public ApiKeyBO generateClientApiKey(String clientId, String type, Duration duration) {
+        final ClientBO client = clientsService.getById(clientId)
+                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST,
+                        "No client with ID " + clientId + " found"));
+
+        return generateClientApiKey(client, type, duration);
+    }
+
+    @Override
     public ApiKeyBO generateApiKey(final AppBO app, final String type, final Duration duration) {
         final ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
 
@@ -100,12 +113,33 @@ public class ApiKeysServiceImpl implements ApiKeysService {
         final AuthResponseBO token = apiKeyExchange.generateKey(app, expirationInstant);
         final String generatedKey = (String) token.getToken();
         final String hashedKey = apiKeyHash.hash(generatedKey);
-        final ApiKeyBO toCreate = mapApiKey(app.getId(), hashedKey, type, expirationInstant);
+        final ApiKeyBO toCreate = mapApiKey(app.getId(), hashedKey, type, false, expirationInstant);
 
         final ApiKeyBO persisted = create(toCreate);
 
         LOG.info("API key generated. appId={}, domain={}, type={}, keyId={}, expiresAt={}",
                 app.getId(), app.getDomain(), type, persisted.getId(), persisted.getExpiresAt());
+
+        return persisted.withKey(generatedKey); // we store the hashed version, but we return the clear version
+    }
+
+    @Override
+    public ApiKeyBO generateClientApiKey(ClientBO client, String type, Duration duration) {
+        final ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
+
+        LOG.info("API key request. clientId={}, domain={}, type={}, duration={}",
+                client.getId(), client.getDomain(), type, duration);
+
+        final Instant expirationInstant = getExpirationInstant(duration);
+        final AuthResponseBO token = apiKeyExchange.generateKey(client, expirationInstant);
+        final String generatedKey = (String) token.getToken();
+        final String hashedKey = apiKeyHash.hash(generatedKey);
+        final ApiKeyBO toCreate = mapApiKey(client.getId(), hashedKey, type, true, expirationInstant);
+
+        final ApiKeyBO persisted = create(toCreate);
+
+        LOG.info("API key generated. clientId={}, domain={}, type={}, keyId={}, expiresAt={}",
+                client.getId(), client.getDomain(), type, persisted.getId(), persisted.getExpiresAt());
 
         return persisted.withKey(generatedKey); // we store the hashed version, but we return the clear version
     }
@@ -129,11 +163,22 @@ public class ApiKeysServiceImpl implements ApiKeysService {
 
     }
 
-    private ApiKeyBO mapApiKey(final String appId, final String key, final String type, final Instant expiresAt) {
+    @Override
+    public Optional<ClientBO> validateClientApiKey(String key, String type) {
+        final ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
+
+        return apiKeyExchange.verifyAndGetClientId(key)
+                .thenApply(optional -> optional.flatMap(clientsService::getById))
+                .join();
+    }
+
+    private ApiKeyBO mapApiKey(final String appId, final String key, final String type, boolean forClient,
+                               final Instant expiresAt) {
         final ApiKeyBO.Builder builder = ApiKeyBO.builder()
                 .appId(appId)
                 .key(key)
-                .type(type);
+                .type(type)
+                .forClient(forClient);
 
         if (expiresAt != null) {
             builder.expiresAt(expiresAt);

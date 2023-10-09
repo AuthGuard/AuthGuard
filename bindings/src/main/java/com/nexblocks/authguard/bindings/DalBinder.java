@@ -27,6 +27,7 @@ public class DalBinder extends AbstractModule {
         bindAndRegister(CredentialsAuditRepository.class);
         bindAndRegister(AccountsRepository.class);
         bindAndRegister(ApplicationsRepository.class);
+        bindAndRegister(ClientsRepository.class);
         bindAndRegister(ApiKeysRepository.class);
         bindAndRegister(PermissionsRepository.class);
         bindAndRegister(RolesRepository.class);

@@ -592,6 +592,122 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
+  # ----------------- clients -----------------
+  /clients:
+    post:
+      operationId: createClient
+      description: Create an AuthGuard client
+      tags:
+        - Clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateClientRequest" 
+      responses:
+        201:
+          description: Success
+          $ref: "#/components/responses/ClientResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
+
+  /clients/{id}:
+    get:
+      operationId: getClientById
+      description: Get an client by ID
+      tags:
+        - Clients
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ClientResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+    delete:
+      operationId: deleteClient
+      description: Delete a client
+      tags:
+        - Clients
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ClientResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /clients/{id}/keys:
+    get:
+      operationId: getApiKeysByClientId
+      description: Get all API keys associated with a client
+      tags:
+        - Clients
+        - API Keys
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApiKeysArrayResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /clients/externalId/{id}:
+    get:
+      operationId: getClientsByExternalId
+      description: Get an application by an external ID
+      tags:
+        - Clients
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ClientResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /clients/{id}/activate:
+    patch:
+      operationId: activateClient
+      description: Activate a client if not already active
+      tags:
+        - Clients
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ClientResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /clients/{id}/deactivate:
+    patch:
+      operationId: deactivateClient
+      description: Deactivate a client if it's active
+      tags:
+        - Clients
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ClientResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
   # ---------------- API keys ---------------
   /keys:
     post:
@@ -1147,6 +1263,13 @@ components:
         application/json:
               schema:
                 $ref: "#/components/schemas/Application"
+    
+    ClientResponse:
+      description: _
+      content:
+        application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
 
     ApiKeyResponse:
       description: _
@@ -1335,6 +1458,29 @@ components:
           type: array
           items:
             type: string
+        active:
+          type: boolean
+
+    Client:
+      type: object
+      properties:
+        id:
+          type: string
+        clientType:
+          type: string
+          enum:
+            - AUTH
+            - ADMIN
+        externalId:
+          type: string
+        domain:
+          type: string
+        accountId:
+          type: string
+        name:
+          type: string
+        baseUrl:
+          type: string
         active:
           type: boolean
     
@@ -1561,6 +1707,29 @@ components:
             type: string
         active:
           type: boolean
+
+    CreateClientRequest:
+      type: object
+      required:
+        - domain
+        - clientType
+        - name
+      properties:
+        externalId:
+          type: string
+        domain:
+          type: string
+        accountId:
+          type: string
+        name:
+          type: string
+        baseUrl:
+          type: string
+        clientType:
+          type: string
+          enum:
+            - AUTH
+            - ADMIN
 
     CreateCredentialsRequest:
       type: object

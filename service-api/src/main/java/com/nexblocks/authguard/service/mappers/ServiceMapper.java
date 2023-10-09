@@ -19,6 +19,9 @@ public interface ServiceMapper {
     AppDO toDO(AppBO appBO);
     AppBO toBO(AppDO appDO);
 
+    ClientDO toDO(ClientBO clientBO);
+    ClientBO toBO(ClientDO clientDO);
+
     ApiKeyDO toDO(ApiKeyBO apiKeyBO);
     ApiKeyBO toBO(ApiKeyDO apiKeyDO);
 
