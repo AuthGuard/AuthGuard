@@ -27,6 +27,12 @@ public class AccountTokenDO extends AbstractDO {
     private String token;
     private String associatedAccountId;
     private Instant expiresAt;
+    private String sourceAuthType;
+    private String deviceId;
+    private String clientId;
+    private String externalSessionId;
+    private String userAgent;
+    private String sourceIp;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name="key")

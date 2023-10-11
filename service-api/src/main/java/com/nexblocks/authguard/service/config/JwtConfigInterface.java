@@ -17,4 +17,11 @@ public interface JwtConfigInterface {
     List<String> getAllowedAlgorithms();
     List<String> getTrustedIssuers();
     EncryptionConfig getEncryption();
+
+    @Value.Default
+    default boolean checkRefreshTokenOption() {
+        return true;
+    }
+
+    boolean checkRefreshTokenRequestIp();
 }

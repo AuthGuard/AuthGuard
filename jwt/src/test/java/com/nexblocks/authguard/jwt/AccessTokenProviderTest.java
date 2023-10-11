@@ -17,7 +17,6 @@ import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -191,6 +190,55 @@ class AccessTokenProviderTest {
                 .isEqualToComparingFieldByField(restrictions);
 
         verifyToken(tokens.getToken().toString(), account.getId(), null, Collections.singletonList("permission-1"));
+    }
+
+    @Test
+    void generateWithOptions() {
+        final AccessTokenProvider accessTokenProvider = newProviderInstance(jwtConfig(), strategyConfig());
+
+        final AccountBO account = RANDOM.nextObject(AccountBO.class)
+                .withActive(true)
+                .withPermissions(Arrays.asList(
+                        PermissionBO.builder().group("super").name("permission-1").build(),
+                        PermissionBO.builder().group("super").name("permission-2").build())
+                );
+
+        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder()
+                .clientId("client-1")
+                .source("basic")
+                .deviceId("device-1")
+                .sourceIp("127.0.0.1")
+                .externalSessionId("session-1")
+                .userAgent("test")
+                .build();
+
+        final AuthResponseBO tokens = accessTokenProvider.generateToken(account, tokenOptions);
+
+        assertThat(tokens).isNotNull();
+        assertThat(tokens.getToken()).isNotNull();
+        assertThat(tokens.getRefreshToken()).isNotNull();
+        assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
+
+        final ArgumentCaptor<AccountTokenDO> accountTokenCaptor = ArgumentCaptor.forClass(AccountTokenDO.class);
+        final AccountTokenDO expectedRefreshToken = AccountTokenDO.builder()
+                .associatedAccountId(account.getId())
+                .clientId("client-1")
+                .sourceAuthType("basic")
+                .deviceId("device-1")
+                .sourceIp("127.0.0.1")
+                .externalSessionId("session-1")
+                .userAgent("test")
+                .build();
+
+        Mockito.verify(accountTokensRepository).save(accountTokenCaptor.capture());
+
+        assertThat(accountTokenCaptor.getValue())
+                .isEqualToIgnoringGivenFields(expectedRefreshToken, "id", "createdAt", "lastModifiedAt",
+                        "token", "expiresAt");
+
+        assertThat(accountTokenCaptor.getValue().getToken()).isEqualTo(tokens.getRefreshToken());
+        assertThat(accountTokenCaptor.getValue().getExpiresAt()).isNotNull()
+                .isAfter(Instant.now());
     }
 
     @Test
