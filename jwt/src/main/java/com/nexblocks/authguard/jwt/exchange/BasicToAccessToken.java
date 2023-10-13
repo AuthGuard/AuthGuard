@@ -25,6 +25,11 @@ public class BasicToAccessToken implements Exchange {
     public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
         final TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("basic")
+                .userAgent(request.getUserAgent())
+                .sourceIp(request.getSourceIp())
+                .clientId(request.getClientId())
+                .externalSessionId(request.getExternalSessionId())
+                .deviceId(request.getDeviceId())
                 .build();
 
         return basicAuth.authenticateAndGetAccount(request)

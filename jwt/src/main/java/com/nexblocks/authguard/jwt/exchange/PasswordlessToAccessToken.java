@@ -34,14 +34,19 @@ public class PasswordlessToAccessToken implements Exchange {
         return passwordlessVerifier.verifyAccountToken(request.getToken())
                 .map(accountsService::getById)
                 .flatMap(accountOpt -> accountOpt
-                        .map(this::generate)
+                        .map(account -> generate(account, request))
                         .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
                                 "Failed to generate access token"))));
     }
 
-    private Either<Exception, AuthResponseBO> generate(final AccountBO account) {
+    private Either<Exception, AuthResponseBO> generate(final AccountBO account, final AuthRequestBO request) {
         final TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("passwordless")
+                .userAgent(request.getUserAgent())
+                .sourceIp(request.getSourceIp())
+                .clientId(request.getClientId())
+                .externalSessionId(request.getExternalSessionId())
+                .deviceId(request.getDeviceId())
                 .build();
 
         return Either.right(accessTokenProvider.generateToken(account, options));
