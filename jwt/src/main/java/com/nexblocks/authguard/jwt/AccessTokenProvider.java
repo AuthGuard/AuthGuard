@@ -113,7 +113,7 @@ public class AccessTokenProvider implements AuthProvider {
         final String finalToken = encryptIfNeeded(signedToken);
         final String refreshToken = jwtGenerator.generateRandomRefreshToken();
 
-        final AccountTokenDO persisted = storeRefreshToken(account.getId(), refreshToken, restrictions);
+        final AccountTokenDO persisted = storeRefreshToken(account.getId(), refreshToken, restrictions, options);
 
         LOG.info("Generated refresh token. accountId={}, domain={}, tokenId={}, expiresAt={}",
                 account.getId(), account.getDomain(), persisted.getId(), persisted.getExpiresAt());
@@ -146,17 +146,27 @@ public class AccessTokenProvider implements AuthProvider {
                 .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid refresh token"));
     }
 
-    private AccountTokenDO storeRefreshToken(final String accountId, final String refreshToken, final TokenRestrictionsBO tokenRestrictions) {
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+    private AccountTokenDO storeRefreshToken(final String accountId, final String refreshToken,
+                                             final TokenRestrictionsBO tokenRestrictions,
+                                             final TokenOptions tokenOptions) {
+        final AccountTokenDO.AccountTokenDOBuilder<?, ?> accountToken = AccountTokenDO.builder()
                 .id(ID.generate())
                 .createdAt(Instant.now())
                 .token(refreshToken)
                 .associatedAccountId(accountId)
                 .expiresAt(refreshTokenExpiry())
-                .tokenRestrictions(serviceMapper.toDO(tokenRestrictions)) // Mapstruct already checks for null
-                .build();
+                .tokenRestrictions(serviceMapper.toDO(tokenRestrictions)); // Mapstruct already checks for null
 
-        return accountTokensRepository.save(accountToken)
+        if (tokenOptions != null) {
+            accountToken.sourceIp(tokenOptions.getSourceIp())
+                    .clientId(tokenOptions.getClientId())
+                    .deviceId(tokenOptions.getDeviceId())
+                    .sourceAuthType(tokenOptions.getSource())
+                    .externalSessionId(tokenOptions.getExternalSessionId())
+                    .userAgent(tokenOptions.getUserAgent());
+        }
+
+        return accountTokensRepository.save(accountToken.build())
                 .join();
     }
 
