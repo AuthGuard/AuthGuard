@@ -58,7 +58,7 @@ public class AuthorizationCodeVerifier implements AuthVerifier {
 
     private Either<Exception, AccountTokenDO> verifyToken(final AccountTokenDO accountToken) {
         if (accountToken.getExpiresAt().isBefore(Instant.now())) {
-            throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "The authorization code has expired",
+            throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Expired authorization code",
                     EntityType.ACCOUNT, accountToken.getAssociatedAccountId());
         }
 

@@ -7,6 +7,7 @@ import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
+import com.nexblocks.authguard.service.model.TokenOptionsBO;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -23,7 +24,15 @@ public class BasicToAuthorizationCode implements Exchange {
 
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+        TokenOptionsBO options = TokenOptionsBO.builder()
+                .source("basic")
+                .userAgent(request.getUserAgent())
+                .sourceIp(request.getSourceIp())
+                .clientId(request.getClientId())
+                .externalSessionId(request.getExternalSessionId())
+                .deviceId(request.getDeviceId())
+                .build();
         return basicAuth.authenticateAndGetAccount(request)
-                .thenCompose(account -> authorizationCodeProvider.generateToken(account, request.getRestrictions()));
+                .thenCompose(account -> authorizationCodeProvider.generateToken(account, request.getRestrictions(), options));
     }
 }

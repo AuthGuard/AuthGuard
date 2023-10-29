@@ -1,13 +1,13 @@
 package com.nexblocks.authguard.rest.routes;
 
 import com.google.inject.Inject;
+import com.nexblocks.authguard.api.common.RequestValidationException;
 import com.nexblocks.authguard.api.dto.entities.ApiKeyDTO;
 import com.nexblocks.authguard.api.dto.requests.ApiKeyRequestDTO;
 import com.nexblocks.authguard.api.dto.requests.ApiKeyVerificationRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.ApiKeysApi;
-import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.api.common.BodyHandler;
 import com.nexblocks.authguard.service.ApiKeysService;

@@ -6,12 +6,14 @@ import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import io.javalin.http.Context;
 import io.vavr.control.Either;
 
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class OpenIdConnectRequestParser {
-    public static Either<RequestValidationError, ImmutableOpenIdConnectRequest> fromContext(final Context context,
-                                                                                            final String expectedResponseType) {
+    public static Either<RequestValidationError, ImmutableOpenIdConnectRequest>
+            authRequestFromQueryParams(Context context, String expectedResponseType) {
         final Either<RequestValidationError, String> responseType =
                 readResponseType(context, expectedResponseType);
 
@@ -25,19 +27,21 @@ public class OpenIdConnectRequestParser {
             return Either.left(clientId.getLeft());
         }
 
+        final Either<RequestValidationError, List<String>> scope = readScope(context);
+
+        if (scope.isLeft()) {
+            return Either.left(scope.getLeft());
+        }
+
         final String redirectUri = context.queryParam("redirect_uri");
-        final String scope = context.queryParam("scope");
         final String state = context.queryParam("state");
 
         final ImmutableOpenIdConnectRequest.Builder request = ImmutableOpenIdConnectRequest.builder()
                 .responseType(responseType.get())
                 .clientId(clientId.get())
                 .redirectUri(redirectUri)
-                .state(state);
-
-        if (scope != null) {
-            request.scope(Arrays.asList(scope.split(" ")));
-        }
+                .state(state)
+                .scope(scope.get());
 
         return Either.right(request.build());
     }
@@ -70,5 +74,17 @@ public class OpenIdConnectRequestParser {
         }
 
         return Either.right(clientId);
+    }
+
+    private static Either<RequestValidationError, List<String>> readScope(Context context) {
+        final String scope = context.queryParam("scope");
+
+        if (scope == null) {
+            return Either.left(new RequestValidationError(Collections.singletonList(
+                    new Violation("client_id", ViolationType.MISSING_REQUIRED_VALUE)
+            )));
+        }
+
+        return Either.right(Stream.of(scope.split(",")).collect(Collectors.toList()));
     }
 }
