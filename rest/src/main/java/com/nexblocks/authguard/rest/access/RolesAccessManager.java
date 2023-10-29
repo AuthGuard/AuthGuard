@@ -3,7 +3,6 @@ package com.nexblocks.authguard.rest.access;
 import com.nexblocks.authguard.api.access.ActorRole;
 import com.nexblocks.authguard.api.access.AuthGuardRoles;
 import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.Client;
 import com.nexblocks.authguard.service.model.ClientBO;
 import io.javalin.core.security.AccessManager;
 import io.javalin.core.security.Role;
@@ -67,16 +66,14 @@ public class RolesAccessManager implements AccessManager {
             return false;
         }
 
-        if (actor.getClientType() == Client.ClientType.AUTH) {
-            return permittedRoles.contains(ActorRole.of(AuthGuardRoles.AUTH_CLIENT));
+        switch (actor.getClientType()) {
+            case AUTH: return permittedRoles.contains(ActorRole.of(AuthGuardRoles.AUTH_CLIENT));
+            case ADMIN: return permittedRoles.contains(ActorRole.of(AuthGuardRoles.ADMIN_CLIENT));
+            case SSO: return permittedRoles.contains(ActorRole.of(AuthGuardRoles.SSO_CLIENT));
+            default:
+                LOG.error("Undefined client type " + actor.getClientType());
+
+                return false;
         }
-
-        if (actor.getClientType() == Client.ClientType.ADMIN) {
-            return permittedRoles.contains(ActorRole.of(AuthGuardRoles.ADMIN_CLIENT));
-        }
-
-        LOG.error("Undefined client type " + actor.getClientType());
-
-        return false;
     }
 }

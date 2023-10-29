@@ -1,6 +1,5 @@
-package com.nexblocks.authguard.rest.mappers;
+package com.nexblocks.authguard.api.common;
 
-import com.nexblocks.authguard.rest.exceptions.RuntimeJsonException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

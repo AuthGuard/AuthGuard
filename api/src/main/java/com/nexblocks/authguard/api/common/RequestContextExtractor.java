@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.rest.util;
+package com.nexblocks.authguard.api.common;
 
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.ClientBO;
@@ -19,15 +19,13 @@ public class RequestContextExtractor {
             return extractWithoutIdempotentKey(context, actor);
         }
 
-        LOG.error("A message made it to a route but it didn't have an actor set");
-
         return RequestContextBO.builder()
                 .source(context.ip())
                 .userAgent(context.userAgent())
                 .build();
     }
 
-    private static RequestContextBO extractWithoutIdempotentKey(final Context context, final Object actor) {
+    public static RequestContextBO extractWithoutIdempotentKey(final Context context, final Object actor) {
         if (actor instanceof ClientBO) {
             return RequestContextBO.builder()
                     .source(context.ip())

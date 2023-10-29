@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.rest.exceptions;
+package com.nexblocks.authguard.api.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
