@@ -43,18 +43,26 @@ public class AuthorizationCodeProvider implements AuthProvider {
     @Override
     public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
                                                            final TokenOptionsBO options) {
-        final String code = random.base64(config.getRandomSize());
+        String code = random.base64(config.getRandomSize());
 
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO.AccountTokenDOBuilder<?, ?> accountToken = AccountTokenDO.builder()
                 .token(TOKEN_TYPE)
                 .id(ID.generate())
                 .token(code)
                 .associatedAccountId(account.getId())
                 .expiresAt(Instant.now().plus(tokenTtl))
-                .tokenRestrictions(serviceMapper.toDO(restrictions))
-                .build();
+                .tokenRestrictions(serviceMapper.toDO(restrictions));
 
-        return accountTokensRepository.save(accountToken)
+        if (options != null) {
+            accountToken
+                    .userAgent(options.getUserAgent())
+                    .externalSessionId(options.getExternalSessionId())
+                    .deviceId(options.getDeviceId())
+                    .clientId(options.getClientId())
+                    .sourceIp(options.getSourceIp());
+        }
+
+        return accountTokensRepository.save(accountToken.build())
                 .thenApply(ignored -> AuthResponseBO.builder()
                         .type("authorizationCode")
                         .token(code)
