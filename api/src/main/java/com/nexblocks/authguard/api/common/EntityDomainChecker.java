@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.rest.access;
+package com.nexblocks.authguard.api.common;
 
 import com.nexblocks.authguard.api.dto.entities.DomainScoped;
 import com.nexblocks.authguard.service.Domains;

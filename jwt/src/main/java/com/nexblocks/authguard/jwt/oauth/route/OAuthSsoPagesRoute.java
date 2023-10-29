@@ -3,12 +3,14 @@ package com.nexblocks.authguard.jwt.oauth.route;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
+import com.nexblocks.authguard.api.dto.entities.RequestValidationError;
 import com.nexblocks.authguard.api.routes.ApiRoute;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.jwt.oauth.config.ImmutableOAuthSsoConfiguration;
 import com.nexblocks.authguard.jwt.oauth.config.OAuthSsoConfiguration;
 import com.nexblocks.authguard.service.exceptions.ConfigurationException;
 import io.javalin.http.Context;
+import io.vavr.control.Either;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
@@ -20,14 +22,14 @@ import java.util.stream.Stream;
 import static io.javalin.apibuilder.ApiBuilder.get;
 
 @DependsOnConfiguration("oauthSso")
-public class SsoPagesRoute implements ApiRoute {
+public class OAuthSsoPagesRoute implements ApiRoute {
     private final OAuthSsoConfiguration configuration;
 
     private final String loginPage;
     private final String otpPage;
 
     @Inject
-    public SsoPagesRoute(final @Named("oauthSso") ConfigContext configContext) {
+    public OAuthSsoPagesRoute(final @Named("oauthSso") ConfigContext configContext) {
         configuration = configContext.asConfigBean(ImmutableOAuthSsoConfiguration.class);
 
         if (!(configuration.useEmail() || configuration.useUsername() || configuration.usePhoneNumber())) {
@@ -46,12 +48,19 @@ public class SsoPagesRoute implements ApiRoute {
 
     @Override
     public void addEndpoints() {
-        get("/login", this::loginPage);
+        get("/auth", this::loginPage);
         get("/otp", this::otpPage);
     }
 
     private void loginPage(Context context) {
-        context.status(200).html(loginPage);
+        final Either<RequestValidationError, ImmutableOpenIdConnectRequest> request
+                = OpenIdConnectRequestParser.fromContext(context, "code");
+
+        if (request.isLeft()) {
+            context.status(400).json(request.getLeft());
+        } else {
+            context.status(200).html(loginPage);
+        }
     }
 
     private void otpPage(Context context) {

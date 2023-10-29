@@ -21,6 +21,7 @@ public interface Client extends Entity {
 
     enum ClientType {
         AUTH,
-        ADMIN
+        ADMIN,
+        SSO
     }
 }

@@ -1,12 +1,9 @@
-package com.nexblocks.authguard.rest.util;
+package com.nexblocks.authguard.api.common;
 
 import com.nexblocks.authguard.api.dto.entities.DomainScoped;
 import com.nexblocks.authguard.api.dto.validation.Validator;
 import com.nexblocks.authguard.api.dto.validation.validators.Validators;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
-import com.nexblocks.authguard.rest.access.EntityDomainChecker;
-import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
-import com.nexblocks.authguard.rest.mappers.RestJsonMapper;
 import io.javalin.http.Context;
 
 import java.util.List;

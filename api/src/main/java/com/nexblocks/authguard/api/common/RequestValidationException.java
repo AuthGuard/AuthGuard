@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.rest.exceptions;
+package com.nexblocks.authguard.api.common;
 
 
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;

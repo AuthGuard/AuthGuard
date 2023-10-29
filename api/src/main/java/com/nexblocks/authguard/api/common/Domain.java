@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.rest.util;
+package com.nexblocks.authguard.api.common;
 
 import io.javalin.http.Context;
 

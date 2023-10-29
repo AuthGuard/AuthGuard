@@ -1,8 +1,7 @@
-package com.nexblocks.authguard.rest.util;
+package com.nexblocks.authguard.api.common;
 
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
-import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 
 import java.time.Instant;
 import java.util.Collections;
