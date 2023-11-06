@@ -5,12 +5,18 @@ import com.nexblocks.authguard.jwt.oauth.route.OpenIdConnectRequest;
 import com.nexblocks.authguard.service.ClientsService;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
+import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.AsyncUtils;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import io.vavr.control.Try;
+import okhttp3.HttpUrl;
+
+import java.util.Objects;
+import java.util.Optional;
 
 public class OpenIdConnectService {
     private static final String BASIC_TOKEN_TYPE = "basic";
@@ -47,18 +53,28 @@ public class OpenIdConnectService {
                 .thenCompose(AsyncUtils::fromClientOptional)
                 .thenCompose(client -> {
                     if (client.getClientType() != Client.ClientType.SSO) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.CLIENT_NOT_PERMITTED,
+                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.CLIENT_NOT_PERMITTED,
                                 "Client isn't permitted to perform OIDC requests"));
                     }
 
-                    // TODO validate redirect URI
-                    // TODO store state
-                    // TODO validate response type
+                    HttpUrl redirectUrl = HttpUrl.parse(request.getRedirectUri());
+
+                    if (redirectUrl == null) {
+                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid redirect URL"));
+                    }
+
+                    if (!redirectUrl.host().equalsIgnoreCase(client.getBaseUrl())) {
+                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "Redirect URL doesn't match the client base URL"));
+                    }
 
                     AuthRequestBO authRequest = createRequest(request, client);
 
                     return exchangeService.exchange(authRequest, BASIC_TOKEN_TYPE, AUTH_CODE_TOKEN_TYPE,
                             requestContext.withClientId(String.valueOf(request.getClientId())));
+
+                    // TODO validate redirect URI
+                    // TODO store state
+                    // TODO validate response type
                 });
     }
 

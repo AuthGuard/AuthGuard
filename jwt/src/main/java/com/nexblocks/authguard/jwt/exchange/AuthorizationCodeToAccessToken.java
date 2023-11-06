@@ -40,7 +40,7 @@ public class AuthorizationCodeToAccessToken implements Exchange {
 
     private CompletableFuture<AuthResponseBO> generateToken(final AccountTokenDO accountToken) {
         final TokenOptionsBO options = TokenOptionsBO.builder()
-                .source("auth_code")
+                .source(accountToken.getSourceAuthType())
                 .build();
 
         final TokenRestrictionsBO restrictions = getRestrictions(accountToken);

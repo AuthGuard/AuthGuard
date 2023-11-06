@@ -25,6 +25,7 @@ public interface CreateClientRequest {
 
     enum ClientType {
         AUTH,
-        ADMIN
+        ADMIN,
+        SSO
     }
 }

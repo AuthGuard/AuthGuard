@@ -20,6 +20,7 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
 import io.javalin.http.Context;
 import io.vavr.control.Either;
+import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;

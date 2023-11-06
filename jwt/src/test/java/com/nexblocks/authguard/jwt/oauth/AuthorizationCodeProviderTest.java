@@ -1,5 +1,7 @@
 package com.nexblocks.authguard.jwt.oauth;
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.config.JacksonConfigContext;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
@@ -7,8 +9,6 @@ import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
