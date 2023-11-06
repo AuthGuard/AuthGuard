@@ -56,6 +56,7 @@ class RefreshToAccessTokenTest {
                 .token(refreshToken)
                 .associatedAccountId(accountId)
                 .expiresAt(Instant.now().plus(Duration.ofMinutes(1)))
+                .sourceAuthType("basic")
                 .build();
 
         AccountBO account = AccountBO.builder()
@@ -67,6 +68,15 @@ class RefreshToAccessTokenTest {
                 .refreshToken("new_refresh_token")
                 .build();
 
+        final TokenOptionsBO options = TokenOptionsBO.builder()
+                .source("basic")
+                .userAgent(authRequest.getUserAgent())
+                .sourceIp(authRequest.getSourceIp())
+                .clientId(authRequest.getClientId())
+                .externalSessionId(authRequest.getExternalSessionId())
+                .deviceId(authRequest.getDeviceId())
+                .build();
+
         // mock
         Mockito.when(accountTokensRepository.getByToken(authRequest.getToken()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
@@ -74,7 +84,7 @@ class RefreshToAccessTokenTest {
         Mockito.when(accountsService.getByIdUnchecked(accountId))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
-        Mockito.when(accessTokenProvider.generateToken(account, null, TokenOptionsBO.builder().build()))
+        Mockito.when(accessTokenProvider.generateToken(account, null, options))
                 .thenReturn(CompletableFuture.completedFuture(newTokens));
 
         // do
@@ -106,6 +116,7 @@ class RefreshToAccessTokenTest {
                         .permissions(Collections.singleton(restrictionPermission))
                         .scopes(Collections.emptySet())
                         .build())
+                .sourceAuthType("basic")
                 .build();
 
         AccountBO account = AccountBO.builder()
@@ -119,6 +130,16 @@ class RefreshToAccessTokenTest {
 
         TokenRestrictionsBO restrictions = TokenRestrictionsBO.builder()
                 .addPermissions(restrictionPermission)
+                .scopes(Collections.emptySet())
+                .build();
+
+        TokenOptionsBO options = TokenOptionsBO.builder()
+                .source("basic")
+                .userAgent(authRequest.getUserAgent())
+                .sourceIp(authRequest.getSourceIp())
+                .clientId(authRequest.getClientId())
+                .externalSessionId(authRequest.getExternalSessionId())
+                .deviceId(authRequest.getDeviceId())
                 .build();
 
         // mock
@@ -128,7 +149,7 @@ class RefreshToAccessTokenTest {
         Mockito.when(accountsService.getByIdUnchecked(accountId))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
-        Mockito.when(accessTokenProvider.generateToken(account, restrictions, TokenOptionsBO.builder().build()))
+        Mockito.when(accessTokenProvider.generateToken(account, restrictions, options))
                 .thenReturn(CompletableFuture.completedFuture(newTokens));
 
         // do
@@ -239,6 +260,7 @@ class RefreshToAccessTokenTest {
                 .sourceIp("127.0.0.1")
                 .externalSessionId("session-1")
                 .userAgent("test")
+                .sourceAuthType("basic")
                 .build();
 
         AccountBO account = AccountBO.builder()
@@ -251,11 +273,12 @@ class RefreshToAccessTokenTest {
                 .build();
 
         TokenOptionsBO tokenOptions = TokenOptionsBO.builder()
-                .clientId("client-1")
-                .deviceId("device-1")
-                .sourceIp("127.0.0.1")
-                .externalSessionId("session-1")
-                .userAgent("test")
+                .source("basic")
+                .userAgent(authRequest.getUserAgent())
+                .sourceIp(authRequest.getSourceIp())
+                .clientId(authRequest.getClientId())
+                .externalSessionId(authRequest.getExternalSessionId())
+                .deviceId(authRequest.getDeviceId())
                 .build();
 
         // mock

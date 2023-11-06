@@ -57,7 +57,14 @@ public class ExchangeServiceImpl implements ExchangeService {
             throw new ServiceException(ErrorCode.UNKNOWN_EXCHANGE, "Unknown token exchange " + fromTokenType + " to " + toTokenType);
         }
 
-        return exchange.exchange(authRequest)
+        AuthRequestBO enrichedRequest = AuthRequestBO.builder()
+                .from(authRequest)
+                .userAgent(requestContext.getUserAgent())
+                .clientId(requestContext.getClientId())
+                .sourceIp(requestContext.getSource())
+                .build();
+
+        return exchange.exchange(enrichedRequest)
                 .whenComplete((tokens, e) -> {
                     if (e == null) {
                         LOG.info("Successful exchange. from={}, to={}, request={}", fromTokenType, toTokenType, authRequest);
@@ -79,7 +86,7 @@ public class ExchangeServiceImpl implements ExchangeService {
 
     @Override
     public CompletableFuture<AuthResponseBO> delete(final AuthRequestBO authRequest, final String tokenType) {
-        final AuthProvider provider = authProviders.get(tokenType);
+        AuthProvider provider = authProviders.get(tokenType);
 
         if (provider == null) {
             throw new ServiceException(ErrorCode.UNKNOWN_EXCHANGE, "Unknown token type " + tokenType);
@@ -90,10 +97,10 @@ public class ExchangeServiceImpl implements ExchangeService {
 
     private void exchangeSuccess(final AuthRequestBO authRequest, final RequestContextBO requestContext,
                                  final AuthResponseBO tokens, final String fromTokenType, final String toTokenType) {
-        final AuthMessage authMessage = AuthMessage.success(fromTokenType, toTokenType,
+        AuthMessage authMessage = AuthMessage.success(fromTokenType, toTokenType,
                 tokens.getEntityType(), tokens.getEntityId());
 
-        final ExchangeAttemptBO attempt = createBaseAttempt(authRequest, requestContext)
+        ExchangeAttemptBO attempt = createBaseAttempt(authRequest, requestContext)
                 .exchangeFrom(fromTokenType)
                 .exchangeTo(toTokenType)
                 .successful(true)
@@ -109,13 +116,13 @@ public class ExchangeServiceImpl implements ExchangeService {
                                  final Throwable e, final String fromTokenType, final String toTokenType) {
 
         if (ServiceAuthorizationException.class.isAssignableFrom(e.getClass())) {
-            final ServiceAuthorizationException sae = (ServiceAuthorizationException) e;
+            ServiceAuthorizationException sae = (ServiceAuthorizationException) e;
 
-            final AuthMessage authMessage = AuthMessage.failure(fromTokenType, toTokenType,
+            AuthMessage authMessage = AuthMessage.failure(fromTokenType, toTokenType,
                     sae.getEntityType(), sae.getEntityId(), sae);
 
             if (sae.getEntityType() == EntityType.ACCOUNT) {
-                final ExchangeAttemptBO attempt = createBaseAttempt(authRequest, requestContext)
+                ExchangeAttemptBO attempt = createBaseAttempt(authRequest, requestContext)
                         .exchangeFrom(fromTokenType)
                         .exchangeTo(toTokenType)
                         .successful(false)
@@ -127,7 +134,7 @@ public class ExchangeServiceImpl implements ExchangeService {
 
             emb.publish(CHANNEL, Messages.auth(authMessage, authRequest.getDomain()));
         } else {
-            final AuthMessage authMessage = AuthMessage.failure(fromTokenType, toTokenType, e);
+            AuthMessage authMessage = AuthMessage.failure(fromTokenType, toTokenType, e);
 
             emb.publish(CHANNEL, Messages.auth(authMessage, authRequest.getDomain()));
         }
@@ -163,7 +170,7 @@ public class ExchangeServiceImpl implements ExchangeService {
     }
 
     private String tokenExchangeToString(final Exchange exchange) {
-        final TokenExchange tokenExchange = exchange.getClass().getAnnotation(TokenExchange.class);
+        TokenExchange tokenExchange = exchange.getClass().getAnnotation(TokenExchange.class);
         return exchangeKey(tokenExchange.from(), tokenExchange.to());
     }
 

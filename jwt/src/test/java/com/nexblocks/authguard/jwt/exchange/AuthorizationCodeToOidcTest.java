@@ -51,6 +51,11 @@ class AuthorizationCodeToOidcTest {
 
         AccountTokenDO accountToken = AccountTokenDO.builder()
                 .associatedAccountId(101)
+                .clientId("client")
+                .deviceId("device")
+                .userAgent("test")
+                .sourceIp("127.0.0.1")
+                .externalSessionId("session")
                 .build();
 
         AccountBO account = AccountBO.builder()
@@ -96,6 +101,11 @@ class AuthorizationCodeToOidcTest {
                         .scopes(Collections.emptySet())
                         .permissions(new HashSet<>(Arrays.asList("perm-1", "perm-2")))
                         .build())
+                .clientId("client")
+                .deviceId("device")
+                .userAgent("test")
+                .sourceIp("127.0.0.1")
+                .externalSessionId("session")
                 .build();
 
         AccountBO account = AccountBO.builder()
@@ -105,6 +115,8 @@ class AuthorizationCodeToOidcTest {
         AuthResponseBO authResponse = AuthResponseBO.builder()
                 .token("OIDC")
                 .build();
+
+        final TokenRestrictionsBO restrictions = serviceMapper.toBO(accountToken.getTokenRestrictions());
 
         TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("authorizationCode")
