@@ -35,13 +35,17 @@ public class OpenIdConnectRequestParser {
 
         final String redirectUri = context.queryParam("redirect_uri");
         final String state = context.queryParam("state");
+        final String codeChallengeMethod = context.queryParam("code_challenge_method");
+        final String codeChallenge = context.queryParam("code_challenge");
 
         final ImmutableOpenIdConnectRequest.Builder request = ImmutableOpenIdConnectRequest.builder()
                 .responseType(responseType.get())
                 .clientId(clientId.get())
                 .redirectUri(redirectUri)
                 .state(state)
-                .scope(scope.get());
+                .scope(scope.get())
+                .codeChallenge(codeChallenge)
+                .codeChallengeMethod(codeChallengeMethod);
 
         return Either.right(request.build());
     }

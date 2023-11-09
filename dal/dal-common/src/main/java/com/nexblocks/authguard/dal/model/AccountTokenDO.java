@@ -33,6 +33,7 @@ public class AccountTokenDO extends AbstractDO {
     private String externalSessionId;
     private String userAgent;
     private String sourceIp;
+    private String domain;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name="key")

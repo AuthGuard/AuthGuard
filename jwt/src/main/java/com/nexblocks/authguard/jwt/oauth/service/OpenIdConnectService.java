@@ -1,6 +1,7 @@
 package com.nexblocks.authguard.jwt.oauth.service;
 
 import com.google.inject.Inject;
+import com.nexblocks.authguard.jwt.exchange.PkceParameters;
 import com.nexblocks.authguard.jwt.oauth.route.OpenIdConnectRequest;
 import com.nexblocks.authguard.service.ClientsService;
 import com.nexblocks.authguard.service.ExchangeService;
@@ -9,14 +10,11 @@ import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.AsyncUtils;
-
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import io.vavr.control.Try;
 import okhttp3.HttpUrl;
 
 import java.util.Objects;
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public class OpenIdConnectService {
     private static final String BASIC_TOKEN_TYPE = "basic";
@@ -36,8 +34,8 @@ public class OpenIdConnectService {
 
     public CompletableFuture<AuthResponseBO> processAuth(OpenIdConnectRequest request, RequestContextBO requestContext) {
         if (!Objects.equals(request.getResponseType(), "code")) {
-            throw new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
-                    "Invalid response type");
+            return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
+                    "Invalid response type"));
         }
 
         long parsedId;
@@ -45,8 +43,8 @@ public class OpenIdConnectService {
         try {
             parsedId = Long.parseLong(request.getClientId());
         } catch (Exception e) {
-            throw new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
-                    "Invalid client ID");
+            return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
+                    "Invalid client ID"));
         }
 
         return clientsService.getById(parsedId)
@@ -57,24 +55,15 @@ public class OpenIdConnectService {
                                 "Client isn't permitted to perform OIDC requests"));
                     }
 
-                    HttpUrl redirectUrl = HttpUrl.parse(request.getRedirectUri());
+                    Try<AuthRequestBO> validatedRequest = verifyClientRequest(client, request.getRedirectUri())
+                            .flatMap(ignored -> createRequest(request, client));
 
-                    if (redirectUrl == null) {
-                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid redirect URL"));
+                    if (validatedRequest.isFailure()) {
+                        return CompletableFuture.failedFuture(validatedRequest.getCause());
                     }
 
-                    if (!redirectUrl.host().equalsIgnoreCase(client.getBaseUrl())) {
-                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "Redirect URL doesn't match the client base URL"));
-                    }
-
-                    AuthRequestBO authRequest = createRequest(request, client);
-
-                    return exchangeService.exchange(authRequest, BASIC_TOKEN_TYPE, AUTH_CODE_TOKEN_TYPE,
+                    return exchangeService.exchange(validatedRequest.get(), BASIC_TOKEN_TYPE, AUTH_CODE_TOKEN_TYPE,
                             requestContext.withClientId(String.valueOf(request.getClientId())));
-
-                    // TODO validate redirect URI
-                    // TODO store state
-                    // TODO validate response type
                 });
     }
 
@@ -86,12 +75,61 @@ public class OpenIdConnectService {
         return exchangeService.exchange(request, REFRESH_TOKEN_TYPE, ACCESS_TOKEN_TYPE, requestContext);
     }
 
-    private AuthRequestBO createRequest(OpenIdConnectRequest request, ClientBO client) {
-        return AuthRequestBO.builder()
+    private Try<AuthRequestBO> createRequest(OpenIdConnectRequest request, ClientBO client) {
+        boolean isPkce = request.getCodeChallenge() != null
+                || request.getCodeChallengeMethod() != null;
+
+        if (isPkce) {
+            return verifyPkceRequest(request)
+                    .map(ignored -> AuthRequestBO.builder()
+                            .domain(client.getDomain())
+                            .identifier(request.getIdentifier())
+                            .password(request.getPassword())
+                            .externalSessionId(request.getExternalSessionId())
+                            .extraParameters(PkceParameters.forAuthCode(request.getCodeChallenge(), request.getCodeChallengeMethod()))
+                            .build());
+        }
+
+        return Try.success(AuthRequestBO.builder()
                 .domain(client.getDomain())
                 .identifier(request.getIdentifier())
                 .password(request.getPassword())
                 .externalSessionId(request.getExternalSessionId())
-                .build();
+                .build());
+    }
+
+    private Try<Boolean> verifyClientRequest(Client client, String redirectUri) {
+        if (client.getClientType() != Client.ClientType.SSO) {
+            return Try.failure(new ServiceException(ErrorCode.CLIENT_NOT_PERMITTED,
+                    "Client isn't permitted to perform OIDC requests"));
+        }
+
+        final HttpUrl parsedUrl = HttpUrl.parse(redirectUri);
+
+        if (parsedUrl == null) {
+            return Try.failure(new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE,
+                    "Invalid redirect URL"));
+        }
+
+        if (!parsedUrl.host().equalsIgnoreCase(client.getBaseUrl())) {
+            return Try.failure(new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE,
+                    "Redirect URL doesn't match the client base URL"));
+        }
+
+        return Try.success(true);
+    }
+
+    private Try<Boolean> verifyPkceRequest(OpenIdConnectRequest request) {
+        if (!Objects.equals(request.getCodeChallengeMethod(), "S256")) {
+            return Try.failure(new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE,
+                    "Code challenge method must be S256 (SHA-256)"));
+        }
+
+        if (request.getCodeChallenge() == null) {
+            return Try.failure(new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE,
+                    "Code challenge missing"));
+        }
+
+        return Try.success(true);
     }
 }
