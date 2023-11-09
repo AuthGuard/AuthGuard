@@ -28,4 +28,8 @@ public interface OpenIdConnectRequest {
     String getExternalSessionId();
     String getUserAgent();
     String getSourceIp();
+
+    String getCodeChallengeMethod();
+    String getCodeChallenge();
+    String getCodeVerifier();
 }

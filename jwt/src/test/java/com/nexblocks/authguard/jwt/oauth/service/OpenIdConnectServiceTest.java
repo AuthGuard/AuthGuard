@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.jwt.oauth.service;
 
+import com.nexblocks.authguard.jwt.exchange.PkceParameters;
 import com.nexblocks.authguard.jwt.oauth.route.ImmutableOpenIdConnectRequest;
 import com.nexblocks.authguard.jwt.oauth.route.OpenIdConnectRequest;
 import com.nexblocks.authguard.service.ClientsService;
@@ -19,6 +20,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class OpenIdConnectServiceTest {
+
+    private final ImmutableOpenIdConnectRequest request = ImmutableOpenIdConnectRequest.builder()
+            .responseType("code")
+            .clientId("1")
+            .redirectUri("http://test-domain.com/oidc/login")
+            .identifier("user")
+            .password("password")
+            .build();
+
+    private final ClientBO client = ClientBO.builder()
+            .id(1)
+            .domain("test")
+            .clientType(Client.ClientType.SSO)
+            .baseUrl("test-domain.com")
+            .build();
+
+    private final RequestContextBO context = RequestContextBO.builder().build();
+
     private ExchangeService exchangeService;
     private ClientsService clientsService;
     private OpenIdConnectService openIdConnectService;
@@ -32,12 +51,6 @@ class OpenIdConnectServiceTest {
 
     @Test
     void processAuth() {
-        ClientBO client = ClientBO.builder()
-                .domain("test")
-                .clientType(Client.ClientType.SSO)
-                .baseUrl("test-domain.com")
-                .build();
-
         OpenIdConnectRequest request = ImmutableOpenIdConnectRequest.builder()
                 .responseType("code")
                 .clientId("1")
@@ -61,7 +74,7 @@ class OpenIdConnectServiceTest {
                 .build();
 
         Mockito.when(clientsService.getById(1))
-                        .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
         Mockito.when(exchangeService.exchange(expectedRequest, "basic", "authorizationCode", context))
                 .thenReturn(CompletableFuture.completedFuture(expectedResponse));
@@ -208,5 +221,91 @@ class OpenIdConnectServiceTest {
         openIdConnectService.processRefreshToken(request, context);
 
         Mockito.verify(exchangeService).exchange(request, "refresh", "accessToken", context);
+    }
+
+    @Test
+    void processAuthPkce() {
+        OpenIdConnectRequest pkceRequest = request
+                .withCodeChallenge("random-code-challenge")
+                .withCodeChallengeMethod("S256");
+
+        RequestContextBO context = RequestContextBO.builder().build();
+
+        AuthRequestBO expectedRequest = AuthRequestBO.builder()
+                .domain(client.getDomain())
+                .identifier(pkceRequest.getIdentifier())
+                .password(pkceRequest.getPassword())
+                .externalSessionId(pkceRequest.getExternalSessionId())
+                .extraParameters(PkceParameters.forAuthCode(pkceRequest.getCodeChallenge(), pkceRequest.getCodeChallengeMethod()))
+                .build();
+        AuthResponseBO expectedResponse = AuthResponseBO.builder()
+                .token("auth code")
+                .build();
+
+        Mockito.when(clientsService.getById(1))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
+
+        Mockito.when(exchangeService.exchange(expectedRequest, "basic", "authorizationCode", context.withClientId("1")))
+                .thenReturn(CompletableFuture.completedFuture(expectedResponse));
+
+        assertThat(openIdConnectService.processAuth(pkceRequest, context).join())
+                .isEqualTo(expectedResponse);
+    }
+    @Test
+    void processAuthPkceMissingCodeChallenge() {
+        OpenIdConnectRequest invalidRequest = request
+                .withCodeChallengeMethod("S256");
+
+        Mockito.when(clientsService.getById(1))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
+
+        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(invalidRequest, context).join())
+                .hasCauseInstanceOf(ServiceException.class)
+                .cause();
+
+        cause.extracting(e -> ((ServiceException) e).getErrorCode())
+                .isEqualTo(ErrorCode.GENERIC_AUTH_FAILURE.getCode());
+
+        cause.extracting(Throwable::getMessage)
+                .isEqualTo("Code challenge missing");
+    }
+
+    @Test
+    void processAuthPkceMissingCodeChallengeMethod() {
+        OpenIdConnectRequest invalidRequest = request
+                .withCodeChallenge("random-code-challenge");
+
+        Mockito.when(clientsService.getById(1))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
+
+        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(invalidRequest, context).join())
+                .hasCauseInstanceOf(ServiceException.class)
+                .cause();
+
+        cause.extracting(e -> ((ServiceException) e).getErrorCode())
+                .isEqualTo(ErrorCode.GENERIC_AUTH_FAILURE.getCode());
+
+        cause.extracting(Throwable::getMessage)
+                .isEqualTo("Code challenge method must be S256 (SHA-256)");
+    }
+
+    @Test
+    void processAuthPkceInvalidCodeChallengeMethod() {
+        OpenIdConnectRequest invalidRequest = request
+                .withCodeChallenge("random-code-challenge")
+                .withCodeChallengeMethod("invalid");
+
+        Mockito.when(clientsService.getById(1))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
+
+        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(invalidRequest, context).join())
+                .hasCauseInstanceOf(ServiceException.class)
+                .cause();
+
+        cause.extracting(e -> ((ServiceException) e).getErrorCode())
+                .isEqualTo(ErrorCode.GENERIC_AUTH_FAILURE.getCode());
+
+        cause.extracting(Throwable::getMessage)
+                .isEqualTo("Code challenge method must be S256 (SHA-256)");
     }
 }

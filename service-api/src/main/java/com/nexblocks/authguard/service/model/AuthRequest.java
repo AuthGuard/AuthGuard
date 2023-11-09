@@ -17,4 +17,5 @@ public interface AuthRequest {
     String getUserAgent();
     String getSourceIp();
     String getClientId();
+    Object getExtraParameters();
 }

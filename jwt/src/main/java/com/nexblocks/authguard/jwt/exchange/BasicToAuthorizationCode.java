@@ -31,6 +31,7 @@ public class BasicToAuthorizationCode implements Exchange {
                 .clientId(request.getClientId())
                 .externalSessionId(request.getExternalSessionId())
                 .deviceId(request.getDeviceId())
+                .extraParameters(request.getExtraParameters())
                 .build();
         return basicAuth.authenticateAndGetAccount(request)
                 .thenCompose(account -> authorizationCodeProvider.generateToken(account, request.getRestrictions(), options));

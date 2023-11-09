@@ -11,6 +11,7 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import com.nexblocks.authguard.service.model.TokenRestrictionsBO;
+import io.vavr.control.Try;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -35,10 +36,10 @@ public class AuthorizationCodeToOidc implements Exchange {
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
         return authorizationCodeVerifier.verifyAndGetAccountTokenAsync(request.getToken())
-                .thenCompose(this::generateToken);
+                .thenCompose(accountToken -> generateToken(accountToken, request));
     }
 
-    private CompletableFuture<AuthResponseBO> generateToken(final AccountTokenDO accountToken) {
+    private CompletableFuture<AuthResponseBO> generateToken(final AccountTokenDO accountToken, final AuthRequestBO request) {
         TokenRestrictionsBO restrictions = getRestrictions(accountToken);
         TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("authorizationCode")
@@ -48,6 +49,12 @@ public class AuthorizationCodeToOidc implements Exchange {
                 .externalSessionId(accountToken.getExternalSessionId())
                 .sourceIp(accountToken.getSourceIp())
                 .build();
+
+        Try<Boolean> verificationResult = PkceVerifier.verifyIfPkce(accountToken, request);
+
+        if (verificationResult.isFailure()) {
+            return CompletableFuture.failedFuture(verificationResult.getCause());
+        }
 
         return accountsServiceAdapter.getAccount(accountToken.getAssociatedAccountId())
                 .thenCompose(account -> openIdConnectTokenProvider.generateToken(account, restrictions, options));

@@ -51,6 +51,7 @@ class AuthorizationCodeToOidcTest {
 
         AccountTokenDO accountToken = AccountTokenDO.builder()
                 .associatedAccountId(101)
+                .sourceAuthType("authorizationCode")
                 .clientId("client")
                 .deviceId("device")
                 .userAgent("test")
@@ -97,6 +98,7 @@ class AuthorizationCodeToOidcTest {
 
         AccountTokenDO accountToken = AccountTokenDO.builder()
                 .associatedAccountId(101)
+                .sourceAuthType("authorizationCode")
                 .tokenRestrictions(TokenRestrictionsDO.builder()
                         .scopes(Collections.emptySet())
                         .permissions(new HashSet<>(Arrays.asList("perm-1", "perm-2")))
