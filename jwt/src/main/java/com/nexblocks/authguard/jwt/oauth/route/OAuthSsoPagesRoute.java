@@ -19,6 +19,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.vavr.control.Either;
 import org.apache.commons.lang3.StringUtils;
@@ -28,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -91,24 +93,39 @@ public class OAuthSsoPagesRoute implements ApiRoute {
         OpenIdConnectRequest request = RestJsonMapper.asClass(context.body(), ImmutableOpenIdConnectRequest.class);
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        try {
-            AuthResponse response = openIdConnectService.processAuth(request, requestContext).join();
-            String formedUrl = request.getRedirectUri() + "?code=" + response.getToken()
-                    + "&state=" + request.getState();
+        CompletableFuture<String> redirectUrl = openIdConnectService.processAuth(request, requestContext)
+                .thenApply(response -> {
+                    String location = request.getRedirectUri() + "?code=" + response.getToken()
+                            + "&state=" + request.getState();
+                    context.status(302)
+                            .header(Header.LOCATION, location);
 
-            context.redirect(formedUrl);
-        } catch (ServiceAuthorizationException ex) {
-            String error = Objects.equals(ex.getErrorCode(), ErrorCode.GENERIC_AUTH_FAILURE.getCode()) ?
-                    "unsupported_response_type" :
-                    "unauthorized_client";
-            String formedUrl = request.getRedirectUri() + "?error=" + error;
+                    return "";
+                })
+                .exceptionally(e -> {
+                    String location;
+                    Throwable effectiveException = e instanceof CompletionException ? e.getCause() : e;
 
-            context.redirect(formedUrl);
-        } catch (ServiceException ex) {
-            String formedUrl = request.getRedirectUri() + "?error=" + ex.getErrorCode();
+                    if (effectiveException instanceof ServiceAuthorizationException) {
+                        ServiceAuthorizationException ex = (ServiceAuthorizationException) effectiveException;
+                        String error = Objects.equals(ex.getErrorCode(), ErrorCode.GENERIC_AUTH_FAILURE.getCode()) ?
+                                "unsupported_response_type" :
+                                "unauthorized_client";
 
-            context.redirect(formedUrl);
-        }
+                        location = request.getRedirectUri() + "?error=" + error;
+                    } else if (effectiveException instanceof ServiceException) {
+                        ServiceException ex = (ServiceException) effectiveException;
+                        location = request.getRedirectUri() + "?error=" + ex.getErrorCode();
+                    } else {
+                        location = request.getRedirectUri() + "?error=Unknown Error";
+                    }
+
+                    context.status(302)
+                            .header(Header.LOCATION, location);
+                    return "";
+                });
+
+        context.result(redirectUrl);
     }
 
     private void authFlowTokenApi(Context context) {
@@ -135,7 +152,8 @@ public class OAuthSsoPagesRoute implements ApiRoute {
             return;
         }
 
-        verifiedClient.thenCompose(client -> {
+        CompletableFuture<Object> result = verifiedClient
+                .thenCompose(client -> {
                     if (Objects.equals(grantType, "authorization_code")) {
                         return handleAuthorizationCode(context, client, codeVerifier);
                     } else if (Objects.equals(grantType, "refresh_token")) {
@@ -144,21 +162,27 @@ public class OAuthSsoPagesRoute implements ApiRoute {
                         return CompletableFuture.failedFuture(new ServiceException("invalid_grant", "Invalid grant type"));
                     }
                 })
-                .whenComplete((response, e) -> {
-                    if (e != null) {
-                        if (ServiceAuthorizationException.class.isAssignableFrom(e.getClass())) {
-                            ServiceAuthorizationException serviceException = (ServiceAuthorizationException) e;
-                            context.status(401)
-                                    .json(new OpenIdConnectError(serviceException.getErrorCode(), serviceException.getMessage()));
-                        } else if (ServiceException.class.isAssignableFrom(e.getClass())) {
-                            ServiceException serviceException = (ServiceException) e;
-                            context.status(400)
-                                    .json(new OpenIdConnectError(serviceException.getErrorCode(), serviceException.getMessage()));
-                        }
+                .exceptionally(e -> {
+                    Throwable effectiveException = e instanceof CompletionException ? e.getCause() : e;
+
+                    if (ServiceAuthorizationException.class.isAssignableFrom(effectiveException.getClass())) {
+                        context.status(401);
+
+                        ServiceAuthorizationException serviceException = (ServiceAuthorizationException) effectiveException;
+
+                        return new OpenIdConnectError(serviceException.getErrorCode(), serviceException.getMessage());
+                    } else if (ServiceException.class.isAssignableFrom(effectiveException.getClass())) {
+                        context.status(400);
+
+                        ServiceException serviceException = (ServiceException) effectiveException;
+
+                        return new OpenIdConnectError(serviceException.getErrorCode(), serviceException.getMessage());
                     }
 
-                    context.json(response);
+                    return new OpenIdConnectError(ErrorCode.GENERIC_AUTH_FAILURE.getCode(), "Unknown error");
                 });
+
+        context.json(result);
     }
 
     private CompletableFuture<ClientBO> verifyNonPkceTokenFlow(Context context, String clientId, String clientSecret) {
@@ -186,7 +210,7 @@ public class OAuthSsoPagesRoute implements ApiRoute {
                 });
     }
 
-    private CompletableFuture<OpenIdConnectResponse> handleAuthorizationCode(Context context, Client client, String codeVerifier) {
+    private CompletableFuture<Object> handleAuthorizationCode(Context context, Client client, String codeVerifier) {
         String authorizationCode = context.formParam("code");
 
         if (authorizationCode == null || authorizationCode.isBlank()) {
@@ -202,7 +226,7 @@ public class OAuthSsoPagesRoute implements ApiRoute {
             request.extraParameters(PkceParameters.forToken(codeVerifier));
         }
 
-        CompletableFuture<OpenIdConnectResponse> response = openIdConnectService.processAuthCodeToken(request.build(), requestContext)
+        return openIdConnectService.processAuthCodeToken(request.build(), requestContext)
                 .thenApply(authCodeResponse -> {
                     OAuthResponseBO oAuthResponse = (OAuthResponseBO) authCodeResponse.getToken();
 
@@ -212,11 +236,9 @@ public class OAuthSsoPagesRoute implements ApiRoute {
                             oAuthResponse.getRefreshToken(),
                             authCodeResponse.getValidFor());
                 });
-
-        return response;
     }
 
-    private CompletableFuture<OpenIdConnectResponse> handleRefreshToken(Context context, Client client) {
+    private CompletableFuture<Object> handleRefreshToken(Context context, Client client) {
         String refreshToken = context.formParam("refresh_token");
 
         if (refreshToken == null || refreshToken.isBlank()) {
@@ -229,14 +251,12 @@ public class OAuthSsoPagesRoute implements ApiRoute {
                 .token(refreshToken)
                 .build();
 
-        CompletableFuture<OpenIdConnectResponse> response = openIdConnectService.processRefreshToken(request, requestContext)
+        return openIdConnectService.processRefreshToken(request, requestContext)
                 .thenApply(refreshResponse -> new OpenIdConnectResponse(
                         (String) refreshResponse.getToken(),
                         null,
                         (String) refreshResponse.getRefreshToken(),
                         refreshResponse.getValidFor()));
-
-        return response;
     }
 
     private void otpPage(Context context) {

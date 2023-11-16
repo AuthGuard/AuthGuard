@@ -43,7 +43,7 @@ public class OpenIdConnectService {
         try {
             parsedId = Long.parseLong(request.getClientId());
         } catch (Exception e) {
-            return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
+            return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.APP_DOES_NOT_EXIST,
                     "Invalid client ID"));
         }
 
