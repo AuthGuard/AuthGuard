@@ -89,11 +89,6 @@
             -webkit-border-radius: 5px 5px 5px 5px;
             border-radius: 5px 5px 5px 5px;
             margin: 5px 20px 40px 20px;
-            -webkit-transition: all 0.3s ease-in-out;
-            -moz-transition: all 0.3s ease-in-out;
-            -ms-transition: all 0.3s ease-in-out;
-            -o-transition: all 0.3s ease-in-out;
-            transition: all 0.3s ease-in-out;
         }
 
         input[type=button]:hover,
@@ -166,13 +161,12 @@
             }
         }
 
-        async function post(url, authKey, data) {
+        async function post(url, data) {
             const response = await fetch(url, {
                 method: "POST",
                 cache: "no-cache",
                 headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${authKey}`
+                    "Content-Type": "application/json"
                 },
                 redirect: "follow",
                 body: JSON.stringify(data),
@@ -181,27 +175,25 @@
             return response.json();
         }
 
-        async function login(email, password) {
-            let key = getClientKey();
-            let domain = getDomain();
+        async function login(identifier, password) {
+            let searchParams = new URLSearchParams(window.location.search);
+            let clientId = searchParams.get("client_id");
+            let responseType = searchParams.get("response_type");
+            let scope = searchParams.get("scope");
+            let redirectUri = searchParams.get("redirect_uri");
+            let state = searchParams.get("state");
 
             let requestBody = {
-                identifier: email,
+                identifier: identifier,
                 password: password,
-                domain: domain
+                responseType: responseType,
+                clientId: clientId,
+                scope: scope.split(","),
+                redirectUri: redirectUri,
+                state: state
             };
 
-            return await post("/auth/authenticate", key, requestBody);
-        }
-
-        function getClientKey() {
-            let searchParams = new URLSearchParams(window.location);
-            return searchParams.client_secret;
-        }
-
-        function getDomain() {
-            let searchParams = new URLSearchParams(window.location);
-            return searchParams.domain;
+            return await post("/oidc/auth", requestBody);
         }
 
         function onSubmit(e) {
@@ -216,6 +208,7 @@
 
         window.onload = () => {
             let element = document.querySelector('form');
+            console.log(element);
             element.onsubmit = onSubmit;
         }
     </script>
@@ -230,7 +223,7 @@
                     <input type="password" id="passwordInput" name="password" placeholder="Password">
                 </div>
 
-                <input type="submit" class="fourth" value="Log In">
+                <input type="submit" value="Log In">
             </form>
 
             <div id="formFooter">
