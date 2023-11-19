@@ -23,6 +23,13 @@ public interface PasswordsConfigInterface {
     }
 
     @Value.Default
+    default ArgonConfig getArgon() {
+        return ArgonConfig.builder().build();
+    }
+
+    Pbkdf2Config getPbkdf2();
+
+    @Value.Default
     default PasswordConditions getConditions() {
         return PasswordConditions.builder().build();
     }

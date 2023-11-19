@@ -74,6 +74,12 @@ public class SecurePasswordProvider {
             case "bcrypt":
                 return new BCryptPassword(passwordsConfig.getBcrypt());
 
+            case "argon2":
+                return new Argon2Password(passwordsConfig.getArgon());
+
+            case "pbkdf2":
+                return new Pbkdf2Password(passwordsConfig.getPbkdf2());
+
             default:
                 throw new IllegalStateException("Unsupported password algorithm " + passwordsConfig.getAlgorithm());
         }
