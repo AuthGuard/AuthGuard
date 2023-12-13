@@ -53,11 +53,11 @@ class AuthorizationCodeToOidcTest {
                 .build();
 
         final AccountTokenDO accountToken = AccountTokenDO.builder()
-                .associatedAccountId("account")
+                .associatedAccountId(101)
                 .build();
 
         final AccountBO account = AccountBO.builder()
-                .id("account")
+                .id(101)
                 .build();
 
         final AuthResponseBO authResponse = AuthResponseBO.builder()
@@ -86,7 +86,7 @@ class AuthorizationCodeToOidcTest {
                 .build();
 
         final AccountTokenDO accountToken = AccountTokenDO.builder()
-                .associatedAccountId("account")
+                .associatedAccountId(101)
                 .tokenRestrictions(TokenRestrictionsDO.builder()
                         .scopes(Collections.emptySet())
                         .permissions(new HashSet<>(Arrays.asList("perm-1", "perm-2")))
@@ -94,7 +94,7 @@ class AuthorizationCodeToOidcTest {
                 .build();
 
         final AccountBO account = AccountBO.builder()
-                .id("account")
+                .id(101)
                 .build();
 
         final AuthResponseBO authResponse = AuthResponseBO.builder()

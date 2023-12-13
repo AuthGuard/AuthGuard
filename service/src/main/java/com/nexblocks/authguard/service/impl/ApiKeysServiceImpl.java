@@ -68,7 +68,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     }
 
     @Override
-    public Optional<ApiKeyBO> getById(final String apiKeyId) {
+    public Optional<ApiKeyBO> getById(final long apiKeyId) {
         return persistenceService.getById(apiKeyId);
     }
 
@@ -78,14 +78,14 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     }
 
     @Override
-    public Optional<ApiKeyBO> delete(final String id) {
+    public Optional<ApiKeyBO> delete(final long id) {
         LOG.info("API key delete request. accountId={}", id);
 
         return persistenceService.delete(id);
     }
 
     @Override
-    public ApiKeyBO generateApiKey(final String appId, final String type, final Duration duration) {
+    public ApiKeyBO generateApiKey(final long appId, final String type, final Duration duration) {
         final AppBO app = applicationsService.getById(appId)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST,
                         "No app with ID " + appId + " found"));
@@ -94,7 +94,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     }
 
     @Override
-    public ApiKeyBO generateClientApiKey(String clientId, String type, Duration duration) {
+    public ApiKeyBO generateClientApiKey(long clientId, String type, Duration duration) {
         final ClientBO client = clientsService.getById(clientId)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST,
                         "No client with ID " + clientId + " found"));
@@ -145,7 +145,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     }
 
     @Override
-    public List<ApiKeyBO> getByAppId(final String appId) {
+    public List<ApiKeyBO> getByAppId(final long appId) {
         return apiKeysRepository.getByAppId(appId)
                 .thenApply(list -> list.stream()
                         .map(serviceMapper::toBO)
@@ -172,7 +172,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
                 .join();
     }
 
-    private ApiKeyBO mapApiKey(final String appId, final String key, final String type, boolean forClient,
+    private ApiKeyBO mapApiKey(final long appId, final String key, final String type, boolean forClient,
                                final Instant expiresAt) {
         final ApiKeyBO.Builder builder = ApiKeyBO.builder()
                 .appId(appId)

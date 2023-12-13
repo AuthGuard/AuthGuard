@@ -14,7 +14,7 @@ public class TokensResponse {
     @JsonProperty("refresh_token")
     private String refreshToken;
 
-    private String accountId;
+    private long accountId;
 
     public String getIdToken() {
         return idToken;
@@ -43,11 +43,11 @@ public class TokensResponse {
         return this;
     }
 
-    public String getAccountId() {
+    public long getAccountId() {
         return accountId;
     }
 
-    public TokensResponse setAccountId(final String accountId) {
+    public TokensResponse setAccountId(final long accountId) {
         this.accountId = accountId;
         return this;
     }

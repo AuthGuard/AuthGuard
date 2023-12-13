@@ -52,7 +52,7 @@ public class PermissionsServiceImpl implements PermissionsService {
     }
 
     @Override
-    public Optional<PermissionBO> getById(final String id) {
+    public Optional<PermissionBO> getById(final long id) {
         return persistenceService.getById(id);
     }
 
@@ -90,7 +90,7 @@ public class PermissionsServiceImpl implements PermissionsService {
     }
 
     @Override
-    public Optional<PermissionBO> delete(final String id) {
+    public Optional<PermissionBO> delete(final long id) {
         LOG.info("Request to delete permission. permissionId={}", id);
 
         return persistenceService.delete(id);

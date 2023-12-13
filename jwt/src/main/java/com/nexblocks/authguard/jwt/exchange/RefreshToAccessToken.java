@@ -91,13 +91,13 @@ public class RefreshToAccessToken implements Exchange {
     }
 
     private Either<Exception, AuthResponseBO> generateNewTokens(final AccountTokenDO accountToken) {
-        String accountId = accountToken.getAssociatedAccountId();
+        long accountId = accountToken.getAssociatedAccountId();
         TokenRestrictionsBO tokenRestrictions = serviceMapper.toBO(accountToken.getTokenRestrictions());
 
         return getAccount(accountId, accountToken).map(account -> accessTokenProvider.generateToken(account, tokenRestrictions));
     }
 
-    private Either<Exception, AccountBO> getAccount(final String accountId, final AccountTokenDO accountToken) {
+    private Either<Exception, AccountBO> getAccount(final long accountId, final AccountTokenDO accountToken) {
         return accountsService.getById(accountId)
                 .<Either<Exception, AccountBO>>map(Either::right)
                 .orElseGet(() -> {

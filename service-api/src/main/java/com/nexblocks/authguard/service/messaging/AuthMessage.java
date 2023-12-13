@@ -8,12 +8,12 @@ public class AuthMessage {
     private final String exchangeFrom;
     private final String exchangeTo;
     private final EntityType entityType;
-    private final String entityId;
+    private final Long entityId;
     private final boolean successful;
     private final Throwable exception;
 
     public AuthMessage(final String exchangeFrom, final String exchangeTo, final EntityType entityType,
-                       final String entityId, final boolean successful, final Throwable exception) {
+                       final Long entityId, final boolean successful, final Throwable exception) {
         this.exchangeFrom = exchangeFrom;
         this.exchangeTo = exchangeTo;
         this.entityType = entityType;
@@ -23,12 +23,12 @@ public class AuthMessage {
     }
 
     public static AuthMessage success(final String exchangeFrom, final String exchangeTo, final EntityType entityType,
-                                      final String entityId) {
+                                      final Long entityId) {
         return new AuthMessage(exchangeFrom, exchangeTo, entityType, entityId, true, null);
     }
 
     public static AuthMessage failure(final String exchangeFrom, final String exchangeTo, final EntityType entityType,
-                                      final String entityId, final Throwable cause) {
+                                      final Long entityId, final Throwable cause) {
         return new AuthMessage(exchangeFrom, exchangeTo, entityType, entityId, true, cause);
     }
 
@@ -53,7 +53,7 @@ public class AuthMessage {
         return entityType;
     }
 
-    public String getEntityId() {
+    public Long getEntityId() {
         return entityId;
     }
 

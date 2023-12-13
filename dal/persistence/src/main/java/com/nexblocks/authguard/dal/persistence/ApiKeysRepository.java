@@ -8,6 +8,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public interface ApiKeysRepository extends ImmutableRecordRepository<ApiKeyDO> {
-    CompletableFuture<Collection<ApiKeyDO>> getByAppId(String id);
+    CompletableFuture<Collection<ApiKeyDO>> getByAppId(long id);
     CompletableFuture<Optional<ApiKeyDO>> getByKey(String key);
 }

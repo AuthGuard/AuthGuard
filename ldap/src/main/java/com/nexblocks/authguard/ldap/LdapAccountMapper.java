@@ -32,7 +32,8 @@ public class LdapAccountMapper {
     }
 
     public AccountBO.Builder mapAttributes(final Map<String, String[]> attributes, final Map<String, String> fieldMappings) {
-        final AccountBO.Builder builder = AccountBO.builder();
+        final AccountBO.Builder builder = AccountBO.builder()
+                .id(0); // external accounts only have an external ID
 
         attributes.forEach((key, value) -> {
             final String mappedField = fieldMappings.get(key);
@@ -40,7 +41,7 @@ public class LdapAccountMapper {
             if (mappedField != null) {
                 switch (mappedField) {
                     case "id":
-                        builder.id(value[0]);
+                        builder.externalId(value[0]);
                         break;
 
                     case "roles":

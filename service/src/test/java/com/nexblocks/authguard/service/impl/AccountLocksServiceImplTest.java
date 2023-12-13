@@ -34,23 +34,23 @@ class AccountLocksServiceImplTest {
     void getActiveLocksByAccountId() {
         final Instant now = Instant.now();
 
-        Mockito.when(repository.findByAccountId("account"))
+        Mockito.when(repository.findByAccountId(101))
                 .thenReturn(CompletableFuture.completedFuture(
                         Arrays.asList(
                                 AccountLockDO.builder()
-                                        .accountId("account")
+                                        .accountId(101)
                                         .expiresAt(now.plus(Duration.ofMinutes(5)))
                                         .build(),
                                 AccountLockDO.builder()
-                                        .accountId("account")
+                                        .accountId(101)
                                         .expiresAt(now.minus(Duration.ofMinutes(1)))
                                         .build()
                         )
                 ));
 
-        final Collection<AccountLockBO> actual = service.getActiveLocksByAccountId("account");
+        final Collection<AccountLockBO> actual = service.getActiveLocksByAccountId(101);
         final Collection<AccountLockBO> expected = Collections.singletonList(AccountLockBO.builder()
-                .accountId("account")
+                .accountId(101L)
                 .expiresAt(now.plus(Duration.ofMinutes(5)))
                 .build());
 
@@ -61,17 +61,17 @@ class AccountLocksServiceImplTest {
     void delete() {
         final Instant now = Instant.now();
 
-        Mockito.when(repository.delete("lock"))
+        Mockito.when(repository.delete(1))
                 .thenReturn(CompletableFuture.completedFuture(
                         Optional.of(AccountLockDO.builder()
-                                .accountId("account")
+                                .accountId(101)
                                 .expiresAt(now.plus(Duration.ofMinutes(5)))
                                 .build())
                 ));
 
-        final Optional<AccountLockBO> actual = service.delete("lock");
+        final Optional<AccountLockBO> actual = service.delete(1);
         final AccountLockBO expected = AccountLockBO.builder()
-                .accountId("account")
+                .accountId(101L)
                 .expiresAt(now.plus(Duration.ofMinutes(5)))
                 .build();
 

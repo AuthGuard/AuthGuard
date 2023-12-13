@@ -7,7 +7,7 @@ import java.time.Instant;
 @Value.Immutable
 @BOStyle
 public interface ApiKey extends Entity {
-    String getAppId();
+    long getAppId();
     String getKey();
     String getType();
     boolean isForClient();

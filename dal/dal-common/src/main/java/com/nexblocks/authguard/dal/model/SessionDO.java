@@ -24,7 +24,7 @@ import java.util.Map;
 )
 public class SessionDO extends AbstractDO {
     private String sessionToken;
-    private String accountId;
+    private long accountId;
     private Instant expiresAt;
 
     @ElementCollection(fetch = FetchType.EAGER)

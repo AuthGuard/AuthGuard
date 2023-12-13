@@ -41,7 +41,7 @@ public class DefaultApiKeyExchange implements ApiKeyExchange {
     }
 
     @Override
-    public CompletableFuture<Optional<String>> verifyAndGetAppId(final String apiKey) {
+    public CompletableFuture<Optional<Long>> verifyAndGetAppId(final String apiKey) {
         return repository.getByKey(apiKeyHash.hash(apiKey))
                 .thenApply(optional -> optional
                         .filter(this::isValid)
@@ -49,7 +49,7 @@ public class DefaultApiKeyExchange implements ApiKeyExchange {
     }
 
     @Override
-    public CompletableFuture<Optional<String>> verifyAndGetClientId(String apiKey) {
+    public CompletableFuture<Optional<Long>> verifyAndGetClientId(String apiKey) {
         return verifyAndGetAppId(apiKey);
     }
 

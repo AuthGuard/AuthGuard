@@ -54,7 +54,7 @@ public class ActionTokenServiceImpl implements ActionTokenService {
     }
 
     @Override
-    public Try<AuthResponseBO> generateOtp(final String accountId) {
+    public Try<AuthResponseBO> generateOtp(final long accountId) {
         final AccountBO account = accountsService.getById(accountId).orElse(null);
 
         if (account == null) {
@@ -91,7 +91,7 @@ public class ActionTokenServiceImpl implements ActionTokenService {
     }
 
     @Override
-    public Try<ActionTokenBO> generateFromOtp(final String passwordId, final String otp, final String action) {
+    public Try<ActionTokenBO> generateFromOtp(final long passwordId, final String otp, final String action) {
         final String otpToken = passwordId + ":" + otp;
         final Either<Exception, Optional<AccountBO>> otpResult = otpVerifier.verifyAccountToken(otpToken)
                 .map(accountsService::getById);

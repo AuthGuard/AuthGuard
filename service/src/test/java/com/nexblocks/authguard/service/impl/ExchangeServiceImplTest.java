@@ -29,7 +29,7 @@ class ExchangeServiceImplTest {
                     .token(request.getToken())
                     .type("Basic")
                     .entityType(EntityType.ACCOUNT)
-                    .entityId("account")
+                    .entityId(101)
                     .build());
         }
     }
@@ -54,7 +54,7 @@ class ExchangeServiceImplTest {
         @Override
         public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
             return Either.left(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE, "Empty",
-                    EntityType.ACCOUNT, "account"));
+                    EntityType.ACCOUNT, 101));
         }
     }
 
@@ -86,7 +86,7 @@ class ExchangeServiceImplTest {
                 .type("Basic")
                 .token(basic)
                 .entityType(EntityType.ACCOUNT)
-                .entityId("account")
+                .entityId(101)
                 .build();
 
         Assertions.assertThat(exchangeService.exchange(authRequest, "basic", "basic", requestContext))
@@ -96,7 +96,7 @@ class ExchangeServiceImplTest {
                 .successful(true)
                 .exchangeFrom("basic")
                 .exchangeTo("basic")
-                .entityId("account")
+                .entityId(101L)
                 .clientId("client")
                 .sourceIp("10.0.0.2")
                 .deviceId("user-device")
@@ -174,7 +174,7 @@ class ExchangeServiceImplTest {
                 .successful(false)
                 .exchangeFrom("basic")
                 .exchangeTo("exception")
-                .entityId("account")
+                .entityId(101L)
                 .build());
 
         Mockito.verify(emb).publish(Mockito.eq(ExchangeServiceImpl.CHANNEL), Mockito.any());
@@ -210,7 +210,7 @@ class ExchangeServiceImplTest {
                 .type("Basic")
                 .token(basic)
                 .entityType(EntityType.ACCOUNT)
-                .entityId("account")
+                .entityId(101)
                 .build();
 
         Assertions.assertThat(exchangeService.exchange(authRequest, "basic", "basic", requestContext))
@@ -220,7 +220,7 @@ class ExchangeServiceImplTest {
                 .successful(true)
                 .exchangeFrom("basic")
                 .exchangeTo("basic")
-                .entityId("account")
+                .entityId(101L)
                 .clientId("client")
                 .sourceIp("10.0.0.3")
                 .deviceId("user-device")

@@ -89,7 +89,7 @@ public class JwtApiKeyProvider implements AuthProvider {
         final String keyId = jti.next();
 
         final JWTCreator.Builder jwtBuilder = JWT.create()
-                .withSubject(app.getId())
+                .withSubject("" + app.getId())
                 .withJWTId(keyId)
                 .withClaim("type", "API");
 
@@ -124,7 +124,7 @@ public class JwtApiKeyProvider implements AuthProvider {
         final String keyId = jti.next();
 
         final JWTCreator.Builder jwtBuilder = JWT.create()
-                .withSubject(client.getId())
+                .withSubject("" + client.getId())
                 .withJWTId(keyId)
                 .withClaim("type", "API")
                 .withClaim("clientType", client.getClientType().name());

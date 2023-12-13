@@ -265,7 +265,7 @@ class AccessTokenProviderTest {
         final AccessTokenProvider accessTokenProvider = newProviderInstance(jwtConfig(), strategyConfig());
 
         final String refreshToken = "refresh";
-        final String accountId = "account";
+        final long accountId = 101;
         final AuthRequestBO deleteRequest = AuthRequestBO.builder().token(refreshToken).build();
 
         Mockito.when(accountTokensRepository.deleteToken(refreshToken))
@@ -302,10 +302,10 @@ class AccessTokenProviderTest {
                 .isInstanceOf(ServiceAuthorizationException.class);
     }
 
-    private void verifyToken(final String token, final String subject, final String jti, final List<String> permissions) {
+    private void verifyToken(final String token, final long subject, final String jti, final List<String> permissions) {
         final Verification verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
                 .withIssuer(ISSUER)
-                .withSubject(subject);
+                .withSubject("" + subject);
 
         if (jti != null) {
             verifier.withJWTId(jti);

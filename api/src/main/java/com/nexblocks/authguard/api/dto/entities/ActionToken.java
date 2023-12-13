@@ -12,6 +12,6 @@ import org.immutables.value.Value;
 public interface ActionToken {
     String getToken();
     String getAction();
-    String getAccountId();
+    Long getAccountId();
     long getValidFor();
 }

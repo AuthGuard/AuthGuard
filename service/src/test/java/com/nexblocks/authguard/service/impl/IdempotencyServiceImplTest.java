@@ -26,16 +26,16 @@ class IdempotencyServiceImplTest {
     private IdempotencyService service;
 
     static class TestEntity implements Entity {
-        private final String id;
+        private final long id;
         private final Instant now;
 
-        TestEntity(final String id) {
+        TestEntity(final long id) {
             this.id = id;
             this.now = Instant.now();
         }
 
         @Override
-        public String getId() {
+        public long getId() {
             return id;
         }
 
@@ -65,7 +65,7 @@ class IdempotencyServiceImplTest {
     @Test
     void perform() throws InterruptedException {
         final String idempotentKey = UUID.randomUUID().toString();
-        final TestEntity entity = new TestEntity("entity-id");
+        final TestEntity entity = new TestEntity(1);
         final Supplier<TestEntity> operation = () -> entity;
 
         Mockito.when(repository.findByKeyAndEntityType(idempotentKey, ENTITY_TYPE))
@@ -90,7 +90,7 @@ class IdempotencyServiceImplTest {
     @Test
     void performExistingKey() {
         final String idempotentKey = UUID.randomUUID().toString();
-        final TestEntity entity = new TestEntity("entity-id");
+        final TestEntity entity = new TestEntity(2);
 
         final IdempotentRecordDO idempotentRecord = IdempotentRecordDO.builder()
                 .idempotentKey(idempotentKey)

@@ -23,7 +23,7 @@ public class ApiTokenVerifier implements AuthVerifier {
     }
 
     @Override
-    public Either<Exception, String> verifyAccountToken(final String token) {
+    public Either<Exception, Long> verifyAccountToken(final String token) {
         return jwtVerifier.verifyAccountToken(token);
     }
 }

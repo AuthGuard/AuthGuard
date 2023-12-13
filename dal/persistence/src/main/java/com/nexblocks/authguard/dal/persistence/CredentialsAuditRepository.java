@@ -9,5 +9,5 @@ import java.util.concurrent.CompletableFuture;
 
 public interface CredentialsAuditRepository
         extends IndelibleRecordRepository<CredentialsAuditDO>, ImmutableRecordRepository<CredentialsAuditDO> {
-    CompletableFuture<List<CredentialsAuditDO>> findByCredentialsId(String credentialsId);
+    CompletableFuture<List<CredentialsAuditDO>> findByCredentialsId(long credentialsId);
 }

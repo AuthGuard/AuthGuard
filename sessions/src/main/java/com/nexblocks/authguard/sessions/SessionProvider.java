@@ -49,7 +49,7 @@ public class SessionProvider implements AuthProvider {
 
         final Map<String, String> data = new HashMap<>();
 
-        data.put(SessionKeys.ACCOUNT_ID, account.getId());
+        data.put(SessionKeys.ACCOUNT_ID, "" + account.getId());
         data.put(SessionKeys.ROLES, String.join(",", account.getRoles()));
         data.put(SessionKeys.PERMISSIONS, account.getPermissions().stream()
                         .map(Permission::getFullName)

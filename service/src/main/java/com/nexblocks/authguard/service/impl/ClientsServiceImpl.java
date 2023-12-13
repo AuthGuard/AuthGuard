@@ -61,13 +61,13 @@ public class ClientsServiceImpl implements ClientsService {
     }
 
     @Override
-    public Optional<ClientBO> getById(final String id) {
+    public Optional<ClientBO> getById(final long id) {
         return persistenceService.getById(id);
     }
 
     @Override
     public Optional<ClientBO> getByExternalId(final String externalId) {
-        return clientsRepository.getById(externalId)
+        return clientsRepository.getByExternalId(externalId)
                 .thenApply(optional -> optional.map(serviceMapper::toBO))
                 .join();
     }
@@ -81,14 +81,14 @@ public class ClientsServiceImpl implements ClientsService {
     }
 
     @Override
-    public Optional<ClientBO> delete(final String id) {
+    public Optional<ClientBO> delete(final long id) {
         LOG.info("Client delete request. accountId={}", id);
 
         return persistenceService.delete(id);
     }
 
     @Override
-    public Optional<ClientBO> activate(final String id) {
+    public Optional<ClientBO> activate(final long id) {
         return getById(id)
                 .flatMap(client -> {
                     LOG.info("Activate client request. clientId={}, domain={}", client.getId(), client.getDomain());
@@ -107,7 +107,7 @@ public class ClientsServiceImpl implements ClientsService {
     }
 
     @Override
-    public Optional<ClientBO> deactivate(final String id) {
+    public Optional<ClientBO> deactivate(final long id) {
         return getById(id)
                 .flatMap(client -> {
                     LOG.info("Deactivate client request. clientId={}, domain={}", client.getId(), client.getDomain());
@@ -126,7 +126,7 @@ public class ClientsServiceImpl implements ClientsService {
     }
 
     @Override
-    public List<ClientBO> getByAccountId(final String accountId) {
+    public List<ClientBO> getByAccountId(final long accountId) {
         return clientsRepository.getAllForAccount(accountId)
                 .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()))
                 .join();

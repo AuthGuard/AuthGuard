@@ -5,7 +5,10 @@ import com.nexblocks.authguard.api.dto.entities.ApiKeyDTO;
 import com.nexblocks.authguard.api.dto.entities.AppDTO;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.requests.CreateAppRequestDTO;
+import com.nexblocks.authguard.api.dto.validation.violations.Violation;
+import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.ApplicationsApi;
+import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestJsonMapper;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
@@ -13,8 +16,10 @@ import com.nexblocks.authguard.rest.util.IdempotencyHeader;
 import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.ApplicationsService;
 import com.nexblocks.authguard.service.model.RequestContextBO;
+import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -59,9 +64,13 @@ public class ApplicationsRoute extends ApplicationsApi {
     }
 
     public void getById(final Context context) {
-        final String applicationId = context.pathParam("id");
+        final Validator<Long> applicationId = context.pathParam("id", Long.class);
 
-        final Optional<AppDTO> application = applicationsService.getById(applicationId)
+        if (!applicationId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<AppDTO> application = applicationsService.getById(applicationId.get())
                 .map(restMapper::toDTO);
 
         if (application.isPresent()) {
@@ -72,9 +81,13 @@ public class ApplicationsRoute extends ApplicationsApi {
     }
 
     public void getByExternalId(final Context context) {
-        final String applicationId = context.pathParam("id");
+        final Validator<Long> applicationId = context.pathParam("id", Long.class);
 
-        final Optional<AppDTO> application = applicationsService.getById(applicationId)
+        if (!applicationId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<AppDTO> application = applicationsService.getById(applicationId.get())
                 .map(restMapper::toDTO);
 
         if (application.isPresent()) {
@@ -100,9 +113,13 @@ public class ApplicationsRoute extends ApplicationsApi {
     }
 
     public void deleteById(final Context context) {
-        final String applicationId = context.pathParam("id");
+        final Validator<Long> applicationId = context.pathParam("id", Long.class);
 
-        final Optional<AppDTO> application = applicationsService.delete(applicationId)
+        if (!applicationId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<AppDTO> application = applicationsService.delete(applicationId.get())
                 .map(restMapper::toDTO);
 
         if (application.isPresent()) {
@@ -113,9 +130,13 @@ public class ApplicationsRoute extends ApplicationsApi {
     }
 
     public void activate(final Context context) {
-        final String applicationId = context.pathParam("id");
+        final Validator<Long> applicationId = context.pathParam("id", Long.class);
 
-        final Optional<AppDTO> application = applicationsService.activate(applicationId)
+        if (!applicationId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<AppDTO> application = applicationsService.activate(applicationId.get())
                 .map(restMapper::toDTO);
 
         if (application.isPresent()) {
@@ -126,9 +147,13 @@ public class ApplicationsRoute extends ApplicationsApi {
     }
 
     public void deactivate(final Context context) {
-        final String applicationId = context.pathParam("id");
+        final Validator<Long> applicationId = context.pathParam("id", Long.class);
 
-        final Optional<AppDTO> application = applicationsService.deactivate(applicationId)
+        if (!applicationId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<AppDTO> application = applicationsService.deactivate(applicationId.get())
                 .map(restMapper::toDTO);
 
         if (application.isPresent()) {
@@ -140,9 +165,13 @@ public class ApplicationsRoute extends ApplicationsApi {
 
     @Override
     public void getApiKeys(final Context context) {
-        final String applicationId = context.pathParam("id");
+        final Validator<Long> applicationId = context.pathParam("id", Long.class);
 
-        final List<ApiKeyDTO> keys = apiKeysService.getByAppId(applicationId)
+        if (!applicationId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final List<ApiKeyDTO> keys = apiKeysService.getByAppId(applicationId.get())
                 .stream()
                 .map(restMapper::toDTO)
                 .collect(Collectors.toList());

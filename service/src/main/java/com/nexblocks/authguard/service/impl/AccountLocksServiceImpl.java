@@ -39,7 +39,7 @@ public class AccountLocksServiceImpl implements AccountLocksService {
     }
 
     @Override
-    public Collection<AccountLockBO> getActiveLocksByAccountId(final String accountId) {
+    public Collection<AccountLockBO> getActiveLocksByAccountId(final long accountId) {
         final Instant now = Instant.now();
 
         return accountLocksRepository.findByAccountId(accountId)
@@ -51,7 +51,7 @@ public class AccountLocksServiceImpl implements AccountLocksService {
     }
 
     @Override
-    public Optional<AccountLockBO> delete(final String lockId) {
+    public Optional<AccountLockBO> delete(final long lockId) {
         return accountLocksRepository.delete(lockId)
                 .thenApply(lock -> lock.map(serviceMapper::toBO))
                 .join();

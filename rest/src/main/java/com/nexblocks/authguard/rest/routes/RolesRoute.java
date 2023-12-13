@@ -3,14 +3,19 @@ package com.nexblocks.authguard.rest.routes;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.RoleDTO;
 import com.nexblocks.authguard.api.dto.requests.CreateRoleRequestDTO;
+import com.nexblocks.authguard.api.dto.validation.violations.Violation;
+import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.RolesApi;
+import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.service.RolesService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.google.inject.Inject;
+import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -44,9 +49,13 @@ public class RolesRoute extends RolesApi {
 
     @Override
     public void getById(final Context context) {
-        final String id = context.pathParam("id");
+        final Validator<Long> id = context.pathParam("id", Long.class);
 
-        rolesService.getById(id)
+        if (!id.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        rolesService.getById(id.get())
                 .map(restMapper::toDTO)
                 .ifPresentOrElse(
                         role -> context.status(200).json(role),
@@ -59,9 +68,13 @@ public class RolesRoute extends RolesApi {
 
     @Override
     public void deleteById(final Context context) {
-        final String id = context.pathParam("id");
+        final Validator<Long> id = context.pathParam("id", Long.class);
 
-        rolesService.getById(id)
+        if (!id.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        rolesService.getById(id.get())
                 .map(restMapper::toDTO)
                 .ifPresentOrElse(
                         role -> context.status(200).json(role),

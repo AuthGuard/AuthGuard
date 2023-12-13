@@ -27,10 +27,10 @@ public class AccountTokenJpaTest {
         entityManager = h2.getEntityManager();
 
         createdAccountToken = AccountTokenDO.builder()
-                .id("account-token-id")
+                .id(1)
                 .token("test-token")
                 .expiresAt(Instant.now())
-                .associatedAccountId("account")
+                .associatedAccountId(101)
                 .additionalInformation(ImmutableMap.of("key", "value"))
                 .build();
 

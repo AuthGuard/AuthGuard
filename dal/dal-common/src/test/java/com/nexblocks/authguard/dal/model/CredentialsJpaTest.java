@@ -31,8 +31,8 @@ public class CredentialsJpaTest {
 
         // create credentials
         createdCredentials = CredentialsDO.builder()
-                .id("created-credentials")
-                .accountId("account")
+                .id(1)
+                .accountId(101)
                 .hashedPassword(PasswordDO.builder()
                         .password("password")
                         .salt("salt")
@@ -45,9 +45,9 @@ public class CredentialsJpaTest {
                 .build();
 
         deletedCredentials = CredentialsDO.builder()
-                .id("deleted-credentials")
+                .id(2)
                 .deleted(true)
-                .accountId("account")
+                .accountId(101)
                 .hashedPassword(PasswordDO.builder()
                         .password("password")
                         .salt("salt")
@@ -117,8 +117,8 @@ public class CredentialsJpaTest {
     @Test
     void createDuplicate() {
         final CredentialsDO duplicate = CredentialsDO.builder()
-                .id("duplicate-credentials")
-                .accountId("account")
+                .id(3)
+                .accountId(101)
                 .hashedPassword(PasswordDO.builder()
                         .password("password")
                         .salt("salt")

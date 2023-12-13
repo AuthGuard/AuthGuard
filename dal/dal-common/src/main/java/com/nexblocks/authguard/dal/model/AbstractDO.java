@@ -19,8 +19,7 @@ import java.time.Instant;
 @MappedSuperclass
 public abstract class AbstractDO {
     @Id
-    @Convert(converter = LongToStringConverter.class)
-    private String id;
+    private long id;
     private boolean deleted;
     private Instant createdAt;
     private Instant lastModified;

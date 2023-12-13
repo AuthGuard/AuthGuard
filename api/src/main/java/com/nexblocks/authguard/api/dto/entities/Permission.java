@@ -12,7 +12,7 @@ import java.time.Instant;
 @JsonSerialize(as = PermissionDTO.class)
 @JsonDeserialize(as = PermissionDTO.class)
 public interface Permission {
-    String getId();
+    long getId();
     Instant getCreatedAt();
     Instant getLastModified();
     String getGroup();

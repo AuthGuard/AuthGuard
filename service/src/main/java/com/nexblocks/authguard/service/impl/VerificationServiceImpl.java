@@ -92,7 +92,7 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     @Override
-    public AuthResponseBO sendPhoneNumberVerification(final String accountId) {
+    public AuthResponseBO sendPhoneNumberVerification(final long accountId) {
         final AccountBO account = accountsService.getById(accountId)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                         "Account " + accountId + " does not exist"));
@@ -110,9 +110,9 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     @Override
-    public void verifyPhoneNumber(final String passwordId, final String otp, final String phoneNumber) {
+    public void verifyPhoneNumber(final long passwordId, final String otp, final String phoneNumber) {
         final String token = passwordId + ":" + otp;
-        final Either<Exception, String> either = otpVerifier.verifyAccountToken(token);
+        final Either<Exception, Long> either = otpVerifier.verifyAccountToken(token);
 
         if (either.isLeft()) {
             LOG.info("Phone number verification request with expired OTP. passwordId={}", passwordId);

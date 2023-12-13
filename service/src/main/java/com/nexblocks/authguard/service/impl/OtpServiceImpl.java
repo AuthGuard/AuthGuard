@@ -27,7 +27,7 @@ public class OtpServiceImpl implements OtpService {
     }
 
     @Override
-    public AuthResponseBO authenticate(final String passwordId, final String otp, final RequestContextBO requestContext) {
+    public AuthResponseBO authenticate(final long passwordId, final String otp, final RequestContextBO requestContext) {
         final String token = passwordId + ":" + otp;
 
         return authenticate(AuthRequestBO.builder().token(token).build(), requestContext);

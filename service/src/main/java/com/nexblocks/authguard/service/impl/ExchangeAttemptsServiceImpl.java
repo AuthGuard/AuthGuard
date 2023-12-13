@@ -39,7 +39,7 @@ public class ExchangeAttemptsServiceImpl implements ExchangeAttemptsService {
     }
 
     @Override
-    public Optional<ExchangeAttemptBO> getById(final String id) {
+    public Optional<ExchangeAttemptBO> getById(final long id) {
         return persistenceService.getById(id);
     }
 
@@ -49,12 +49,12 @@ public class ExchangeAttemptsServiceImpl implements ExchangeAttemptsService {
     }
 
     @Override
-    public Optional<ExchangeAttemptBO> delete(final String id) {
+    public Optional<ExchangeAttemptBO> delete(final long id) {
         throw new UnsupportedOperationException("Exchange attempts cannot be deleted");
     }
 
     @Override
-    public Collection<ExchangeAttemptBO> getByEntityId(final String entityId) {
+    public Collection<ExchangeAttemptBO> getByEntityId(final long entityId) {
         return exchangeAttemptsRepository.findByEntity(entityId)
                 .thenApply(collection -> collection.stream()
                         .map(serviceMapper::toBO)

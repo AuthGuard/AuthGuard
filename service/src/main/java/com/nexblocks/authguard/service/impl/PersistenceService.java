@@ -50,7 +50,7 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
                 .join();
     }
 
-    public Optional<BO> getById(final String id) {
+    public Optional<BO> getById(final long id) {
         return repository.getById(id)
                 .thenApply(opt -> opt.map(doToBo))
                 .join();
@@ -73,7 +73,7 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
                 .join();
     }
 
-    public Optional<BO> delete(final String id) {
+    public Optional<BO> delete(final long id) {
         return repository.delete(id)
                 .thenApply(opt -> {
                     final Optional<BO> boOpt = opt.map(doToBo);

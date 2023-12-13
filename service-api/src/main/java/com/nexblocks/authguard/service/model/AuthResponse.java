@@ -6,7 +6,7 @@ import org.immutables.value.Value;
 @BOStyle
 public interface AuthResponse {
     EntityType getEntityType();
-    String getEntityId();
+    long getEntityId();
     String getType();
     String getId();
     Object getToken();

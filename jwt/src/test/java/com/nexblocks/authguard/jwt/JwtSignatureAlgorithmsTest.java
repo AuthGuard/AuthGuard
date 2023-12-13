@@ -54,7 +54,7 @@ public class JwtSignatureAlgorithmsTest {
         final JwtGenerator jwtGenerator = new JwtGenerator(config);
 
         final AccountBO account = AccountBO.builder()
-                .id("id")
+                .id(101)
                 .build();
 
         final JWTCreator.Builder tokenBuilder = jwtGenerator.generateUnsignedToken(account, Duration.ofMinutes(5));

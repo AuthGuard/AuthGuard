@@ -65,7 +65,7 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public Optional<RoleBO> getById(final String id) {
+    public Optional<RoleBO> getById(final long id) {
         return persistenceService.getById(id);
     }
 
@@ -75,7 +75,7 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public Optional<RoleBO> delete(final String id) {
+    public Optional<RoleBO> delete(final long id) {
         LOG.info("Request to delete role. roleId={}", id);
 
         return persistenceService.delete(id);

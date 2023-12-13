@@ -94,11 +94,11 @@ class IdTokenProviderTest {
         assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
     }
 
-    private void verifyToken(final String token, final String subject, final String jti,
+    private void verifyToken(final String token, final long subject, final String jti,
                              final List<PermissionBO> permissions, final List<String> scopes) {
         final Verification verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
                 .withIssuer(ISSUER)
-                .withSubject(subject);
+                .withSubject("" + subject);
 
         if (jti != null) {
             verifier.withJWTId(jti);

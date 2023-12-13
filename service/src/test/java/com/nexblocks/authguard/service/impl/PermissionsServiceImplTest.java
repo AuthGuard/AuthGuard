@@ -76,13 +76,13 @@ class PermissionsServiceImplTest {
     @Test
     void getById() {
         final PermissionDO permission = PermissionDO.builder()
-                .id("permission")
+                .id(1)
                 .group("test")
                 .name("read")
                 .build();
 
         final PermissionBO expected = PermissionBO.builder()
-                .id("permission")
+                .id(1)
                 .group("test")
                 .name("read")
                 .build();
@@ -144,13 +144,13 @@ class PermissionsServiceImplTest {
     @Test
     void delete() {
         final PermissionDO permission = PermissionDO.builder()
-                .id("permission")
+                .id(1)
                 .group("test")
                 .name("read")
                 .build();
 
         final PermissionBO expected = PermissionBO.builder()
-                .id("permission")
+                .id(1)
                 .group("test")
                 .name("read")
                 .build();

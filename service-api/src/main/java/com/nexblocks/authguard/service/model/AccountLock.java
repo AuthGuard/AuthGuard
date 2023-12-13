@@ -7,6 +7,6 @@ import java.time.Instant;
 @Value.Immutable
 @BOStyle
 public interface AccountLock {
-    String getAccountId();
+    Long getAccountId();
     Instant getExpiresAt();
 }

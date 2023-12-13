@@ -15,6 +15,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.model.ActionTokenBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
+import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 import io.vavr.control.Try;
 
@@ -38,7 +39,11 @@ public class ActionTokensRoute extends ActionTokensApi {
 
     @Override
     public void createOtp(final Context context) {
-        final String accountId = context.queryParam("accountId");
+        final Validator<Long> accountId = context.pathParam("id", Long.class);
+
+        if (!accountId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
 
         if (accountId == null) {
             throw new RequestValidationException(Collections.singletonList(
@@ -46,7 +51,7 @@ public class ActionTokensRoute extends ActionTokensApi {
             ));
         }
 
-        final Try<AuthResponseBO> result = actionTokenService.generateOtp(accountId);
+        final Try<AuthResponseBO> result = actionTokenService.generateOtp(accountId.get());
 
         if (result.isFailure()) {
             throw (ServiceException) result.getCause();

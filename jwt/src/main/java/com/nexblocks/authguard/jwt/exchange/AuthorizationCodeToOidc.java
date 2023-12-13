@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.jwt.exchange;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.jwt.OpenIdConnectTokenProvider;
 import com.nexblocks.authguard.jwt.oauth.AuthorizationCodeVerifier;
@@ -18,6 +19,7 @@ public class AuthorizationCodeToOidc implements Exchange {
     private final OpenIdConnectTokenProvider openIdConnectTokenProvider;
     private final ServiceMapper serviceMapper;
 
+    @Inject
     public AuthorizationCodeToOidc(final AccountsServiceAdapter accountsServiceAdapter,
                                    final AuthorizationCodeVerifier authorizationCodeVerifier,
                                    final OpenIdConnectTokenProvider openIdConnectTokenProvider,

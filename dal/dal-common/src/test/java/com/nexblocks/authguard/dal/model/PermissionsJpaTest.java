@@ -26,21 +26,21 @@ public class PermissionsJpaTest {
 
         // create entities
         first = PermissionDO.builder()
-                .id("first-permission")
+                .id(1)
                 .group("test")
                 .name("read")
                 .domain("main")
                 .build();
 
         second = PermissionDO.builder()
-                .id("second-permission")
+                .id(2)
                 .group("test")
                 .name("write")
                 .domain("main")
                 .build();
 
         deleted = PermissionDO.builder()
-                .id("deleted-permission")
+                .id(3)
                 .deleted(true)
                 .group("test")
                 .name("delete")

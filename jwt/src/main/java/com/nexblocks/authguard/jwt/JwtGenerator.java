@@ -32,7 +32,7 @@ public class JwtGenerator {
 
         return JWT.create()
                 .withIssuer(jwtConfig.getIssuer())
-                .withSubject(account.getId())
+                .withSubject("" + account.getId())
                 // TODO properly handle timezones
                 .withIssuedAt(Date.from(now.toInstant(ZoneId.systemDefault().getRules().getOffset(now))))
                 .withExpiresAt(Date.from(exp.toInstant(ZoneId.systemDefault().getRules().getOffset(now))));

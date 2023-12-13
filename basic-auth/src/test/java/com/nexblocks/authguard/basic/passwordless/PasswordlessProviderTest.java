@@ -52,7 +52,7 @@ class PasswordlessProviderTest {
         setup(passwordlessConfig);
 
         final AccountBO account = AccountBO.builder()
-                .id("account")
+                .id(101)
                 .active(true)
                 .build();
 

@@ -10,11 +10,11 @@ import java.util.concurrent.CompletableFuture;
 
 public interface ExchangeAttemptsRepository
         extends ImmutableRecordRepository<ExchangeAttemptDO>, IndelibleRecordRepository<ExchangeAttemptDO> {
-    CompletableFuture<Collection<ExchangeAttemptDO>> findByEntity(String entityId);
+    CompletableFuture<Collection<ExchangeAttemptDO>> findByEntity(long entityId);
 
-    CompletableFuture<Collection<ExchangeAttemptDO>> findByEntityAndTimestamp(String entityId, Instant fromTimestamp);
+    CompletableFuture<Collection<ExchangeAttemptDO>> findByEntityAndTimestamp(long entityId, Instant fromTimestamp);
 
-    CompletableFuture<Collection<ExchangeAttemptDO>> findByEntityAndTimestampAndExchange(String entityId,
+    CompletableFuture<Collection<ExchangeAttemptDO>> findByEntityAndTimestampAndExchange(long entityId,
                                                                                          Instant fromTimestamp,
                                                                                          String fromExchange);
 }

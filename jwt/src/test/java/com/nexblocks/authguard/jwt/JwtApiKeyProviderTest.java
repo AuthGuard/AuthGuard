@@ -129,9 +129,9 @@ class JwtApiKeyProviderTest {
                 Instant.now().plusSeconds(6));
     }
 
-    private void verifyToken(final String token, final String subject, final String jti) {
+    private void verifyToken(final String token, final long subject, final String jti) {
         final JWTVerifier verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
-                .withSubject(subject)
+                .withSubject("" + subject)
                 .withJWTId(jti)
                 .build();
 
@@ -142,10 +142,10 @@ class JwtApiKeyProviderTest {
     }
 
     private DecodedJWT verifyAndGetDecodedToken(final String token,
-                                                final String subject,
+                                                final long subject,
                                                 final String jti) {
         final JWTVerifier verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
-                .withSubject(subject)
+                .withSubject("" + subject)
                 .withJWTId(jti)
                 .build();
 

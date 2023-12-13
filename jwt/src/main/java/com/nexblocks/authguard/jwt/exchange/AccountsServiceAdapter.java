@@ -9,7 +9,7 @@ import io.vavr.control.Either;
 
 /**
  * An adapter class to wrap {@link AccountsService} to
- * provide a difference interface, more suitable for
+ * provide a different interface, more suitable for
  * its use here.
  */
 public class AccountsServiceAdapter {
@@ -20,7 +20,7 @@ public class AccountsServiceAdapter {
         this.accountsService = accountsService;
     }
 
-    public Either<Exception, AccountBO> getAccount(final String accountId) {
+    public Either<Exception, AccountBO> getAccount(final long accountId) {
         return accountsService.getById(accountId)
                 .<Either<Exception, AccountBO>>map(Either::right)
                 .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,

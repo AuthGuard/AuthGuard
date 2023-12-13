@@ -69,7 +69,7 @@ class AccountsApiTest extends AbstractRouteTest {
                 .build();
 
         final AccountBO accountBO = mapper().toBO(requestDTO);
-        final AccountBO serviceResponse = accountBO.withId(UUID.randomUUID().toString());
+        final AccountBO serviceResponse = accountBO.withId(UUID.randomUUID().getMostSignificantBits());
 
         Mockito.when(accountsService.create(Mockito.eq(accountBO), Mockito.any()))
                 .thenReturn(serviceResponse);

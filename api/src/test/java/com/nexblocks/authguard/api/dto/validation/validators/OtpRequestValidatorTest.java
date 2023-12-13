@@ -15,7 +15,7 @@ class OtpRequestValidatorTest {
     @Test
     void validateValid() {
         final OtpRequestDTO request = OtpRequestDTO.builder()
-                .passwordId("password-id")
+                .passwordId(1L)
                 .password("password")
                 .build();
 

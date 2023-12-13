@@ -7,5 +7,5 @@ import java.util.concurrent.CompletableFuture;
 
 public interface OtpRepository {
     CompletableFuture<OneTimePasswordDO> save(OneTimePasswordDO password);
-    CompletableFuture<Optional<OneTimePasswordDO>> getById(String id);
+    CompletableFuture<Optional<OneTimePasswordDO>> getById(long id);
 }

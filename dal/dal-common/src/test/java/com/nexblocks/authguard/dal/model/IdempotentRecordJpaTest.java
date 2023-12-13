@@ -26,17 +26,17 @@ public class IdempotentRecordJpaTest {
 
         // create record
         first = IdempotentRecordDO.builder()
-                .id("first-idempotent-record")
+                .id(1)
                 .idempotentKey("idempotent-key")
                 .entityType("FirstEntity")
-                .entityId("first-entity")
+                .entityId(101)
                 .build();
 
         second = IdempotentRecordDO.builder()
-                .id("second-idempotent-record")
+                .id(2)
                 .idempotentKey("idempotent-key")
                 .entityType("SecondEntity")
-                .entityId("second-entity")
+                .entityId(102)
                 .build();
 
         entityManager.getTransaction().begin();

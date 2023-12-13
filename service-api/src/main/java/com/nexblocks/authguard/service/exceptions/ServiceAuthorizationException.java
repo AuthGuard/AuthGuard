@@ -5,7 +5,7 @@ import com.nexblocks.authguard.service.model.EntityType;
 
 public class ServiceAuthorizationException extends ServiceException {
     private final EntityType entityType;
-    private final String entityId;
+    private final Long entityId;
 
     public ServiceAuthorizationException(final ErrorCode errorCode, final String message) {
         super(errorCode, message);
@@ -14,7 +14,7 @@ public class ServiceAuthorizationException extends ServiceException {
     }
 
     public ServiceAuthorizationException(final ErrorCode errorCode, final String message,
-                                         final EntityType entityType, final String entityId) {
+                                         final EntityType entityType, final long entityId) {
         super(errorCode, message);
         this.entityType = entityType;
         this.entityId = entityId;
@@ -24,7 +24,7 @@ public class ServiceAuthorizationException extends ServiceException {
         return entityType;
     }
 
-    public String getEntityId() {
+    public Long getEntityId() {
         return entityId;
     }
 }

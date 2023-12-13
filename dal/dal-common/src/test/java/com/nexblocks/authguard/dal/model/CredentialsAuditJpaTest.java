@@ -26,8 +26,8 @@ public class CredentialsAuditJpaTest {
 
         // create audit
         created = CredentialsAuditDO.builder()
-                .id("credentials-audit")
-                .credentialsId("credentials")
+                .id(1)
+                .credentialsId(101)
                 .action(CredentialsAuditDO.Action.UPDATED)
                 .password(PasswordDO.builder()
                         .password("password")

@@ -5,8 +5,8 @@ import org.immutables.value.Value;
 @Value.Immutable
 @BOStyle
 public interface CredentialsAudit {
-    String getId();
-    String getCredentialsId();
+    long getId();
+    long getCredentialsId();
     Action getAction();
 
     String getIdentifier();

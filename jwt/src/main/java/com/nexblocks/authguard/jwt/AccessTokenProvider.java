@@ -146,7 +146,7 @@ public class AccessTokenProvider implements AuthProvider {
                 .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid refresh token"));
     }
 
-    private AccountTokenDO storeRefreshToken(final String accountId, final String refreshToken,
+    private AccountTokenDO storeRefreshToken(final long accountId, final String refreshToken,
                                              final TokenRestrictionsBO tokenRestrictions,
                                              final TokenOptions tokenOptions) {
         final AccountTokenDO.AccountTokenDOBuilder<?, ?> accountToken = AccountTokenDO.builder()

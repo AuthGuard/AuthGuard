@@ -8,7 +8,7 @@ import java.util.Optional;
 public interface AccountLocksService {
     AccountLockBO create(AccountLockBO accountLock);
 
-    Collection<AccountLockBO> getActiveLocksByAccountId(String accountId);
+    Collection<AccountLockBO> getActiveLocksByAccountId(long accountId);
 
-    Optional<AccountLockBO> delete(String lockId);
+    Optional<AccountLockBO> delete(long lockId);
 }

@@ -5,16 +5,21 @@ import com.nexblocks.authguard.api.dto.entities.ApiKeyDTO;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.requests.ApiKeyRequestDTO;
 import com.nexblocks.authguard.api.dto.requests.ApiKeyVerificationRequestDTO;
+import com.nexblocks.authguard.api.dto.validation.violations.Violation;
+import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.ApiKeysApi;
+import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.ApiKeyBO;
 import com.nexblocks.authguard.service.model.AppBO;
+import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.Optional;
 
 public class ApiKeysRoute extends ApiKeysApi {
@@ -49,9 +54,13 @@ public class ApiKeysRoute extends ApiKeysApi {
 
     @Override
     public void getById(final Context context) {
-        final String apiKeyId = context.pathParam("id");
+        final Validator<Long> apiKeyId = context.pathParam("id", Long.class);
 
-        final Optional<ApiKeyDTO> apiKey = apiKeysService.getById(apiKeyId)
+        if (!apiKeyId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<ApiKeyDTO> apiKey = apiKeysService.getById(apiKeyId.get())
                 .map(restMapper::toDTO);
 
         if (apiKey.isPresent()) {
@@ -79,9 +88,13 @@ public class ApiKeysRoute extends ApiKeysApi {
 
     @Override
     public void deleteById(final Context context) {
-        final String apiKeyId = context.pathParam("id");
+        final Validator<Long> apiKeyId = context.pathParam("id", Long.class);
 
-        final Optional<ApiKeyDTO> apiKey = apiKeysService.delete(apiKeyId)
+        if (!apiKeyId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<ApiKeyDTO> apiKey = apiKeysService.delete(apiKeyId.get())
                 .map(restMapper::toDTO);
 
         if (apiKey.isPresent()) {

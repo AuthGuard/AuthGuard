@@ -45,7 +45,7 @@ class RefreshToAccessTokenTest {
     @Test
     void exchange() {
         // data
-        final String accountId = "account";
+        final long accountId = 101;
         final String refreshToken = "refresh_token";
 
         final AuthRequestBO authRequest = AuthRequestBO.builder()
@@ -90,7 +90,7 @@ class RefreshToAccessTokenTest {
     @Test
     void exchangeWithRestrictions() {
         // data
-        final String accountId = "account";
+        final long accountId = 101;
         final String refreshToken = "refresh_token";
         final String restrictionPermission = "permission.read";
 
@@ -141,7 +141,7 @@ class RefreshToAccessTokenTest {
     @Test
     void exchangeExpiredToken() {
         // data
-        final String accountId = "account";
+        final long accountId = 101;
         final String refreshToken = "refresh_token";
 
         final AuthRequestBO authRequest = AuthRequestBO.builder()
@@ -171,7 +171,7 @@ class RefreshToAccessTokenTest {
     @Test
     void exchangeNoAccount() {
         // data
-        final String accountId = "account";
+        final long accountId = 101;
         final String refreshToken = "refresh_token";
 
         final AuthRequestBO authRequest = AuthRequestBO.builder()
@@ -225,7 +225,7 @@ class RefreshToAccessTokenTest {
     @Test
     void exchangeWithTokenOptionChecks() {
         // data
-        final String accountId = "account";
+        final long accountId = 101;
         final String refreshToken = "refresh_token";
 
         final AuthRequestBO authRequest = AuthRequestBO.builder()
@@ -280,7 +280,7 @@ class RefreshToAccessTokenTest {
     @Test
     void exchangeWithMismatchedTokenOptions() {
         // data
-        final String accountId = "account";
+        final long accountId = 101;
         final String refreshToken = "refresh_token";
 
         final AuthRequestBO authRequest = AuthRequestBO.builder()

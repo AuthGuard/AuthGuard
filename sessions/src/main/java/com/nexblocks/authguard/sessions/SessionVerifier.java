@@ -20,13 +20,13 @@ public class SessionVerifier implements AuthVerifier {
     }
 
     @Override
-    public Either<Exception, String> verifyAccountToken(final String sessionToken) {
+    public Either<Exception, Long> verifyAccountToken(final String sessionToken) {
         return sessionsService.getByToken(sessionToken)
                 .map(this::verifySession)
                 .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid session token")));
     }
 
-    private Either<Exception, String> verifySession(final SessionBO session) {
+    private Either<Exception, Long> verifySession(final SessionBO session) {
         if (session.getExpiresAt().isBefore(Instant.now())) {
             return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Session has expired",
                     EntityType.ACCOUNT, session.getAccountId()));

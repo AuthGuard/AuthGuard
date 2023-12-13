@@ -21,6 +21,9 @@ class AccountJpaTest {
     private AccountDO createdAccount;
     private AccountDO deletedAccount;
 
+    private int idCounter = 1;
+    private int readPermissionId;
+
     @BeforeAll
     void setup() {
         final H2 h2 = new H2().withMappedClass(AccountDO.class)
@@ -35,11 +38,13 @@ class AccountJpaTest {
         // create test permission
         entityManager.getTransaction().begin();
 
-        entityManager.persist(PermissionDO.builder()
-                .id("read-posts-permission")
+        readPermissionId = idCounter++;
+        PermissionDO readPostsPermission = PermissionDO.builder()
+                .id(readPermissionId)
                 .group("posts")
                 .name("read")
-                .build());
+                .build();
+        entityManager.persist(readPostsPermission);
 
         entityManager.getTransaction().commit();
 
@@ -47,11 +52,11 @@ class AccountJpaTest {
         entityManager.getTransaction().begin();
 
         createdAccount = AccountDO.builder()
-                .id("1")
+                .id(idCounter++)
                 .roles(Collections.singleton("test"))
                 .externalId("test-account-external")
                 .permissions(Collections.singleton(PermissionDO.builder()
-                        .id("read-posts-permission")
+                        .id(readPostsPermission.getId())
                         .group("posts")
                         .name("read")
                         .build()))
@@ -75,12 +80,12 @@ class AccountJpaTest {
                 .build();
 
         deletedAccount = AccountDO.builder()
-                .id("deleted-account")
+                .id(idCounter++)
                 .deleted(true)
                 .roles(Collections.singleton("test"))
                 .externalId("test-account-external")
                 .permissions(Collections.singleton(PermissionDO.builder()
-                        .id("read-posts-permission")
+                        .id(readPostsPermission.getId())
                         .build()))
                 .email(EmailDO.builder()
                         .email("deleted@emails.com")
@@ -157,10 +162,10 @@ class AccountJpaTest {
         entityManager.getTransaction().begin();
 
         entityManager.persist(AccountDO.builder()
-                .id("not-to-be-inserted")
+                .id(idCounter++)
                 .roles(Collections.singleton("test"))
                 .permissions(Collections.singleton(PermissionDO.builder()
-                        .id("read-posts-permission")
+                        .id(readPermissionId)
                         .build()))
                 .email(EmailDO.builder()
                         .email("primary@emails.com")
@@ -225,7 +230,7 @@ class AccountJpaTest {
     @Test
     void createDuplicate() {
         final AccountDO duplicate = AccountDO.builder()
-                .id("duplicate-credentials")
+                .id(idCounter++)
                 .hashedPassword(PasswordDO.builder()
                         .password("password")
                         .salt("salt")

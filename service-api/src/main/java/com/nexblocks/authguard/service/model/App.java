@@ -9,7 +9,7 @@ import java.util.Set;
 public interface App extends Entity {
     String getExternalId();
     String getName();
-    String getParentAccountId();
+    Long getParentAccountId();
     Set<PermissionBO> getPermissions();
     Set<String> getRoles();
     String getDomain();

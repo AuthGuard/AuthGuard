@@ -38,7 +38,7 @@ class SessionsServiceImplTest {
     @Test
     void create() {
         final SessionBO sessionBO = SessionBO.builder()
-                .accountId("account")
+                .accountId(101)
                 .data(Collections.singletonMap("key", "value"))
                 .build();
 
@@ -57,8 +57,8 @@ class SessionsServiceImplTest {
     @Test
     void getById() {
         final SessionDO sessionDO = SessionDO.builder()
-                .id("session-id")
-                .accountId("account")
+                .id(1)
+                .accountId(101)
                 .data(Collections.singletonMap("key", "value"))
                 .build();
 
@@ -74,8 +74,8 @@ class SessionsServiceImplTest {
     @Test
     void getByToken() {
         final SessionDO sessionDO = SessionDO.builder()
-                .id("session-id")
-                .accountId("account")
+                .id(1)
+                .accountId(101)
                 .sessionToken("token")
                 .data(Collections.singletonMap("key", "value"))
                 .build();
@@ -92,8 +92,8 @@ class SessionsServiceImplTest {
     @Test
     void deleteByToken() {
         final SessionDO sessionDO = SessionDO.builder()
-                .id("session-id")
-                .accountId("account")
+                .id(1)
+                .accountId(101)
                 .sessionToken("token")
                 .data(Collections.singletonMap("key", "value"))
                 .build();

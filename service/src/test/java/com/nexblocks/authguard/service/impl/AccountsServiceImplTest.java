@@ -103,6 +103,7 @@ class AccountsServiceImplTest {
     private AccountBO createAccountBO() {
         // TODO don't create random objects
         return RANDOM.nextObject(AccountBO.class)
+                .withPlainPassword("valid-password")
                 .withActive(true)
                 .withDeleted(false)
                 .withDomain("main");
@@ -120,7 +121,7 @@ class AccountsServiceImplTest {
     void create() {
         final AccountBO account = createAccountBO()
                 .withPlainPassword("test-password")
-                .withId(null);
+                .withId(0);
 
         final String idempotentKey = "idempotent-key";
         final RequestContextBO requestContext = RequestContextBO.builder()
@@ -200,7 +201,7 @@ class AccountsServiceImplTest {
                 .withDomain("unit")
                 .withRoles(Collections.emptySet())
                 .withPermissions(Collections.emptySet())
-                .withId(null);
+                .withId(0);
 
         final List<String> defaultRoles = Collections.singletonList("def-role");
 
@@ -269,10 +270,10 @@ class AccountsServiceImplTest {
         final AccountBO accountBO = createAccountBO();
         final AccountDO accountDO = serviceMapper.toDO(accountBO);
 
-        Mockito.when(accountsRepository.getById(any()))
+        Mockito.when(accountsRepository.getById(Mockito.anyLong()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
 
-        final Optional<AccountBO> retrieved = accountService.getById("");
+        final Optional<AccountBO> retrieved = accountService.getById(0);
         final List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
                 .collect(Collectors.toList());
@@ -306,16 +307,19 @@ class AccountsServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
         Mockito.when(permissionsService.validate(any(), eq("main")))
                 .thenAnswer(invocation -> invocation.getArgument(0, List.class));
+        Mockito.when(accountsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
         final List<PermissionBO> permissions = Arrays.asList(
-                RANDOM.nextObject(PermissionBO.class),
-                RANDOM.nextObject(PermissionBO.class)
+                RANDOM.nextObject(PermissionBO.class).withEntityType(null),
+                RANDOM.nextObject(PermissionBO.class).withEntityType(null)
         );
 
-        final AccountBO updated = accountService.grantPermissions(account.getId(), permissions);
+        final Optional<AccountBO> updated = accountService.grantPermissions(account.getId(), permissions);
 
-        assertThat(updated).isNotEqualTo(account);
-        assertThat(updated.getPermissions()).contains(permissions.toArray(new PermissionBO[0]));
+        assertThat(updated).isPresent();
+        assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(account);
+        assertThat(updated.get().getPermissions()).contains(permissions.toArray(new PermissionBO[0]));
     }
 
     @Test
@@ -364,16 +368,19 @@ class AccountsServiceImplTest {
 
         Mockito.when(accountsRepository.getById(account.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+        Mockito.when(accountsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
         final List<PermissionBO> permissionsToRevoke = Arrays.asList(
                 currentPermissions.get(0),
                 currentPermissions.get(1)
         );
 
-        final AccountBO updated = accountService.revokePermissions(account.getId(), permissionsToRevoke);
+        final Optional<AccountBO> updated = accountService.revokePermissions(account.getId(), permissionsToRevoke);
 
-        assertThat(updated).isNotEqualTo(account);
-        assertThat(updated.getPermissions()).doesNotContain(permissionsToRevoke.toArray(new PermissionBO[0]));
+        assertThat(updated).isPresent();
+        assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(account);
+        assertThat(updated.get().getPermissions()).doesNotContain(permissionsToRevoke.toArray(new PermissionBO[0]));
     }
 
     @Test
@@ -392,10 +399,11 @@ class AccountsServiceImplTest {
 
         Mockito.when(rolesService.verifyRoles(roles, "main")).thenReturn(roles);
 
-        final AccountBO updated = accountService.grantRoles(account.getId(), roles);
+        final Optional<AccountBO> updated = accountService.grantRoles(account.getId(), roles);
 
-        assertThat(updated).isNotEqualTo(account);
-        assertThat(updated.getRoles()).contains(roles.toArray(new String[0]));
+        assertThat(updated).isPresent();
+        assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(account);
+        assertThat(updated.get().getRoles()).contains(roles.toArray(new String[0]));
     }
 
     @Test
@@ -455,10 +463,11 @@ class AccountsServiceImplTest {
                 currentRoles.get(1)
         );
 
-        final AccountBO updated = accountService.revokeRoles(account.getId(), rolesToRevoke);
+        final Optional<AccountBO> updated = accountService.revokeRoles(account.getId(), rolesToRevoke);
 
-        assertThat(updated).isNotEqualTo(account);
-        assertThat(updated.getRoles()).doesNotContain(rolesToRevoke.toArray(new String[0]));
+        assertThat(updated).isPresent();
+        assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(account);
+        assertThat(updated.get().getRoles()).doesNotContain(rolesToRevoke.toArray(new String[0]));
     }
 
     @Test

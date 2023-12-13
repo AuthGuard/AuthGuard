@@ -112,13 +112,13 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public Optional<AccountBO> getById(final String accountId) {
+    public Optional<AccountBO> getById(final long accountId) {
         return persistenceService.getById(accountId)
                 .map(credentialsManager::removeSensitiveInformation);
     }
 
     @Override
-    public Optional<AccountBO> getByIdUnsafe(final String id) {
+    public Optional<AccountBO> getByIdUnsafe(final long id) {
         return persistenceService.getById(id);
     }
 
@@ -161,14 +161,14 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public Optional<AccountBO> delete(final String accountId) {
+    public Optional<AccountBO> delete(final long accountId) {
         LOG.info("Account delete request. accountId={}", accountId);
 
         return persistenceService.delete(accountId);
     }
 
     @Override
-    public Optional<AccountBO> activate(final String accountId) {
+    public Optional<AccountBO> activate(final long accountId) {
         return getByIdUnsafe(accountId)
                 .flatMap(account -> {
                     LOG.info("Activate account request. accountId={}, domain={}", account.getId(), account.getDomain());
@@ -186,7 +186,7 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public Optional<AccountBO> deactivate(final String accountId) {
+    public Optional<AccountBO> deactivate(final long accountId) {
         return getByIdUnsafe(accountId)
                 .flatMap(account -> {
                     LOG.info("Deactivate account request. accountId={}, domain={}", account.getId(), account.getDomain());
@@ -204,7 +204,7 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public Optional<AccountBO> patch(final String accountId, final AccountBO account) {
+    public Optional<AccountBO> patch(final long accountId, final AccountBO account) {
         final AccountBO existing = getByIdUnsafe(accountId)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID "
                         + accountId + " was found"));
@@ -275,7 +275,7 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public AccountBO grantPermissions(final String accountId, final List<PermissionBO> permissions) {
+    public Optional<AccountBO> grantPermissions(final long accountId, final List<PermissionBO> permissions) {
         final AccountBO account = getByIdUnsafe(accountId)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " 
                         + accountId + " was found"));
@@ -299,16 +299,18 @@ public class AccountsServiceImpl implements AccountsService {
 
         final AccountBO updated = account.withPermissions(combinedPermissions);
 
-        accountsRepository.update(serviceMapper.toDO(updated));
+        return accountsRepository.update(serviceMapper.toDO(updated))
+                .join()
+                .map(accountDO -> {
+                    LOG.info("Granted account permissions. accountId={}, domain={}, permissions={}",
+                            account.getId(), account.getDomain(), verifiedPermissions);
 
-        LOG.info("Granted account permissions. accountId={}, domain={}, permissions={}",
-                account.getId(), account.getDomain(), verifiedPermissions);
-
-        return updated;
+                    return serviceMapper.toBO(accountDO);
+                });
     }
 
     @Override
-    public AccountBO revokePermissions(final String accountId, final List<PermissionBO> permissions) {
+    public Optional<AccountBO> revokePermissions(final long accountId, final List<PermissionBO> permissions) {
         final Set<String> permissionsFullNames = permissions.stream()
                 .map(Permission::getFullName)
                 .collect(Collectors.toSet());
@@ -328,16 +330,18 @@ public class AccountsServiceImpl implements AccountsService {
 
         final AccountBO updated = account.withPermissions(filteredPermissions);
 
-        accountsRepository.update(serviceMapper.toDO(updated));
+        return accountsRepository.update(serviceMapper.toDO(updated))
+                .join()
+                .map(accountDO -> {
+                    LOG.info("Revoked account permissions. accountId={}, domain={}, permissions={}",
+                            account.getId(), account.getDomain(), permissionsFullNames);
 
-        LOG.info("Revoked account permissions. accountId={}, domain={}, permissions={}",
-                account.getId(), account.getDomain(), permissionsFullNames);
-
-        return updated;
+                    return serviceMapper.toBO(accountDO);
+                });
     }
 
     @Override
-    public AccountBO grantRoles(final String accountId, final List<String> roles) {
+    public Optional<AccountBO> grantRoles(final long accountId, final List<String> roles) {
         final AccountBO account = accountsRepository.getById(accountId)
                 .join()
                 .map(serviceMapper::toBO)
@@ -362,12 +366,11 @@ public class AccountsServiceImpl implements AccountsService {
                             account.getId(), account.getDomain(), roles);
 
                     return serviceMapper.toBO(accountDO);
-                })
-                .orElseThrow(IllegalStateException::new);
+                });
     }
 
     @Override
-    public AccountBO revokeRoles(final String accountId, final List<String> roles) {
+    public Optional<AccountBO> revokeRoles(final long accountId, final List<String> roles) {
         final AccountBO account = accountsRepository.getById(accountId)
                 .join()
                 .map(serviceMapper::toBO)
@@ -390,8 +393,7 @@ public class AccountsServiceImpl implements AccountsService {
                             account.getId(), account.getDomain(), roles);
 
                     return serviceMapper.toBO(accountDO);
-                })
-                .orElseThrow(IllegalStateException::new);
+                });
     }
 
     @Override

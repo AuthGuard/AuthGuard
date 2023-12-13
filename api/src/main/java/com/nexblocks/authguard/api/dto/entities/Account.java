@@ -15,7 +15,7 @@ import java.util.Map;
 @JsonSerialize(as = AccountDTO.class)
 @JsonDeserialize(as = AccountDTO.class)
 public interface Account {
-    String getId();
+    long getId();
     Instant getCreatedAt();
     Instant getLastModified();
 

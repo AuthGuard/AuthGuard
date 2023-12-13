@@ -5,15 +5,21 @@ import com.nexblocks.authguard.api.dto.entities.ApiKeyDTO;
 import com.nexblocks.authguard.api.dto.entities.ClientDTO;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.requests.CreateClientRequestDTO;
+import com.nexblocks.authguard.api.dto.validation.violations.Violation;
+import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.ClientsApi;
+import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.rest.util.IdempotencyHeader;
 import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.ClientsService;
+import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.model.RequestContextBO;
+import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -58,9 +64,13 @@ public class ClientsRoute extends ClientsApi {
     }
 
     public void getById(final Context context) {
-        final String clientId = context.pathParam("id");
+        final Validator<Long> clientId = context.pathParam("id", Long.class);
 
-        final Optional<ClientDTO> client = clientsService.getById(clientId)
+        if (!clientId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<ClientDTO> client = clientsService.getById(clientId.get())
                 .map(restMapper::toDTO);
 
         if (client.isPresent()) {
@@ -71,9 +81,13 @@ public class ClientsRoute extends ClientsApi {
     }
 
     public void getByExternalId(final Context context) {
-        final String clientId = context.pathParam("id");
+        final Validator<Long> clientId = context.pathParam("id", Long.class);
 
-        final Optional<ClientDTO> client = clientsService.getById(clientId)
+        if (!clientId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<ClientDTO> client = clientsService.getById(clientId.get())
                 .map(restMapper::toDTO);
 
         if (client.isPresent()) {
@@ -84,9 +98,13 @@ public class ClientsRoute extends ClientsApi {
     }
 
     public void deleteById(final Context context) {
-        final String clientId = context.pathParam("id");
+        final Validator<Long> clientId = context.pathParam("id", Long.class);
 
-        final Optional<ClientDTO> client = clientsService.delete(clientId)
+        if (!clientId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<ClientDTO> client = clientsService.delete(clientId.get())
                 .map(restMapper::toDTO);
 
         if (client.isPresent()) {
@@ -97,9 +115,13 @@ public class ClientsRoute extends ClientsApi {
     }
 
     public void activate(final Context context) {
-        final String clientId = context.pathParam("id");
+        final Validator<Long> clientId = context.pathParam("id", Long.class);
 
-        final Optional<ClientDTO> client = clientsService.activate(clientId)
+        if (!clientId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<ClientDTO> client = clientsService.activate(clientId.get())
                 .map(restMapper::toDTO);
 
         if (client.isPresent()) {
@@ -110,9 +132,13 @@ public class ClientsRoute extends ClientsApi {
     }
 
     public void deactivate(final Context context) {
-        final String clientId = context.pathParam("id");
+        final Validator<Long> clientId = context.pathParam("id", Long.class);
 
-        final Optional<ClientDTO> client = clientsService.deactivate(clientId)
+        if (!clientId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<ClientDTO> client = clientsService.deactivate(clientId.get())
                 .map(restMapper::toDTO);
 
         if (client.isPresent()) {
@@ -124,9 +150,13 @@ public class ClientsRoute extends ClientsApi {
 
     @Override
     public void getApiKeys(final Context context) {
-        final String clientId = context.pathParam("id");
+        final Validator<Long> clientId = context.pathParam("id", Long.class);
 
-        final List<ApiKeyDTO> keys = apiKeysService.getByAppId(clientId)
+        if (!clientId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final List<ApiKeyDTO> keys = apiKeysService.getByAppId(clientId.get())
                 .stream()
                 .map(restMapper::toDTO)
                 .collect(Collectors.toList());
