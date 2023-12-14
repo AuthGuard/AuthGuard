@@ -11,7 +11,7 @@ import java.util.Optional;
  * AccountDO service interface.
  */
 public interface AccountsService extends IdempotentCrudService<AccountBO> {
-    Optional<AccountBO> getByIdUnsafe(String id);
+    Optional<AccountBO> getByIdUnsafe(long id);
 
     Optional<AccountBO> getByExternalId(String externalId);
 
@@ -20,11 +20,11 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
     Optional<AccountBO> getByIdentifier(String identifier, String domain);
     Optional<AccountBO> getByIdentifierUnsafe(String identifier, String domain);
 
-    Optional<AccountBO> activate(String accountId);
+    Optional<AccountBO> activate(long accountId);
 
-    Optional<AccountBO> deactivate(String accountId);
+    Optional<AccountBO> deactivate(long accountId);
 
-    Optional<AccountBO> patch(String accountId, AccountBO account);
+    Optional<AccountBO> patch(long accountId, AccountBO account);
 
     /**
      * Grant permissions to an account. This should only updatePatch
@@ -32,7 +32,7 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
      * @throws ServiceNotFoundException
      *         if no account was found.
      */
-    AccountBO grantPermissions(String accountId, List<PermissionBO> permissions);
+    Optional<AccountBO> grantPermissions(long accountId, List<PermissionBO> permissions);
 
     /**
      * Revoke permissions of an account. This should only updatePatch
@@ -40,7 +40,7 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
      * @throws ServiceNotFoundException
      *         if no account was found.
      */
-    AccountBO revokePermissions(String accountId, List<PermissionBO> permissions);
+    Optional<AccountBO> revokePermissions(long accountId, List<PermissionBO> permissions);
 
     /**
      * Grant roles to an account. This should only updatePatch the roles
@@ -48,7 +48,7 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
      * @throws ServiceNotFoundException
      *         if no account was found.
      */
-    AccountBO grantRoles(String accountId, List<String> roles);
+    Optional<AccountBO> grantRoles(long accountId, List<String> roles);
 
     /**
      * Revoke roles of an account. This should only updatePatch the roles
@@ -56,7 +56,7 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
      * @throws ServiceNotFoundException
      *         if no account was found.
      */
-    AccountBO revokeRoles(String accountId, List<String> roles);
+    Optional<AccountBO> revokeRoles(long accountId, List<String> roles);
 
     /**
      * Finds a list of all admins. This is useful only when deciding

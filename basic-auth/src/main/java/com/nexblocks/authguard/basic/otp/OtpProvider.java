@@ -92,7 +92,7 @@ public class OtpProvider implements AuthProvider {
         throw new UnsupportedOperationException("OTPs cannot be generated for applications");
     }
 
-    private AuthResponseBO createToken(final String passwordId, final String accountId) {
+    private AuthResponseBO createToken(final long passwordId, final long accountId) {
         return AuthResponseBO.builder()
                 .type(TOKEN_TYPE)
                 .token(passwordId)

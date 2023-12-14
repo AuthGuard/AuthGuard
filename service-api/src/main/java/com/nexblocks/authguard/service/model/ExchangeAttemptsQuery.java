@@ -7,7 +7,7 @@ import java.time.Instant;
 @Value.Immutable
 @BOStyle
 public interface ExchangeAttemptsQuery {
-    String getEntityId();
+    long getEntityId();
     String getFromExchange();
     Instant getFromTimestamp();
 }

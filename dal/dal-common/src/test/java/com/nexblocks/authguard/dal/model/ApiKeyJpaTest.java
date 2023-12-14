@@ -24,15 +24,15 @@ public class ApiKeyJpaTest {
         entityManager = h2.getEntityManager();
 
         createdApiKey = ApiKeyDO.builder()
-                .id("api-key-id")
-                .appId("app-id")
+                .id(1)
+                .appId(101)
                 .key("key")
                 .build();
 
         deletedAPiKey = ApiKeyDO.builder()
-                .id("deleted-api-key-id")
+                .id(2)
                 .deleted(true)
-                .appId("app-id")
+                .appId(101)
                 .key("deleted-key")
                 .build();
 

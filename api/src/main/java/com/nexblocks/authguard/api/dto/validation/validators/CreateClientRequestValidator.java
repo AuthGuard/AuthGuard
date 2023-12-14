@@ -12,7 +12,6 @@ public class CreateClientRequestValidator implements Validator<CreateClientReque
     public List<Violation> validate(CreateClientRequestDTO obj) {
         return FluentValidator.begin()
                 .validate("externalId", obj.getExternalId(), Constraints.reasonableLength)
-                .validate("accountId", obj.getAccountId(), Constraints.reasonableLength)
                 .validate("name", obj.getName(), Constraints.required, Constraints.reasonableLength)
                 .validate("domain", obj.getDomain(), Constraints.required)
                 .validate("clientType", obj.getClientType(), Constraints.required)

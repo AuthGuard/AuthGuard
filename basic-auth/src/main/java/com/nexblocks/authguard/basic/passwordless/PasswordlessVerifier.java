@@ -10,7 +10,6 @@ import com.google.inject.Inject;
 import io.vavr.control.Either;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
 
 public class PasswordlessVerifier implements AuthVerifier {
     private final AccountTokensRepository accountTokensRepository;
@@ -21,7 +20,7 @@ public class PasswordlessVerifier implements AuthVerifier {
     }
 
     @Override
-    public Either<Exception, String> verifyAccountToken(final String passwordlessToken) {
+    public Either<Exception, Long> verifyAccountToken(final String passwordlessToken) {
         return accountTokensRepository.getByToken(passwordlessToken)
                 .join()
                 .map(this::verifyToken)
@@ -29,7 +28,7 @@ public class PasswordlessVerifier implements AuthVerifier {
                         "No passwordless token found for " + passwordlessToken)));
     }
 
-    private Either<Exception, String> verifyToken(final AccountTokenDO accountToken) {
+    private Either<Exception, Long> verifyToken(final AccountTokenDO accountToken) {
         if (accountToken.getExpiresAt().isBefore(Instant.now())) {
             return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Expired passwordless token",
                     EntityType.ACCOUNT, accountToken.getAssociatedAccountId()));

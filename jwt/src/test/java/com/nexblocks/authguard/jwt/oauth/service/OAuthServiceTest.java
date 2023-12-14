@@ -182,13 +182,13 @@ class OAuthServiceTest {
 
         Mockito.when(accountsService.create(Mockito.any(), Mockito.eq(expectedContext)))
                 .thenAnswer(invocation ->
-                        invocation.getArgument(0, AccountBO.class).withId("1"));
+                        invocation.getArgument(0, AccountBO.class).withId(1));
 
         final TokensResponse actual = oAuthService.exchangeAuthorizationCode("account_test", "random", "code")
                 .join();
         final TokensResponse expected = testIdentityServer.getSuccessResponse();
 
-        expected.setAccountId("1");
+        expected.setAccountId(1);
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -206,13 +206,13 @@ class OAuthServiceTest {
                 });
 
         Mockito.when(accountsService.getByExternalId("1"))
-                .thenReturn(Optional.of(AccountBO.builder().id("1").build()));
+                .thenReturn(Optional.of(AccountBO.builder().id(1).build()));
 
         final TokensResponse actual = oAuthService.exchangeAuthorizationCode("account_test", "random", "code")
                 .join();
         final TokensResponse expected = testIdentityServer.getSuccessResponse();
 
-        expected.setAccountId("1");
+        expected.setAccountId(1);
 
         assertThat(actual).isEqualTo(expected);
     }

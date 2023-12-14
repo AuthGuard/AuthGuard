@@ -33,7 +33,7 @@ import java.util.Set;
                 "WHERE identifier.identifier = :identifier AND identifier.domain = :domain AND credentials.deleted = false"
 )
 public class CredentialsDO extends AbstractDO {
-    private String accountId;
+    private long accountId;
 
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private Set<UserIdentifierDO> identifiers;

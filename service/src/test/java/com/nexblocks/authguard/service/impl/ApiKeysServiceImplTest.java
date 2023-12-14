@@ -65,13 +65,13 @@ class ApiKeysServiceImplTest {
         }
 
         @Override
-        public CompletableFuture<Optional<String>> verifyAndGetAppId(final String apiKey) {
-            return CompletableFuture.completedFuture(Optional.of("app"));
+        public CompletableFuture<Optional<Long>> verifyAndGetAppId(final String apiKey) {
+            return CompletableFuture.completedFuture(Optional.of(1L));
         }
 
         @Override
-        public CompletableFuture<Optional<String>> verifyAndGetClientId(String apiKey) {
-            return CompletableFuture.completedFuture(Optional.of("client"));
+        public CompletableFuture<Optional<Long>> verifyAndGetClientId(String apiKey) {
+            return CompletableFuture.completedFuture(Optional.of(2L));
         }
     }
 
@@ -102,7 +102,7 @@ class ApiKeysServiceImplTest {
 
     @Test
     void generateApiKeyWithoutExpiration() {
-        final String appId = "app";
+        final long appId = 1;
         final String key = "key";
         final AppBO app = AppBO.builder()
                 .id(appId)
@@ -142,7 +142,7 @@ class ApiKeysServiceImplTest {
 
     @Test
     void generateApiKeyWithExpiration() {
-        final String appId = "app";
+        final long appId = 1;
         final String key = "key";
         final AppBO app = AppBO.builder()
                 .id(appId)
@@ -185,7 +185,7 @@ class ApiKeysServiceImplTest {
 
     @Test
     void generateApiKeyNonExistingApp() {
-        final String appId = "app";
+        final long appId = 1;
 
         Mockito.when(applicationsService.getById(appId))
                 .thenReturn(Optional.empty());
@@ -196,7 +196,7 @@ class ApiKeysServiceImplTest {
 
     @Test
     void generateApiKeyInvalidType() {
-        final String appId = "app";
+        final long appId = 1;
 
         assertThatThrownBy(() -> apiKeysService.generateApiKey(appId, "none", Duration.ZERO))
                 .isInstanceOf(ServiceException.class);
@@ -204,7 +204,7 @@ class ApiKeysServiceImplTest {
 
     @Test
     void getByAppId() {
-        final String appId = "app";
+        final long appId = 1;
         final String key = "key";
         final ApiKeyBO apiKeyBO = ApiKeyBO.builder()
                 .appId(appId)
@@ -222,7 +222,7 @@ class ApiKeysServiceImplTest {
 
     @Test
     void validateApiKey() {
-        final String appId = "app";
+        final long appId = 1;
         final String key = "key";
         final AppBO app = AppBO.builder()
                 .id(appId)
@@ -241,7 +241,7 @@ class ApiKeysServiceImplTest {
 
     @Test
     void generateClientApiKeyWithoutExpiration() {
-        final String clientId = "client";
+        final long clientId = 2;
         final String key = "key";
         final ClientBO app = ClientBO.builder()
                 .id(clientId)
@@ -281,7 +281,7 @@ class ApiKeysServiceImplTest {
 
     @Test
     void generateClientApiKeyWithExpiration() {
-        final String clientId = "client";
+        final long clientId = 2;
         final String key = "key";
         final ClientBO client = ClientBO.builder()
                 .id(clientId)
@@ -324,7 +324,7 @@ class ApiKeysServiceImplTest {
 
     @Test
     void generateClientApiKeyNonExistingApp() {
-        final String clientId = "client";
+        final long clientId = 2;
 
         Mockito.when(clientsService.getById(clientId))
                 .thenReturn(Optional.empty());
@@ -335,7 +335,7 @@ class ApiKeysServiceImplTest {
 
     @Test
     void generateClientApiKeyInvalidType() {
-        final String clientId = "client";
+        final long clientId = 1;
 
         assertThatThrownBy(() -> apiKeysService.generateClientApiKey(clientId, "none", Duration.ZERO))
                 .isInstanceOf(ServiceException.class);
@@ -343,7 +343,7 @@ class ApiKeysServiceImplTest {
 
     @Test
     void validateClientApiKey() {
-        final String clientId = "client";
+        final long clientId = 2;
         final String key = "key";
         final ClientBO client = ClientBO.builder()
                 .id(clientId)
@@ -362,7 +362,7 @@ class ApiKeysServiceImplTest {
 
     @Test
     void getById() {
-        final String id = "api_key";
+        final long id = 3;
         final ApiKeyBO apiKeyBO = ApiKeyBO.builder()
                 .id(id)
                 .build();
@@ -380,7 +380,7 @@ class ApiKeysServiceImplTest {
 
     @Test
     void delete() {
-        final String id = "api_key";
+        final long id = 3;
         final ApiKeyBO apiKeyBO = ApiKeyBO.builder()
                 .id(id)
                 .build();

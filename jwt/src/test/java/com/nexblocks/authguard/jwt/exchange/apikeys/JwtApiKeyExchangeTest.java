@@ -29,7 +29,7 @@ class JwtApiKeyExchangeTest {
     @Test
     void generateKeyWithoutExpiry() {
         final AppBO app = AppBO.builder()
-                .id("appId")
+                .id(101)
                 .build();
 
         final AuthResponseBO expected = AuthResponseBO.builder()
@@ -47,7 +47,7 @@ class JwtApiKeyExchangeTest {
     @Test
     void generateKeyWithExpiry() {
         final AppBO app = AppBO.builder()
-                .id("appId")
+                .id(101)
                 .build();
         final Instant expiresAt = Instant.now().plusSeconds(10);
 

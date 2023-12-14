@@ -24,9 +24,9 @@ public class AccountLockJpaTest {
         entityManager = h2.getEntityManager();
 
         createdLock = AccountLockDO.builder()
-                .id("account-lock-id")
+                .id(1)
                 .expiresAt(Instant.now())
-                .accountId("account")
+                .accountId(101)
                 .build();
 
         entityManager.getTransaction().begin();

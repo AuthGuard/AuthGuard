@@ -26,6 +26,6 @@ import javax.persistence.Table;
 )
 public class IdempotentRecordDO extends AbstractDO {
     private String idempotentKey;
-    private String entityId;
+    private long entityId;
     private String entityType;
 }

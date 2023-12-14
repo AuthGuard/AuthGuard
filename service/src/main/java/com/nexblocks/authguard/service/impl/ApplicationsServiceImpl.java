@@ -65,12 +65,12 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public Optional<AppBO> getById(final String id) {
+    public Optional<AppBO> getById(final long id) {
         return persistenceService.getById(id);
     }
 
     @Override
-    public Optional<AppBO> getByExternalId(final String externalId) {
+    public Optional<AppBO> getByExternalId(final long externalId) {
         return applicationsRepository.getById(externalId)
                 .thenApply(optional -> optional.map(serviceMapper::toBO))
                 .join();
@@ -85,14 +85,14 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public Optional<AppBO> delete(final String id) {
+    public Optional<AppBO> delete(final long id) {
         LOG.info("Application delete request. accountId={}", id);
 
         return persistenceService.delete(id);
     }
 
     @Override
-    public Optional<AppBO> activate(final String id) {
+    public Optional<AppBO> activate(final long id) {
         return getById(id)
                 .flatMap(app -> {
                     LOG.info("Activate application request. appId={}, domain={}", app.getId(), app.getDomain());
@@ -111,7 +111,7 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public Optional<AppBO> deactivate(final String id) {
+    public Optional<AppBO> deactivate(final long id) {
         return getById(id)
                 .flatMap(app -> {
                     LOG.info("Deactivate application request. appId={}, domain={}", app.getId(), app.getDomain());
@@ -130,7 +130,7 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public List<AppBO> getByAccountId(final String accountId) {
+    public List<AppBO> getByAccountId(final long accountId) {
         return applicationsRepository.getAllForAccount(accountId)
                 .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()))
                 .join();

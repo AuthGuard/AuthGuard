@@ -27,19 +27,19 @@ public class RolesJpaTest {
 
         // create entities
         first = RoleDO.builder()
-                .id("first-role")
+                .id(1)
                 .name("role-1")
                 .domain("main")
                 .build();
 
         second = RoleDO.builder()
-                .id("second-role")
+                .id(2)
                 .name("role-2")
                 .domain("main")
                 .build();
 
         deleted = RoleDO.builder()
-                .id("deleted-role")
+                .id(3)
                 .deleted(true)
                 .name("role-3")
                 .domain("main")

@@ -40,7 +40,7 @@ public class JwtApiKeyExchange implements ApiKeyExchange {
     }
 
     @Override
-    public CompletableFuture<Optional<String>> verifyAndGetAppId(final String apiKey) {
+    public CompletableFuture<Optional<Long>> verifyAndGetAppId(final String apiKey) {
         return CompletableFuture.supplyAsync(() ->
                 tokenVerifier.verifyAccountToken(apiKey)
                         .map(Optional::of)
@@ -54,7 +54,7 @@ public class JwtApiKeyExchange implements ApiKeyExchange {
     }
 
     @Override
-    public CompletableFuture<Optional<String>> verifyAndGetClientId(String apiKey) {
+    public CompletableFuture<Optional<Long>> verifyAndGetClientId(String apiKey) {
         return verifyAndGetAppId(apiKey);
     }
 }

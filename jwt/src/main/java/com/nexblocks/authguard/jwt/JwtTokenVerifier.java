@@ -5,7 +5,6 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.auth0.jwt.interfaces.Payload;
 import com.nexblocks.authguard.service.auth.AuthVerifier;
 import com.nexblocks.authguard.service.config.StrategyConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
@@ -41,8 +40,7 @@ public class JwtTokenVerifier implements AuthVerifier {
             if (this.verifyJti(verified)) {
                 return Either.right(verified);
             } else {
-                return Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid JTI", EntityType.ACCOUNT,
-                        verified.getSubject()));
+                return Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid JTI"));
             }
         } catch (final JWTVerificationException e) {
             return Either.left(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid JWT"));
@@ -54,7 +52,13 @@ public class JwtTokenVerifier implements AuthVerifier {
     }
 
     @Override
-    public Either<Exception, String> verifyAccountToken(String token) {
-        return verify(token).map(Payload::getSubject);
+    public Either<Exception, Long> verifyAccountToken(String token) {
+        return verify(token).flatMap(payload -> {
+            try {
+                return Either.right(Long.parseLong(payload.getSubject()));
+            } catch (Exception e) {
+                return Either.left(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid JWT subject"));
+            }
+        });
     }
 }

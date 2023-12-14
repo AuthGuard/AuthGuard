@@ -7,5 +7,5 @@ import com.nexblocks.authguard.service.model.AuthResponseBO;
 public interface OtpService {
     AuthResponseBO authenticate(AuthRequestBO authRequest, RequestContextBO requestContext);
 
-    AuthResponseBO authenticate(String passwordId, String otp, RequestContextBO requestContext);
+    AuthResponseBO authenticate(long passwordId, String otp, RequestContextBO requestContext);
 }

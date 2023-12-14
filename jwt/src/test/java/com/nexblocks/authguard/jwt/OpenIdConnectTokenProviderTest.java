@@ -24,7 +24,7 @@ class OpenIdConnectTokenProviderTest {
 
     @Test
     void generateToken() {
-        final AccountBO account = AccountBO.builder().id("account").build();
+        final AccountBO account = AccountBO.builder().id(101).build();
 
         final AuthResponseBO accessTokenResponse = AuthResponseBO.builder()
                 .token("access token")
@@ -59,7 +59,7 @@ class OpenIdConnectTokenProviderTest {
 
     @Test
     void generateTokenWithRestrictions() {
-        final AccountBO account = AccountBO.builder().id("account").build();
+        final AccountBO account = AccountBO.builder().id(101).build();
 
         final TokenRestrictionsBO restrictions = TokenRestrictionsBO.builder()
                 .addPermissions("permission")

@@ -5,7 +5,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @BOStyle
 public interface ExchangeAttempt extends Entity {
-     String getEntityId();
+     Long getEntityId();
      String getExchangeFrom();
      String getExchangeTo();
      boolean isSuccessful();

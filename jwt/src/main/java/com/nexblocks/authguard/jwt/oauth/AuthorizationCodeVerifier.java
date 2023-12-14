@@ -20,7 +20,7 @@ public class AuthorizationCodeVerifier implements AuthVerifier {
     }
 
     @Override
-    public Either<Exception, String> verifyAccountToken(final String token) {
+    public Either<Exception, Long> verifyAccountToken(final String token) {
         return verifyAndGetAccountToken(token)
                 .map(AccountTokenDO::getAssociatedAccountId);
     }

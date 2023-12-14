@@ -172,7 +172,7 @@ class JwtTokenVerifierTest {
         assertThat(jwtTokenVerifier.verify(maliciousToken)).isEmpty();
     }
 
-    private void verifyToken(final DecodedJWT decodedJWT, final String subject, final String jti, final List<PermissionBO> permissions,
+    private void verifyToken(final DecodedJWT decodedJWT, final long subject, final String jti, final List<PermissionBO> permissions,
                              final List<String> scopes) {
         final JWTVerifier verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
                 .build();
@@ -180,7 +180,7 @@ class JwtTokenVerifierTest {
         verifier.verify(decodedJWT);
 
         assertThat(decodedJWT.getIssuer()).isEqualTo(ISSUER);
-        assertThat(decodedJWT.getSubject()).isEqualTo(subject);
+        assertThat(decodedJWT.getSubject()).isEqualTo("" + subject);
 
         if (jti != null) {
             assertThat(decodedJWT.getId()).isEqualTo(jti);

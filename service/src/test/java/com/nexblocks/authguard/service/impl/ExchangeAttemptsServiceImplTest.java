@@ -34,13 +34,13 @@ class ExchangeAttemptsServiceImplTest {
     @Test
     void findByEntityId() {
         final ExchangeAttemptsQueryBO query = ExchangeAttemptsQueryBO.builder()
-                .entityId("account")
+                .entityId(101L)
                 .build();
 
-        Mockito.when(repository.findByEntity("account"))
+        Mockito.when(repository.findByEntity(101))
                 .thenReturn(CompletableFuture.completedFuture(
                         Collections.singletonList(ExchangeAttemptDO.builder()
-                                .entityId("account")
+                                .entityId(101L)
                                 .exchangeFrom("basic")
                                 .exchangeTo("session")
                                 .build())
@@ -48,7 +48,7 @@ class ExchangeAttemptsServiceImplTest {
 
         final Collection<ExchangeAttemptBO> actual = service.find(query);
         final Collection<ExchangeAttemptBO> expected = Collections.singletonList(ExchangeAttemptBO.builder()
-                .entityId("account")
+                .entityId(101L)
                 .exchangeFrom("basic")
                 .exchangeTo("session")
                 .build());
@@ -60,14 +60,14 @@ class ExchangeAttemptsServiceImplTest {
     void findByEntityIdAndFromTimestamp() {
         final Instant now = Instant.now();
         final ExchangeAttemptsQueryBO query = ExchangeAttemptsQueryBO.builder()
-                .entityId("account")
+                .entityId(101L)
                 .fromTimestamp(now)
                 .build();
 
-        Mockito.when(repository.findByEntityAndTimestamp("account", now))
+        Mockito.when(repository.findByEntityAndTimestamp(101, now))
                 .thenReturn(CompletableFuture.completedFuture(
                         Collections.singletonList(ExchangeAttemptDO.builder()
-                                .entityId("account")
+                                .entityId(101L)
                                 .exchangeFrom("basic")
                                 .exchangeTo("session")
                                 .build())
@@ -75,7 +75,7 @@ class ExchangeAttemptsServiceImplTest {
 
         final Collection<ExchangeAttemptBO> actual = service.find(query);
         final Collection<ExchangeAttemptBO> expected = Collections.singletonList(ExchangeAttemptBO.builder()
-                .entityId("account")
+                .entityId(101L)
                 .exchangeFrom("basic")
                 .exchangeTo("session")
                 .build());
@@ -87,15 +87,15 @@ class ExchangeAttemptsServiceImplTest {
     void findByEntityIdAndFromTimestampAndExchange() {
         final Instant now = Instant.now();
         final ExchangeAttemptsQueryBO query = ExchangeAttemptsQueryBO.builder()
-                .entityId("account")
+                .entityId(101L)
                 .fromTimestamp(now)
                 .fromExchange("basic")
                 .build();
 
-        Mockito.when(repository.findByEntityAndTimestampAndExchange("account", now, "basic"))
+        Mockito.when(repository.findByEntityAndTimestampAndExchange(101, now, "basic"))
                 .thenReturn(CompletableFuture.completedFuture(
                         Collections.singletonList(ExchangeAttemptDO.builder()
-                                .entityId("account")
+                                .entityId(101L)
                                 .exchangeFrom("basic")
                                 .exchangeTo("session")
                                 .build())
@@ -103,7 +103,7 @@ class ExchangeAttemptsServiceImplTest {
 
         final Collection<ExchangeAttemptBO> actual = service.find(query);
         final Collection<ExchangeAttemptBO> expected = Collections.singletonList(ExchangeAttemptBO.builder()
-                .entityId("account")
+                .entityId(101L)
                 .exchangeFrom("basic")
                 .exchangeTo("session")
                 .build());

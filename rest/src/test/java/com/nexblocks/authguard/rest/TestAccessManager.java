@@ -20,13 +20,13 @@ public class TestAccessManager implements AccessManager {
 
         if ("auth-client".equals(context.header("Authorization"))) {
             client = ClientBO.builder()
-                    .id("valid-test-client")
+                    .id(201)
                     .clientType(Client.ClientType.AUTH)
                     .domain("test")
                     .build();
         } else {
             client = ClientBO.builder()
-                    .id("valid-test-client")
+                    .id(201)
                     .clientType(Client.ClientType.ADMIN)
                     .build();
         }

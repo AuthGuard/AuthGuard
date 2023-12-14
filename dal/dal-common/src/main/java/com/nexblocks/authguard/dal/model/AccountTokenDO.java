@@ -25,7 +25,7 @@ import java.util.Map;
 )
 public class AccountTokenDO extends AbstractDO {
     private String token;
-    private String associatedAccountId;
+    private long associatedAccountId;
     private Instant expiresAt;
     private String sourceAuthType;
     private String deviceId;

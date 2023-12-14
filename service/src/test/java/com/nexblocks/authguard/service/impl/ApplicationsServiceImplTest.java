@@ -89,10 +89,10 @@ class ApplicationsServiceImplTest {
         final AppBO app = random.nextObject(AppBO.class)
                 .withDeleted(false);
 
-        Mockito.when(applicationsRepository.getById(any()))
+        Mockito.when(applicationsRepository.getById(Mockito.anyLong()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(serviceMapper.toDO(app))));
 
-        final Optional<AppBO> retrieved = applicationsService.getById("");
+        final Optional<AppBO> retrieved = applicationsService.getById(1);
         final List<PermissionBO> expectedPermissions = app.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
                 .collect(Collectors.toList());

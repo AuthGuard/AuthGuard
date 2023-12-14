@@ -39,7 +39,7 @@ import javax.persistence.Table;
 public class ClientDO extends AbstractDO {
     private String externalId;
     private String name;
-    private String accountId;
+    private Long accountId;
     private String domain;
     private String baseUrl;
     private String clientType;

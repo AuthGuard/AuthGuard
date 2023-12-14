@@ -44,7 +44,7 @@ class VerificationSubscriberTest {
     @Test
     void onEmailVerificationMessage() {
         final AccountBO account = AccountBO.builder()
-                .id("account-id")
+                .id(101)
                 .email(AccountEmailBO.builder()
                         .email("unverified")
                         .verified(false)

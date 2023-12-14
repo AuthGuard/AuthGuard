@@ -11,7 +11,6 @@ import com.google.inject.Inject;
 import io.vavr.control.Either;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.Optional;
 
 public class OtpVerifier implements AuthVerifier {
@@ -25,7 +24,7 @@ public class OtpVerifier implements AuthVerifier {
     }
 
     @Override
-    public Either<Exception, String> verifyAccountToken(final String token) {
+    public Either<Exception, Long> verifyAccountToken(final String token) {
         // TODO: no need to have a special format for the token, just receive the two parts in the request
         final String[] parts = token.split(":");
 
@@ -34,7 +33,14 @@ public class OtpVerifier implements AuthVerifier {
                     "Invalid OTP token format"));
         }
 
-        final String passwordId = parts[0];
+        final long passwordId;
+
+        try {
+            passwordId = Long.parseLong(parts[0]);
+        } catch (Exception e) {
+            return Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_AUTHORIZATION_FORMAT,
+                    "Invalid OTP ID"));
+        }
         final String otp = parts[1];
 
         final Optional<OneTimePasswordBO> generatedOpt = otpRepository.getById(passwordId)

@@ -16,7 +16,7 @@ public final class ID {
                 + Long.toHexString(uuid.getLeastSignificantBits());
     }
 
-    public static String generate() {
-        return String.valueOf(generator.next());
+    public static long generate() {
+        return generator.next();
     }
 }

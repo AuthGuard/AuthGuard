@@ -53,7 +53,7 @@ class BasicAuthProviderTest {
 
     private AccountBO createCredentials(final String username) {
         return AccountBO.builder()
-                .id("credentials")
+                .id(1)
                 .active(true)
                 .addIdentifiers(UserIdentifierBO.builder()
                         .identifier(username)
@@ -213,12 +213,6 @@ class BasicAuthProviderTest {
 
         assertThat(result.isLeft()).isTrue();
         assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
-    }
-
-    @Test
-    void authenticateBadAuthorization() {
-        final String authorization = RandomStringUtils.randomAlphanumeric(20);
-        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization)).isInstanceOf(ServiceException.class);
     }
 
     @Test

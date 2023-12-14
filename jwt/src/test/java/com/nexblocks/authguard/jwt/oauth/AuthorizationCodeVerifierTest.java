@@ -22,7 +22,7 @@ class AuthorizationCodeVerifierTest {
         final AccountTokensRepository accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
         final AuthorizationCodeVerifier authorizationCodeVerifier = new AuthorizationCodeVerifier(accountTokensRepository);
 
-        final String accountId = "account-id";
+        final long accountId = 101;
         final String authorizationCode = "authorization-code";
 
         final AccountTokenDO accountToken = AccountTokenDO.builder()
@@ -47,7 +47,7 @@ class AuthorizationCodeVerifierTest {
         Mockito.when(accountTokensRepository.getByToken(authorizationCode))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        final Either<Exception, String> result = authorizationCodeVerifier.verifyAccountToken(authorizationCode);
+        final Either<Exception, Long> result = authorizationCodeVerifier.verifyAccountToken(authorizationCode);
 
         assertThat(result.isLeft());
         assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
@@ -58,7 +58,7 @@ class AuthorizationCodeVerifierTest {
         final AccountTokensRepository accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
         final AuthorizationCodeVerifier authorizationCodeVerifier = new AuthorizationCodeVerifier(accountTokensRepository);
 
-        final String accountId = "account-id";
+        final long accountId = 101;
         final String authorizationCode = "authorization-code";
 
         final AccountTokenDO accountToken = AccountTokenDO.builder()

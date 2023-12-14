@@ -7,9 +7,9 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public interface AccountLocksRepository {
-    CompletableFuture<Collection<AccountLockDO>> findByAccountId(String accountId);
+    CompletableFuture<Collection<AccountLockDO>> findByAccountId(long accountId);
 
     CompletableFuture<AccountLockDO> save(AccountLockDO accountLock);
 
-    CompletableFuture<Optional<AccountLockDO>> delete(String id);
+    CompletableFuture<Optional<AccountLockDO>> delete(long id);
 }

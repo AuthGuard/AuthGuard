@@ -35,7 +35,7 @@ class AuthorizationCodeProviderTest {
                 new AuthorizationCodeProvider(accountTokensRepository, new ServiceMapperImpl(), config());
 
         final AccountBO account = AccountBO.builder()
-                .id("account-id")
+                .id(101)
                 .build();
 
         final AuthResponseBO tokens = authorizationCodeProvider.generateToken(account);

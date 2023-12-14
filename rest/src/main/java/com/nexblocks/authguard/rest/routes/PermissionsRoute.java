@@ -3,15 +3,20 @@ package com.nexblocks.authguard.rest.routes;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.PermissionDTO;
 import com.nexblocks.authguard.api.dto.requests.CreatePermissionRequestDTO;
+import com.nexblocks.authguard.api.dto.validation.violations.Violation;
+import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.PermissionsApi;
+import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.service.PermissionsService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.PermissionBO;
 import com.google.inject.Inject;
+import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,31 +45,39 @@ public class PermissionsRoute extends PermissionsApi {
 
     @Override
     public void getById(final Context context) {
-        final String id = context.pathParam("id");
+        final Validator<Long> id = context.pathParam("id", Long.class);
 
-        permissionsService.getById(id)
+        if (!id.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        permissionsService.getById(id.get())
                 .map(restMapper::toDTO)
                 .ifPresentOrElse(
                         context::json,
                         // or else
                         () -> context.status(404)
                                 .json(new Error(ErrorCode.PERMISSION_DOES_NOT_EXIST.getCode(),
-                                        "No role with ID " + id + " exists"))
+                                        "No role with ID " + id.get() + " exists"))
                 );
     }
 
     @Override
     public void deleteById(final Context context) {
-        final String id = context.pathParam("id");
+        final Validator<Long> id = context.pathParam("id", Long.class);
 
-        permissionsService.delete(id)
+        if (!id.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        permissionsService.delete(id.get())
                 .map(restMapper::toDTO)
                 .ifPresentOrElse(
                         context::json,
                         // or else
                         () -> context.status(404)
                                 .json(new Error(ErrorCode.PERMISSION_DOES_NOT_EXIST.getCode(),
-                                        "No role with ID " + id + " exists"))
+                                        "No role with ID " + id.get() + " exists"))
                 );
     }
 

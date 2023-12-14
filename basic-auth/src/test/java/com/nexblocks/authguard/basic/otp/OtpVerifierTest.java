@@ -51,7 +51,7 @@ class OtpVerifierTest {
         Mockito.when(mockOtpRepository.getById(otp.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(otp)));
 
-        final Either<Exception, String> generated = otpVerifier.verifyAccountToken(otp.getId() + ":" + otp.getPassword());
+        final Either<Exception, Long> generated = otpVerifier.verifyAccountToken(otp.getId() + ":" + otp.getPassword());
 
         assertThat(generated.get()).isEqualTo(otp.getAccountId());
     }
@@ -84,7 +84,7 @@ class OtpVerifierTest {
 
         setup(otpConfig);
 
-        final Either<Exception, String> result = otpVerifier.verifyAccountToken("not a valid OTP");
+        final Either<Exception, Long> result = otpVerifier.verifyAccountToken("not a valid OTP");
 
         assertThat(result.isLeft()).isTrue();
         assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
@@ -105,7 +105,7 @@ class OtpVerifierTest {
         Mockito.when(mockOtpRepository.getById(otp.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        final Either<Exception, String> result = otpVerifier.verifyAccountToken(otp.getId() + ":" + otp.getPassword());
+        final Either<Exception, Long> result = otpVerifier.verifyAccountToken(otp.getId() + ":" + otp.getPassword());
 
         assertThat(result.isLeft()).isTrue();
         assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);

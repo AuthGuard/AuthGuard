@@ -28,12 +28,12 @@ public class SessionsJpaTest {
 
         // create entities
         first = SessionDO.builder()
-                .id("first-session")
+                .id(1)
                 .sessionToken("token-1")
                 .build();
 
         second = SessionDO.builder()
-                .id("second-session")
+                .id(2)
                 .sessionToken("token-2")
                 .build();
 
@@ -59,7 +59,7 @@ public class SessionsJpaTest {
         entityManager.getTransaction().begin();
 
         entityManager.persist(SessionDO.builder()
-                .id("duplicate")
+                .id(3)
                 .sessionToken(first.getSessionToken())
                 .build());
 

@@ -52,16 +52,16 @@ class ActionTokenServiceImplTest {
     @Test
     void generateOtp() {
         final AccountBO accountBO = AccountBO.builder()
-                .id("account")
+                .id(101)
                 .build();
         final AuthResponseBO otpResponse = AuthResponseBO.builder()
                 .token("password-id")
                 .build();
 
-        Mockito.when(accountsService.getById("account")).thenReturn(Optional.of(accountBO));
+        Mockito.when(accountsService.getById(101)).thenReturn(Optional.of(accountBO));
         Mockito.when(otpProvider.generateToken(accountBO)).thenReturn(otpResponse);
 
-        final Try<AuthResponseBO> response = actionTokenService.generateOtp("account");
+        final Try<AuthResponseBO> response = actionTokenService.generateOtp(101);
 
         assertThat(response.isSuccess()).isTrue();
         assertThat(response.get()).isEqualTo(otpResponse);
@@ -74,7 +74,7 @@ class ActionTokenServiceImplTest {
                 .password("password")
                 .build();
         final AccountBO account = AccountBO.builder()
-                .id("account")
+                .id(101)
                 .build();
 
         Mockito.when(basicAuthProvider.getAccount(authRequest)).thenReturn(Either.right(account));
@@ -95,17 +95,17 @@ class ActionTokenServiceImplTest {
     @Test
     void generateFromOtp() {
         final AccountBO account = AccountBO.builder()
-                .id("account")
+                .id(101)
                 .build();
 
-        final String otpToken = "password-id:otp";
+        final String otpToken = "1:otp";
 
         Mockito.when(otpVerifier.verifyAccountToken(otpToken)).thenReturn(Either.right(account.getId()));
-        Mockito.when(accountsService.getById("account")).thenReturn(Optional.of(account));
+        Mockito.when(accountsService.getById(101)).thenReturn(Optional.of(account));
         Mockito.when(accountTokensRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
 
-        final Try<ActionTokenBO> actual = actionTokenService.generateFromOtp("password-id", "otp", "something");
+        final Try<ActionTokenBO> actual = actionTokenService.generateFromOtp(1, "otp", "something");
         final ActionTokenBO expected = ActionTokenBO.builder()
                 .accountId(account.getId())
                 .validFor(Duration.ofMinutes(5).toSeconds())

@@ -39,7 +39,7 @@ public class OtpToSession implements Exchange {
                 .map(account -> sessionProvider.generateToken(account, options));
     }
 
-    private Either<Exception, AccountBO> getAccount(final String accountId) {
+    private Either<Exception, AccountBO> getAccount(final long accountId) {
         return accountsService.getById(accountId)
                 .<Either<Exception, AccountBO>>map(Either::right)
                 .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,

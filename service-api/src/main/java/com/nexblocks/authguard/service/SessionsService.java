@@ -7,7 +7,7 @@ import java.util.Optional;
 public interface SessionsService {
     SessionBO create(SessionBO session);
 
-    Optional<SessionBO> getById(String id);
+    Optional<SessionBO> getById(long id);
 
     Optional<SessionBO> getByToken(String token);
 

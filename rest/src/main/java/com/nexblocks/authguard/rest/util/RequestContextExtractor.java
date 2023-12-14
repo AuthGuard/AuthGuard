@@ -31,14 +31,14 @@ public class RequestContextExtractor {
         if (actor instanceof ClientBO) {
             return RequestContextBO.builder()
                     .source(context.ip())
-                    .clientId(((ClientBO) actor).getId())
+                    .clientId("" + ((ClientBO) actor).getId())
                     .userAgent(context.userAgent())
                     .build();
         }
 
         return RequestContextBO.builder()
                 .source(context.ip())
-                .accountId(((AccountBO) actor).getId())
+                .accountId("" + ((AccountBO) actor).getId())
                 .userAgent(context.userAgent())
                 .build();
     }

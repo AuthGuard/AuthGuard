@@ -37,7 +37,7 @@ class SessionProviderTest {
         final SessionProvider sessionProvider = new SessionProvider(sessionsService, sessionsConfig());
 
         final AccountBO account = AccountBO.builder()
-                .id("account-id")
+                .id(101)
                 .build();
 
         final AuthResponseBO expected = AuthResponseBO.builder()
@@ -63,7 +63,7 @@ class SessionProviderTest {
         final SessionProvider sessionProvider = new SessionProvider(sessionsService, sessionsConfig());
 
         final AccountBO account = AccountBO.builder()
-                .id("account-id")
+                .id(101)
                 .active(false)
                 .build();
 
@@ -76,7 +76,7 @@ class SessionProviderTest {
         final SessionProvider sessionProvider = new SessionProvider(sessionsService, sessionsConfig());
 
         final String sessionToken = "session-token";
-        final String accountId = "account";
+        final long accountId = 101;
 
         Mockito.when(sessionsService.deleteByToken(sessionToken))
                 .thenReturn(Optional.of(SessionBO.builder()

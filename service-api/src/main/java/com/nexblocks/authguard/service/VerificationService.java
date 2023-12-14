@@ -4,7 +4,7 @@ import com.nexblocks.authguard.service.model.AuthResponseBO;
 
 public interface VerificationService {
     void verifyEmail(String verificationToken);
-    AuthResponseBO sendPhoneNumberVerification(String accountId);
+    AuthResponseBO sendPhoneNumberVerification(long accountId);
     AuthResponseBO sendPhoneNumberVerificationByIdentifier(String identifier, String domain);
-    void verifyPhoneNumber(String passwordId, String otp, String phoneNumber);
+    void verifyPhoneNumber(long passwordId, String otp, String phoneNumber);
 }

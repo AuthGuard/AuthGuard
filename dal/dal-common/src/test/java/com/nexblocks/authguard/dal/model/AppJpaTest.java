@@ -27,16 +27,16 @@ public class AppJpaTest {
 
         // create test app
         createdApp = AppDO.builder()
-                .id("test-app")
-                .parentAccountId("parent-account")
+                .id(1)
+                .parentAccountId(101L)
                 .name("Test Application")
                 .externalId("external-id")
                 .build();
 
         deletedApp = AppDO.builder()
-                .id("deleted-app")
+                .id(2)
                 .deleted(true)
-                .parentAccountId("parent-account")
+                .parentAccountId(101L)
                 .name("Test Application")
                 .externalId("external-id")
                 .build();

@@ -75,41 +75,9 @@ class AccountCredentialsServiceImplTest {
                 securePasswordProvider, accountManager, messageBus, serviceMapper);
     }
 
-    private AccountBO createCredentials() {
-        return AccountBO.builder()
-                .id("account")
-                .addIdentifiers(UserIdentifierBO.builder()
-                        .identifier("username")
-                        .type(UserIdentifier.Type.USERNAME)
-                        .active(true)
-                        .build())
-                .hashedPassword(HashedPasswordBO.builder()
-                        .password("hashed")
-                        .salt("super-salt")
-                        .build())
-                .passwordVersion(1)
-                .build();
-    }
-
-    private AccountDO createAccountDO() {
-        return AccountDO.builder()
-                .id("account")
-                .identifiers(Collections.singleton(UserIdentifierDO.builder()
-                        .identifier("username")
-                        .type(UserIdentifierDO.Type.USERNAME)
-                        .active(true)
-                        .build()))
-                .hashedPassword(PasswordDO.builder()
-                        .password("hashed")
-                        .salt("super-salt")
-                        .build())
-                .passwordVersion(1)
-                .build();
-    }
-
     @Test
     void updatePassword() {
-        final String accountId = "account";
+        final long accountId = 1;
         final String newPassword = "new_password";
 
         final AccountBO accountBO = AccountBO.builder()
@@ -172,7 +140,7 @@ class AccountCredentialsServiceImplTest {
     void generateResetToken() {
         // data
         final String identifier = "identifier";
-        final String accountId = "account";
+        final long accountId = 1;
 
         final AccountBO account = AccountBO.builder()
                 .id(accountId)
@@ -204,7 +172,7 @@ class AccountCredentialsServiceImplTest {
     void generateResetTokenNoReturn() {
         // data
         final String identifier = "identifier";
-        final String accountId = "account";
+        final long accountId = 1;
 
         final AccountBO account = AccountBO.builder()
                 .id(accountId)
@@ -243,7 +211,7 @@ class AccountCredentialsServiceImplTest {
     @Test
     void generateResetTokenNoAccount() {
         final String identifier = "identifier";
-        final String accountId = "account";
+        final long accountId = 1;
 
         Mockito.when(accountsService.getById(accountId)).thenReturn(Optional.empty());
 
@@ -255,7 +223,7 @@ class AccountCredentialsServiceImplTest {
     void resetPasswordByToken() {
         // data
         final String resetToken = "token";
-        final String accountId = "account";
+        final long accountId = 1;
 
         final AccountTokenDO persistedToken = AccountTokenDO.builder()
                 .associatedAccountId(accountId)
@@ -320,11 +288,11 @@ class AccountCredentialsServiceImplTest {
     @Test
     void resetPasswordExpiredToken() {
         final String resetToken = "token";
-        final String accountId = "account";
+        final long accountId = 1;
 
         final AccountTokenDO persistedToken = AccountTokenDO.builder()
                 .expiresAt(Instant.now().minus(Duration.ofMinutes(31)))
-                .additionalInformation(ImmutableMap.of("accountId", accountId))
+                .additionalInformation(ImmutableMap.of("accountId", "" + accountId))
                 .build();
 
         final String newPassword = "new_password";
@@ -344,7 +312,7 @@ class AccountCredentialsServiceImplTest {
         final String newPassword = "new_password";
 
         final AccountBO accountBO = AccountBO.builder()
-                .id("account")
+                .id(1)
                 .addIdentifiers(UserIdentifierBO.builder()
                         .identifier(identifier)
                         .build())
@@ -396,7 +364,7 @@ class AccountCredentialsServiceImplTest {
         final String newPassword = "new_password";
 
         final AccountBO accountBO = AccountBO.builder()
-                .id("account")
+                .id(1)
                 .addIdentifiers(UserIdentifierBO.builder()
                         .identifier(identifier)
                         .build())
@@ -432,7 +400,7 @@ class AccountCredentialsServiceImplTest {
         final String newPassword = "bad";
 
         final AccountBO accountBO = AccountBO.builder()
-                .id("account")
+                .id(1)
                 .addIdentifiers(UserIdentifierBO.builder()
                         .identifier(identifier)
                         .build())
@@ -463,7 +431,7 @@ class AccountCredentialsServiceImplTest {
 
     @Test
     void replaceIdentifier() {
-        final String accountId = "account";
+        final long accountId = 1;
 
         final AccountBO accountBO = AccountBO.builder()
                 .id(accountId)
@@ -504,7 +472,7 @@ class AccountCredentialsServiceImplTest {
 
     @Test
     void replaceIdentifierNoCredentials() {
-        final String accountId = "account";
+        final long accountId = 1;
 
         assertThatThrownBy(() -> accountCredentialsService.replaceIdentifier(accountId, "username", null))
                 .isInstanceOf(ServiceNotFoundException.class);
@@ -512,7 +480,7 @@ class AccountCredentialsServiceImplTest {
 
     @Test
     void replaceIdentifierNoIdentifier() {
-        final String accountId = "account";
+        final long accountId = 1;
 
         final AccountBO accountBO = AccountBO.builder()
                 .id(accountId)

@@ -44,7 +44,7 @@ class AccountLockerTest {
     void onMessageNoLock() {
         // data
         final AuthMessage authMessage = AuthMessage.success("basic", "session",
-                EntityType.ACCOUNT, "account");
+                EntityType.ACCOUNT, 101L);
 
         final Message<Object> message = Message.builder()
                 .eventType(EventType.AUTHENTICATION)
@@ -54,7 +54,7 @@ class AccountLockerTest {
                 .build();
 
         // mocks
-        Mockito.when(exchangeAttemptsRepository.findByEntityAndTimestamp(Mockito.any(), Mockito.any()))
+        Mockito.when(exchangeAttemptsRepository.findByEntityAndTimestamp(Mockito.anyLong(), Mockito.any()))
                 .thenReturn(CompletableFuture.completedFuture(Collections.emptyList()));
 
         // call
@@ -64,7 +64,7 @@ class AccountLockerTest {
         final ArgumentCaptor<Instant> timeArgumentCaptor = ArgumentCaptor.forClass(Instant.class);
 
         Mockito.verify(exchangeAttemptsRepository)
-                .findByEntityAndTimestamp(Mockito.eq("account"), timeArgumentCaptor.capture());
+                .findByEntityAndTimestamp(Mockito.eq(101L), timeArgumentCaptor.capture());
 
         assertThat(timeArgumentCaptor.getValue()).isBetween(
                 Instant.now()
@@ -82,7 +82,7 @@ class AccountLockerTest {
     void onMessageLock() {
         // data
         final AuthMessage authMessage = AuthMessage.success("basic", "session",
-                EntityType.ACCOUNT, "account");
+                EntityType.ACCOUNT, 101L);
 
         final Message<Object> message = Message.builder()
                 .eventType(EventType.AUTHENTICATION)
@@ -92,7 +92,7 @@ class AccountLockerTest {
                 .build();
 
         // mocks
-        Mockito.when(exchangeAttemptsRepository.findByEntityAndTimestamp(Mockito.any(), Mockito.any()))
+        Mockito.when(exchangeAttemptsRepository.findByEntityAndTimestamp(Mockito.anyLong(), Mockito.any()))
                 .thenReturn(CompletableFuture.completedFuture(Arrays.asList(
                         ExchangeAttemptDO.builder().build(),
                         ExchangeAttemptDO.builder().build(),
@@ -107,7 +107,7 @@ class AccountLockerTest {
         final ArgumentCaptor<AccountLockBO> accountLockArgumentCaptor = ArgumentCaptor.forClass(AccountLockBO.class);
 
         Mockito.verify(exchangeAttemptsRepository)
-                .findByEntityAndTimestamp(Mockito.eq("account"), timeArgumentCaptor.capture());
+                .findByEntityAndTimestamp(Mockito.eq(101L), timeArgumentCaptor.capture());
 
         assertThat(timeArgumentCaptor.getValue()).isBetween(
                 Instant.now()
@@ -135,7 +135,7 @@ class AccountLockerTest {
     void onMessageNotAuth() {
         // data
         final AuthMessage authMessage = AuthMessage.success("basic", "session",
-                EntityType.ACCOUNT, "account");
+                EntityType.ACCOUNT, 101L);
 
         final Message<Object> message = Message.builder()
                 .eventType(EventType.EMAIL_VERIFICATION)
@@ -155,7 +155,7 @@ class AccountLockerTest {
     void onMessageAuthWrongBodyType() {
         // data
         final AuthMessage authMessage = AuthMessage.success("basic", "session",
-                EntityType.ACCOUNT, "account");
+                EntityType.ACCOUNT, 101L);
 
         final Message<Object> message = Message.builder()
                 .eventType(EventType.AUTHENTICATION)
@@ -175,7 +175,7 @@ class AccountLockerTest {
     void onMessageAuthNotAccount() {
         // data
         final AuthMessage authMessage = AuthMessage.success("basic", "session",
-                EntityType.APPLICATION, "account");
+                EntityType.APPLICATION, 101L);
 
         final Message<Object> message = Message.builder()
                 .eventType(EventType.AUTHENTICATION)

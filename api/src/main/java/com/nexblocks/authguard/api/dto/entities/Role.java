@@ -12,7 +12,7 @@ import java.time.Instant;
 @JsonDeserialize(as = RoleDTO.class)
 @JsonSerialize(as = RoleDTO.class)
 public interface Role {
-    String getId();
+    long getId();
     Instant getCreatedAt();
     Instant getLastModified();
     String getName();

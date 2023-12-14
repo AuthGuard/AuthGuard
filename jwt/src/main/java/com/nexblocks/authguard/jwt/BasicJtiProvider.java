@@ -22,7 +22,7 @@ public class BasicJtiProvider implements JtiProvider {
     public String next() {
         final AccountTokenDO persistedToken = accountTokensRepository.save(AccountTokenDO.builder()
                 .id(ID.generate())
-                .token(ID.generate())
+                .token(ID.generateSimplifiedUuid())
                 .build())
                 .join();
 

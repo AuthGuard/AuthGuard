@@ -19,6 +19,7 @@ import com.nexblocks.authguard.service.ExchangeAttemptsService;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
+import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 
 import java.time.Instant;
@@ -132,12 +133,12 @@ public class AuthRoute extends AuthApi {
 
     @Override
     public void getExchangeAttempts(final Context context) {
-        final String entityId = context.queryParam("entityId");
+        final Validator<Long> entityId = context.queryParam("entityId", Long.class);
         final Instant fromTimestamp = parseOffsetDateTime(context.queryParam("fromTimestamp"));
         final String fromExchange = context.queryParam("fromExchange");
 
         // take care of checking the parameters
-        if (entityId == null) {
+        if (entityId.getOrNull() == null) {
             context.status(400)
                     .json(new Error(ErrorCode.MISSING_REQUEST_QUERY.getCode(),
                             "Query parameter entityId is required"));
@@ -155,7 +156,7 @@ public class AuthRoute extends AuthApi {
 
         // do the real work
         final ExchangeAttemptsQueryBO query = ExchangeAttemptsQueryBO.builder()
-                .entityId(entityId)
+                .entityId(entityId.get())
                 .fromTimestamp(fromTimestamp)
                 .fromExchange(fromExchange)
                 .build();
@@ -199,7 +200,7 @@ public class AuthRoute extends AuthApi {
                 authRequest = authRequest.withUserAgent(context.userAgent());
             }
 
-            return Optional.of(authRequest.withClientId(client.getId()));
+            return Optional.of(authRequest.withClientId("" + client.getId())); // TODO migrate that to long as well
         }
 
         return Optional.of(authRequest);

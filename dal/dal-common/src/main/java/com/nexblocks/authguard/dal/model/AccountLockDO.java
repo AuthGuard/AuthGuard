@@ -23,6 +23,6 @@ import java.time.Instant;
                 "WHERE lock.accountId = :accountId AND lock.deleted = false"
 )
 public class AccountLockDO extends AbstractDO {
-    private String accountId;
+    private long accountId;
     private Instant expiresAt;
 }

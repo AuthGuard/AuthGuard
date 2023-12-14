@@ -8,10 +8,10 @@ import java.time.Instant;
 @Value.Immutable
 @DTOStyle
 public interface ExchangeAttempt {
-    String getId();
+    long getId();
     Instant getCreatedAt();
     Instant getLastModified();
-    String getEntityId();
+    Long getEntityId();
     String getExchangeFrom();
     String getExchangeTo();
     boolean isSuccessful();

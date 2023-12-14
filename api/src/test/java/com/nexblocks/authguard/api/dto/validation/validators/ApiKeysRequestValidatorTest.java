@@ -17,7 +17,7 @@ class ApiKeysRequestValidatorTest {
     @Test
     void validate() {
         final ApiKeyRequestDTO request = ApiKeyRequestDTO.builder()
-                .appId("app")
+                .appId(1L)
                 .keyType("default")
                 .build();
 
@@ -44,7 +44,7 @@ class ApiKeysRequestValidatorTest {
     @Test
     void validateWithZeroValidity() {
         final ApiKeyRequestDTO request = ApiKeyRequestDTO.builder()
-                .appId("app")
+                .appId(1L)
                 .keyType("default")
                 .validFor(DurationRequestDTO.builder()
                         .build())
@@ -59,7 +59,7 @@ class ApiKeysRequestValidatorTest {
     @Test
     void validateWithNonZeroValidity() {
         final ApiKeyRequestDTO request = ApiKeyRequestDTO.builder()
-                .appId("app")
+                .appId(1L)
                 .keyType("default")
                 .validFor(DurationRequestDTO.builder()
                         .days(1)
@@ -77,7 +77,7 @@ class ApiKeysRequestValidatorTest {
     @Test
     void validateWithNegativeDaysValidity() {
         final ApiKeyRequestDTO request = ApiKeyRequestDTO.builder()
-                .appId("app")
+                .appId(1L)
                 .keyType("default")
                 .validFor(DurationRequestDTO.builder()
                         .days(-1)
@@ -95,7 +95,7 @@ class ApiKeysRequestValidatorTest {
     @Test
     void validateWithNegativeHoursValidity() {
         final ApiKeyRequestDTO request = ApiKeyRequestDTO.builder()
-                .appId("app")
+                .appId(1L)
                 .keyType("default")
                 .validFor(DurationRequestDTO.builder()
                         .hours(-1)
@@ -113,7 +113,7 @@ class ApiKeysRequestValidatorTest {
     @Test
     void validateWithNegativeMinutesValidity() {
         final ApiKeyRequestDTO request = ApiKeyRequestDTO.builder()
-                .appId("app")
+                .appId(1L)
                 .keyType("default")
                 .validFor(DurationRequestDTO.builder()
                         .minutes(-1)

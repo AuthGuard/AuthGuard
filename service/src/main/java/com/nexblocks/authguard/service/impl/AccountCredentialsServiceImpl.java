@@ -67,12 +67,12 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
         this.cryptographicRandom = new CryptographicRandom();
     }
 
-    public Optional<AccountBO> getByIdUnsafe(final String id) {
+    public Optional<AccountBO> getByIdUnsafe(final long id) {
         return accountsService.getByIdUnsafe(id);
     }
 
     @Override
-    public Optional<AccountBO> updatePassword(final String id, final String plainPassword) {
+    public Optional<AccountBO> updatePassword(final long id, final String plainPassword) {
         final AccountBO existing = accountsService.getById(id)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
 
@@ -94,7 +94,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     }
 
     @Override
-    public Optional<AccountBO> addIdentifiers(final String id, final List<UserIdentifierBO> identifiers) {
+    public Optional<AccountBO> addIdentifiers(final long id, final List<UserIdentifierBO> identifiers) {
         final AccountBO existing = getByIdUnsafe(id)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
 
@@ -125,7 +125,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     }
 
     @Override
-    public Optional<AccountBO> removeIdentifiers(final String id, final List<String> identifiers) {
+    public Optional<AccountBO> removeIdentifiers(final long id, final List<String> identifiers) {
         final AccountBO existing = getByIdUnsafe(id)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
 
@@ -155,7 +155,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     }
 
     @Override
-    public Optional<AccountBO> replaceIdentifier(final String id, final String oldIdentifier, final UserIdentifierBO newIdentifier) {
+    public Optional<AccountBO> replaceIdentifier(final long id, final String oldIdentifier, final UserIdentifierBO newIdentifier) {
         final AccountBO existing = getByIdUnsafe(id)
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No account with ID " + id));
 

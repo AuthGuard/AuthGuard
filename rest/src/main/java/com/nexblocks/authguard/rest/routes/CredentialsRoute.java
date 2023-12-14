@@ -18,6 +18,7 @@ import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.service.AccountCredentialsService;
 import com.nexblocks.authguard.service.model.*;
+import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 
 import java.util.Collections;
@@ -48,9 +49,13 @@ public class CredentialsRoute extends CredentialsApi {
 
     public void updatePassword(final Context context) {
         final CredentialsDTO credentials = RestJsonMapper.asClass(context.body(), CredentialsDTO.class);
-        final String credentialsId = context.pathParam("id");
+        final Validator<Long> credentialsId = context.pathParam("id", Long.class);
 
-        final Optional<AccountDTO> updated = credentialsService.updatePassword(credentialsId, credentials.getPlainPassword())
+        if (!credentialsId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<AccountDTO> updated = credentialsService.updatePassword(credentialsId.get(), credentials.getPlainPassword())
                 .map(restMapper::toDTO);
 
         if (updated.isPresent()) {
@@ -61,7 +66,12 @@ public class CredentialsRoute extends CredentialsApi {
     }
 
     public void addIdentifiers(final Context context) {
-        final String credentialsId = context.pathParam("id");
+        final Validator<Long> credentialsId = context.pathParam("id", Long.class);
+
+        if (!credentialsId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
         final UserIdentifiersRequestDTO request = userIdentifiersRequestBodyHandler.getValidated(context);
 
         if (request.getOldIdentifier() != null && request.getIdentifiers().size() != 1) {
@@ -75,24 +85,29 @@ public class CredentialsRoute extends CredentialsApi {
                 .collect(Collectors.toList());
 
         if (request.getOldIdentifier() != null) {
-            credentialsService.replaceIdentifier(credentialsId, request.getOldIdentifier(), identifiers.get(0))
+            credentialsService.replaceIdentifier(credentialsId.get(), request.getOldIdentifier(), identifiers.get(0))
                     .map(restMapper::toDTO)
                     .ifPresentOrElse(context::json, () -> context.status(404));
         } else {
-            credentialsService.addIdentifiers(credentialsId, identifiers)
+            credentialsService.addIdentifiers(credentialsId.get(), identifiers)
                     .map(restMapper::toDTO)
                     .ifPresentOrElse(context::json, () -> context.status(404));
         }
     }
 
     public void removeIdentifiers(final Context context) {
-        final String credentialsId = context.pathParam("id");
+        final Validator<Long> credentialsId = context.pathParam("id", Long.class);
+
+        if (!credentialsId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
         final UserIdentifiersRequestDTO request = userIdentifiersRequestBodyHandler.getValidated(context);
         final List<String> identifiers = request.getIdentifiers().stream()
                 .map(UserIdentifierDTO::getIdentifier)
                 .collect(Collectors.toList());
 
-        credentialsService.removeIdentifiers(credentialsId, identifiers)
+        credentialsService.removeIdentifiers(credentialsId.get(), identifiers)
                 .map(restMapper::toDTO)
                 .ifPresentOrElse(context::json, () -> context.status(404));
     }

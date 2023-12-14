@@ -17,7 +17,7 @@ import java.time.Instant;
 @Entity
 @Table(name = "otps")
 public class OneTimePasswordDO extends AbstractDO {
-    private String accountId;
+    private long accountId;
     private String password;
     private Instant expiresAt;
     private String deviceId;

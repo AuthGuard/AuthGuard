@@ -5,8 +5,8 @@ import org.immutables.value.Value;
 @Value.Immutable
 @BOStyle
 public interface IdempotentRecord {
-    String getId();
+    long getId();
     String getIdempotentKey();
-    String getEntityId();
+    Long getEntityId();
     String getEntityType();
 }

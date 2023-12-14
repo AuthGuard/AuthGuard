@@ -23,7 +23,7 @@ import javax.persistence.Table;
 )
 public class CredentialsAuditDO extends AbstractDO {
     private Action action;
-    private String credentialsId;
+    private long credentialsId;
 
     private String identifier;
 

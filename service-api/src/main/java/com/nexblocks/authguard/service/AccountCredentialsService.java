@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface AccountCredentialsService {
-    Optional<AccountBO> updatePassword(String id, String plainPassword);
-    Optional<AccountBO> addIdentifiers(String id, List<UserIdentifierBO> identifiers);
-    Optional<AccountBO> removeIdentifiers(String id, List<String> identifiers);
-    Optional<AccountBO> replaceIdentifier(String id, String oldIdentifier, UserIdentifierBO newIdentifier);
+    Optional<AccountBO> updatePassword(long id, String plainPassword);
+    Optional<AccountBO> addIdentifiers(long id, List<UserIdentifierBO> identifiers);
+    Optional<AccountBO> removeIdentifiers(long id, List<String> identifiers);
+    Optional<AccountBO> replaceIdentifier(long id, String oldIdentifier, UserIdentifierBO newIdentifier);
 
     PasswordResetTokenBO generateResetToken(String identifier, boolean returnToken, String domain);
     Optional<AccountBO> resetPasswordByToken(String token, String plainPassword);

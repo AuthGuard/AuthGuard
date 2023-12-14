@@ -33,7 +33,7 @@ class BasicToOIdCTest {
 
     @Test
     void exchange() {
-        final AccountBO account = AccountBO.builder().id("account").build();
+        final AccountBO account = AccountBO.builder().id(101).build();
 
         final AuthRequestBO authRequest = AuthRequestBO.builder()
                 .identifier("username")

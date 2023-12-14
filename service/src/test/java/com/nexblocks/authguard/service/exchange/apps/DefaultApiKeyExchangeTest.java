@@ -45,7 +45,7 @@ class DefaultApiKeyExchangeTest {
     @Test
     void generateKey() {
         final AppBO app = AppBO.builder()
-                .id("app")
+                .id(101)
                 .build();
 
         final AuthResponseBO expected = AuthResponseBO.builder()
@@ -64,7 +64,7 @@ class DefaultApiKeyExchangeTest {
     void verifyAndGetAppId() {
         final String key = "key";
         final String hashedKey = apiKeyHashProvider.getHash().hash(key);
-        final String appId = "app";
+        final long appId = 101;
 
         final ApiKeyDO apiKeyDO = ApiKeyDO.builder()
                 .key(hashedKey)
@@ -74,7 +74,7 @@ class DefaultApiKeyExchangeTest {
         Mockito.when(repository.getByKey(hashedKey))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
 
-        final Optional<String> retrieved = exchange.verifyAndGetAppId(key).join();
+        final Optional<Long> retrieved = exchange.verifyAndGetAppId(key).join();
 
         assertThat(retrieved).contains(appId);
     }
@@ -87,7 +87,7 @@ class DefaultApiKeyExchangeTest {
         Mockito.when(repository.getByKey(hashedKey))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        final Optional<String> retrieved = exchange.verifyAndGetAppId(key).join();
+        final Optional<Long> retrieved = exchange.verifyAndGetAppId(key).join();
 
         assertThat(retrieved).isEmpty();
     }
@@ -96,7 +96,7 @@ class DefaultApiKeyExchangeTest {
     void verifyAndGetAppIdValidKey() {
         final String key = "key";
         final String hashedKey = apiKeyHashProvider.getHash().hash(key);
-        final String appId = "app";
+        final long appId = 101;
 
         final ApiKeyDO apiKeyDO = ApiKeyDO.builder()
                 .key(hashedKey)
@@ -107,7 +107,7 @@ class DefaultApiKeyExchangeTest {
         Mockito.when(repository.getByKey(hashedKey))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
 
-        final Optional<String> retrieved = exchange.verifyAndGetAppId(key).join();
+        final Optional<Long> retrieved = exchange.verifyAndGetAppId(key).join();
 
         assertThat(retrieved).contains(appId);
     }
@@ -116,7 +116,7 @@ class DefaultApiKeyExchangeTest {
     void verifyAndGetAppIdExpiredKey() {
         final String key = "key";
         final String hashedKey = apiKeyHashProvider.getHash().hash(key);
-        final String appId = "app";
+        final long appId = 101;
 
         final ApiKeyDO apiKeyDO = ApiKeyDO.builder()
                 .key(hashedKey)
@@ -127,7 +127,7 @@ class DefaultApiKeyExchangeTest {
         Mockito.when(repository.getByKey(hashedKey))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
 
-        final Optional<String> retrieved = exchange.verifyAndGetAppId(key).join();
+        final Optional<Long> retrieved = exchange.verifyAndGetAppId(key).join();
 
         assertThat(retrieved).isEmpty();
     }

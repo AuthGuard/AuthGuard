@@ -33,7 +33,7 @@ import javax.persistence.Table;
                 "AND attempt.createdAt > :timestamp"
 )
 public class ExchangeAttemptDO extends AbstractDO {
-    private String entityId;
+    private long entityId;
     private String exchangeFrom;
     private String exchangeTo;
     private boolean successful;

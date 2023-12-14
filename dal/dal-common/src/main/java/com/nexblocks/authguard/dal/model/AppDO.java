@@ -30,7 +30,7 @@ import java.util.Set;
 public class AppDO extends AbstractDO {
     private String externalId;
     private String name;
-    private String parentAccountId;
+    private Long parentAccountId;
     private String domain;
     private String baseUrl;
 

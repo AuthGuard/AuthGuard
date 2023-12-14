@@ -60,7 +60,7 @@ public class SessionsServiceImpl implements SessionsService {
     }
 
     @Override
-    public Optional<SessionBO> getById(final String id) {
+    public Optional<SessionBO> getById(final long id) {
         return sessionsRepository.getById(id)
                 .thenApply(opt -> opt.map(serviceMapper::toBO))
                 .join();

@@ -22,16 +22,16 @@ class SessionVerifierTest {
         final SessionVerifier sessionVerifier = new SessionVerifier(sessionsService);
 
         final SessionBO session = SessionBO.builder()
-                .id("session-id")
+                .id(1)
                 .sessionToken("token")
-                .accountId("account-id")
+                .accountId(101)
                 .expiresAt(Instant.now().plus(Duration.ofMinutes(20)))
                 .build();
 
         Mockito.when(sessionsService.getByToken(session.getSessionToken()))
                 .thenReturn(Optional.of(session));
 
-        final Either<Exception, String> accountId = sessionVerifier.verifyAccountToken(session.getSessionToken());
+        final Either<Exception, Long> accountId = sessionVerifier.verifyAccountToken(session.getSessionToken());
 
         assertThat(accountId.get()).isEqualTo(session.getAccountId());
     }
@@ -44,7 +44,7 @@ class SessionVerifierTest {
         Mockito.when(sessionsService.getByToken(any()))
                 .thenReturn(Optional.empty());
 
-        final Either<Exception, String> result = sessionVerifier.verifyAccountToken("invalid");
+        final Either<Exception, Long> result = sessionVerifier.verifyAccountToken("invalid");
 
         assertThat(result.isLeft());
         assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
@@ -56,16 +56,16 @@ class SessionVerifierTest {
         final SessionVerifier sessionVerifier = new SessionVerifier(sessionsService);
 
         final SessionBO session = SessionBO.builder()
-                .id("session-id")
+                .id(1)
                 .sessionToken("token")
-                .accountId("account-id")
+                .accountId(101)
                 .expiresAt(Instant.now().minus(Duration.ofMinutes(20)))
                 .build();
 
         Mockito.when(sessionsService.getByToken(session.getSessionToken()))
                 .thenReturn(Optional.of(session));
 
-        final Either<Exception, String> result = sessionVerifier.verifyAccountToken("session-id");
+        final Either<Exception, Long> result = sessionVerifier.verifyAccountToken("session-id");
 
         assertThat(result.isLeft());
         assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);

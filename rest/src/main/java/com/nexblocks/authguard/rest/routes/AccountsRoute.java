@@ -6,8 +6,11 @@ import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.UserIdentifier;
 import com.nexblocks.authguard.api.dto.entities.*;
 import com.nexblocks.authguard.api.dto.requests.*;
+import com.nexblocks.authguard.api.dto.validation.violations.Violation;
+import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.AccountsApi;
 import com.nexblocks.authguard.rest.access.ActorDomainVerifier;
+import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.rest.util.IdempotencyHeader;
@@ -17,9 +20,11 @@ import com.nexblocks.authguard.service.ApplicationsService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.model.Client;
+import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -91,9 +96,13 @@ public class AccountsRoute extends AccountsApi {
 
     @Override
     public void getById(final Context context) {
-        final String accountId = context.pathParam("id");
+        final Validator<Long> accountId = context.pathParam("id", Long.class);
 
-        final Optional<AccountDTO> account = accountsService.getById(accountId)
+        if (!accountId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<AccountDTO> account = accountsService.getById(accountId.get())
                 .map(restMapper::toDTO);
 
         if (account.isPresent()) {
@@ -141,9 +150,13 @@ public class AccountsRoute extends AccountsApi {
 
     @Override
     public void deleteAccount(final Context context) {
-        final String accountId = context.pathParam("id");
+        final Validator<Long> accountId = context.pathParam("id", Long.class);
 
-        final Optional<AccountDTO> account = accountsService.delete(accountId)
+        if (!accountId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<AccountDTO> account = accountsService.delete(accountId.get())
                 .map(restMapper::toDTO);
 
         if (account.isPresent()) {
@@ -156,10 +169,15 @@ public class AccountsRoute extends AccountsApi {
 
     @Override
     public void patchAccount(final Context context) {
-        final String accountId = context.pathParam("id");
+        final Validator<Long> accountId = context.pathParam("id", Long.class);
+
+        if (!accountId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+        
         final UpdateAccountRequestDTO request = updateAccountRequestBodyHandler.getValidated(context);
 
-        final Optional<AccountDTO> account = accountsService.patch(accountId, restMapper.toBO(request))
+        final Optional<AccountDTO> account = accountsService.patch(accountId.get(), restMapper.toBO(request))
                 .map(restMapper::toDTO);
 
         if (account.isPresent()) {
@@ -221,35 +239,50 @@ public class AccountsRoute extends AccountsApi {
 
     @Override
     public void updatePermissions(final Context context) {
-        final String accountId = context.pathParam("id");
+        final Validator<Long> accountId = context.pathParam("id", Long.class);
+
+        if (!accountId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+        
         final PermissionsRequestDTO request = permissionsRequestBodyHandler.getValidated(context);
 
         final List<PermissionBO> permissions = request.getPermissions().stream()
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
 
-        final AccountDTO updatedAccount;
+        final Optional<AccountDTO> updatedAccount;
 
         if (request.getAction() == PermissionsRequest.Action.GRANT) {
-            updatedAccount = restMapper.toDTO(accountsService.grantPermissions(accountId, permissions));
+            updatedAccount = accountsService.grantPermissions(accountId.get(), permissions).map(restMapper::toDTO);
         } else {
-            updatedAccount = restMapper.toDTO(accountsService.revokePermissions(accountId, permissions));
+            updatedAccount = accountsService.revokePermissions(accountId.get(), permissions).map(restMapper::toDTO);
         }
 
-        context.json(updatedAccount);
+        if (updatedAccount.isPresent()) {
+            context.status(200).json(updatedAccount.get());
+        } else {
+            context.status(404)
+                    .json(new Error(ErrorCode.ACCOUNT_DOES_NOT_EXIST.getCode(), "Account not found"));
+        }
     }
 
     @Override
     public void updateRoles(final Context context) {
-        final String accountId = context.pathParam("id");
+        final Validator<Long> accountId = context.pathParam("id", Long.class);
+
+        if (!accountId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+        
         final RolesRequestDTO request = rolesRequestBodyHandler.getValidated(context);
 
-        final AccountDTO updatedAccount;
+        final Optional<AccountDTO> updatedAccount;
 
         if (request.getAction() == RolesRequest.Action.GRANT) {
-            updatedAccount = restMapper.toDTO(accountsService.grantRoles(accountId, request.getRoles()));
+            updatedAccount = accountsService.grantRoles(accountId.get(), request.getRoles()).map(restMapper::toDTO);
         } else {
-            updatedAccount = restMapper.toDTO(accountsService.revokeRoles(accountId, request.getRoles()));
+            updatedAccount = accountsService.revokeRoles(accountId.get(), request.getRoles()).map(restMapper::toDTO);
         }
 
         context.json(updatedAccount);
@@ -257,9 +290,13 @@ public class AccountsRoute extends AccountsApi {
 
     @Override
     public void getApps(final Context context) {
-        final String accountId = context.pathParam("id");
+        final Validator<Long> accountId = context.pathParam("id", Long.class);
 
-        final List<AppDTO> apps = applicationsService.getByAccountId(accountId)
+        if (!accountId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final List<AppDTO> apps = applicationsService.getByAccountId(accountId.get())
                 .stream()
                 .map(restMapper::toDTO)
                 .collect(Collectors.toList());
@@ -269,9 +306,13 @@ public class AccountsRoute extends AccountsApi {
 
     @Override
     public void activate(final Context context) {
-        final String accountId = context.pathParam("id");
+        final Validator<Long> accountId = context.pathParam("id", Long.class);
 
-        final Optional<AccountDTO> account = accountsService.activate(accountId)
+        if (!accountId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<AccountDTO> account = accountsService.activate(accountId.get())
                 .map(restMapper::toDTO);
 
         if (account.isPresent()) {
@@ -283,23 +324,31 @@ public class AccountsRoute extends AccountsApi {
 
     @Override
     public void deactivate(final Context context) {
-        final String accountId = context.pathParam("id");
+        final Validator<Long> accountId = context.pathParam("id", Long.class);
 
-        final Optional<AccountDTO> account = accountsService.deactivate(accountId)
+        if (!accountId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Optional<AccountDTO> account = accountsService.deactivate(accountId.get())
                 .map(restMapper::toDTO);
 
         if (account.isPresent()) {
             context.status(200).json(account.get());
         } else {
-            context.status(404).json(new Error("404", "No account with ID " + accountId + " exists"));
+            context.status(404).json(new Error("404", "No account with ID " + accountId.get() + " exists"));
         }
     }
 
     @Override
     public void getActiveLocks(final Context context) {
-        final String accountId = context.pathParam("id");
+        final Validator<Long> accountId = context.pathParam("id", Long.class);
 
-        final Collection<AccountLockDTO> locks = accountLocksService.getActiveLocksByAccountId(accountId)
+        if (!accountId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        final Collection<AccountLockDTO> locks = accountLocksService.getActiveLocksByAccountId(accountId.get())
                 .stream()
                 .map(restMapper::toDTO)
                 .collect(Collectors.toList());

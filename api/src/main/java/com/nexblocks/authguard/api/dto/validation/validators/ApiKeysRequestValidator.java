@@ -14,7 +14,7 @@ public class ApiKeysRequestValidator implements Validator<ApiKeyRequestDTO> {
     @Override
     public List<Violation> validate(final ApiKeyRequestDTO obj) {
         return FluentValidator.begin()
-                .validate("appId", obj.getAppId(), Constraints.required, Constraints.reasonableLength)
+                .validate("appId", obj.getAppId(), Constraints.required)
                 .validate("keyType", obj.getKeyType(), Constraints.required, Constraints.reasonableLength)
                 .validate("validFor", obj.getValidFor(), durationRequest -> {
                     if (durationRequest == null) {

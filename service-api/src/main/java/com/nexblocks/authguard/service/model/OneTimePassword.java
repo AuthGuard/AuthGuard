@@ -7,8 +7,8 @@ import java.time.Instant;
 @Value.Immutable
 @BOStyle
 public interface OneTimePassword {
-    String getId();
-    String getAccountId();
+    long getId();
+    long getAccountId();
     String getPassword();
     Instant getExpiresAt();
     String getDeviceId();
