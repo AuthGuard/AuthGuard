@@ -60,7 +60,8 @@ public class ExchangeServiceImpl implements ExchangeService {
         final Either<Exception, AuthResponseBO> result = exchange.exchange(authRequest);
 
         if (result.isRight()) {
-            LOG.info("Successful exchange. request={}", authRequest);
+            LOG.info("Successful exchange. from={}, to={}, request={}",
+                    fromTokenType, toTokenType, authRequest);
             final AuthResponseBO tokens = result.get();
 
             exchangeSuccess(authRequest, requestContext, tokens, fromTokenType, toTokenType);
@@ -69,7 +70,8 @@ public class ExchangeServiceImpl implements ExchangeService {
         } else {
             final Exception e = result.getLeft();
 
-            LOG.info("Unsuccessful exchange. request={}, error={}", authRequest, e.getMessage());
+            LOG.info("Unsuccessful exchange. from={}, to={}, request={}, error={}", fromTokenType, toTokenType,
+                    authRequest, e.getMessage());
 
             exchangeFailure(authRequest, requestContext, e, fromTokenType, toTokenType);
 
