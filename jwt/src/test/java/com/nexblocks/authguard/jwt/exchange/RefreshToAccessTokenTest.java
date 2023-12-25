@@ -8,10 +8,7 @@ import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.service.model.AuthResponseBO;
-import com.nexblocks.authguard.service.model.TokenRestrictionsBO;
+import com.nexblocks.authguard.service.model.*;
 import io.vavr.control.Either;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,7 +71,7 @@ class RefreshToAccessTokenTest {
         Mockito.when(accountsService.getById(accountId))
                 .thenReturn(Optional.of(account));
 
-        Mockito.when(accessTokenProvider.generateToken(account, (TokenRestrictionsBO) null))
+        Mockito.when(accessTokenProvider.generateToken(account, null, TokenOptionsBO.builder().build()))
                 .thenReturn(newTokens);
 
         // do
@@ -117,6 +114,10 @@ class RefreshToAccessTokenTest {
                 .refreshToken("new_refresh_token")
                 .build();
 
+        final TokenRestrictionsBO restrictions = TokenRestrictionsBO.builder()
+                .addPermissions(restrictionPermission)
+                .build();
+
         // mock
         Mockito.when(accountTokensRepository.getByToken(authRequest.getToken()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
@@ -124,9 +125,8 @@ class RefreshToAccessTokenTest {
         Mockito.when(accountsService.getById(accountId))
                 .thenReturn(Optional.of(account));
 
-        Mockito.when(accessTokenProvider.generateToken(account, TokenRestrictionsBO.builder()
-                .addPermissions(restrictionPermission)
-                .build())).thenReturn(newTokens);
+        Mockito.when(accessTokenProvider.generateToken(account, restrictions, TokenOptionsBO.builder().build()))
+                .thenReturn(newTokens);
 
         // do
         final Either<Exception, AuthResponseBO> actual = refreshToAccessToken.exchange(authRequest);
@@ -257,6 +257,14 @@ class RefreshToAccessTokenTest {
                 .refreshToken("new_refresh_token")
                 .build();
 
+        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder()
+                .clientId("client-1")
+                .deviceId("device-1")
+                .sourceIp("127.0.0.1")
+                .externalSessionId("session-1")
+                .userAgent("test")
+                .build();
+
         // mock
         Mockito.when(accountTokensRepository.getByToken(authRequest.getToken()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
@@ -264,7 +272,7 @@ class RefreshToAccessTokenTest {
         Mockito.when(accountsService.getById(accountId))
                 .thenReturn(Optional.of(account));
 
-        Mockito.when(accessTokenProvider.generateToken(account, (TokenRestrictionsBO) null))
+        Mockito.when(accessTokenProvider.generateToken(account, null, tokenOptions))
                 .thenReturn(newTokens);
 
         // do

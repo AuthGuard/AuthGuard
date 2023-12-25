@@ -84,10 +84,16 @@ public class AuthRoute extends AuthApi {
 
     @Override
     public void refresh(final Context context) {
-        final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
+        final Optional<AuthRequestDTO> authRequest = getValidRequestOrFail(context);
+
+        if (authRequest.isEmpty()) {
+            return;
+        }
+
         final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        final Optional<AuthResponseDTO> tokens = authenticationService.refresh(restMapper.toBO(authenticationRequest), requestContext)
+        final Optional<AuthResponseDTO> tokens =
+                authenticationService.refresh(restMapper.toBO(authRequest.get()), requestContext)
                 .map(restMapper::toDTO);
 
         if (tokens.isPresent()) {

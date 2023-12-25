@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 
 @TokenExchange(from = "refresh", to = "accessToken")
 public class RefreshToAccessToken implements Exchange {
@@ -79,9 +80,11 @@ public class RefreshToAccessToken implements Exchange {
             return Either.left(error);
         }
 
-        if (!validateTokenValues(accountToken, authRequest)) {
+        Optional<String> invalidTokenValues = getInvalidTokenValues(accountToken, authRequest);
+
+        if (invalidTokenValues.isPresent()) {
             ServiceAuthorizationException error =
-                    new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Refresh token has expired",
+                    new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, invalidTokenValues.get(),
                             EntityType.ACCOUNT, accountToken.getAssociatedAccountId());
 
             return Either.left(error);
@@ -94,7 +97,17 @@ public class RefreshToAccessToken implements Exchange {
         long accountId = accountToken.getAssociatedAccountId();
         TokenRestrictionsBO tokenRestrictions = serviceMapper.toBO(accountToken.getTokenRestrictions());
 
-        return getAccount(accountId, accountToken).map(account -> accessTokenProvider.generateToken(account, tokenRestrictions));
+        final TokenOptionsBO options = TokenOptionsBO.builder()
+                .source(accountToken.getSourceAuthType())
+                .userAgent(accountToken.getUserAgent())
+                .sourceIp(accountToken.getSourceIp())
+                .clientId(accountToken.getClientId())
+                .externalSessionId(accountToken.getExternalSessionId())
+                .deviceId(accountToken.getDeviceId())
+                .build();
+
+        return getAccount(accountId, accountToken)
+                .map(account -> accessTokenProvider.generateToken(account, tokenRestrictions, options));
     }
 
     private Either<Exception, AccountBO> getAccount(final long accountId, final AccountTokenDO accountToken) {
@@ -114,32 +127,42 @@ public class RefreshToAccessToken implements Exchange {
         return now.isBefore(accountToken.getExpiresAt());
     }
 
-    private boolean validateTokenValues(final AccountTokenDO accountToken, AuthRequest authRequest) {
+    private Optional<String> getInvalidTokenValues(final AccountTokenDO accountToken, AuthRequest authRequest) {
         if (jwtConfig.checkRefreshTokenOption()) {
             if (!Objects.equals(accountToken.getClientId(), authRequest.getClientId())) {
-                return false;
+                LOG.warn("Request received with unexpected client ID. expected={}, request={}",
+                        accountToken.getClientId(), authRequest);
+                return Optional.of("Client ID value mismatch");
             }
 
             if (!Objects.equals(accountToken.getDeviceId(), authRequest.getDeviceId())) {
-                return false;
+                LOG.warn("Request received with unexpected device ID. expected={}, request={}",
+                        accountToken.getDeviceId(), authRequest);
+                return Optional.of("Device ID value mismatch");
             }
 
             if (!Objects.equals(accountToken.getUserAgent(), authRequest.getUserAgent())) {
-                return false;
+                LOG.warn("Request received with unexpected user agent. expected={}, request={}",
+                        accountToken.getUserAgent(), authRequest);
+                return Optional.of("User agent value mismatch");
             }
 
             if (!Objects.equals(accountToken.getExternalSessionId(), authRequest.getExternalSessionId())) {
-                return false;
+                LOG.warn("Request received with unexpected external session ID. expected={}, request={}",
+                        accountToken.getExternalSessionId(), authRequest);
+                return Optional.of("External session ID value mismatch");
             }
         }
 
         if (jwtConfig.checkRefreshTokenRequestIp()) {
             if (!Objects.equals(accountToken.getSourceIp(), authRequest.getSourceIp())) {
-                return false;
+                LOG.warn("Request received with unexpected source IP. expected={}, request={}",
+                        accountToken.getSourceIp(), authRequest);
+                return Optional.of("Source IP value mismatch");
             }
         }
 
-        return true;
+        return Optional.empty();
     }
 
     private void deleteRefreshToken(final AccountTokenDO accountToken) {
