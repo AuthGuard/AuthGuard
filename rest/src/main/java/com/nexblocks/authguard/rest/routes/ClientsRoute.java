@@ -53,7 +53,7 @@ public class ClientsRoute extends ClientsApi {
                 .build();
 
         final Optional<Object> created = Optional.of(restMapper.toBO(request))
-                .map(clientBO -> clientsService.create(clientBO, requestContext))
+                .map(clientBO -> clientsService.create(clientBO, requestContext).join())
                 .map(restMapper::toDTO);
 
         if (created.isPresent()) {
@@ -70,7 +70,7 @@ public class ClientsRoute extends ClientsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Optional<ClientDTO> client = clientsService.getById(clientId.get())
+        final Optional<ClientDTO> client = clientsService.getById(clientId.get()).join()
                 .map(restMapper::toDTO);
 
         if (client.isPresent()) {
@@ -87,7 +87,7 @@ public class ClientsRoute extends ClientsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Optional<ClientDTO> client = clientsService.getById(clientId.get())
+        final Optional<ClientDTO> client = clientsService.getById(clientId.get()).join()
                 .map(restMapper::toDTO);
 
         if (client.isPresent()) {
@@ -104,7 +104,7 @@ public class ClientsRoute extends ClientsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Optional<ClientDTO> client = clientsService.delete(clientId.get())
+        final Optional<ClientDTO> client = clientsService.delete(clientId.get()).join()
                 .map(restMapper::toDTO);
 
         if (client.isPresent()) {

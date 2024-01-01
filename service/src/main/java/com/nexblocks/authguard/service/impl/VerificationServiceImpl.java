@@ -15,7 +15,6 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.PhoneNumberBO;
-import io.vavr.control.Either;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +68,7 @@ public class VerificationServiceImpl implements VerificationService {
                 .map(additional -> additional.get(TARGET_EMAIL_PROPERTY))
                 .orElseThrow(() -> new ServiceException(ErrorCode.INVALID_TOKEN, "Invalid account token: no valid additional information"));
 
-        final AccountBO account = accountsService.getById(accountToken.getAssociatedAccountId())
+        final AccountBO account = accountsService.getById(accountToken.getAssociatedAccountId()).join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                         "Account " + accountToken.getAssociatedAccountId() + " does not exist"));
 
@@ -93,7 +92,7 @@ public class VerificationServiceImpl implements VerificationService {
 
     @Override
     public AuthResponseBO sendPhoneNumberVerification(final long accountId) {
-        final AccountBO account = accountsService.getById(accountId)
+        final AccountBO account = accountsService.getById(accountId).join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                         "Account " + accountId + " does not exist"));
 
@@ -102,7 +101,7 @@ public class VerificationServiceImpl implements VerificationService {
 
     @Override
     public AuthResponseBO sendPhoneNumberVerificationByIdentifier(final String identifier, final String domain) {
-        final AccountBO account = accountsService.getByIdentifier(identifier, domain)
+        final AccountBO account = accountsService.getByIdentifier(identifier, domain).join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                         "No account with that identifier exists"));
 
@@ -111,19 +110,13 @@ public class VerificationServiceImpl implements VerificationService {
 
     @Override
     public void verifyPhoneNumber(final long passwordId, final String otp, final String phoneNumber) {
-        final String token = passwordId + ":" + otp;
-        final Either<Exception, Long> either = otpVerifier.verifyAccountToken(token);
+        String token = passwordId + ":" + otp;
+        Long accountId = otpVerifier.verifyAccountTokenAsync(token).join();
 
-        if (either.isLeft()) {
-            LOG.info("Phone number verification request with expired OTP. passwordId={}", passwordId);
-
-            throw new ServiceException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST, "Invalid token");
-        }
-
-        final Optional<AccountBO> account = accountsService.getById(either.get());
+        Optional<AccountBO> account = accountsService.getById(accountId).join();
 
         if (account.isEmpty()) {
-            LOG.info("Phone number verification request for deleted account. passwordId={}, accountId={}", passwordId, either.get());
+            LOG.info("Phone number verification request for deleted account. passwordId={}, accountId={}", passwordId, accountId);
 
             throw new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "The account associated with that token no longer exists");
         }
@@ -131,7 +124,7 @@ public class VerificationServiceImpl implements VerificationService {
         if (account.get().getPhoneNumber() == null
                 || !Objects.equals(account.get().getPhoneNumber().getNumber(), phoneNumber)) {
             LOG.warn("Phone number verification request with the wrong phone number. accountId={}, passwordId={}",
-                    either.get(), passwordId);
+                    accountId, passwordId);
 
             throw new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "The provided phone number does not match the one in the account");
         }

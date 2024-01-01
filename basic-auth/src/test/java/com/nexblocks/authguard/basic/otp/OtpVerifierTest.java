@@ -7,7 +7,6 @@ import com.nexblocks.authguard.dal.model.OneTimePasswordDO;
 import com.nexblocks.authguard.basic.config.OtpMode;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
-import io.vavr.control.Either;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
@@ -17,6 +16,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class OtpVerifierTest {
 
@@ -26,10 +26,10 @@ class OtpVerifierTest {
 
     private OtpVerifier otpVerifier;
 
-    void setup(final OtpConfig otpConfig) {
+    void setup(OtpConfig otpConfig) {
         mockOtpRepository = Mockito.mock(OtpRepository.class);
 
-        final ConfigContext configContext = Mockito.mock(ConfigContext.class);
+        ConfigContext configContext = Mockito.mock(ConfigContext.class);
 
         Mockito.when(configContext.asConfigBean(OtpConfig.class)).thenReturn(otpConfig);
 
@@ -38,7 +38,7 @@ class OtpVerifierTest {
 
     @Test
     void verify() {
-        final OtpConfig otpConfig = OtpConfig.builder()
+        OtpConfig otpConfig = OtpConfig.builder()
                 .mode(OtpMode.ALPHANUMERIC)
                 .length(6)
                 .lifeTime("5m")
@@ -46,19 +46,19 @@ class OtpVerifierTest {
 
         setup(otpConfig);
 
-        final OneTimePasswordDO otp = random.nextObject(OneTimePasswordDO.class);
+        OneTimePasswordDO otp = random.nextObject(OneTimePasswordDO.class);
 
         Mockito.when(mockOtpRepository.getById(otp.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(otp)));
 
-        final Either<Exception, Long> generated = otpVerifier.verifyAccountToken(otp.getId() + ":" + otp.getPassword());
+        Long generated = otpVerifier.verifyAccountTokenAsync(otp.getId() + ":" + otp.getPassword()).join();
 
-        assertThat(generated.get()).isEqualTo(otp.getAccountId());
+        assertThat(generated).isEqualTo(otp.getAccountId());
     }
 
     @Test
     void verifyWrongPassword() {
-        final OtpConfig otpConfig = OtpConfig.builder()
+        OtpConfig otpConfig = OtpConfig.builder()
                 .mode(OtpMode.ALPHANUMERIC)
                 .length(6)
                 .lifeTime("5m")
@@ -66,17 +66,18 @@ class OtpVerifierTest {
 
         setup(otpConfig);
 
-        final OneTimePasswordDO otp = random.nextObject(OneTimePasswordDO.class);
+        OneTimePasswordDO otp = random.nextObject(OneTimePasswordDO.class);
 
         Mockito.when(mockOtpRepository.getById(otp.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(otp)));
 
-        assertThat(otpVerifier.verifyAccountToken(otp.getId() + ":" + "wrong")).isEmpty();
+        assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync(otp.getId() + ":" + "wrong").join())
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
     void verifyInvalidOtpFormat() {
-        final OtpConfig otpConfig = OtpConfig.builder()
+        OtpConfig otpConfig = OtpConfig.builder()
                 .mode(OtpMode.ALPHANUMERIC)
                 .length(6)
                 .lifeTime("5m")
@@ -84,15 +85,13 @@ class OtpVerifierTest {
 
         setup(otpConfig);
 
-        final Either<Exception, Long> result = otpVerifier.verifyAccountToken("not a valid OTP");
-
-        assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync("not a valid OTP").join())
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
     void verifyPasswordNotFound() {
-        final OtpConfig otpConfig = OtpConfig.builder()
+        OtpConfig otpConfig = OtpConfig.builder()
                 .mode(OtpMode.ALPHANUMERIC)
                 .length(6)
                 .lifeTime("5m")
@@ -100,14 +99,12 @@ class OtpVerifierTest {
 
         setup(otpConfig);
 
-        final OneTimePasswordDO otp = random.nextObject(OneTimePasswordDO.class);
+        OneTimePasswordDO otp = random.nextObject(OneTimePasswordDO.class);
 
         Mockito.when(mockOtpRepository.getById(otp.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        final Either<Exception, Long> result = otpVerifier.verifyAccountToken(otp.getId() + ":" + otp.getPassword());
-
-        assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync("not a valid OTP").join())
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 }

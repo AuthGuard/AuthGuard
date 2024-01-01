@@ -8,7 +8,8 @@ import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import com.nexblocks.authguard.sessions.SessionProvider;
 import com.google.inject.Inject;
-import io.vavr.control.Either;
+
+import java.util.concurrent.CompletableFuture;
 
 @TokenExchange(from = "basic", to = "sessionToken")
 public class BasicToSession implements Exchange {
@@ -22,7 +23,7 @@ public class BasicToSession implements Exchange {
     }
 
     @Override
-    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
+    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
         final TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("basic")
                 .sourceIp(request.getSourceIp())
@@ -30,6 +31,6 @@ public class BasicToSession implements Exchange {
                 .build();
 
         return basicAuth.authenticateAndGetAccount(request)
-                .map(account -> sessionProvider.generateToken(account, options));
+                .thenApply(account -> sessionProvider.generateToken(account, options));
     }
 }

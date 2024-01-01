@@ -41,16 +41,7 @@ public class JwtApiKeyExchange implements ApiKeyExchange {
 
     @Override
     public CompletableFuture<Optional<Long>> verifyAndGetAppId(final String apiKey) {
-        return CompletableFuture.supplyAsync(() ->
-                tokenVerifier.verifyAccountToken(apiKey)
-                        .map(Optional::of)
-                        .getOrElseThrow(e -> {
-                            if (RuntimeException.class.isAssignableFrom(e.getClass())) {
-                                return (RuntimeException) e;
-                            }
-
-                            return new RuntimeException(e);
-                        }));
+        return CompletableFuture.completedFuture(Optional.of(tokenVerifier.verifyAccountToken(apiKey)));
     }
 
     @Override

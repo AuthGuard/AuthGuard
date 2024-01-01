@@ -46,6 +46,6 @@ public class AdminRolesBootstrap implements BootstrapStep {
                 .domain(RESERVED_DOMAIN)
                 .build();
 
-        return rolesService.create(role);
+        return rolesService.create(role).join();
     }
 }

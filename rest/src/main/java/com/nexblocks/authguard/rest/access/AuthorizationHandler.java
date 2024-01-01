@@ -8,7 +8,6 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.ClientBO;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.vavr.control.Either;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,12 +61,11 @@ public class AuthorizationHandler implements Handler {
     }
 
     private void populateBasicActor(final Context context, final String base64Credentials) {
-        final Either<Exception, AccountBO> actorAccount = basicAuth.authenticateAndGetAccount(base64Credentials);
-
-        if (actorAccount.isRight()) {
-            LOG.info("Authenticated actor {} with basic credentials", actorAccount.get().getId());
-            context.attribute("actor", actorAccount.get());
-        } else {
+        try {
+            AccountBO account = basicAuth.authenticateAndGetAccount(base64Credentials).join();
+            LOG.info("Authenticated actor {} with basic credentials", account.getId());
+            context.attribute("actor", account);
+        } catch (Exception e) {
             LOG.info("Failed to authenticate actor with basic credentials");
             context.status(401).json(new Error("401", "Failed to authenticate with basic scheme"));
         }

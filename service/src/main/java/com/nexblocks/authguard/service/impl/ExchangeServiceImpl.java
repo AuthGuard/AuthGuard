@@ -14,7 +14,6 @@ import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.messaging.AuthMessage;
 import com.nexblocks.authguard.service.model.*;
-import io.vavr.control.Either;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,31 +56,20 @@ public class ExchangeServiceImpl implements ExchangeService {
             throw new ServiceException(ErrorCode.UNKNOWN_EXCHANGE, "Unknown token exchange " + fromTokenType + " to " + toTokenType);
         }
 
-        final Either<Exception, AuthResponseBO> result = exchange.exchange(authRequest);
+        return exchange.exchange(authRequest)
+                .whenComplete((tokens, e) -> {
+                    if (e == null) {
+                        LOG.info("Successful exchange. from={}, to={}, request={}", fromTokenType, toTokenType, authRequest);
 
-        if (result.isRight()) {
-            LOG.info("Successful exchange. from={}, to={}, request={}",
-                    fromTokenType, toTokenType, authRequest);
-            final AuthResponseBO tokens = result.get();
+                        exchangeSuccess(authRequest, requestContext, tokens, fromTokenType, toTokenType);
+                    } else {
+                        LOG.info("Unsuccessful exchange. from={}, to={}, request={}, error={}", fromTokenType, toTokenType,
+                                authRequest, e.getMessage());
 
-            exchangeSuccess(authRequest, requestContext, tokens, fromTokenType, toTokenType);
-
-            return tokens;
-        } else {
-            final Exception e = result.getLeft();
-
-            LOG.info("Unsuccessful exchange. from={}, to={}, request={}, error={}", fromTokenType, toTokenType,
-                    authRequest, e.getMessage());
-
-            exchangeFailure(authRequest, requestContext, e, fromTokenType, toTokenType);
-
-            // TODO remove this
-            if (ServiceException.class.isAssignableFrom(e.getClass())) {
-                throw (ServiceException) e;
-            } else {
-                throw new RuntimeException(e);
-            }
-        }
+                        exchangeFailure(authRequest, requestContext, e, fromTokenType, toTokenType);
+                    }
+                })
+                .join();
     }
 
     @Override
@@ -118,7 +106,7 @@ public class ExchangeServiceImpl implements ExchangeService {
     }
 
     private void exchangeFailure(final AuthRequestBO authRequest, final RequestContextBO requestContext,
-                                 final Exception e, final String fromTokenType, final String toTokenType) {
+                                 final Throwable e, final String fromTokenType, final String toTokenType) {
 
         if (ServiceAuthorizationException.class.isAssignableFrom(e.getClass())) {
             final ServiceAuthorizationException sae = (ServiceAuthorizationException) e;

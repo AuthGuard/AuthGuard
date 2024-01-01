@@ -8,9 +8,7 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
-import io.vavr.control.Either;
-
-import java.util.Base64;
+import java.util.concurrent.CompletableFuture;
 
 public abstract class LdapExchange implements Exchange {
     private final LdapService ldapService;
@@ -22,10 +20,10 @@ public abstract class LdapExchange implements Exchange {
     }
 
     @Override
-    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
+    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
         final AccountBO account = ldapService.authenticate(request.getIdentifier(), request.getPassword());
         final TokenOptionsBO tokenOptions = TokenOptionsMapper.fromAuthRequest(request);
 
-        return Either.right(authProvider.generateToken(account, tokenOptions));
+        return CompletableFuture.completedFuture(authProvider.generateToken(account, tokenOptions));
     }
 }

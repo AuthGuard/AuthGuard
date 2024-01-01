@@ -41,9 +41,7 @@ class ApiKeysServiceImplTest {
     private ClientsService clientsService;
     private ApiKeysRepository apiKeysRepository;
     private ApiKeyExchange apiKeyExchange;
-    private ApiKeyHashProvider apiKeyHashProvider;
     private ApiKeyHash apiKeyHash;
-    private MessageBus messageBus;
     private ServiceMapper serviceMapper;
     private ApiKeysService apiKeysService;
 
@@ -51,7 +49,7 @@ class ApiKeysServiceImplTest {
     private static class TestApiKeyExchange implements ApiKeyExchange {
 
         @Override
-        public AuthResponseBO generateKey(final AppBO app, Instant expiresAt) {
+        public AuthResponseBO generateKey(AppBO app, Instant expiresAt) {
             return AuthResponseBO.builder()
                     .token("key")
                     .build();
@@ -65,7 +63,7 @@ class ApiKeysServiceImplTest {
         }
 
         @Override
-        public CompletableFuture<Optional<Long>> verifyAndGetAppId(final String apiKey) {
+        public CompletableFuture<Optional<Long>> verifyAndGetAppId(String apiKey) {
             return CompletableFuture.completedFuture(Optional.of(1L));
         }
 
@@ -81,9 +79,9 @@ class ApiKeysServiceImplTest {
         clientsService = Mockito.mock(ClientsService.class);
         apiKeysRepository = Mockito.mock(ApiKeysRepository.class);
         apiKeyExchange = Mockito.mock(ApiKeyExchange.class);
-        messageBus = Mockito.mock(MessageBus.class);
+        MessageBus messageBus = Mockito.mock(MessageBus.class);
 
-        apiKeyHashProvider = new ApiKeyHashProvider(ApiKeysConfig.builder()
+        ApiKeyHashProvider apiKeyHashProvider = new ApiKeyHashProvider(ApiKeysConfig.builder()
                 .hash(ApiKeyHashingConfig.builder()
                         .algorithm("blake2b")
                         .digestSize(32)
@@ -102,14 +100,14 @@ class ApiKeysServiceImplTest {
 
     @Test
     void generateApiKeyWithoutExpiration() {
-        final long appId = 1;
-        final String key = "key";
-        final AppBO app = AppBO.builder()
+        long appId = 1;
+        String key = "key";
+        AppBO app = AppBO.builder()
                 .id(appId)
                 .build();
 
         Mockito.when(applicationsService.getById(appId))
-                .thenReturn(Optional.of(app));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
         Mockito.when(apiKeysRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, ApiKeyDO.class)));
@@ -119,7 +117,7 @@ class ApiKeysServiceImplTest {
                         .token(key)
                         .build());
 
-        final ApiKeyBO actual = apiKeysService.generateApiKey(appId, "test", Duration.ZERO);
+        ApiKeyBO actual = apiKeysService.generateApiKey(appId, "test", Duration.ZERO);
 
         assertThat(actual.getAppId()).isEqualTo(appId);
         assertThat(actual.getKey()).isEqualTo(key);
@@ -127,11 +125,11 @@ class ApiKeysServiceImplTest {
 
         // verify that we persisted the hashed key and not the clear key
 
-        final ArgumentCaptor<ApiKeyDO> argumentCaptor = ArgumentCaptor.forClass(ApiKeyDO.class);
+        ArgumentCaptor<ApiKeyDO> argumentCaptor = ArgumentCaptor.forClass(ApiKeyDO.class);
 
         Mockito.verify(apiKeysRepository).save(argumentCaptor.capture());
 
-        final ApiKeyDO persisted = argumentCaptor.getValue();
+        ApiKeyDO persisted = argumentCaptor.getValue();
 
         assertThat(persisted.getAppId()).isEqualTo(appId);
         assertThat(persisted.getKey()).isEqualTo(apiKeyHash.hash(key));
@@ -142,15 +140,15 @@ class ApiKeysServiceImplTest {
 
     @Test
     void generateApiKeyWithExpiration() {
-        final long appId = 1;
-        final String key = "key";
-        final AppBO app = AppBO.builder()
+        long appId = 1;
+        String key = "key";
+        AppBO app = AppBO.builder()
                 .id(appId)
                 .build();
-        final Duration duration = Duration.ofDays(1);
+        Duration duration = Duration.ofDays(1);
 
         Mockito.when(applicationsService.getById(appId))
-                .thenReturn(Optional.of(app));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
         Mockito.when(apiKeysRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, ApiKeyDO.class)));
@@ -160,7 +158,7 @@ class ApiKeysServiceImplTest {
                         .token(key)
                         .build());
 
-        final ApiKeyBO actual = apiKeysService.generateApiKey(appId, "test", duration);
+        ApiKeyBO actual = apiKeysService.generateApiKey(appId, "test", duration);
 
         assertThat(actual.getAppId()).isEqualTo(appId);
         assertThat(actual.getKey()).isEqualTo(key);
@@ -168,11 +166,11 @@ class ApiKeysServiceImplTest {
 
         // verify that we persisted the hashed key and not the clear key
 
-        final ArgumentCaptor<ApiKeyDO> argumentCaptor = ArgumentCaptor.forClass(ApiKeyDO.class);
+        ArgumentCaptor<ApiKeyDO> argumentCaptor = ArgumentCaptor.forClass(ApiKeyDO.class);
 
         Mockito.verify(apiKeysRepository).save(argumentCaptor.capture());
 
-        final ApiKeyDO persisted = argumentCaptor.getValue();
+        ApiKeyDO persisted = argumentCaptor.getValue();
 
         assertThat(persisted.getAppId()).isEqualTo(appId);
         assertThat(persisted.getKey()).isEqualTo(apiKeyHash.hash(key));
@@ -185,10 +183,10 @@ class ApiKeysServiceImplTest {
 
     @Test
     void generateApiKeyNonExistingApp() {
-        final long appId = 1;
+        long appId = 1;
 
         Mockito.when(applicationsService.getById(appId))
-                .thenReturn(Optional.empty());
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         assertThatThrownBy(() -> apiKeysService.generateApiKey(appId, "test", Duration.ZERO))
                 .isInstanceOf(ServiceNotFoundException.class);
@@ -196,7 +194,13 @@ class ApiKeysServiceImplTest {
 
     @Test
     void generateApiKeyInvalidType() {
-        final long appId = 1;
+        long appId = 1;
+        AppBO app = AppBO.builder()
+                .id(appId)
+                .build();
+
+        Mockito.when(applicationsService.getById(appId))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
         assertThatThrownBy(() -> apiKeysService.generateApiKey(appId, "none", Duration.ZERO))
                 .isInstanceOf(ServiceException.class);
@@ -204,27 +208,27 @@ class ApiKeysServiceImplTest {
 
     @Test
     void getByAppId() {
-        final long appId = 1;
-        final String key = "key";
-        final ApiKeyBO apiKeyBO = ApiKeyBO.builder()
+        long appId = 1;
+        String key = "key";
+        ApiKeyBO apiKeyBO = ApiKeyBO.builder()
                 .appId(appId)
                 .key(key)
                 .build();
-        final ApiKeyDO apiKeyDO = serviceMapper.toDO(apiKeyBO);
+        ApiKeyDO apiKeyDO = serviceMapper.toDO(apiKeyBO);
 
         Mockito.when(apiKeysRepository.getByAppId(appId))
                 .thenReturn(CompletableFuture.completedFuture(Collections.singletonList(apiKeyDO)));
 
-        final List<ApiKeyBO> actual = apiKeysService.getByAppId(appId);
+        List<ApiKeyBO> actual = apiKeysService.getByAppId(appId);
 
         assertThat(actual).isEqualTo(Collections.singletonList(apiKeyBO));
     }
 
     @Test
     void validateApiKey() {
-        final long appId = 1;
-        final String key = "key";
-        final AppBO app = AppBO.builder()
+        long appId = 1;
+        String key = "key";
+        AppBO app = AppBO.builder()
                 .id(appId)
                 .build();
 
@@ -232,23 +236,23 @@ class ApiKeysServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(appId)));
 
         Mockito.when(applicationsService.getById(appId))
-                .thenReturn(Optional.of(app));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
-        final Optional<AppBO> actual = apiKeysService.validateApiKey(key, "test");
+        Optional<AppBO> actual = apiKeysService.validateApiKey(key, "test");
 
         assertThat(actual).contains(app);
     }
 
     @Test
     void generateClientApiKeyWithoutExpiration() {
-        final long clientId = 2;
-        final String key = "key";
-        final ClientBO app = ClientBO.builder()
+        long clientId = 2;
+        String key = "key";
+        ClientBO app = ClientBO.builder()
                 .id(clientId)
                 .build();
 
         Mockito.when(clientsService.getById(clientId))
-                .thenReturn(Optional.of(app));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
         Mockito.when(apiKeysRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, ApiKeyDO.class)));
@@ -258,7 +262,7 @@ class ApiKeysServiceImplTest {
                         .token(key)
                         .build());
 
-        final ApiKeyBO actual = apiKeysService.generateClientApiKey(clientId, "test", Duration.ZERO);
+        ApiKeyBO actual = apiKeysService.generateClientApiKey(clientId, "test", Duration.ZERO);
 
         assertThat(actual.getAppId()).isEqualTo(clientId);
         assertThat(actual.getKey()).isEqualTo(key);
@@ -266,11 +270,11 @@ class ApiKeysServiceImplTest {
 
         // verify that we persisted the hashed key and not the clear key
 
-        final ArgumentCaptor<ApiKeyDO> argumentCaptor = ArgumentCaptor.forClass(ApiKeyDO.class);
+        ArgumentCaptor<ApiKeyDO> argumentCaptor = ArgumentCaptor.forClass(ApiKeyDO.class);
 
         Mockito.verify(apiKeysRepository).save(argumentCaptor.capture());
 
-        final ApiKeyDO persisted = argumentCaptor.getValue();
+        ApiKeyDO persisted = argumentCaptor.getValue();
 
         assertThat(persisted.getAppId()).isEqualTo(clientId);
         assertThat(persisted.getKey()).isEqualTo(apiKeyHash.hash(key));
@@ -281,15 +285,15 @@ class ApiKeysServiceImplTest {
 
     @Test
     void generateClientApiKeyWithExpiration() {
-        final long clientId = 2;
-        final String key = "key";
-        final ClientBO client = ClientBO.builder()
+        long clientId = 2;
+        String key = "key";
+        ClientBO client = ClientBO.builder()
                 .id(clientId)
                 .build();
-        final Duration duration = Duration.ofDays(1);
+        Duration duration = Duration.ofDays(1);
 
         Mockito.when(clientsService.getById(clientId))
-                .thenReturn(Optional.of(client));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
         Mockito.when(apiKeysRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, ApiKeyDO.class)));
@@ -299,7 +303,7 @@ class ApiKeysServiceImplTest {
                         .token(key)
                         .build());
 
-        final ApiKeyBO actual = apiKeysService.generateClientApiKey(clientId, "test", duration);
+        ApiKeyBO actual = apiKeysService.generateClientApiKey(clientId, "test", duration);
 
         assertThat(actual.getAppId()).isEqualTo(clientId);
         assertThat(actual.getKey()).isEqualTo(key);
@@ -307,11 +311,11 @@ class ApiKeysServiceImplTest {
 
         // verify that we persisted the hashed key and not the clear key
 
-        final ArgumentCaptor<ApiKeyDO> argumentCaptor = ArgumentCaptor.forClass(ApiKeyDO.class);
+        ArgumentCaptor<ApiKeyDO> argumentCaptor = ArgumentCaptor.forClass(ApiKeyDO.class);
 
         Mockito.verify(apiKeysRepository).save(argumentCaptor.capture());
 
-        final ApiKeyDO persisted = argumentCaptor.getValue();
+        ApiKeyDO persisted = argumentCaptor.getValue();
 
         assertThat(persisted.getAppId()).isEqualTo(clientId);
         assertThat(persisted.getKey()).isEqualTo(apiKeyHash.hash(key));
@@ -324,10 +328,10 @@ class ApiKeysServiceImplTest {
 
     @Test
     void generateClientApiKeyNonExistingApp() {
-        final long clientId = 2;
+        long clientId = 2;
 
         Mockito.when(clientsService.getById(clientId))
-                .thenReturn(Optional.empty());
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         assertThatThrownBy(() -> apiKeysService.generateClientApiKey(clientId, "test", Duration.ZERO))
                 .isInstanceOf(ServiceNotFoundException.class);
@@ -335,7 +339,13 @@ class ApiKeysServiceImplTest {
 
     @Test
     void generateClientApiKeyInvalidType() {
-        final long clientId = 1;
+        long clientId = 1;
+        ClientBO client = ClientBO.builder()
+                .id(clientId)
+                .build();
+
+        Mockito.when(clientsService.getById(clientId))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
         assertThatThrownBy(() -> apiKeysService.generateClientApiKey(clientId, "none", Duration.ZERO))
                 .isInstanceOf(ServiceException.class);
@@ -343,9 +353,9 @@ class ApiKeysServiceImplTest {
 
     @Test
     void validateClientApiKey() {
-        final long clientId = 2;
-        final String key = "key";
-        final ClientBO client = ClientBO.builder()
+        long clientId = 2;
+        String key = "key";
+        ClientBO client = ClientBO.builder()
                 .id(clientId)
                 .build();
 
@@ -353,45 +363,45 @@ class ApiKeysServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(clientId)));
 
         Mockito.when(clientsService.getById(clientId))
-                .thenReturn(Optional.of(client));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
-        final Optional<ClientBO> actual = apiKeysService.validateClientApiKey(key, "test");
+        Optional<ClientBO> actual = apiKeysService.validateClientApiKey(key, "test");
 
         assertThat(actual).contains(client);
     }
 
     @Test
     void getById() {
-        final long id = 3;
-        final ApiKeyBO apiKeyBO = ApiKeyBO.builder()
+        long id = 3;
+        ApiKeyBO apiKeyBO = ApiKeyBO.builder()
                 .id(id)
                 .build();
-        final ApiKeyDO apiKeyDO = ApiKeyDO.builder()
+        ApiKeyDO apiKeyDO = ApiKeyDO.builder()
                 .id(id)
                 .build();
 
         Mockito.when(apiKeysRepository.getById(id))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
 
-        final Optional<ApiKeyBO> actual = apiKeysService.getById(id);
+        Optional<ApiKeyBO> actual = apiKeysService.getById(id).join();
 
         assertThat(actual).contains(apiKeyBO);
     }
 
     @Test
     void delete() {
-        final long id = 3;
-        final ApiKeyBO apiKeyBO = ApiKeyBO.builder()
+        long id = 3;
+        ApiKeyBO apiKeyBO = ApiKeyBO.builder()
                 .id(id)
                 .build();
-        final ApiKeyDO apiKeyDO = ApiKeyDO.builder()
+        ApiKeyDO apiKeyDO = ApiKeyDO.builder()
                 .id(id)
                 .build();
 
         Mockito.when(apiKeysRepository.delete(id))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
 
-        final Optional<ApiKeyBO> actual = apiKeysService.delete(id);
+        Optional<ApiKeyBO> actual = apiKeysService.delete(id).join();
 
         assertThat(actual).contains(apiKeyBO);
     }

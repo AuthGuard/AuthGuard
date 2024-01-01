@@ -40,7 +40,7 @@ public class RolesRoute extends RolesApi {
 
         final RoleDTO created = Optional.of(role)
                 .map(restMapper::toBO)
-                .map(rolesService::create)
+                .map(entity -> rolesService.create(entity).join())
                 .map(restMapper::toDTO)
                 .orElseThrow();
 
@@ -55,7 +55,7 @@ public class RolesRoute extends RolesApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        rolesService.getById(id.get())
+        rolesService.getById(id.get()).join()
                 .map(restMapper::toDTO)
                 .ifPresentOrElse(
                         role -> context.status(200).json(role),
@@ -74,7 +74,7 @@ public class RolesRoute extends RolesApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        rolesService.getById(id.get())
+        rolesService.getById(id.get()).join()
                 .map(restMapper::toDTO)
                 .ifPresentOrElse(
                         role -> context.status(200).json(role),

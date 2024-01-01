@@ -34,22 +34,22 @@ public class ExchangeAttemptsServiceImpl implements ExchangeAttemptsService {
     }
 
     @Override
-    public ExchangeAttemptBO create(final ExchangeAttemptBO entity) {
+    public CompletableFuture<ExchangeAttemptBO> create(final ExchangeAttemptBO entity) {
         return persistenceService.create(entity);
     }
 
     @Override
-    public Optional<ExchangeAttemptBO> getById(final long id) {
+    public CompletableFuture<Optional<ExchangeAttemptBO>> getById(final long id) {
         return persistenceService.getById(id);
     }
 
     @Override
-    public Optional<ExchangeAttemptBO> update(final ExchangeAttemptBO entity) {
+    public CompletableFuture<Optional<ExchangeAttemptBO>> update(final ExchangeAttemptBO entity) {
         throw new UnsupportedOperationException("Exchange attempts cannot be updated");
     }
 
     @Override
-    public Optional<ExchangeAttemptBO> delete(final long id) {
+    public CompletableFuture<Optional<ExchangeAttemptBO>> delete(final long id) {
         throw new UnsupportedOperationException("Exchange attempts cannot be deleted");
     }
 

@@ -7,9 +7,11 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.google.inject.Inject;
-import io.vavr.control.Either;
+import com.nexblocks.authguard.service.util.AsyncUtils;
+import io.vavr.control.Try;
 
 import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
 
 public class PasswordlessVerifier implements AuthVerifier {
     private final AccountTokensRepository accountTokensRepository;
@@ -20,20 +22,29 @@ public class PasswordlessVerifier implements AuthVerifier {
     }
 
     @Override
-    public Either<Exception, Long> verifyAccountToken(final String passwordlessToken) {
-        return accountTokensRepository.getByToken(passwordlessToken)
-                .join()
-                .map(this::verifyToken)
-                .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN,
-                        "No passwordless token found for " + passwordlessToken)));
+    public Long verifyAccountToken(final String passwordlessToken) {
+        throw new UnsupportedOperationException("Use the async variant");
     }
 
-    private Either<Exception, Long> verifyToken(final AccountTokenDO accountToken) {
+    @Override
+    public CompletableFuture<Long> verifyAccountTokenAsync(final String token) {
+        return accountTokensRepository.getByToken(token)
+                .thenCompose(opt -> {
+                    if (opt.isEmpty()) {
+                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN,
+                                "Passwordless token doesn't exist"));
+                    }
+
+                    return AsyncUtils.fromTry(verifyToken(opt.get()));
+                });
+    }
+
+    private Try<Long> verifyToken(final AccountTokenDO accountToken) {
         if (accountToken.getExpiresAt().isBefore(Instant.now())) {
-            return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Expired passwordless token",
+            return Try.failure(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Expired passwordless token",
                     EntityType.ACCOUNT, accountToken.getAssociatedAccountId()));
         }
 
-        return Either.right(accountToken.getAssociatedAccountId());
+        return Try.success(accountToken.getAssociatedAccountId());
     }
 }

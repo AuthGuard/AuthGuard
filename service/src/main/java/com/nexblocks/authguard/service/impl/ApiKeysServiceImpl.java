@@ -27,6 +27,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -63,22 +64,22 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     }
 
     @Override
-    public ApiKeyBO create(final ApiKeyBO apiKey) {
+    public CompletableFuture<ApiKeyBO> create(final ApiKeyBO apiKey) {
         return persistenceService.create(apiKey);
     }
 
     @Override
-    public Optional<ApiKeyBO> getById(final long apiKeyId) {
+    public CompletableFuture<Optional<ApiKeyBO>> getById(final long apiKeyId) {
         return persistenceService.getById(apiKeyId);
     }
 
     @Override
-    public Optional<ApiKeyBO> update(final ApiKeyBO entity) {
+    public CompletableFuture<Optional<ApiKeyBO>> update(final ApiKeyBO entity) {
         throw new UnsupportedOperationException("API keys cannot be updated");
     }
 
     @Override
-    public Optional<ApiKeyBO> delete(final long id) {
+    public CompletableFuture<Optional<ApiKeyBO>> delete(final long id) {
         LOG.info("API key delete request. accountId={}", id);
 
         return persistenceService.delete(id);
@@ -86,7 +87,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
 
     @Override
     public ApiKeyBO generateApiKey(final long appId, final String type, final Duration duration) {
-        final AppBO app = applicationsService.getById(appId)
+        final AppBO app = applicationsService.getById(appId).join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST,
                         "No app with ID " + appId + " found"));
 
@@ -95,7 +96,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
 
     @Override
     public ApiKeyBO generateClientApiKey(long clientId, String type, Duration duration) {
-        final ClientBO client = clientsService.getById(clientId)
+        final ClientBO client = clientsService.getById(clientId).join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST,
                         "No client with ID " + clientId + " found"));
 
@@ -115,7 +116,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
         final String hashedKey = apiKeyHash.hash(generatedKey);
         final ApiKeyBO toCreate = mapApiKey(app.getId(), hashedKey, type, false, expirationInstant);
 
-        final ApiKeyBO persisted = create(toCreate);
+        final ApiKeyBO persisted = create(toCreate).join();
 
         LOG.info("API key generated. appId={}, domain={}, type={}, keyId={}, expiresAt={}",
                 app.getId(), app.getDomain(), type, persisted.getId(), persisted.getExpiresAt());
@@ -136,7 +137,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
         final String hashedKey = apiKeyHash.hash(generatedKey);
         final ApiKeyBO toCreate = mapApiKey(client.getId(), hashedKey, type, true, expirationInstant);
 
-        final ApiKeyBO persisted = create(toCreate);
+        final ApiKeyBO persisted = create(toCreate).join();
 
         LOG.info("API key generated. clientId={}, domain={}, type={}, keyId={}, expiresAt={}",
                 client.getId(), client.getDomain(), type, persisted.getId(), persisted.getExpiresAt());
@@ -158,7 +159,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
         final ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
 
         return apiKeyExchange.verifyAndGetAppId(key)
-                .thenApply(optional -> optional.flatMap(applicationsService::getById))
+                .thenApply(optional -> optional.flatMap((Long id) -> applicationsService.getById(id).join()))
                 .join();
 
     }
@@ -168,7 +169,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
         final ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
 
         return apiKeyExchange.verifyAndGetClientId(key)
-                .thenApply(optional -> optional.flatMap(clientsService::getById))
+                .thenApply(optional -> optional.flatMap((Long id) -> clientsService.getById(id).join()))
                 .join();
     }
 

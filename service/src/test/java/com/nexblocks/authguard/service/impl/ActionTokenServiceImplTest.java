@@ -14,7 +14,6 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.ActionTokenBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
-import io.vavr.control.Either;
 import io.vavr.control.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,17 +50,18 @@ class ActionTokenServiceImplTest {
 
     @Test
     void generateOtp() {
-        final AccountBO accountBO = AccountBO.builder()
+        AccountBO accountBO = AccountBO.builder()
                 .id(101)
                 .build();
-        final AuthResponseBO otpResponse = AuthResponseBO.builder()
+        AuthResponseBO otpResponse = AuthResponseBO.builder()
                 .token("password-id")
                 .build();
 
-        Mockito.when(accountsService.getById(101)).thenReturn(Optional.of(accountBO));
+        Mockito.when(accountsService.getById(101))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountBO)));
         Mockito.when(otpProvider.generateToken(accountBO)).thenReturn(otpResponse);
 
-        final Try<AuthResponseBO> response = actionTokenService.generateOtp(101);
+        Try<AuthResponseBO> response = actionTokenService.generateOtp(101);
 
         assertThat(response.isSuccess()).isTrue();
         assertThat(response.get()).isEqualTo(otpResponse);
@@ -69,20 +69,20 @@ class ActionTokenServiceImplTest {
 
     @Test
     void generateFromBasicAuth() {
-        final AuthRequestBO authRequest = AuthRequestBO.builder()
+        AuthRequestBO authRequest = AuthRequestBO.builder()
                 .identifier("username")
                 .password("password")
                 .build();
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .id(101)
                 .build();
 
-        Mockito.when(basicAuthProvider.getAccount(authRequest)).thenReturn(Either.right(account));
+        Mockito.when(basicAuthProvider.getAccount(authRequest)).thenReturn(account);
         Mockito.when(accountTokensRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
 
-        final Try<ActionTokenBO> actual = actionTokenService.generateFromBasicAuth(authRequest, "something");
-        final ActionTokenBO expected = ActionTokenBO.builder()
+        Try<ActionTokenBO> actual = actionTokenService.generateFromBasicAuth(authRequest, "something");
+        ActionTokenBO expected = ActionTokenBO.builder()
                 .accountId(account.getId())
                 .validFor(Duration.ofMinutes(5).toSeconds())
                 .build();
@@ -94,19 +94,20 @@ class ActionTokenServiceImplTest {
 
     @Test
     void generateFromOtp() {
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .id(101)
                 .build();
 
-        final String otpToken = "1:otp";
+        String otpToken = "1:otp";
 
-        Mockito.when(otpVerifier.verifyAccountToken(otpToken)).thenReturn(Either.right(account.getId()));
-        Mockito.when(accountsService.getById(101)).thenReturn(Optional.of(account));
+        Mockito.when(otpVerifier.verifyAccountTokenAsync(otpToken)).thenReturn(CompletableFuture.completedFuture(account.getId()));
+        Mockito.when(accountsService.getById(101))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
         Mockito.when(accountTokensRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
 
-        final Try<ActionTokenBO> actual = actionTokenService.generateFromOtp(1, "otp", "something");
-        final ActionTokenBO expected = ActionTokenBO.builder()
+        Try<ActionTokenBO> actual = actionTokenService.generateFromOtp(1, "otp", "something");
+        ActionTokenBO expected = ActionTokenBO.builder()
                 .accountId(account.getId())
                 .validFor(Duration.ofMinutes(5).toSeconds())
                 .build();
@@ -118,7 +119,7 @@ class ActionTokenServiceImplTest {
 
     @Test
     void verifyToken() {
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .expiresAt(Instant.now().plus(Duration.ofMinutes(1)))
                 .additionalInformation(ImmutableMap.of("action", "something"))
                 .build();
@@ -126,14 +127,14 @@ class ActionTokenServiceImplTest {
         Mockito.when(accountTokensRepository.getByToken("action-token"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
 
-        final Try<ActionTokenBO> actual = actionTokenService.verifyToken("action-token", "something");
+        Try<ActionTokenBO> actual = actionTokenService.verifyToken("action-token", "something");
 
         assertThat(actual.isSuccess()).isTrue();
     }
 
     @Test
     void verifyTokenWrongAction() {
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .expiresAt(Instant.now().plus(Duration.ofMinutes(1)))
                 .additionalInformation(ImmutableMap.of("action", "something"))
                 .build();
@@ -141,7 +142,7 @@ class ActionTokenServiceImplTest {
         Mockito.when(accountTokensRepository.getByToken("action-token"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
 
-        final Try<ActionTokenBO> actual = actionTokenService.verifyToken("action-token", "else");
+        Try<ActionTokenBO> actual = actionTokenService.verifyToken("action-token", "else");
 
         assertThat(actual.isFailure());
         assertThat(((ServiceException) actual.getCause()).getErrorCode()).isEqualTo(ErrorCode.INVALID_TOKEN.getCode());
@@ -149,7 +150,7 @@ class ActionTokenServiceImplTest {
 
     @Test
     void verifyTokenExpired() {
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .expiresAt(Instant.now().minus(Duration.ofMinutes(1)))
                 .additionalInformation(ImmutableMap.of("action", "something"))
                 .build();
@@ -157,7 +158,7 @@ class ActionTokenServiceImplTest {
         Mockito.when(accountTokensRepository.getByToken("action-token"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
 
-        final Try<ActionTokenBO> actual = actionTokenService.verifyToken("action-token", "something");
+        Try<ActionTokenBO> actual = actionTokenService.verifyToken("action-token", "something");
 
         assertThat(actual.isFailure()).isTrue();
         assertThat(((ServiceException) actual.getCause()).getErrorCode())
@@ -169,7 +170,7 @@ class ActionTokenServiceImplTest {
         Mockito.when(accountTokensRepository.getByToken("action-token"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        final Try<ActionTokenBO> actual = actionTokenService.verifyToken("action-token", "something");
+        Try<ActionTokenBO> actual = actionTokenService.verifyToken("action-token", "something");
 
         assertThat(actual.isFailure()).isTrue();
         assertThat(((ServiceException) actual.getCause()).getErrorCode())

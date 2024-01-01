@@ -37,7 +37,7 @@ public class PermissionsRoute extends PermissionsApi {
 
     public void create(final Context context) {
         final CreatePermissionRequestDTO permission = createPermissionRequestBodyHandler.getValidated(context);
-        final PermissionBO created = permissionsService.create(restMapper.toBO(permission));
+        final PermissionBO created = permissionsService.create(restMapper.toBO(permission)).join();
 
         context.status(201)
                 .json(restMapper.toDTO(created));
@@ -51,7 +51,7 @@ public class PermissionsRoute extends PermissionsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        permissionsService.getById(id.get())
+        permissionsService.getById(id.get()).join()
                 .map(restMapper::toDTO)
                 .ifPresentOrElse(
                         context::json,
@@ -70,7 +70,7 @@ public class PermissionsRoute extends PermissionsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        permissionsService.delete(id.get())
+        permissionsService.delete(id.get()).join()
                 .map(restMapper::toDTO)
                 .ifPresentOrElse(
                         context::json,

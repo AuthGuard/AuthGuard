@@ -15,6 +15,7 @@ import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.rest.util.IdempotencyHeader;
 import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.ApplicationsService;
+import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
@@ -53,7 +54,7 @@ public class ApplicationsRoute extends ApplicationsApi {
                 .build();
 
         final Optional<Object> created = Optional.of(restMapper.toBO(request))
-                .map(appBO -> applicationsService.create(appBO, requestContext))
+                .map(appBO -> applicationsService.create(appBO, requestContext).join())
                 .map(restMapper::toDTO);
 
         if (created.isPresent()) {
@@ -70,7 +71,7 @@ public class ApplicationsRoute extends ApplicationsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Optional<AppDTO> application = applicationsService.getById(applicationId.get())
+        final Optional<AppDTO> application = applicationsService.getById(applicationId.get()).join()
                 .map(restMapper::toDTO);
 
         if (application.isPresent()) {
@@ -87,7 +88,7 @@ public class ApplicationsRoute extends ApplicationsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Optional<AppDTO> application = applicationsService.getById(applicationId.get())
+        final Optional<AppDTO> application = applicationsService.getById(applicationId.get()).join()
                 .map(restMapper::toDTO);
 
         if (application.isPresent()) {
@@ -102,7 +103,7 @@ public class ApplicationsRoute extends ApplicationsApi {
 
         final Optional<AppDTO> application = Optional.of(app)
                 .map(restMapper::toBO)
-                .flatMap(applicationsService::update)
+                .flatMap((AppBO entity) -> applicationsService.update(entity).join())
                 .map(restMapper::toDTO);
 
         if (application.isPresent()) {
@@ -119,7 +120,7 @@ public class ApplicationsRoute extends ApplicationsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Optional<AppDTO> application = applicationsService.delete(applicationId.get())
+        final Optional<AppDTO> application = applicationsService.delete(applicationId.get()).join()
                 .map(restMapper::toDTO);
 
         if (application.isPresent()) {

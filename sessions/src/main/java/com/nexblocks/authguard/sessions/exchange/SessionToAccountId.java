@@ -6,7 +6,8 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.sessions.SessionVerifier;
 import com.google.inject.Inject;
-import io.vavr.control.Either;
+
+import java.util.concurrent.CompletableFuture;
 
 @TokenExchange(from = "sessionToken", to = "accountId")
 public class SessionToAccountId implements Exchange {
@@ -20,11 +21,10 @@ public class SessionToAccountId implements Exchange {
     }
 
     @Override
-    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
-        return sessionVerifier.verifyAccountToken(request.getToken())
-                .map(accountId -> AuthResponseBO.builder()
+    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+        return CompletableFuture.completedFuture(AuthResponseBO.builder()
                         .type(TOKEN_TYPE)
-                        .token(accountId)
+                        .token(sessionVerifier.verifyAccountToken(request.getToken()))
                         .build());
     }
 }

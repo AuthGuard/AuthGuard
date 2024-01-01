@@ -6,12 +6,12 @@ public class ServiceException extends RuntimeException {
     private final String errorCode;
 
     public ServiceException(final ErrorCode errorCode, final String message) {
-        super(message);
+        super(message, null, true, false);
         this.errorCode = errorCode.getCode();
     }
 
     public ServiceException(final String errorCode, final String message) {
-        super(message);
+        super(message, null, true, false);
         this.errorCode = errorCode;
     }
 

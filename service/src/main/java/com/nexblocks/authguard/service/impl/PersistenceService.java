@@ -9,6 +9,7 @@ import com.nexblocks.authguard.service.util.ID;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 public class PersistenceService<BO extends Entity, DO extends AbstractDO, R extends Repository<DO>> {
@@ -30,7 +31,7 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
         this.channel = channel;
     }
 
-    public BO create(final BO entity) {
+    public CompletableFuture<BO> create(final BO entity) {
         final Instant now = Instant.now();
         final DO mappedDo = boToDo.apply(entity);
 
@@ -46,17 +47,15 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
                     messageBus.publish(channel, Messages.created(persistedBo));
 
                     return persistedBo;
-                })
-                .join();
+                });
     }
 
-    public Optional<BO> getById(final long id) {
+    public CompletableFuture<Optional<BO>> getById(final long id) {
         return repository.getById(id)
-                .thenApply(opt -> opt.map(doToBo))
-                .join();
+                .thenApply(opt -> opt.map(doToBo));
     }
 
-    public Optional<BO> update(final BO entity) {
+    public CompletableFuture<Optional<BO>> update(final BO entity) {
         final Instant now = Instant.now();
         final DO mappedDo = boToDo.apply(entity);
 
@@ -69,11 +68,10 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
                     boOpt.ifPresent(bo -> messageBus.publish(channel, Messages.updated(bo)));
 
                     return boOpt;
-                })
-                .join();
+                });
     }
 
-    public Optional<BO> delete(final long id) {
+    public CompletableFuture<Optional<BO>> delete(final long id) {
         return repository.delete(id)
                 .thenApply(opt -> {
                     final Optional<BO> boOpt = opt.map(doToBo);
@@ -81,7 +79,6 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
                     boOpt.ifPresent(bo -> messageBus.publish(channel, Messages.deleted(bo)));
 
                     return boOpt;
-                })
-                .join();
+                });
     }
 }

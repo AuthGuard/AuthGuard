@@ -3,7 +3,6 @@ package com.nexblocks.authguard.jwt.oauth;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
-import io.vavr.control.Either;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -19,13 +18,13 @@ class AuthorizationCodeVerifierTest {
 
     @Test
     void verifyAccountToken() {
-        final AccountTokensRepository accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
-        final AuthorizationCodeVerifier authorizationCodeVerifier = new AuthorizationCodeVerifier(accountTokensRepository);
+        AccountTokensRepository accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
+        AuthorizationCodeVerifier authorizationCodeVerifier = new AuthorizationCodeVerifier(accountTokensRepository);
 
-        final long accountId = 101;
-        final String authorizationCode = "authorization-code";
+        long accountId = 101;
+        String authorizationCode = "authorization-code";
 
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .expiresAt(Instant.now().plus(Duration.ofMinutes(5)))
                 .associatedAccountId(accountId)
                 .token(authorizationCode)
@@ -34,34 +33,32 @@ class AuthorizationCodeVerifierTest {
         Mockito.when(accountTokensRepository.getByToken(authorizationCode))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
 
-        assertThat(authorizationCodeVerifier.verifyAccountToken(authorizationCode)).contains(accountId);
+        assertThat(authorizationCodeVerifier.verifyAccountToken(authorizationCode)).isEqualTo(accountId);
     }
 
     @Test
     void nonExistingToken() {
-        final AccountTokensRepository accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
-        final AuthorizationCodeVerifier authorizationCodeVerifier = new AuthorizationCodeVerifier(accountTokensRepository);
+        AccountTokensRepository accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
+        AuthorizationCodeVerifier authorizationCodeVerifier = new AuthorizationCodeVerifier(accountTokensRepository);
 
-        final String authorizationCode = "authorization-code";
+        String authorizationCode = "authorization-code";
 
         Mockito.when(accountTokensRepository.getByToken(authorizationCode))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        final Either<Exception, Long> result = authorizationCodeVerifier.verifyAccountToken(authorizationCode);
-
-        assertThat(result.isLeft());
-        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> authorizationCodeVerifier.verifyAccountToken(authorizationCode))
+                .isInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
     void expiredToken() {
-        final AccountTokensRepository accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
-        final AuthorizationCodeVerifier authorizationCodeVerifier = new AuthorizationCodeVerifier(accountTokensRepository);
+        AccountTokensRepository accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
+        AuthorizationCodeVerifier authorizationCodeVerifier = new AuthorizationCodeVerifier(accountTokensRepository);
 
-        final long accountId = 101;
-        final String authorizationCode = "authorization-code";
+        long accountId = 101;
+        String authorizationCode = "authorization-code";
 
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .expiresAt(Instant.now().minus(Duration.ofMinutes(5)))
                 .associatedAccountId(accountId)
                 .token(authorizationCode)

@@ -60,7 +60,7 @@ public class ApiKeysRoute extends ApiKeysApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Optional<ApiKeyDTO> apiKey = apiKeysService.getById(apiKeyId.get())
+        final Optional<ApiKeyDTO> apiKey = apiKeysService.getById(apiKeyId.get()).join()
                 .map(restMapper::toDTO);
 
         if (apiKey.isPresent()) {
@@ -94,7 +94,7 @@ public class ApiKeysRoute extends ApiKeysApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Optional<ApiKeyDTO> apiKey = apiKeysService.delete(apiKeyId.get())
+        final Optional<ApiKeyDTO> apiKey = apiKeysService.delete(apiKeyId.get()).join()
                 .map(restMapper::toDTO);
 
         if (apiKey.isPresent()) {

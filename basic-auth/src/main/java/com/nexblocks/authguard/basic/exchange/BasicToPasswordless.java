@@ -9,7 +9,8 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
-import io.vavr.control.Either;
+
+import java.util.concurrent.CompletableFuture;
 
 @TokenExchange(from = "basic", to = "passwordless")
 public class BasicToPasswordless implements Exchange {
@@ -23,9 +24,9 @@ public class BasicToPasswordless implements Exchange {
     }
 
     @Override
-    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
-        return basicAuth.getAccount(request)
-                .map(account -> {
+    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+        return basicAuth.getAccountAsync(request)
+                .thenApply(account -> {
                     final TokenOptionsBO tokenOptions = TokenOptionsMapper.fromAuthRequest(request);
 
                     return passwordlessProvider.generateToken(account, tokenOptions);

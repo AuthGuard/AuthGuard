@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.basic.otp;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.cache.OtpRepository;
 import com.nexblocks.authguard.service.auth.AuthVerifier;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
@@ -7,11 +8,12 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.OneTimePasswordBO;
-import com.google.inject.Inject;
-import io.vavr.control.Either;
+import com.nexblocks.authguard.service.util.AsyncUtils;
+import io.vavr.control.Try;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public class OtpVerifier implements AuthVerifier {
     private final OtpRepository otpRepository;
@@ -24,45 +26,53 @@ public class OtpVerifier implements AuthVerifier {
     }
 
     @Override
-    public Either<Exception, Long> verifyAccountToken(final String token) {
+    public Long verifyAccountToken(String token) {
+        throw new UnsupportedOperationException("Use the async function");
+    }
+
+    @Override
+    public CompletableFuture<Long> verifyAccountTokenAsync(final String token) {
         // TODO: no need to have a special format for the token, just receive the two parts in the request
-        final String[] parts = token.split(":");
+        String[] parts = token.split(":");
 
         if (parts.length != 2) {
-            return Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_AUTHORIZATION_FORMAT,
+            return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.INVALID_AUTHORIZATION_FORMAT,
                     "Invalid OTP token format"));
         }
 
-        final long passwordId;
+        long passwordId;
 
         try {
             passwordId = Long.parseLong(parts[0]);
         } catch (Exception e) {
-            return Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_AUTHORIZATION_FORMAT,
+            return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.INVALID_AUTHORIZATION_FORMAT,
                     "Invalid OTP ID"));
         }
-        final String otp = parts[1];
+        String otp = parts[1];
 
-        final Optional<OneTimePasswordBO> generatedOpt = otpRepository.getById(passwordId)
-                .thenApply(optional -> optional.map(serviceMapper::toBO))
-                .join();
+        return otpRepository.getById(passwordId)
+                .thenCompose(opt -> {
+                    Optional<OneTimePasswordBO> generatedOpt = opt.map(serviceMapper::toBO);
 
-        if (generatedOpt.isPresent()) {
-            final OneTimePasswordBO generated = generatedOpt.get();
+                    if (generatedOpt.isEmpty()) {
+                        throw new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid OTP ID");
+                    }
 
-            if (generated.getExpiresAt().isBefore(Instant.now())) {
-                return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "OTP " + passwordId + " has expired",
-                        EntityType.ACCOUNT, generated.getAccountId()));
-            }
+                    return AsyncUtils.fromTry(verifyOtp(generatedOpt.get(), otp));
+                });
+    }
 
-            if (generated.getPassword().equals(otp)) {
-                return Either.right(generated.getAccountId());
-            } else {
-                return Either.left(new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH,
-                        "OTP " + passwordId + " values did not match", EntityType.ACCOUNT, generated.getAccountId()));
-            }
-        } else {
-            return Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid OTP ID"));
+    private Try<Long> verifyOtp(final OneTimePasswordBO generated, final String otp) {
+        if (generated.getExpiresAt().isBefore(Instant.now())) {
+            return Try.failure(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "OTP has expired",
+                    EntityType.ACCOUNT, generated.getAccountId()));
         }
+
+        if (generated.getPassword().equals(otp)) {
+            return Try.success(generated.getAccountId());
+        }
+
+        return Try.failure(new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH,
+                "OTP values did not match", EntityType.ACCOUNT, generated.getAccountId()));
     }
 }

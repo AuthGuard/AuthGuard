@@ -19,6 +19,7 @@ import org.mockito.Mockito;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,7 +30,6 @@ class OAuthServiceTest {
     private AccountsService accountsService;
     private TestIdentityServer testIdentityServer;
     private ImmutableOAuthClientConfiguration clientConfiguration;
-    private ImmutableOAuthClientConfiguration accountProviderClientConfiguration;
 
     private OAuthService oAuthService;
 
@@ -50,7 +50,7 @@ class OAuthServiceTest {
                 .addDefaultScopes("openid", "profile")
                 .build();
 
-        accountProviderClientConfiguration = ImmutableOAuthClientConfiguration.builder()
+        ImmutableOAuthClientConfiguration accountProviderClientConfiguration = ImmutableOAuthClientConfiguration.builder()
                 .provider("account_test")
                 .authUrl("http://localhost:" + testIdentityServer.getPort() + "/auth")
                 .tokenUrl("http://localhost:" + testIdentityServer.getPort() + "/token")
@@ -181,8 +181,13 @@ class OAuthServiceTest {
                 });
 
         Mockito.when(accountsService.create(Mockito.any(), Mockito.eq(expectedContext)))
-                .thenAnswer(invocation ->
-                        invocation.getArgument(0, AccountBO.class).withId(1));
+                .thenAnswer(invocation -> {
+                    AccountBO argWithId = invocation.getArgument(0, AccountBO.class).withId(1);
+                    return CompletableFuture.completedFuture(argWithId);
+                });
+
+        Mockito.when(accountsService.getByExternalId(Mockito.any()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         final TokensResponse actual = oAuthService.exchangeAuthorizationCode("account_test", "random", "code")
                 .join();
@@ -206,7 +211,7 @@ class OAuthServiceTest {
                 });
 
         Mockito.when(accountsService.getByExternalId("1"))
-                .thenReturn(Optional.of(AccountBO.builder().id(1).build()));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(AccountBO.builder().id(1).build())));
 
         final TokensResponse actual = oAuthService.exchangeAuthorizationCode("account_test", "random", "code")
                 .join();

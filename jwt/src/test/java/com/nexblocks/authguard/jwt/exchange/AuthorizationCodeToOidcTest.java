@@ -11,7 +11,6 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.TokenRestrictionsBO;
-import io.vavr.control.Either;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -20,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -48,44 +48,43 @@ class AuthorizationCodeToOidcTest {
 
     @Test
     void exchange() {
-        final AuthRequestBO authRequest = AuthRequestBO.builder()
+        AuthRequestBO authRequest = AuthRequestBO.builder()
                 .token("auth code")
                 .build();
 
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .associatedAccountId(101)
                 .build();
 
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .id(101)
                 .build();
 
-        final AuthResponseBO authResponse = AuthResponseBO.builder()
+        AuthResponseBO authResponse = AuthResponseBO.builder()
                 .token("OIDC")
                 .build();
 
-        Mockito.when(authorizationCodeVerifier.verifyAndGetAccountToken(authRequest.getToken()))
-                .thenReturn(Either.right(accountToken));
+        Mockito.when(authorizationCodeVerifier.verifyAndGetAccountTokenAsync(authRequest.getToken()))
+                .thenReturn(CompletableFuture.completedFuture(accountToken));
 
         Mockito.when(accountsService.getById(accountToken.getAssociatedAccountId()))
-                .thenReturn(Optional.of(account));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(openIdConnectTokenProvider.generateToken(account, (TokenRestrictionsBO) null))
                 .thenReturn(authResponse);
 
-        final Either<Exception, AuthResponseBO> actual = authorizationCodeToOidc.exchange(authRequest);
+        AuthResponseBO actual = authorizationCodeToOidc.exchange(authRequest).join();
 
-        assertThat(actual.isRight());
-        assertThat(actual.get()).isEqualTo(authResponse);
+        assertThat(actual).isEqualTo(authResponse);
     }
 
     @Test
     void exchangeWithRestrictions() {
-        final AuthRequestBO authRequest = AuthRequestBO.builder()
+        AuthRequestBO authRequest = AuthRequestBO.builder()
                 .token("auth code")
                 .build();
 
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .associatedAccountId(101)
                 .tokenRestrictions(TokenRestrictionsDO.builder()
                         .scopes(Collections.emptySet())
@@ -93,26 +92,25 @@ class AuthorizationCodeToOidcTest {
                         .build())
                 .build();
 
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .id(101)
                 .build();
 
-        final AuthResponseBO authResponse = AuthResponseBO.builder()
+        AuthResponseBO authResponse = AuthResponseBO.builder()
                 .token("OIDC")
                 .build();
 
-        Mockito.when(authorizationCodeVerifier.verifyAndGetAccountToken(authRequest.getToken()))
-                .thenReturn(Either.right(accountToken));
+        Mockito.when(authorizationCodeVerifier.verifyAndGetAccountTokenAsync(authRequest.getToken()))
+                .thenReturn(CompletableFuture.completedFuture(accountToken));
 
         Mockito.when(accountsService.getById(accountToken.getAssociatedAccountId()))
-                .thenReturn(Optional.of(account));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(openIdConnectTokenProvider.generateToken(account, serviceMapper.toBO(accountToken.getTokenRestrictions())))
                 .thenReturn(authResponse);
 
-        final Either<Exception, AuthResponseBO> actual = authorizationCodeToOidc.exchange(authRequest);
+        AuthResponseBO actual = authorizationCodeToOidc.exchange(authRequest).join();
 
-        assertThat(actual.isRight());
-        assertThat(actual.get()).isEqualTo(authResponse);
+        assertThat(actual).isEqualTo(authResponse);
     }
 }

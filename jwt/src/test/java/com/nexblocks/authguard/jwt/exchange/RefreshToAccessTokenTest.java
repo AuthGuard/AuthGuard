@@ -9,7 +9,6 @@ import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.*;
-import io.vavr.control.Either;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -21,6 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class RefreshToAccessTokenTest {
     private AccountTokensRepository accountTokensRepository;
@@ -37,29 +37,32 @@ class RefreshToAccessTokenTest {
 
         refreshToAccessToken = new RefreshToAccessToken(accountTokensRepository, accountsService,
                 accessTokenProvider, JwtConfig.builder().build(), new ServiceMapperImpl());
+
+        Mockito.when(accountTokensRepository.deleteToken(Mockito.any()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(AccountTokenDO.builder().build())));
     }
 
     @Test
-    void exchange() {
+    void exchange() throws InterruptedException {
         // data
-        final long accountId = 101;
-        final String refreshToken = "refresh_token";
+        long accountId = 101;
+        String refreshToken = "refresh_token";
 
-        final AuthRequestBO authRequest = AuthRequestBO.builder()
+        AuthRequestBO authRequest = AuthRequestBO.builder()
                 .token(refreshToken)
                 .build();
 
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token(refreshToken)
                 .associatedAccountId(accountId)
                 .expiresAt(Instant.now().plus(Duration.ofMinutes(1)))
                 .build();
 
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .id(accountId)
                 .build();
 
-        final AuthResponseBO newTokens = AuthResponseBO.builder()
+        AuthResponseBO newTokens = AuthResponseBO.builder()
                 .token("new_token")
                 .refreshToken("new_refresh_token")
                 .build();
@@ -69,33 +72,33 @@ class RefreshToAccessTokenTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
 
         Mockito.when(accountsService.getById(accountId))
-                .thenReturn(Optional.of(account));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accessTokenProvider.generateToken(account, null, TokenOptionsBO.builder().build()))
                 .thenReturn(newTokens);
 
         // do
-        final Either<Exception, AuthResponseBO> actual = refreshToAccessToken.exchange(authRequest);
+        AuthResponseBO actual = refreshToAccessToken.exchange(authRequest).join();
 
         // assert
-        assertThat(actual.isRight()).isTrue();
-        assertThat(actual.right().get()).isEqualTo(newTokens);
+        assertThat(actual).isEqualTo(newTokens);
 
+        Thread.sleep(50L); // triggering deleting happens in the background so give it some time
         Mockito.verify(accountTokensRepository).deleteToken(refreshToken);
     }
 
     @Test
-    void exchangeWithRestrictions() {
+    void exchangeWithRestrictions() throws InterruptedException {
         // data
-        final long accountId = 101;
-        final String refreshToken = "refresh_token";
-        final String restrictionPermission = "permission.read";
+        long accountId = 101;
+        String refreshToken = "refresh_token";
+        String restrictionPermission = "permission.read";
 
-        final AuthRequestBO authRequest = AuthRequestBO.builder()
+        AuthRequestBO authRequest = AuthRequestBO.builder()
                 .token(refreshToken)
                 .build();
 
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token(refreshToken)
                 .associatedAccountId(accountId)
                 .expiresAt(Instant.now().plus(Duration.ofMinutes(1)))
@@ -105,16 +108,16 @@ class RefreshToAccessTokenTest {
                         .build())
                 .build();
 
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .id(accountId)
                 .build();
 
-        final AuthResponseBO newTokens = AuthResponseBO.builder()
+        AuthResponseBO newTokens = AuthResponseBO.builder()
                 .token("new_token")
                 .refreshToken("new_refresh_token")
                 .build();
 
-        final TokenRestrictionsBO restrictions = TokenRestrictionsBO.builder()
+        TokenRestrictionsBO restrictions = TokenRestrictionsBO.builder()
                 .addPermissions(restrictionPermission)
                 .build();
 
@@ -123,32 +126,32 @@ class RefreshToAccessTokenTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
 
         Mockito.when(accountsService.getById(accountId))
-                .thenReturn(Optional.of(account));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accessTokenProvider.generateToken(account, restrictions, TokenOptionsBO.builder().build()))
                 .thenReturn(newTokens);
 
         // do
-        final Either<Exception, AuthResponseBO> actual = refreshToAccessToken.exchange(authRequest);
+        AuthResponseBO actual = refreshToAccessToken.exchange(authRequest).join();
 
         // assert
-        assertThat(actual.isRight()).isTrue();
-        assertThat(actual.get()).isEqualTo(newTokens);
+        assertThat(actual).isEqualTo(newTokens);
 
+        Thread.sleep(50L); // triggering deleting happens in the background so give it some time
         Mockito.verify(accountTokensRepository).deleteToken(refreshToken);
     }
 
     @Test
-    void exchangeExpiredToken() {
+    void exchangeExpiredToken() throws InterruptedException {
         // data
-        final long accountId = 101;
-        final String refreshToken = "refresh_token";
+        long accountId = 101;
+        String refreshToken = "refresh_token";
 
-        final AuthRequestBO authRequest = AuthRequestBO.builder()
+        AuthRequestBO authRequest = AuthRequestBO.builder()
                 .token(refreshToken)
                 .build();
 
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token(refreshToken)
                 .associatedAccountId(accountId)
                 .expiresAt(Instant.now().minus(Duration.ofMinutes(1)))
@@ -159,26 +162,24 @@ class RefreshToAccessTokenTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
 
         // do
-        final Either<Exception, AuthResponseBO> actual = refreshToAccessToken.exchange(authRequest);
+        assertThatThrownBy(() -> refreshToAccessToken.exchange(authRequest).join())
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
 
-        // assert
-        assertThat(actual.isLeft()).isTrue();
-        assertThat(actual.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
-
+        Thread.sleep(50L); // triggering deleting happens in the background so give it some time
         Mockito.verify(accountTokensRepository).deleteToken(refreshToken);
     }
 
     @Test
-    void exchangeNoAccount() {
+    void exchangeNoAccount() throws InterruptedException {
         // data
-        final long accountId = 101;
-        final String refreshToken = "refresh_token";
+        long accountId = 101;
+        String refreshToken = "refresh_token";
 
-        final AuthRequestBO authRequest = AuthRequestBO.builder()
+        AuthRequestBO authRequest = AuthRequestBO.builder()
                 .token(refreshToken)
                 .build();
 
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token(refreshToken)
                 .associatedAccountId(accountId)
                 .expiresAt(Instant.now().plus(Duration.ofMinutes(1)))
@@ -189,24 +190,19 @@ class RefreshToAccessTokenTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
 
         Mockito.when(accountsService.getById(accountId))
-                .thenReturn(Optional.empty());
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         // do
-        final Either<Exception, AuthResponseBO> actual = refreshToAccessToken.exchange(authRequest);
-
-        // assert
-        assertThat(actual.isLeft()).isTrue();
-        assertThat(actual.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
-
-        Mockito.verify(accountTokensRepository).deleteToken(refreshToken);
+        assertThatThrownBy(() -> refreshToAccessToken.exchange(authRequest).join())
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
     void exchangeInvalidToken() {
         // data
-        final String refreshToken = "refresh_token";
+        String refreshToken = "refresh_token";
 
-        final AuthRequestBO authRequest = AuthRequestBO.builder()
+        AuthRequestBO authRequest = AuthRequestBO.builder()
                 .token(refreshToken)
                 .build();
 
@@ -215,20 +211,17 @@ class RefreshToAccessTokenTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         // do
-        final Either<Exception, AuthResponseBO> actual = refreshToAccessToken.exchange(authRequest);
-
-        // assert
-        assertThat(actual.isLeft()).isTrue();
-        assertThat(actual.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> refreshToAccessToken.exchange(authRequest).join())
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
-    void exchangeWithTokenOptionChecks() {
+    void exchangeWithTokenOptionChecks() throws InterruptedException {
         // data
-        final long accountId = 101;
-        final String refreshToken = "refresh_token";
+        long accountId = 101;
+        String refreshToken = "refresh_token";
 
-        final AuthRequestBO authRequest = AuthRequestBO.builder()
+        AuthRequestBO authRequest = AuthRequestBO.builder()
                 .token(refreshToken)
                 .clientId("client-1")
                 .deviceId("device-1")
@@ -237,7 +230,7 @@ class RefreshToAccessTokenTest {
                 .userAgent("test")
                 .build();
 
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token(refreshToken)
                 .associatedAccountId(accountId)
                 .expiresAt(Instant.now().plus(Duration.ofMinutes(1)))
@@ -248,16 +241,16 @@ class RefreshToAccessTokenTest {
                 .userAgent("test")
                 .build();
 
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .id(accountId)
                 .build();
 
-        final AuthResponseBO newTokens = AuthResponseBO.builder()
+        AuthResponseBO newTokens = AuthResponseBO.builder()
                 .token("new_token")
                 .refreshToken("new_refresh_token")
                 .build();
 
-        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder()
+        TokenOptionsBO tokenOptions = TokenOptionsBO.builder()
                 .clientId("client-1")
                 .deviceId("device-1")
                 .sourceIp("127.0.0.1")
@@ -270,32 +263,32 @@ class RefreshToAccessTokenTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
 
         Mockito.when(accountsService.getById(accountId))
-                .thenReturn(Optional.of(account));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accessTokenProvider.generateToken(account, null, tokenOptions))
                 .thenReturn(newTokens);
 
         // do
-        final Either<Exception, AuthResponseBO> actual = refreshToAccessToken.exchange(authRequest);
+        final AuthResponseBO actual = refreshToAccessToken.exchange(authRequest).join();
 
         // assert
-        assertThat(actual.isRight()).isTrue();
-        assertThat(actual.right().get()).isEqualTo(newTokens);
+        assertThat(actual).isEqualTo(newTokens);
 
+        Thread.sleep(50L); // triggering deleting happens in the background so give it some time
         Mockito.verify(accountTokensRepository).deleteToken(refreshToken);
     }
 
     @Test
     void exchangeWithMismatchedTokenOptions() {
         // data
-        final long accountId = 101;
-        final String refreshToken = "refresh_token";
+        long accountId = 101;
+        String refreshToken = "refresh_token";
 
-        final AuthRequestBO authRequest = AuthRequestBO.builder()
+        AuthRequestBO authRequest = AuthRequestBO.builder()
                 .token(refreshToken)
                 .build();
 
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token(refreshToken)
                 .associatedAccountId(accountId)
                 .expiresAt(Instant.now().plus(Duration.ofMinutes(1)))
@@ -311,11 +304,8 @@ class RefreshToAccessTokenTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
 
         // do
-        final Either<Exception, AuthResponseBO> actual = refreshToAccessToken.exchange(authRequest);
-
-        // assert
-        assertThat(actual.isLeft()).isTrue();
-        assertThat(actual.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> refreshToAccessToken.exchange(authRequest).join())
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
 
         Mockito.verify(accountTokensRepository, Mockito.never()).deleteToken(refreshToken);
     }

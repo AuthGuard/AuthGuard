@@ -68,12 +68,12 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     }
 
     public Optional<AccountBO> getByIdUnsafe(final long id) {
-        return accountsService.getByIdUnsafe(id);
+        return accountsService.getByIdUnsafe(id).join();
     }
 
     @Override
     public Optional<AccountBO> updatePassword(final long id, final String plainPassword) {
-        final AccountBO existing = accountsService.getById(id)
+        final AccountBO existing = accountsService.getById(id).join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
 
         LOG.info("Password update request. accountId={}, domain={}", id, existing.getDomain());
@@ -198,7 +198,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
 
     @Override
     public PasswordResetTokenBO generateResetToken(final String identifier, final boolean returnToken, final String domain) {
-        final AccountBO account = accountsService.getByIdentifier(identifier, domain)
+        final AccountBO account = accountsService.getByIdentifier(identifier, domain).join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "Unknown identifier"));
 
         LOG.info("Generate password reset token request. accountId={}, domain={}", account.getId(), account.getDomain());
@@ -249,7 +249,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     public Optional<AccountBO> replacePassword(final String identifier,
                                                final String oldPassword,
                                                final String newPassword, final String domain) {
-        final AccountBO credentials = accountsService.getByIdentifierUnsafe(identifier, domain)
+        final AccountBO credentials = accountsService.getByIdentifierUnsafe(identifier, domain).join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST, "Unknown identifier"));
 
         LOG.info("Password replace request. accountId={}, domain={}", credentials.getId(), domain);
@@ -277,7 +277,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
         LOG.info("Account credentials update. accountId={}, domain={}", existing.getId(), existing.getDomain());
         storeAuditAttempt(existing);
 
-        return accountsService.update(updated)
+        return accountsService.update(updated).join()
                 .map(c -> {
                     messageBus.publish(CREDENTIALS_CHANNEL, Messages.updated(c));
 

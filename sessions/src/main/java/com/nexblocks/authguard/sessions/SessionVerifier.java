@@ -7,7 +7,6 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.SessionBO;
 import com.google.inject.Inject;
-import io.vavr.control.Either;
 
 import java.time.Instant;
 
@@ -20,18 +19,18 @@ public class SessionVerifier implements AuthVerifier {
     }
 
     @Override
-    public Either<Exception, Long> verifyAccountToken(final String sessionToken) {
+    public Long verifyAccountToken(final String sessionToken) {
         return sessionsService.getByToken(sessionToken)
                 .map(this::verifySession)
-                .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid session token")));
+                .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid session token"));
     }
 
-    private Either<Exception, Long> verifySession(final SessionBO session) {
+    private Long verifySession(final SessionBO session) {
         if (session.getExpiresAt().isBefore(Instant.now())) {
-            return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Session has expired",
-                    EntityType.ACCOUNT, session.getAccountId()));
+            throw new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Session has expired",
+                    EntityType.ACCOUNT, session.getAccountId());
         }
 
-        return Either.right(session.getAccountId());
+        return session.getAccountId();
     }
 }

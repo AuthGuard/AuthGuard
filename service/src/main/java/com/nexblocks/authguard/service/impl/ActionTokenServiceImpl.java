@@ -17,7 +17,6 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.ID;
-import io.vavr.control.Either;
 import io.vavr.control.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +54,7 @@ public class ActionTokenServiceImpl implements ActionTokenService {
 
     @Override
     public Try<AuthResponseBO> generateOtp(final long accountId) {
-        final AccountBO account = accountsService.getById(accountId).orElse(null);
+        final AccountBO account = accountsService.getById(accountId).join().orElse(null);
 
         if (account == null) {
             return Try.failure(new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "Account does not exist"));
@@ -68,16 +67,7 @@ public class ActionTokenServiceImpl implements ActionTokenService {
 
     @Override
     public Try<ActionTokenBO> generateFromBasicAuth(final AuthRequestBO authRequest, final String action) {
-        final Either<Exception, AccountBO> authResult = basicAuthProvider.getAccount(authRequest);
-
-        if (authResult.isLeft()) {
-            LOG.info("Failed action token from credentials request. domain={}, error={}",
-                    authRequest.getDomain(), authResult.getLeft().getMessage());
-
-            return Try.failure(authResult.getLeft());
-        }
-
-        final AccountBO account = authResult.get();
+        final AccountBO account = basicAuthProvider.getAccount(authRequest);
         final AccountTokenDO token = generateToken(account, action);
 
         LOG.info("Action token from credentials request. accountId={}, domain={}, tokenId={}, expiresAt={}",
@@ -92,29 +82,20 @@ public class ActionTokenServiceImpl implements ActionTokenService {
 
     @Override
     public Try<ActionTokenBO> generateFromOtp(final long passwordId, final String otp, final String action) {
-        final String otpToken = passwordId + ":" + otp;
-        final Either<Exception, Optional<AccountBO>> otpResult = otpVerifier.verifyAccountToken(otpToken)
-                .map(accountsService::getById);
+        String otpToken = passwordId + ":" + otp;
+        Optional<AccountBO> otpResult = otpVerifier.verifyAccountTokenAsync(otpToken)
+                .thenCompose(accountsService::getById)
+                .join();
 
-        if (otpResult.isLeft()) {
-            LOG.info("Failed generate action token from OTP request. passwordId={}, error={}",
-                    passwordId, otpResult.getLeft().getMessage());
-            return Try.failure(otpResult.getLeft());
+        if (otpResult.isEmpty()) {
+            LOG.error("Verified OTP request but the account doesn't exist. passwordId={}", passwordId);
+            return Try.failure(new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
+                    "The account associated with that OTP no longer exists"));
         }
 
-        final AccountBO account = otpResult.get().orElse(null);
+        AccountBO account = otpResult.get();
 
-        if (account == null) {
-            ServiceException error = new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
-                    "The account associated with that OTP no longer exists");
-
-            LOG.info("Failed generate action token from OTP request. passwordId={}, error={}",
-                    passwordId, error.getMessage());
-
-            return Try.failure(error);
-        }
-
-        final AccountTokenDO token = generateToken(account, action);
+        AccountTokenDO token = generateToken(account, action);
         LOG.info("Generated action token from OTP request. passwordId={}, tokenId={}, expiresAt={}",
                 passwordId, token.getId(), token.getExpiresAt());
 
@@ -127,19 +108,19 @@ public class ActionTokenServiceImpl implements ActionTokenService {
 
     @Override
     public Try<ActionTokenBO> verifyToken(final String token, final String action) {
-        final Optional<AccountTokenDO> persisted = accountTokensRepository.getByToken(token).join();
+        Optional<AccountTokenDO> persisted = accountTokensRepository.getByToken(token).join();
 
         if (persisted.isEmpty()) {
             return Try.failure(new ServiceException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST, "Token was not found"));
         }
 
-        final Instant now = Instant.now();
+        Instant now = Instant.now();
 
         if (persisted.get().getExpiresAt().isBefore(now)) {
             return Try.failure(new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token has expired"));
         }
 
-        final String allowedAction = persisted.get().getAdditionalInformation().get("action");
+        String allowedAction = persisted.get().getAdditionalInformation().get("action");
 
         if (allowedAction == null || !allowedAction.equals(action)) {
             return Try.failure(new ServiceException(ErrorCode.INVALID_TOKEN, "Token was created for a different action"));
@@ -155,9 +136,9 @@ public class ActionTokenServiceImpl implements ActionTokenService {
     }
 
     private AccountTokenDO generateToken(final AccountBO account, final String action) {
-        final Instant now = Instant.now();
+        Instant now = Instant.now();
 
-        final AccountTokenDO accountToken = AccountTokenDO
+        AccountTokenDO accountToken = AccountTokenDO
                 .builder()
                 .id(ID.generate())
                 .createdAt(now)

@@ -1,18 +1,18 @@
 package com.nexblocks.authguard.sessions.exchange;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.basic.passwordless.PasswordlessVerifier;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
-import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import com.nexblocks.authguard.sessions.SessionProvider;
-import com.google.inject.Inject;
-import io.vavr.control.Either;
+
+import java.util.concurrent.CompletableFuture;
 
 @TokenExchange(from = "passwordless", to = "sessionToken")
 public class PasswordlessToSession implements Exchange {
@@ -30,20 +30,19 @@ public class PasswordlessToSession implements Exchange {
     }
 
     @Override
-    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
-        final TokenOptionsBO options = TokenOptionsBO.builder()
+    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+        TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("passwordless")
                 .build();
 
-        return passwordlessVerifier.verifyAccountToken(request.getToken())
-                .flatMap(this::getAccount)
-                .map(account -> sessionProvider.generateToken(account, options));
-    }
+        return passwordlessVerifier.verifyAccountTokenAsync(request.getToken())
+                .thenCompose(accountsService::getById)
+                .thenApply(opt -> {
+                    if (opt.isEmpty()) {
+                        throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "Account does not exist");
+                    }
 
-    private Either<Exception, AccountBO> getAccount(final long accountId) {
-        return accountsService.getById(accountId)
-                .<Either<Exception, AccountBO>>map(Either::right)
-                .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
-                        "Account " + accountId + " does not exist")));
+                    return sessionProvider.generateToken(opt.get(), options);
+                });
     }
 }

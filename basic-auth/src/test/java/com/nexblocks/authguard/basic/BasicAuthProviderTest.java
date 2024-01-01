@@ -11,8 +11,6 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.HashedPasswordBO;
 import com.nexblocks.authguard.service.model.UserIdentifier;
 import com.nexblocks.authguard.service.model.UserIdentifierBO;
-import io.vavr.control.Either;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -21,6 +19,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -51,7 +51,7 @@ class BasicAuthProviderTest {
         basicAuth = new BasicAuthProvider(accountsService, securePasswordProvider);
     }
 
-    private AccountBO createCredentials(final String username) {
+    private AccountBO createCredentials(String username) {
         return AccountBO.builder()
                 .id(1)
                 .active(true)
@@ -72,152 +72,155 @@ class BasicAuthProviderTest {
 
     @Test
     void authenticate() {
-        final String username = "username";
-        final String password = "password";
-        final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        String username = "username";
+        String password = "password";
+        String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final AccountBO credentials = createCredentials(username);
+        AccountBO credentials = createCredentials(username);
 
         Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
-                .thenReturn(Optional.of(credentials));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
         Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(true);
 
-        final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
+        AccountBO account = basicAuth.authenticateAndGetAccount(authorization).join();
 
-        assertThat(result.get()).isEqualTo(credentials);
+        assertThat(account).isEqualTo(credentials);
     }
 
     @Test
     void authenticateInactiveAccount() {
-        final String username = "username";
-        final String password = "password";
-        final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        String username = "username";
+        String password = "password";
+        String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final AccountBO credentials = createCredentials(username)
+        AccountBO credentials = createCredentials(username)
                 .withActive(false);
 
-        Mockito.when(accountsService.getByIdentifierUnsafe(username, "main")).thenReturn(Optional.of(credentials));
+        Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
         Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(true);
 
-        final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
-
-        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).join())
+                .isInstanceOf(CompletionException.class)
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
     void authenticateInactiveIdentifier() {
-        final String username = "username";
-        final String password = "password";
-        final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        String username = "username";
+        String password = "password";
+        String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final AccountBO credentials = createCredentials(username)
+        AccountBO credentials = createCredentials(username)
                 .withIdentifiers(UserIdentifierBO.builder()
                         .identifier(username)
                         .type(UserIdentifier.Type.USERNAME)
                         .active(false)
                         .build());
 
-        Mockito.when(accountsService.getByIdentifierUnsafe(username, "main")).thenReturn(Optional.of(credentials));
+        Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
 
-        final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
-
-        assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).join())
+                .isInstanceOf(CompletionException.class)
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
     void authenticateNotFound() {
-        final String username = "username";
-        final String password = "password";
-        final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        String username = "username";
+        String password = "password";
+        String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        Mockito.when(accountsService.getByIdentifierUnsafe(username, "main")).thenReturn(Optional.empty());
+        Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        assertThat(basicAuth.authenticateAndGetAccount(authorization)).isEmpty();
+        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).join())
+                .isInstanceOf(CompletionException.class)
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
     void authenticateWrongPassword() {
-        final String username = "username";
-        final String password = "password";
-        final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        String username = "username";
+        String password = "password";
+        String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final AccountBO credentials = createCredentials(username);
+        AccountBO credentials = createCredentials(username);
 
-        Mockito.when(accountsService.getByIdentifierUnsafe(username, "main")).thenReturn(Optional.of(credentials));
+        Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
         Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(false);
 
-        final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
-
-        assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).join())
+                .isInstanceOf(CompletionException.class)
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
     void authenticateExpiredPassword() {
-        final String username = "username";
-        final String password = "password";
-        final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        String username = "username";
+        String password = "password";
+        String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final AccountBO credentials = createCredentials(username)
+        AccountBO credentials = createCredentials(username)
                 .withPasswordUpdatedAt(Instant.now().minus(Duration.ofMinutes(5)));
 
-        Mockito.when(accountsService.getByIdentifierUnsafe(username, "main")).thenReturn(Optional.of(credentials));
+        Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
         Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(true);
 
         Mockito.when(securePasswordProvider.passwordsExpire()).thenReturn(true);
         Mockito.when(securePasswordProvider.getPasswordTtl()).thenReturn(Duration.ofMinutes(2));
 
-        final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
-
-        assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).join())
+                .isInstanceOf(CompletionException.class)
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
     void authenticateWithPreviousPasswordVersion() {
-        final String username = "username";
-        final String password = "password";
-        final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        String username = "username";
+        String password = "password";
+        String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final AccountBO credentials = createCredentials(username)
+        AccountBO credentials = createCredentials(username)
                 .withActive(true)
                 .withPasswordVersion(0);
 
         Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
-                .thenReturn(Optional.of(credentials));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
         Mockito.when(previousSecurePassword.verify(eq(password), eq(credentials.getHashedPassword())))
                 .thenReturn(true);
 
-        final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
+        AccountBO account = basicAuth.authenticateAndGetAccount(authorization).join();
 
-        assertThat(result.get()).isEqualTo(credentials);
+        assertThat(account).isEqualTo(credentials);
     }
 
     @Test
     void authenticateWithPreviousPasswordVersionWrongPassword() {
-        final String username = "username";
-        final String password = "password";
-        final String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        String username = "username";
+        String password = "password";
+        String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        final AccountBO credentials = createCredentials(username)
+        AccountBO credentials = createCredentials(username)
                 .withActive(true)
                 .withPasswordVersion(0);
 
-        Mockito.when(accountsService.getByIdentifierUnsafe(username, credentials.getDomain()))
-                .thenReturn(Optional.of(credentials));
+        Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
         Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(true);
         Mockito.when(previousSecurePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(false);
 
-        final Either<Exception, AccountBO> result = basicAuth.authenticateAndGetAccount(authorization);
-
-        assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).join())
+                .isInstanceOf(CompletionException.class)
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
     void authenticateBadBasicScheme() {
-        final String authorization = "dGhpc2RvbmVzbid0Zmx5aW5vdXJjaXR5";
+        String authorization = "dGhpc2RvbmVzbid0Zmx5aW5vdXJjaXR5";
         assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization)).isInstanceOf(ServiceException.class);
     }
 }

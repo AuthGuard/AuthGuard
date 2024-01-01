@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class ApplicationsServiceImpl implements ApplicationsService {
@@ -46,26 +47,33 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public AppBO create(final AppBO app, final RequestContextBO requestContext) {
-        return idempotencyService.performOperation(() -> doCreate(app), requestContext.getIdempotentKey(), app.getEntityType())
-                .join();
+    public CompletableFuture<AppBO> create(final AppBO app, final RequestContextBO requestContext) {
+        return idempotencyService.performOperationAsync(() -> doCreate(app),
+                requestContext.getIdempotentKey(), app.getEntityType());
     }
 
-    private AppBO doCreate(final AppBO app) {
+    private CompletableFuture<AppBO> doCreate(final AppBO app) {
         /*
          * It's undecided whether an app should be under an
          * account or not. So for now, we only check that the
          * account exists if it's set.
          */
-        if (app.getParentAccountId() != null && accountsService.getById(app.getParentAccountId()).isEmpty()) {
-            throw new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " + app.getParentAccountId() + " exists");
+        if (app.getParentAccountId() != null) {
+            return accountsService.getById(app.getParentAccountId())
+                    .thenCompose(opt -> {
+                        if (opt.isEmpty()) {
+                            throw new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " + app.getParentAccountId() + " exists");
+                        }
+
+                        return persistenceService.create(app);
+                    });
         }
 
         return persistenceService.create(app);
     }
 
     @Override
-    public Optional<AppBO> getById(final long id) {
+    public CompletableFuture<Optional<AppBO>> getById(final long id) {
         return persistenceService.getById(id);
     }
 
@@ -77,7 +85,7 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public Optional<AppBO> update(final AppBO app) {
+    public CompletableFuture<Optional<AppBO>> update(final AppBO app) {
         LOG.info("Application update request. accountId={}", app.getId());
 
         // FIXME accountId cannot be updated
@@ -85,7 +93,7 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public Optional<AppBO> delete(final long id) {
+    public CompletableFuture<Optional<AppBO>> delete(final long id) {
         LOG.info("Application delete request. accountId={}", id);
 
         return persistenceService.delete(id);
@@ -93,12 +101,12 @@ public class ApplicationsServiceImpl implements ApplicationsService {
 
     @Override
     public Optional<AppBO> activate(final long id) {
-        return getById(id)
+        return getById(id).join()
                 .flatMap(app -> {
                     LOG.info("Activate application request. appId={}, domain={}", app.getId(), app.getDomain());
 
                     AppBO activated = app.withActive(true);
-                    Optional<AppBO> persisted = this.update(activated);
+                    Optional<AppBO> persisted = this.update(activated).join();
 
                     if (persisted.isPresent()) {
                         LOG.info("Application activated. appId={}, domain={}", app.getId(), app.getDomain());
@@ -112,12 +120,12 @@ public class ApplicationsServiceImpl implements ApplicationsService {
 
     @Override
     public Optional<AppBO> deactivate(final long id) {
-        return getById(id)
+        return getById(id).join()
                 .flatMap(app -> {
                     LOG.info("Deactivate application request. appId={}, domain={}", app.getId(), app.getDomain());
 
                     AppBO deactivated = app.withActive(false);
-                    Optional<AppBO> persisted = this.update(deactivated);
+                    Optional<AppBO> persisted = this.update(deactivated).join();
 
                     if (persisted.isPresent()) {
                         LOG.info("Application deactivated. appId={}, domain={}", app.getId(), app.getDomain());

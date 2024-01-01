@@ -97,18 +97,20 @@ public class OAuthService {
                         .orElseThrow(() ->
                                 new ServiceAuthorizationException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
                                         "The provided state is either invalid or has expired")))
-                .thenApply(tokensResponse -> {
+                .thenCompose(tokensResponse -> {
                     if (client.getConfiguration().isAccountProvider()) {
                         if (tokensResponse.getIdToken() == null) {
                             LOG.warn("Provider {} was set as an account provider but no ID was found in the response", provider);
-                        } else {
-                            final AccountBO account = getOrCreateAccount(client, authorizationCode, tokensResponse.getIdToken());
-
-                            tokensResponse.setAccountId(account.getId());
+                            return CompletableFuture.completedFuture(tokensResponse);
                         }
+                        return getOrCreateAccount(client, authorizationCode, tokensResponse.getIdToken())
+                                .thenApply(account -> {
+                                    tokensResponse.setAccountId(account.getId());
+                                    return tokensResponse;
+                                });
                     }
 
-                    return tokensResponse;
+                    return CompletableFuture.completedFuture(tokensResponse);
                 });
     }
 
@@ -129,39 +131,41 @@ public class OAuthService {
         }
     }
 
-    private AccountBO getOrCreateAccount(final OAuthServiceClient serviceClient, final String authorizationCode,
-                                         final String idToken) {
-        final ImmutableOAuthClientConfiguration configuration = serviceClient.getConfiguration();
+    private CompletableFuture<AccountBO> getOrCreateAccount(final OAuthServiceClient serviceClient,
+                                                            final String authorizationCode,
+                                                            final String idToken) {
+        ImmutableOAuthClientConfiguration configuration = serviceClient.getConfiguration();
 
-        final DecodedJWT decoded = JWT.decode(idToken);
-        final String externalId = decoded.getSubject();
+        DecodedJWT decoded = JWT.decode(idToken);
+        String externalId = decoded.getSubject();
 
-        final Optional<AccountBO> account = accountsService.getByExternalId(externalId);
+        return accountsService.getByExternalId(externalId)
+                .thenCompose(account -> {
+                    if (account.isPresent()) {
+                        return CompletableFuture.completedFuture(account.get());
+                    }
 
-        if (account.isPresent()) {
-            return account.get();
-        }
+                    AccountBO.Builder newAccount = AccountBO.builder()
+                            .externalId(externalId)
+                            .social(true)
+                            .identityProvider(configuration.getProvider());
 
-        final AccountBO.Builder newAccount = AccountBO.builder()
-                .externalId(externalId)
-                .social(true)
-                .identityProvider(configuration.getProvider());
+                    if (configuration.getEmailField() != null) {
+                        Claim emailClaim = decoded.getClaim(configuration.getEmailField());
 
-        if (configuration.getEmailField() != null) {
-            final Claim emailClaim = decoded.getClaim(configuration.getEmailField());
+                        if (!emailClaim.isNull()) {
+                            newAccount.email(AccountEmailBO.builder()
+                                    .email(emailClaim.asString())
+                                    .build());
+                        }
+                    }
 
-            if (!emailClaim.isNull()) {
-                newAccount.email(AccountEmailBO.builder()
-                        .email(emailClaim.asString())
-                        .build());
-            }
-        }
+                    RequestContextBO requestContext = RequestContextBO.builder()
+                            .source(configuration.getProvider())
+                            .idempotentKey(authorizationCode)
+                            .build();
 
-        final RequestContextBO requestContext = RequestContextBO.builder()
-                .source(configuration.getProvider())
-                .idempotentKey(authorizationCode)
-                .build();
-
-        return accountsService.create(newAccount.build(), requestContext);
+                    return accountsService.create(newAccount.build(), requestContext);
+                });
     }
 }

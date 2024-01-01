@@ -1,10 +1,10 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.nexblocks.authguard.dal.model.AppDO;
 import com.nexblocks.authguard.dal.persistence.ApplicationsRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.ApplicationsService;
-import com.nexblocks.authguard.dal.model.AppDO;
 import com.nexblocks.authguard.service.IdempotencyService;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
@@ -29,7 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 class ApplicationsServiceImplTest {
-    private final EasyRandom random = new EasyRandom(new EasyRandomParameters()
+    private EasyRandom random = new EasyRandom(new EasyRandomParameters()
             .collectionSizeRange(1, 4));
 
     private ApplicationsRepository applicationsRepository;
@@ -54,26 +54,24 @@ class ApplicationsServiceImplTest {
 
     @Test
     void create() {
-        final AppBO app = random.nextObject(AppBO.class);
+        AppBO app = random.nextObject(AppBO.class);
 
-        final String idempotentKey = "idempotent-key";
-        final RequestContextBO requestContext = RequestContextBO.builder()
+        String idempotentKey = "idempotent-key";
+        RequestContextBO requestContext = RequestContextBO.builder()
                 .idempotentKey(idempotentKey)
                 .build();
 
         Mockito.when(accountsService.getById(app.getParentAccountId()))
-                .thenReturn(Optional.of(random.nextObject(AccountBO.class)));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(random.nextObject(AccountBO.class))));
 
         Mockito.when(applicationsRepository.save(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AppDO.class)));
 
-        Mockito.when(idempotencyService.performOperation(Mockito.any(), Mockito.eq(idempotentKey), Mockito.eq(app.getEntityType())))
-                .thenAnswer(invocation -> {
-                    return CompletableFuture.completedFuture(invocation.getArgument(0, Supplier.class).get());
-                });
+        Mockito.when(idempotencyService.performOperationAsync(Mockito.any(), Mockito.eq(idempotentKey), Mockito.eq(app.getEntityType())))
+                .thenAnswer(invocation -> invocation.getArgument(0, Supplier.class).get());
 
-        final AppBO created = applicationsService.create(app, requestContext);
-        final List<PermissionBO> expectedPermissions = app.getPermissions().stream()
+        AppBO created = applicationsService.create(app, requestContext).join();
+        List<PermissionBO> expectedPermissions = app.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
                 .collect(Collectors.toList());
 
@@ -86,14 +84,14 @@ class ApplicationsServiceImplTest {
 
     @Test
     void getById() {
-        final AppBO app = random.nextObject(AppBO.class)
+        AppBO app = random.nextObject(AppBO.class)
                 .withDeleted(false);
 
         Mockito.when(applicationsRepository.getById(Mockito.anyLong()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(serviceMapper.toDO(app))));
 
-        final Optional<AppBO> retrieved = applicationsService.getById(1);
-        final List<PermissionBO> expectedPermissions = app.getPermissions().stream()
+        Optional<AppBO> retrieved = applicationsService.getById(1).join();
+        List<PermissionBO> expectedPermissions = app.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
                 .collect(Collectors.toList());
 
@@ -104,7 +102,7 @@ class ApplicationsServiceImplTest {
 
     @Test
     void delete() {
-        final AppDO app = random.nextObject(AppDO.class);
+        AppDO app = random.nextObject(AppDO.class);
 
         app.setDeleted(false);
 
@@ -118,7 +116,7 @@ class ApplicationsServiceImplTest {
 
     @Test
     void activate() {
-        final AppDO app = random.nextObject(AppDO.class);
+        AppDO app = random.nextObject(AppDO.class);
 
         app.setActive(false);
 
@@ -127,7 +125,7 @@ class ApplicationsServiceImplTest {
         Mockito.when(applicationsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
 
-        final AppBO updated = applicationsService.activate(app.getId()).orElse(null);
+        AppBO updated = applicationsService.activate(app.getId()).orElse(null);
 
         assertThat(updated).isNotNull();
         assertThat(updated.isActive()).isTrue();
@@ -135,7 +133,7 @@ class ApplicationsServiceImplTest {
 
     @Test
     void deactivate() {
-        final AppDO app = random.nextObject(AppDO.class);
+        AppDO app = random.nextObject(AppDO.class);
 
         app.setActive(true);
 
@@ -144,7 +142,7 @@ class ApplicationsServiceImplTest {
         Mockito.when(applicationsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
 
-        final AppBO updated = applicationsService.deactivate(app.getId()).orElse(null);
+        AppBO updated = applicationsService.deactivate(app.getId()).orElse(null);
 
         assertThat(updated).isNotNull();
         assertThat(updated.isActive()).isFalse();

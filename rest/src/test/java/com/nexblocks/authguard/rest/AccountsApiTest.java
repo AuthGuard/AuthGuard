@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -72,7 +73,7 @@ class AccountsApiTest extends AbstractRouteTest {
         final AccountBO serviceResponse = accountBO.withId(UUID.randomUUID().getMostSignificantBits());
 
         Mockito.when(accountsService.create(Mockito.eq(accountBO), Mockito.any()))
-                .thenReturn(serviceResponse);
+                .thenReturn(CompletableFuture.completedFuture(serviceResponse));
 
         LOG.info("Request {}", requestDTO);
 

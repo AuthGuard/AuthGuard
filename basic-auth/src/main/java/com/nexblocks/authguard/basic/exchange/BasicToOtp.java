@@ -9,7 +9,8 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
-import io.vavr.control.Either;
+
+import java.util.concurrent.CompletableFuture;
 
 @TokenExchange(from = "basic", to = "otp")
 public class BasicToOtp implements Exchange {
@@ -23,12 +24,12 @@ public class BasicToOtp implements Exchange {
     }
 
     @Override
-    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
+    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
         return basicAuth.authenticateAndGetAccount(request)
-                .map(account -> {
-                    final TokenOptionsBO tokenOptions = TokenOptionsMapper.fromAuthRequest(request);
+                .thenApply(account -> {
+                            final TokenOptionsBO tokenOptions = TokenOptionsMapper.fromAuthRequest(request);
 
-                    return otpProvider.generateToken(account, tokenOptions);
-                });
+                            return otpProvider.generateToken(account, tokenOptions);
+                        });
     }
 }

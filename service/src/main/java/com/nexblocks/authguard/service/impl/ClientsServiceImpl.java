@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class ClientsServiceImpl implements ClientsService {
@@ -47,21 +48,29 @@ public class ClientsServiceImpl implements ClientsService {
     }
 
     @Override
-    public ClientBO create(final ClientBO client, final RequestContextBO requestContext) {
-        return idempotencyService.performOperation(() -> doCreate(client), requestContext.getIdempotentKey(), client.getEntityType())
-                .join();
+    public CompletableFuture<ClientBO> create(final ClientBO client, final RequestContextBO requestContext) {
+        return idempotencyService.performOperationAsync(() -> doCreate(client), requestContext.getIdempotentKey(),
+                client.getEntityType());
     }
 
-    private ClientBO doCreate(final ClientBO client) {
-        if (client.getAccountId() != null && accountsService.getById(client.getAccountId()).isEmpty()) {
-            throw new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " + client.getAccountId() + " exists");
+    private CompletableFuture<ClientBO> doCreate(final ClientBO client) {
+        if (client.getAccountId() != null) {
+            return accountsService.getById(client.getAccountId())
+                    .thenCompose(opt -> {
+                        if (opt.isEmpty()) {
+                            throw new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
+                                    "No account with ID " + client.getAccountId() + " exists");
+                        }
+
+                        return persistenceService.create(client);
+                    });
         }
 
         return persistenceService.create(client);
     }
 
     @Override
-    public Optional<ClientBO> getById(final long id) {
+    public CompletableFuture<Optional<ClientBO>> getById(final long id) {
         return persistenceService.getById(id);
     }
 
@@ -73,7 +82,7 @@ public class ClientsServiceImpl implements ClientsService {
     }
 
     @Override
-    public Optional<ClientBO> update(final ClientBO client) {
+    public CompletableFuture<Optional<ClientBO>> update(final ClientBO client) {
         LOG.info("Client update request. accountId={}", client.getId());
 
         // FIXME accountId cannot be updated
@@ -81,7 +90,7 @@ public class ClientsServiceImpl implements ClientsService {
     }
 
     @Override
-    public Optional<ClientBO> delete(final long id) {
+    public CompletableFuture<Optional<ClientBO>> delete(final long id) {
         LOG.info("Client delete request. accountId={}", id);
 
         return persistenceService.delete(id);
@@ -89,12 +98,12 @@ public class ClientsServiceImpl implements ClientsService {
 
     @Override
     public Optional<ClientBO> activate(final long id) {
-        return getById(id)
+        return getById(id).join()
                 .flatMap(client -> {
                     LOG.info("Activate client request. clientId={}, domain={}", client.getId(), client.getDomain());
 
                     ClientBO activated = client.withActive(true);
-                    Optional<ClientBO> persisted = this.update(activated);
+                    Optional<ClientBO> persisted = this.update(activated).join();
 
                     if (persisted.isPresent()) {
                         LOG.info("Client activated. clientId={}, domain={}", client.getId(), client.getDomain());
@@ -108,12 +117,12 @@ public class ClientsServiceImpl implements ClientsService {
 
     @Override
     public Optional<ClientBO> deactivate(final long id) {
-        return getById(id)
+        return getById(id).join()
                 .flatMap(client -> {
                     LOG.info("Deactivate client request. clientId={}, domain={}", client.getId(), client.getDomain());
 
                     ClientBO deactivated = client.withActive(false);
-                    Optional<ClientBO> persisted = this.update(deactivated);
+                    Optional<ClientBO> persisted = this.update(deactivated).join();
 
                     if (persisted.isPresent()) {
                         LOG.info("Client deactivated. clientId={}, domain={}", client.getId(), client.getDomain());

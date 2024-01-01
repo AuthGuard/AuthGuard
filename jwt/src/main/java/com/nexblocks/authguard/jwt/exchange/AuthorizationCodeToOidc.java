@@ -10,7 +10,8 @@ import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.TokenRestrictionsBO;
-import io.vavr.control.Either;
+
+import java.util.concurrent.CompletableFuture;
 
 @TokenExchange(from = "authorizationCode", to = "oidc")
 public class AuthorizationCodeToOidc implements Exchange {
@@ -31,16 +32,16 @@ public class AuthorizationCodeToOidc implements Exchange {
     }
 
     @Override
-    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
-        return authorizationCodeVerifier.verifyAndGetAccountToken(request.getToken())
-                .flatMap(this::generateToken);
+    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+        return authorizationCodeVerifier.verifyAndGetAccountTokenAsync(request.getToken())
+                .thenCompose(this::generateToken);
     }
 
-    private Either<Exception, AuthResponseBO> generateToken(final AccountTokenDO accountToken) {
+    private CompletableFuture<AuthResponseBO> generateToken(final AccountTokenDO accountToken) {
         final TokenRestrictionsBO restrictions = getRestrictions(accountToken);
 
         return accountsServiceAdapter.getAccount(accountToken.getAssociatedAccountId())
-                .map(account -> openIdConnectTokenProvider.generateToken(account, restrictions));
+                .thenApply(account -> openIdConnectTokenProvider.generateToken(account, restrictions));
     }
 
     private TokenRestrictionsBO getRestrictions(final AccountTokenDO accountToken) {

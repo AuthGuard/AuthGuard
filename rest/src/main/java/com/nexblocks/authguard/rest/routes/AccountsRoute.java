@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class AccountsRoute extends AccountsApi {
@@ -62,8 +63,8 @@ public class AccountsRoute extends AccountsApi {
 
     @Override
     public void create(final Context context) {
-        final String idempotentKey = IdempotencyHeader.getKeyOrFail(context);
-        final CreateAccountRequestDTO request = accountRequestBodyHandler.getValidated(context);
+        String idempotentKey = IdempotencyHeader.getKeyOrFail(context);
+        CreateAccountRequestDTO request = accountRequestBodyHandler.getValidated(context);
 
         if (!canPerform(context, request)) {
             context.status(403)
@@ -71,27 +72,24 @@ public class AccountsRoute extends AccountsApi {
             return;
         }
 
-        final RequestContextBO requestContext = RequestContextBO.builder()
+        RequestContextBO requestContext = RequestContextBO.builder()
                 .idempotentKey(idempotentKey)
                 .source(context.ip())
                 .build();
 
-        final AccountBO account = restMapper.toBO(request);
+        AccountBO account = restMapper.toBO(request);
 
-        final List<UserIdentifierBO> identifiers = account.getIdentifiers()
+        List<UserIdentifierBO> identifiers = account.getIdentifiers()
                 .stream()
                 .map(identifier -> identifier.withDomain(request.getDomain()))
                 .collect(Collectors.toList());
 
-        final Optional<AccountDTO> createdAccount = Optional.of(account.withIdentifiers(identifiers))
-                .map(accountBO -> accountsService.create(accountBO, requestContext))
-                .map(restMapper::toDTO);
+        AccountBO withIdentifiers = account.withIdentifiers(identifiers);
 
-        if (createdAccount.isPresent()) {
-            context.status(201).json(createdAccount.get());
-        } else {
-            context.status(400).json(new Error("400", "Failed to create account"));
-        }
+        CompletableFuture<AccountDTO> result = accountsService.create(withIdentifiers, requestContext)
+                .thenApply(restMapper::toDTO);
+
+        context.status(201).json(result);
     }
 
     @Override
@@ -102,7 +100,7 @@ public class AccountsRoute extends AccountsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Optional<AccountDTO> account = accountsService.getById(accountId.get())
+        final Optional<AccountDTO> account = accountsService.getById(accountId.get()).join()
                 .map(restMapper::toDTO);
 
         if (account.isPresent()) {
@@ -118,7 +116,7 @@ public class AccountsRoute extends AccountsApi {
         final String identifier = context.pathParam("identifier");
         final String domain = context.pathParam("domain");
 
-        final Optional<AccountBO> account = accountsService.getByIdentifier(identifier, domain);
+        final Optional<AccountBO> account = accountsService.getByIdentifier(identifier, domain).join();
 
         if (account.isPresent()) {
             context.status(200).json(account.get());
@@ -138,7 +136,7 @@ public class AccountsRoute extends AccountsApi {
 
         final String identifier = context.pathParam("identifier");
 
-        final boolean exists = accountsService.getByIdentifier(identifier, domain)
+        final boolean exists = accountsService.getByIdentifier(identifier, domain).join()
                 .isPresent();
 
         if (exists) {
@@ -156,7 +154,7 @@ public class AccountsRoute extends AccountsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Optional<AccountDTO> account = accountsService.delete(accountId.get())
+        final Optional<AccountDTO> account = accountsService.delete(accountId.get()).join()
                 .map(restMapper::toDTO);
 
         if (account.isPresent()) {
@@ -177,7 +175,7 @@ public class AccountsRoute extends AccountsApi {
         
         final UpdateAccountRequestDTO request = updateAccountRequestBodyHandler.getValidated(context);
 
-        final Optional<AccountDTO> account = accountsService.patch(accountId.get(), restMapper.toBO(request))
+        final Optional<AccountDTO> account = accountsService.patch(accountId.get(), restMapper.toBO(request)).join()
                 .map(restMapper::toDTO);
 
         if (account.isPresent()) {
@@ -192,7 +190,7 @@ public class AccountsRoute extends AccountsApi {
     public void getByExternalId(final Context context) {
         final String accountId = context.pathParam("id");
 
-        final Optional<AccountDTO> account = accountsService.getByExternalId(accountId)
+        final Optional<AccountDTO> account = accountsService.getByExternalId(accountId).join()
                 .map(restMapper::toDTO);
 
         if (account.isPresent()) {
@@ -208,7 +206,7 @@ public class AccountsRoute extends AccountsApi {
         final String domain = context.pathParam("domain");
         final String email = context.pathParam("email");
 
-        final Optional<AccountDTO> account = accountsService.getByEmail(email, domain)
+        final Optional<AccountDTO> account = accountsService.getByEmail(email, domain).join()
                 .map(restMapper::toDTO);
 
         if (account.isPresent()) {
@@ -228,7 +226,7 @@ public class AccountsRoute extends AccountsApi {
             return;
         }
 
-        final boolean exists = accountsService.getByEmail(email, domain).isPresent();
+        final boolean exists = accountsService.getByEmail(email, domain).join().isPresent();
 
         if (exists) {
             context.status(200);
@@ -254,9 +252,9 @@ public class AccountsRoute extends AccountsApi {
         final Optional<AccountDTO> updatedAccount;
 
         if (request.getAction() == PermissionsRequest.Action.GRANT) {
-            updatedAccount = accountsService.grantPermissions(accountId.get(), permissions).map(restMapper::toDTO);
+            updatedAccount = accountsService.grantPermissions(accountId.get(), permissions).join().map(restMapper::toDTO);
         } else {
-            updatedAccount = accountsService.revokePermissions(accountId.get(), permissions).map(restMapper::toDTO);
+            updatedAccount = accountsService.revokePermissions(accountId.get(), permissions).join().map(restMapper::toDTO);
         }
 
         if (updatedAccount.isPresent()) {
@@ -277,15 +275,15 @@ public class AccountsRoute extends AccountsApi {
         
         final RolesRequestDTO request = rolesRequestBodyHandler.getValidated(context);
 
-        final Optional<AccountDTO> updatedAccount;
+        final CompletableFuture<Optional<AccountBO>> updatedAccount;
 
         if (request.getAction() == RolesRequest.Action.GRANT) {
-            updatedAccount = accountsService.grantRoles(accountId.get(), request.getRoles()).map(restMapper::toDTO);
+            updatedAccount = accountsService.grantRoles(accountId.get(), request.getRoles());
         } else {
-            updatedAccount = accountsService.revokeRoles(accountId.get(), request.getRoles()).map(restMapper::toDTO);
+            updatedAccount = accountsService.revokeRoles(accountId.get(), request.getRoles());
         }
 
-        context.json(updatedAccount);
+        context.json(updatedAccount.thenApply(opt -> opt.map(restMapper::toDTO)));
     }
 
     @Override
@@ -312,7 +310,7 @@ public class AccountsRoute extends AccountsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Optional<AccountDTO> account = accountsService.activate(accountId.get())
+        final Optional<AccountDTO> account = accountsService.activate(accountId.get()).join()
                 .map(restMapper::toDTO);
 
         if (account.isPresent()) {
@@ -330,7 +328,7 @@ public class AccountsRoute extends AccountsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Optional<AccountDTO> account = accountsService.deactivate(accountId.get())
+        final Optional<AccountDTO> account = accountsService.deactivate(accountId.get()).join()
                 .map(restMapper::toDTO);
 
         if (account.isPresent()) {

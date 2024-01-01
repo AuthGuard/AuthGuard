@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class RolesServiceImpl implements RolesService {
@@ -47,7 +48,7 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public RoleBO create(final RoleBO role) {
+    public CompletableFuture<RoleBO> create(final RoleBO role) {
         LOG.debug("New role request. role={}, domain={}", role.getName(), role.getDomain());
 
         if (getRoleByName(role.getName(), role.getDomain()).isPresent()) {
@@ -57,25 +58,21 @@ public class RolesServiceImpl implements RolesService {
                     "Role " + role.getName() + " already exists");
         }
 
-        RoleBO persisted = persistenceService.create(role);
-
-        LOG.info("New role created. role={}, domain={}", role.getName(), role.getDomain());
-
-        return persisted;
+        return persistenceService.create(role);
     }
 
     @Override
-    public Optional<RoleBO> getById(final long id) {
+    public CompletableFuture<Optional<RoleBO>> getById(final long id) {
         return persistenceService.getById(id);
     }
 
     @Override
-    public Optional<RoleBO> update(final RoleBO entity) {
+    public CompletableFuture<Optional<RoleBO>> update(final RoleBO entity) {
         throw new UnsupportedOperationException("Roles cannot be updated");
     }
 
     @Override
-    public Optional<RoleBO> delete(final long id) {
+    public CompletableFuture<Optional<RoleBO>> delete(final long id) {
         LOG.info("Request to delete role. roleId={}", id);
 
         return persistenceService.delete(id);
