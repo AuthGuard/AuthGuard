@@ -132,7 +132,7 @@ public class VerificationServiceImpl implements VerificationService {
         LOG.info("Phone number verification request. accountId={}, domain={}, passwordId={}",
                 passwordId, account.get().getDomain(), account.get().getId());
 
-        final AccountBO updated = account.get().withPhoneNumber(PhoneNumberBO.builder()
+        AccountBO updated = account.get().withPhoneNumber(PhoneNumberBO.builder()
                 .number(account.get().getPhoneNumber().getNumber())
                 .verified(true)
                 .build());
@@ -145,8 +145,8 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     private AuthResponseBO sendVerificationSms(final AccountBO account) {
-        final AuthResponseBO otp = otpProvider.generateToken(account);
-        final ImmutableTextMessage message = ImmutableTextMessage.builder()
+        AuthResponseBO otp = otpProvider.generateToken(account).join();
+        ImmutableTextMessage message = ImmutableTextMessage.builder()
                 .template(SMS_TEMPLATE)
                 .to(account.getPhoneNumber().getNumber())
                 .putParameters("account", account)

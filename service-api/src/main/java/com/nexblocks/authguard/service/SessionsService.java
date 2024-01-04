@@ -3,13 +3,14 @@ package com.nexblocks.authguard.service;
 import com.nexblocks.authguard.service.model.SessionBO;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public interface SessionsService {
-    SessionBO create(SessionBO session);
+    CompletableFuture<SessionBO> create(SessionBO session);
 
-    Optional<SessionBO> getById(long id);
+    CompletableFuture<Optional<SessionBO>> getById(long id);
 
-    Optional<SessionBO> getByToken(String token);
+    CompletableFuture<Optional<SessionBO>> getByToken(String token);
 
-    Optional<SessionBO> deleteByToken(String token);
+    CompletableFuture<Optional<SessionBO>> deleteByToken(String token);
 }

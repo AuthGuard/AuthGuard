@@ -4,10 +4,7 @@ import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.rest.exceptions.ExceptionHandlers;
 import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.exceptions.RuntimeJsonException;
-import com.nexblocks.authguard.service.exceptions.IdempotencyException;
-import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
-import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
-import com.nexblocks.authguard.service.exceptions.ServiceException;
+import com.nexblocks.authguard.service.exceptions.*;
 import io.javalin.Javalin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +27,8 @@ public class ServerExceptionHandlers implements JavalinAppConfigurer {
         });
 
         app.exception(ServiceException.class, ExceptionHandlers::serviceException);
+
+        app.exception(ServiceNotFoundException.class, ExceptionHandlers::serviceNotFoundException);
 
         app.exception(ServiceAuthorizationException.class, ExceptionHandlers::serviceAuthorizationException);
 

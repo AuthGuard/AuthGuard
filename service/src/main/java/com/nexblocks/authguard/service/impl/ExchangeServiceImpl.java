@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -44,7 +45,7 @@ public class ExchangeServiceImpl implements ExchangeService {
     }
 
     @Override
-    public AuthResponseBO exchange(final AuthRequestBO authRequest, final String fromTokenType, final String toTokenType,
+    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO authRequest, final String fromTokenType, final String toTokenType,
                                    final RequestContextBO requestContext) {
         final String key = exchangeKey(fromTokenType, toTokenType);
         final Exchange exchange = exchanges.get(key);
@@ -68,8 +69,7 @@ public class ExchangeServiceImpl implements ExchangeService {
 
                         exchangeFailure(authRequest, requestContext, e, fromTokenType, toTokenType);
                     }
-                })
-                .join();
+                });
     }
 
     @Override
@@ -78,7 +78,7 @@ public class ExchangeServiceImpl implements ExchangeService {
     }
 
     @Override
-    public AuthResponseBO delete(final AuthRequestBO authRequest, final String tokenType) {
+    public CompletableFuture<AuthResponseBO> delete(final AuthRequestBO authRequest, final String tokenType) {
         final AuthProvider provider = authProviders.get(tokenType);
 
         if (provider == null) {

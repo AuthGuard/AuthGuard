@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class AccountLocksServiceImpl implements AccountLocksService {
@@ -28,18 +29,17 @@ public class AccountLocksServiceImpl implements AccountLocksService {
     }
 
     @Override
-    public AccountLockBO create(final AccountLockBO accountLock) {
+    public CompletableFuture<AccountLockBO> create(final AccountLockBO accountLock) {
         final AccountLockDO accountLockDO = serviceMapper.toDO(accountLock);
 
         LOG.info("Locking an account. accountId={}, expiresAt={}", accountLock.getAccountId(), accountLock.getExpiresAt());
 
         return accountLocksRepository.save(accountLockDO)
-                .thenApply(serviceMapper::toBO)
-                .join();
+                .thenApply(serviceMapper::toBO);
     }
 
     @Override
-    public Collection<AccountLockBO> getActiveLocksByAccountId(final long accountId) {
+    public CompletableFuture<Collection<AccountLockBO>> getActiveLocksByAccountId(final long accountId) {
         final Instant now = Instant.now();
 
         return accountLocksRepository.findByAccountId(accountId)
@@ -47,13 +47,12 @@ public class AccountLocksServiceImpl implements AccountLocksService {
                         .filter(lock -> lock.getExpiresAt().isAfter(now))
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList())
-                ).join();
+                );
     }
 
     @Override
-    public Optional<AccountLockBO> delete(final long lockId) {
+    public CompletableFuture<Optional<AccountLockBO>> delete(final long lockId) {
         return accountLocksRepository.delete(lockId)
-                .thenApply(lock -> lock.map(serviceMapper::toBO))
-                .join();
+                .thenApply(lock -> lock.map(serviceMapper::toBO));
     }
 }

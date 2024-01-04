@@ -63,7 +63,7 @@ class OAuthServiceTest {
                 .emailField("email")
                 .build();
 
-        final ImmutableOAuthConfiguration oAuthConfiguration = ImmutableOAuthConfiguration.builder()
+         ImmutableOAuthConfiguration oAuthConfiguration = ImmutableOAuthConfiguration.builder()
                 .addClients(clientConfiguration)
                 .addClients(accountProviderClientConfiguration)
                 .build();
@@ -87,11 +87,11 @@ class OAuthServiceTest {
     @Test
     void getAuthorizationUrl() {
         Mockito.when(sessionsService.create(Mockito.any()))
-                .thenAnswer(invocation -> invocation.getArgument(0, SessionBO.class).withSessionToken("state_token"));
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, SessionBO.class).withSessionToken("state_token")));
 
-        final HttpUrl actual = HttpUrl.get(oAuthService.getAuthorizationUrl("test").join());
+         HttpUrl actual = HttpUrl.get(oAuthService.getAuthorizationUrl("test").join());
 
-        final HttpUrl expected = new HttpUrl.Builder()
+         HttpUrl expected = new HttpUrl.Builder()
                 .scheme("http")
                 .host("localhost")
                 .port(testIdentityServer.getPort())
@@ -118,17 +118,17 @@ class OAuthServiceTest {
     void exchangeAuthorizationCode() {
         Mockito.when(sessionsService.getByToken(Mockito.any()))
                 .thenAnswer(invocation -> {
-                    final SessionBO session = SessionBO.builder()
+                    SessionBO session = SessionBO.builder()
                             .sessionToken(invocation.getArgument(0))
                             .expiresAt(Instant.now().plus(Duration.ofMinutes(2)))
                             .build();
 
-                    return Optional.of(session);
+                    return CompletableFuture.completedFuture(Optional.of(session));
                 });
 
-        final TokensResponse actual = oAuthService.exchangeAuthorizationCode("test", "random", "code")
+         TokensResponse actual = oAuthService.exchangeAuthorizationCode("test", "random", "code")
                 .join();
-        final TokensResponse expected = testIdentityServer.getSuccessResponse();
+         TokensResponse expected = testIdentityServer.getSuccessResponse();
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -136,7 +136,7 @@ class OAuthServiceTest {
     @Test
     void exchangeAuthorizationCodeInvalidState() {
         Mockito.when(sessionsService.getByToken(Mockito.any()))
-                .thenAnswer(invocation -> Optional.empty());
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.empty()));
 
         assertThatThrownBy(() -> oAuthService.exchangeAuthorizationCode("test", "random", "code")
                 .join()).hasCauseInstanceOf(ServiceAuthorizationException.class);
@@ -146,12 +146,12 @@ class OAuthServiceTest {
     void exchangeAuthorizationCodeExpiredState() {
         Mockito.when(sessionsService.getByToken(Mockito.any()))
                 .thenAnswer(invocation -> {
-                    final SessionBO session = SessionBO.builder()
+                     SessionBO session = SessionBO.builder()
                             .sessionToken(invocation.getArgument(0))
                             .expiresAt(Instant.now().minus(Duration.ofMinutes(2)))
                             .build();
 
-                    return Optional.of(session);
+                    return CompletableFuture.completedFuture(Optional.of(session));
                 });
 
         assertThatThrownBy(() -> oAuthService.exchangeAuthorizationCode("test", "random", "code")
@@ -166,18 +166,18 @@ class OAuthServiceTest {
 
     @Test
     void exchangeAuthorizationCodeAndCreateAccount() {
-        final RequestContextBO expectedContext = RequestContextBO.builder()
+         RequestContextBO expectedContext = RequestContextBO.builder()
                 .idempotentKey("code")
                 .source("account_test").build();
 
         Mockito.when(sessionsService.getByToken(Mockito.any()))
                 .thenAnswer(invocation -> {
-                    final SessionBO session = SessionBO.builder()
+                     SessionBO session = SessionBO.builder()
                             .sessionToken(invocation.getArgument(0))
                             .expiresAt(Instant.now().plus(Duration.ofMinutes(2)))
                             .build();
 
-                    return Optional.of(session);
+                    return CompletableFuture.completedFuture(Optional.of(session));
                 });
 
         Mockito.when(accountsService.create(Mockito.any(), Mockito.eq(expectedContext)))
@@ -189,9 +189,9 @@ class OAuthServiceTest {
         Mockito.when(accountsService.getByExternalId(Mockito.any()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        final TokensResponse actual = oAuthService.exchangeAuthorizationCode("account_test", "random", "code")
+         TokensResponse actual = oAuthService.exchangeAuthorizationCode("account_test", "random", "code")
                 .join();
-        final TokensResponse expected = testIdentityServer.getSuccessResponse();
+         TokensResponse expected = testIdentityServer.getSuccessResponse();
 
         expected.setAccountId(1);
 
@@ -202,20 +202,20 @@ class OAuthServiceTest {
     void exchangeAuthorizationCodeAndGetAccount() {
         Mockito.when(sessionsService.getByToken(Mockito.any()))
                 .thenAnswer(invocation -> {
-                    final SessionBO session = SessionBO.builder()
+                     SessionBO session = SessionBO.builder()
                             .sessionToken(invocation.getArgument(0))
                             .expiresAt(Instant.now().plus(Duration.ofMinutes(2)))
                             .build();
 
-                    return Optional.of(session);
+                    return CompletableFuture.completedFuture(Optional.of(session));
                 });
 
         Mockito.when(accountsService.getByExternalId("1"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(AccountBO.builder().id(1).build())));
 
-        final TokensResponse actual = oAuthService.exchangeAuthorizationCode("account_test", "random", "code")
+         TokensResponse actual = oAuthService.exchangeAuthorizationCode("account_test", "random", "code")
                 .join();
-        final TokensResponse expected = testIdentityServer.getSuccessResponse();
+         TokensResponse expected = testIdentityServer.getSuccessResponse();
 
         expected.setAccountId(1);
 

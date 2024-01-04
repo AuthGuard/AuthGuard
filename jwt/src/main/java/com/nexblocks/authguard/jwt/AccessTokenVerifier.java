@@ -7,7 +7,7 @@ import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
 
-public class AccessTokenVerifier{
+public class AccessTokenVerifier {
     private final JwtTokenVerifier jwtTokenVerifier;
 
     @Inject

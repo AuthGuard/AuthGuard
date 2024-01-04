@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
  * AccountDO service interface.
  */
 public interface AccountsService extends IdempotentCrudService<AccountBO> {
-    CompletableFuture<Optional<AccountBO>> getByIdUnsafe(long id);
+    CompletableFuture<AccountBO> getByIdUnsafe(long id);
 
     CompletableFuture<Optional<AccountBO>> getByExternalId(String externalId);
 

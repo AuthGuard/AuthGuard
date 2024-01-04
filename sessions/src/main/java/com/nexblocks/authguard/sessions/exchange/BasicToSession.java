@@ -31,6 +31,6 @@ public class BasicToSession implements Exchange {
                 .build();
 
         return basicAuth.authenticateAndGetAccount(request)
-                .thenApply(account -> sessionProvider.generateToken(account, options));
+                .thenCompose(account -> sessionProvider.generateToken(account, options));
     }
 }

@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.basic.exchange;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.basic.BasicAuthProvider;
 import com.nexblocks.authguard.basic.passwordless.PasswordlessProvider;
 import com.nexblocks.authguard.service.exchange.Exchange;
@@ -7,7 +8,6 @@ import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.mappers.TokenOptionsMapper;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
-import com.google.inject.Inject;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
 
 import java.util.concurrent.CompletableFuture;
@@ -26,8 +26,8 @@ public class BasicToPasswordless implements Exchange {
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
         return basicAuth.getAccountAsync(request)
-                .thenApply(account -> {
-                    final TokenOptionsBO tokenOptions = TokenOptionsMapper.fromAuthRequest(request);
+                .thenCompose(account -> {
+                    TokenOptionsBO tokenOptions = TokenOptionsMapper.fromAuthRequest(request);
 
                     return passwordlessProvider.generateToken(account, tokenOptions);
                 });

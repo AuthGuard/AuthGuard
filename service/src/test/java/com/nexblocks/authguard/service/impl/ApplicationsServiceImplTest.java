@@ -29,7 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 class ApplicationsServiceImplTest {
-    private EasyRandom random = new EasyRandom(new EasyRandomParameters()
+    private final EasyRandom random = new EasyRandom(new EasyRandomParameters()
             .collectionSizeRange(1, 4));
 
     private ApplicationsRepository applicationsRepository;
@@ -38,6 +38,8 @@ class ApplicationsServiceImplTest {
     private IdempotencyService idempotencyService;
     private MessageBus messageBus;
     private ServiceMapper serviceMapper;
+
+    private static final String[] SKIPPED_FIELDS = new String[] { "id", "createdAt", "lastModified", "entityType" };
 
     @BeforeEach
     void setup() {
@@ -75,8 +77,10 @@ class ApplicationsServiceImplTest {
                 .map(permission -> permission.withEntityType(null))
                 .collect(Collectors.toList());
 
-        assertThat(created).isEqualToIgnoringGivenFields(app.withPermissions(expectedPermissions),
-                "id", "createdAt", "lastModified", "entityType");
+        assertThat(created)
+                .usingRecursiveComparison()
+                .ignoringFields(SKIPPED_FIELDS)
+                .isEqualTo(app.withPermissions(expectedPermissions));
 
         Mockito.verify(messageBus, Mockito.times(1))
                 .publish(eq("apps"), any());
@@ -96,8 +100,9 @@ class ApplicationsServiceImplTest {
                 .collect(Collectors.toList());
 
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualToIgnoringGivenFields(app.withPermissions(expectedPermissions),
-                "permissions", "entityType");
+        assertThat(retrieved.get()).usingRecursiveComparison()
+                .ignoringFields("permissions", "entityType")
+                .isEqualTo(app.withPermissions(expectedPermissions));
     }
 
     @Test
@@ -125,7 +130,7 @@ class ApplicationsServiceImplTest {
         Mockito.when(applicationsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
 
-        AppBO updated = applicationsService.activate(app.getId()).orElse(null);
+        AppBO updated = applicationsService.activate(app.getId()).join();
 
         assertThat(updated).isNotNull();
         assertThat(updated.isActive()).isTrue();
@@ -142,7 +147,7 @@ class ApplicationsServiceImplTest {
         Mockito.when(applicationsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
 
-        AppBO updated = applicationsService.deactivate(app.getId()).orElse(null);
+        AppBO updated = applicationsService.deactivate(app.getId()).join();
 
         assertThat(updated).isNotNull();
         assertThat(updated.isActive()).isFalse();

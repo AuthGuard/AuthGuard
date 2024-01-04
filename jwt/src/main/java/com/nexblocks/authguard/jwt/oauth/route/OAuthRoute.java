@@ -40,7 +40,7 @@ public class OAuthRoute implements ApiRoute {
     }
 
     void openIdConnectAuthFlows(final Context context) {
-        final Either<RequestValidationError, ImmutableOpenIdConnectRequest> request
+        Either<RequestValidationError, ImmutableOpenIdConnectRequest> request
                 = OpenIdConnectRequestParser.fromContext(context, "code");
 
         if (request.isLeft()) {
@@ -55,23 +55,23 @@ public class OAuthRoute implements ApiRoute {
     }
 
     void getAuthUrl(final Context context) {
-        final String provider = context.queryParam("provider");
+        String provider = context.queryParam("provider");
 
         if (provider == null) {
             context.status(400).json(new RequestValidationError(Collections.singletonList(
                     new Violation("provider", ViolationType.MISSING_REQUIRED_VALUE)
             )));
         } else {
-            final String url = oAuthService.getAuthorizationUrl(provider).join();
+            String url = oAuthService.getAuthorizationUrl(provider).join();
 
             context.redirect(url);
         }
     }
 
     void authorize(final Context context) {
-        final String provider = context.queryParam("provider");
-        final String state = context.queryParam("state");
-        final String code = context.queryParam("code");
+        String provider = context.queryParam("provider");
+        String state = context.queryParam("state");
+        String code = context.queryParam("code");
 
         if (provider == null) {
             context.status(400).json(new RequestValidationError(Collections.singletonList(

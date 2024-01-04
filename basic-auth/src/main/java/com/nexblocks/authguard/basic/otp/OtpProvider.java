@@ -1,10 +1,11 @@
 package com.nexblocks.authguard.basic.otp;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.nexblocks.authguard.basic.config.OtpConfig;
 import com.nexblocks.authguard.basic.config.OtpConfigInterface;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.OtpRepository;
-import com.nexblocks.authguard.dal.model.OneTimePasswordDO;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.service.auth.AuthProvider;
@@ -13,15 +14,12 @@ import com.nexblocks.authguard.service.config.ConfigParser;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.ID;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.concurrent.CompletableFuture;
 
 @ProvidesToken("otp")
@@ -47,14 +45,15 @@ public class OtpProvider implements AuthProvider {
     }
 
     @Override
-    public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO options) {
+    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+                                                           final TokenOptionsBO options) {
         if (!account.isActive()) {
             throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
         }
 
-        final String password = generatePassword();
+        String password = generatePassword();
 
-        final OneTimePasswordBO oneTimePassword = OneTimePasswordBO.builder()
+        OneTimePasswordBO oneTimePassword = OneTimePasswordBO.builder()
                 .id(ID.generate())
                 .accountId(account.getId())
                 .expiresAt(Instant.now().plus(tokenTtl))
@@ -66,24 +65,23 @@ public class OtpProvider implements AuthProvider {
                 .userAgent(options.getUserAgent())
                 .build();
 
-        final OneTimePasswordBO persistedOtp = otpRepository.save(serviceMapper.toDO(oneTimePassword))
-                .thenApply(serviceMapper::toBO)
-                .join(); // TODO not a good idea, change the interface
+        return otpRepository.save(serviceMapper.toDO(oneTimePassword))
+                .thenApply(persistedOtp -> {
+                    OtpMessageBody messageBody = new OtpMessageBody(oneTimePassword, account,
+                            options,
+                            otpConfig.getMethod() == OtpConfigInterface.Method.EMAIL,
+                            otpConfig.getMethod() == OtpConfigInterface.Method.SMS);
 
-        final OtpMessageBody messageBody = new OtpMessageBody(oneTimePassword, account,
-                options,
-                otpConfig.getMethod() == OtpConfigInterface.Method.EMAIL,
-                otpConfig.getMethod() == OtpConfigInterface.Method.SMS);
+                    AuthResponseBO token = createToken(persistedOtp.getId(), account.getId());
 
-        final AuthResponseBO token = createToken(persistedOtp.getId(), account.getId());
+                    messageBus.publish(OTP_CHANNEL, Messages.otpGenerated(messageBody));
 
-        messageBus.publish(OTP_CHANNEL, Messages.otpGenerated(messageBody));
-
-        return token;
+                    return token;
+                });
     }
 
     @Override
-    public AuthResponseBO generateToken(final AccountBO account) {
+    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account) {
         throw new UnsupportedOperationException("Use the method which accepts TokenOptionsBO");
     }
 

@@ -1,11 +1,11 @@
 package com.nexblocks.authguard.sessions.exchange;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.sessions.SessionVerifier;
-import com.google.inject.Inject;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -22,9 +22,10 @@ public class SessionToAccountId implements Exchange {
 
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
-        return CompletableFuture.completedFuture(AuthResponseBO.builder()
+        return sessionVerifier.verifyAccountTokenAsync(request.getToken())
+                .thenApply(token -> AuthResponseBO.builder()
                         .type(TOKEN_TYPE)
-                        .token(sessionVerifier.verifyAccountToken(request.getToken()))
+                        .token(token)
                         .build());
     }
 }

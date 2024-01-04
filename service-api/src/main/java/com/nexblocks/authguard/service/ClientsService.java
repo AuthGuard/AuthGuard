@@ -4,10 +4,11 @@ import com.nexblocks.authguard.service.model.ClientBO;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public interface ClientsService extends IdempotentCrudService<ClientBO> {
-    Optional<ClientBO> getByExternalId(String externalId);
-    Optional<ClientBO> activate(long id);
-    Optional<ClientBO> deactivate(long id);
-    List<ClientBO> getByAccountId(long accountId);
+    CompletableFuture<Optional<ClientBO>> getByExternalId(String externalId);
+    CompletableFuture<ClientBO> activate(long id);
+    CompletableFuture<ClientBO> deactivate(long id);
+    CompletableFuture<List<ClientBO>> getByAccountId(long accountId);
 }

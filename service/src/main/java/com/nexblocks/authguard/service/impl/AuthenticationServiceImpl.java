@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public class AuthenticationServiceImpl implements AuthenticationService {
     private static final Logger LOG = LoggerFactory.getLogger(AuthenticationServiceImpl.class);
@@ -50,30 +51,28 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public Optional<AuthResponseBO> authenticate(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
-        final AuthResponseBO tokens = exchangeService.exchange(authRequest, BASIC_TOKEN_TYPE,
-                generateTokenType, requestContext);
-        final Collection<AccountLockBO> locks = accountLocksService.getActiveLocksByAccountId(tokens.getEntityId());
+    public CompletableFuture<AuthResponseBO> authenticate(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
+        return exchangeService.exchange(authRequest, BASIC_TOKEN_TYPE, generateTokenType, requestContext)
+                .thenCompose(tokens ->
+                        accountLocksService.getActiveLocksByAccountId(tokens.getEntityId())
+                                .thenApply(locks -> {
+                                    if (locks == null || locks.isEmpty()) {
+                                        return tokens;
+                                    }
 
-        if (locks == null || locks.isEmpty()) {
-            return Optional.of(tokens);
-        } else {
-            throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_IS_LOCKED,
-                    "There is an active lock on account " + tokens.getEntityId());
-        }
+                                    throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_IS_LOCKED,
+                                            "There is an active lock on account " + tokens.getEntityId());
+                                }));
     }
 
     @Override
-    public Optional<AuthResponseBO> logout(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
-        return Optional.of(exchangeService.delete(authRequest, logoutTokenType));
+    public CompletableFuture<AuthResponseBO> logout(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
+        return exchangeService.delete(authRequest, logoutTokenType);
     }
 
     @Override
-    public Optional<AuthResponseBO> refresh(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
-        final AuthResponseBO tokens = exchangeService.exchange(authRequest, REFRESH_TOKEN_TYPE,
-                generateTokenType, requestContext);
-
-        return Optional.of(tokens);
+    public CompletableFuture<AuthResponseBO> refresh(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
+        return exchangeService.exchange(authRequest, REFRESH_TOKEN_TYPE, generateTokenType, requestContext);
     }
 
 }

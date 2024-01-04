@@ -46,7 +46,7 @@ public class AuthorizationCodeToAccessToken implements Exchange {
         final TokenRestrictionsBO restrictions = getRestrictions(accountToken);
 
         return accountsServiceAdapter.getAccount(accountToken.getAssociatedAccountId())
-                .thenApply(account ->  accessTokenProvider.generateToken(account, restrictions, options));
+                .thenCompose(account ->  accessTokenProvider.generateToken(account, restrictions, options));
     }
 
     private TokenRestrictionsBO getRestrictions(final AccountTokenDO accountToken) {

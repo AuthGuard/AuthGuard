@@ -12,6 +12,7 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.ClientBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
+import com.nexblocks.authguard.service.util.AsyncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,10 +76,9 @@ public class ClientsServiceImpl implements ClientsService {
     }
 
     @Override
-    public Optional<ClientBO> getByExternalId(final String externalId) {
+    public CompletableFuture<Optional<ClientBO>> getByExternalId(final String externalId) {
         return clientsRepository.getByExternalId(externalId)
-                .thenApply(optional -> optional.map(serviceMapper::toBO))
-                .join();
+                .thenApply(optional -> optional.map(serviceMapper::toBO));
     }
 
     @Override
@@ -97,47 +97,52 @@ public class ClientsServiceImpl implements ClientsService {
     }
 
     @Override
-    public Optional<ClientBO> activate(final long id) {
-        return getById(id).join()
-                .flatMap(client -> {
+    public CompletableFuture<ClientBO> activate(final long id) {
+        return getById(id)
+                .thenCompose(AsyncUtils::fromClientOptional)
+                .thenCompose(client -> {
                     LOG.info("Activate client request. clientId={}, domain={}", client.getId(), client.getDomain());
 
                     ClientBO activated = client.withActive(true);
-                    Optional<ClientBO> persisted = this.update(activated).join();
 
-                    if (persisted.isPresent()) {
-                        LOG.info("Client activated. clientId={}, domain={}", client.getId(), client.getDomain());
-                    } else {
-                        LOG.info("Failed to activate client. clientId={}, domain={}", client.getId(), client.getDomain());
-                    }
+                    return update(activated)
+                            .thenApply(persisted -> {
+                                if (persisted.isPresent()) {
+                                    LOG.info("Client activated. clientId={}, domain={}", client.getId(), client.getDomain());
+                                    return persisted.get();
+                                }
 
-                    return persisted;
+                                LOG.info("Failed to activate client. clientId={}, domain={}", client.getId(), client.getDomain());
+                                throw new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST, "Client does not exist");
+                            });
                 });
     }
 
     @Override
-    public Optional<ClientBO> deactivate(final long id) {
-        return getById(id).join()
-                .flatMap(client -> {
+    public CompletableFuture<ClientBO> deactivate(final long id) {
+        return getById(id)
+                .thenCompose(AsyncUtils::fromClientOptional)
+                .thenCompose(client -> {
                     LOG.info("Deactivate client request. clientId={}, domain={}", client.getId(), client.getDomain());
 
                     ClientBO deactivated = client.withActive(false);
-                    Optional<ClientBO> persisted = this.update(deactivated).join();
 
-                    if (persisted.isPresent()) {
-                        LOG.info("Client deactivated. clientId={}, domain={}", client.getId(), client.getDomain());
-                    } else {
-                        LOG.info("Failed to deactivate Client. clientId={}, domain={}", client.getId(), client.getDomain());
-                    }
+                    return update(deactivated)
+                            .thenApply(persisted -> {
+                                if (persisted.isPresent()) {
+                                    LOG.info("Client deactivated. clientId={}, domain={}", client.getId(), client.getDomain());
+                                    return persisted.get();
+                                }
 
-                    return persisted;
+                                LOG.info("Failed to deactivate Client. clientId={}, domain={}", client.getId(), client.getDomain());
+                                throw new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST, "Client does not exist");
+                            });
                 });
     }
 
     @Override
-    public List<ClientBO> getByAccountId(final long accountId) {
+    public CompletableFuture<List<ClientBO>> getByAccountId(final long accountId) {
         return clientsRepository.getAllForAccount(accountId)
-                .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()))
-                .join();
+                .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()));
     }
 }

@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @ProvidesToken("accessToken")
 public class AccessTokenProvider implements AuthProvider {
@@ -78,23 +79,8 @@ public class AccessTokenProvider implements AuthProvider {
     }
 
     @Override
-    public AuthResponseBO generateToken(final AccountBO account) {
-        return generateToken(account, (TokenRestrictionsBO) null);
-    }
-
-    @Override
-    public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO options) {
-        return generateToken(account, null, options);
-    }
-
-    @Override
-    public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
-        return generateToken(account, restrictions, null);
-    }
-
-    @Override
-    public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
-                                        final TokenOptionsBO options) {
+    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+                                                           final TokenOptionsBO options) {
         if (!account.isActive()) {
             LOG.warn("Access token request for an inactive account. accountId={}, domain={}",
                     account.getId(), account.getDomain());
@@ -104,28 +90,29 @@ public class AccessTokenProvider implements AuthProvider {
 
         LOG.debug("Access token request. accountId={}, domain={}", account.getId(), account.getDomain());
 
-        final JwtTokenBuilder tokenBuilder = generateAccessToken(account, restrictions, options);
+        JwtTokenBuilder tokenBuilder = generateAccessToken(account, restrictions, options);
 
         LOG.info("Generated access token. accountId={}, domain={}", account.getId(), account.getDomain());
 
-        final String signedToken = tokenBuilder.getBuilder().sign(algorithm);
-        final String finalToken = encryptIfNeeded(signedToken);
-        final String refreshToken = jwtGenerator.generateRandomRefreshToken();
+        String signedToken = tokenBuilder.getBuilder().sign(algorithm);
+        String finalToken = encryptIfNeeded(signedToken);
+        String refreshToken = jwtGenerator.generateRandomRefreshToken();
 
-        final AccountTokenDO persisted = storeRefreshToken(account.getId(), refreshToken, restrictions, options);
+        return storeRefreshToken(account.getId(), refreshToken, restrictions, options)
+                .thenApply(persisted -> {
+                    LOG.info("Generated refresh token. accountId={}, domain={}, tokenId={}, expiresAt={}",
+                            account.getId(), account.getDomain(), persisted.getId(), persisted.getExpiresAt());
 
-        LOG.info("Generated refresh token. accountId={}, domain={}, tokenId={}, expiresAt={}",
-                account.getId(), account.getDomain(), persisted.getId(), persisted.getExpiresAt());
-
-        return AuthResponseBO.builder()
-                .id(tokenBuilder.getId().orElse(null))
-                .type(TOKEN_TYPE)
-                .token(finalToken)
-                .refreshToken(refreshToken)
-                .entityType(EntityType.ACCOUNT)
-                .entityId(account.getId())
-                .validFor(tokenTtl.getSeconds())
-                .build();
+                    return AuthResponseBO.builder()
+                            .id(tokenBuilder.getId().orElse(""))
+                            .type(TOKEN_TYPE)
+                            .token(finalToken)
+                            .refreshToken(refreshToken)
+                            .entityType(EntityType.ACCOUNT)
+                            .entityId(account.getId())
+                            .validFor(tokenTtl.getSeconds())
+                            .build();
+                });
     }
 
     @Override
@@ -134,20 +121,21 @@ public class AccessTokenProvider implements AuthProvider {
     }
 
     @Override
-    public AuthResponseBO delete(final AuthRequestBO authRequest) {
+    public CompletableFuture<AuthResponseBO> delete(final AuthRequestBO authRequest) {
         return deleteRefreshToken(authRequest.getToken())
-                .map(accountToken -> AuthResponseBO.builder()
-                        .type(TOKEN_TYPE)
-                        .entityId(accountToken.getAssociatedAccountId())
-                        .entityType(EntityType.ACCOUNT)
-                        .refreshToken(authRequest.getToken())
-                        .build())
-                .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid refresh token"));
+                .thenApply(opt -> opt
+                        .map(accountToken -> AuthResponseBO.builder()
+                                .type(TOKEN_TYPE)
+                                .entityId(accountToken.getAssociatedAccountId())
+                                .entityType(EntityType.ACCOUNT)
+                                .refreshToken(authRequest.getToken())
+                                .build())
+                        .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid refresh token")));
     }
 
-    private AccountTokenDO storeRefreshToken(final long accountId, final String refreshToken,
-                                             final TokenRestrictionsBO tokenRestrictions,
-                                             final TokenOptions tokenOptions) {
+    private CompletableFuture<AccountTokenDO> storeRefreshToken(final long accountId, final String refreshToken,
+                                                                final TokenRestrictionsBO tokenRestrictions,
+                                                                final TokenOptions tokenOptions) {
         final AccountTokenDO.AccountTokenDOBuilder<?, ?> accountToken = AccountTokenDO.builder()
                 .id(ID.generate())
                 .createdAt(Instant.now())
@@ -165,18 +153,17 @@ public class AccessTokenProvider implements AuthProvider {
                     .userAgent(tokenOptions.getUserAgent());
         }
 
-        return accountTokensRepository.save(accountToken.build())
-                .join();
+        return accountTokensRepository.save(accountToken.build());
     }
 
-    private Optional<AccountTokenDO> deleteRefreshToken(final String refreshToken) {
-        return accountTokensRepository.deleteToken(refreshToken).join();
+    private CompletableFuture<Optional<AccountTokenDO>> deleteRefreshToken(final String refreshToken) {
+        return accountTokensRepository.deleteToken(refreshToken);
     }
 
     private JwtTokenBuilder generateAccessToken(final AccountBO account, final TokenRestrictionsBO restrictions,
                                                 final TokenOptionsBO options) {
-        final JwtTokenBuilder.Builder tokenBuilder = JwtTokenBuilder.builder();
-        final JWTCreator.Builder jwtBuilder = jwtGenerator.generateUnsignedToken(account, tokenTtl);
+        JwtTokenBuilder.Builder tokenBuilder = JwtTokenBuilder.builder();
+        JWTCreator.Builder jwtBuilder = jwtGenerator.generateUnsignedToken(account, tokenTtl);
 
         if (strategy.useJti()) {
             final String id = jti.next();

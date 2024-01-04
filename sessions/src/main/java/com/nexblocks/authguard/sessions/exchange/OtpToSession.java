@@ -36,7 +36,7 @@ public class OtpToSession implements Exchange {
 
         return otpVerifier.verifyAccountTokenAsync(request.getToken())
                 .thenCompose(accountsService::getById)
-                .thenApply(opt -> {
+                .thenCompose(opt -> {
                     if (opt.isEmpty()) {
                         throw  new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                                 "Account does not exist");

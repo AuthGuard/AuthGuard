@@ -16,14 +16,14 @@ import com.nexblocks.authguard.service.model.ActionTokenBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
+import com.nexblocks.authguard.service.util.AsyncUtils;
 import com.nexblocks.authguard.service.util.ID;
-import io.vavr.control.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public class ActionTokenServiceImpl implements ActionTokenService {
     private static final Logger LOG = LoggerFactory.getLogger(ActionTokenServiceImpl.class);
@@ -53,86 +53,90 @@ public class ActionTokenServiceImpl implements ActionTokenService {
     }
 
     @Override
-    public Try<AuthResponseBO> generateOtp(final long accountId) {
-        final AccountBO account = accountsService.getById(accountId).join().orElse(null);
+    public CompletableFuture<AuthResponseBO> generateOtp(final long accountId) {
+        return accountsService.getById(accountId)
+                .thenCompose(AsyncUtils::fromAccountOptional)
+                .thenCompose(account -> {
+                    LOG.info("Generate OTP for action token request. accountId={}, domain={}", account.getId(), account.getDomain());
 
-        if (account == null) {
-            return Try.failure(new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "Account does not exist"));
-        }
-
-        LOG.info("Generate OTP for action token request. accountId={}, domain={}", account.getId(), account.getDomain());
-
-        return Try.success(otpProvider.generateToken(account));
+                    return otpProvider.generateToken(account);
+                });
     }
 
     @Override
-    public Try<ActionTokenBO> generateFromBasicAuth(final AuthRequestBO authRequest, final String action) {
-        final AccountBO account = basicAuthProvider.getAccount(authRequest);
-        final AccountTokenDO token = generateToken(account, action);
+    public CompletableFuture<ActionTokenBO> generateFromBasicAuth(final AuthRequestBO authRequest, final String action) {
+        return basicAuthProvider.getAccount(authRequest)
+                .thenApply(account -> {
+                    AccountTokenDO token = generateToken(account, action);
 
-        LOG.info("Action token from credentials request. accountId={}, domain={}, tokenId={}, expiresAt={}",
-                account.getId(), account.getDomain(), token.getId(), token.getExpiresAt());
+                    LOG.info("Action token from credentials request. accountId={}, domain={}, tokenId={}, expiresAt={}",
+                            account.getId(), account.getDomain(), token.getId(), token.getExpiresAt());
 
-        return Try.success(ActionTokenBO.builder()
-                .accountId(account.getId())
-                .token(token.getToken())
-                .validFor(TOKEN_LIFETIME.toSeconds())
-                .build());
+                    return ActionTokenBO.builder()
+                            .accountId(account.getId())
+                            .token(token.getToken())
+                            .validFor(TOKEN_LIFETIME.toSeconds())
+                            .build();
+                });
     }
 
     @Override
-    public Try<ActionTokenBO> generateFromOtp(final long passwordId, final String otp, final String action) {
+    public CompletableFuture<ActionTokenBO> generateFromOtp(final long passwordId, final String otp, final String action) {
         String otpToken = passwordId + ":" + otp;
-        Optional<AccountBO> otpResult = otpVerifier.verifyAccountTokenAsync(otpToken)
+
+        return otpVerifier.verifyAccountTokenAsync(otpToken)
                 .thenCompose(accountsService::getById)
-                .join();
+                .thenCompose(result -> {
+                    if (result.isEmpty()) {
+                        LOG.warn("Verified OTP request but the account doesn't exist. passwordId={}", passwordId);
+                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
+                                "The account associated with that OTP no longer exists"));
+                    }
 
-        if (otpResult.isEmpty()) {
-            LOG.error("Verified OTP request but the account doesn't exist. passwordId={}", passwordId);
-            return Try.failure(new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
-                    "The account associated with that OTP no longer exists"));
-        }
+                    return CompletableFuture.completedFuture(result.get());
+                })
+                .thenApply(account -> {
+                    AccountTokenDO token = generateToken(account, action);
+                    LOG.info("Generated action token from OTP request. passwordId={}, tokenId={}, expiresAt={}",
+                            passwordId, token.getId(), token.getExpiresAt());
 
-        AccountBO account = otpResult.get();
-
-        AccountTokenDO token = generateToken(account, action);
-        LOG.info("Generated action token from OTP request. passwordId={}, tokenId={}, expiresAt={}",
-                passwordId, token.getId(), token.getExpiresAt());
-
-        return Try.success(ActionTokenBO.builder()
-                .accountId(account.getId())
-                .token(token.getToken())
-                .validFor(TOKEN_LIFETIME.toSeconds())
-                .build());
+                    return ActionTokenBO.builder()
+                            .accountId(account.getId())
+                            .token(token.getToken())
+                            .validFor(TOKEN_LIFETIME.toSeconds())
+                            .build();
+                });
     }
 
     @Override
-    public Try<ActionTokenBO> verifyToken(final String token, final String action) {
-        Optional<AccountTokenDO> persisted = accountTokensRepository.getByToken(token).join();
+    public CompletableFuture<ActionTokenBO> verifyToken(final String token, final String action) {
+        return accountTokensRepository.getByToken(token)
+                .thenCompose(persisted -> {
+                    if (persisted.isEmpty()) {
+                        return CompletableFuture.failedFuture(
+                                new ServiceException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST, "Token does not exist"));
+                    }
 
-        if (persisted.isEmpty()) {
-            return Try.failure(new ServiceException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST, "Token was not found"));
-        }
+                    Instant now = Instant.now();
 
-        Instant now = Instant.now();
+                    if (persisted.get().getExpiresAt().isBefore(now)) {
+                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token has expired"));
+                    }
 
-        if (persisted.get().getExpiresAt().isBefore(now)) {
-            return Try.failure(new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token has expired"));
-        }
+                    String allowedAction = persisted.get().getAdditionalInformation().get("action");
 
-        String allowedAction = persisted.get().getAdditionalInformation().get("action");
+                    if (allowedAction == null || !allowedAction.equals(action)) {
+                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.INVALID_TOKEN, "Token was created for a different action"));
+                    }
 
-        if (allowedAction == null || !allowedAction.equals(action)) {
-            return Try.failure(new ServiceException(ErrorCode.INVALID_TOKEN, "Token was created for a different action"));
-        }
+                    LOG.info("Action token verified. tokenId={}, action={}", persisted.get().getId(), action);
 
-        LOG.info("Action token verified. tokenId={}, action={}", persisted.get().getId(), action);
-
-        return Try.success(ActionTokenBO.builder()
-                .accountId(persisted.get().getAssociatedAccountId())
-                .token(token)
-                .action(action)
-                .build());
+                    return CompletableFuture.completedFuture(ActionTokenBO.builder()
+                            .accountId(persisted.get().getAssociatedAccountId())
+                            .token(token)
+                            .action(action)
+                            .build());
+                });
     }
 
     private AccountTokenDO generateToken(final AccountBO account, final String action) {

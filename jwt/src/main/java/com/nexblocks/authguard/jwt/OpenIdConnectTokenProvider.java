@@ -5,6 +5,8 @@ import com.nexblocks.authguard.service.auth.AuthProvider;
 import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.model.*;
 
+import java.util.concurrent.CompletableFuture;
+
 @ProvidesToken("oidc")
 public class OpenIdConnectTokenProvider implements AuthProvider {
     private final AccessTokenProvider accessTokenProvider;
@@ -18,36 +20,25 @@ public class OpenIdConnectTokenProvider implements AuthProvider {
     }
 
     @Override
-    public AuthResponseBO generateToken(final AccountBO account) {
+    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account) {
         return generateToken(account, null, null);
     }
 
     @Override
-    public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO options) {
-        return generateToken(account, null, options);
-    }
-
-    @Override
-    public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
-        return generateToken(account, restrictions, null);
-    }
-
-    @Override
-    public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
-                                        final TokenOptionsBO options) {
-        final AuthResponseBO accessToken = accessTokenProvider.generateToken(account, restrictions, options);
-        final AuthResponseBO idToken = idTokenProvider.generateToken(account);
-
-        return AuthResponseBO.builder()
-                .type("oidc")
-                .entityId(account.getId())
-                .entityType(EntityType.ACCOUNT)
-                .token(OAuthResponseBO.builder()
-                        .accessToken((String) accessToken.getToken())
-                        .idToken((String) idToken.getToken())
-                        .refreshToken((String) accessToken.getRefreshToken())
-                        .build())
-                .build();
+    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+                                                           final TokenOptionsBO options) {
+        return accessTokenProvider.generateToken(account, restrictions, options)
+                .thenCompose(accessToken -> idTokenProvider.generateToken(account)
+                        .thenApply(idToken -> AuthResponseBO.builder()
+                                .type("oidc")
+                                .entityId(account.getId())
+                                .entityType(EntityType.ACCOUNT)
+                                .token(OAuthResponseBO.builder()
+                                        .accessToken((String) accessToken.getToken())
+                                        .idToken((String) idToken.getToken())
+                                        .refreshToken((String) accessToken.getRefreshToken())
+                                        .build())
+                                .build()));
     }
 
     @Override

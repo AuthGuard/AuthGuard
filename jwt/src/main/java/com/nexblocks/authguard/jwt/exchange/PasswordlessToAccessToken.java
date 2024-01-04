@@ -40,11 +40,11 @@ public class PasswordlessToAccessToken implements Exchange {
                                 new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "The account associated with that token does not exist"));
                     }
 
-                    return CompletableFuture.completedFuture(generate(opt.get(), request));
+                    return generate(opt.get(), request);
                 });
     }
 
-    private AuthResponseBO generate(final AccountBO account, final AuthRequestBO request) {
+    private CompletableFuture<AuthResponseBO> generate(final AccountBO account, final AuthRequestBO request) {
         TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("passwordless")
                 .userAgent(request.getUserAgent())

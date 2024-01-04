@@ -13,12 +13,10 @@ import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AppBO;
-import com.nexblocks.authguard.service.model.AuthResponseBO;
-import com.nexblocks.authguard.service.model.EntityType;
+import com.nexblocks.authguard.service.model.*;
 
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 
 @ProvidesToken("idToken")
 public class IdTokenProvider implements AuthProvider {
@@ -53,7 +51,8 @@ public class IdTokenProvider implements AuthProvider {
     }
 
     @Override
-    public AuthResponseBO generateToken(final AccountBO account) {
+    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+                                                           final TokenOptionsBO options) {
         if (!account.isActive()) {
             throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
         }
@@ -65,14 +64,14 @@ public class IdTokenProvider implements AuthProvider {
 
         final String refreshToken = jwtGenerator.generateRandomRefreshToken();
 
-        return AuthResponseBO.builder()
+        return CompletableFuture.completedFuture(AuthResponseBO.builder()
                 .type(TOKEN_TYPE)
                 .token(finalToken)
                 .refreshToken(refreshToken)
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .validFor(tokenTtl.getSeconds())
-                .build();
+                .build());
     }
 
     @Override

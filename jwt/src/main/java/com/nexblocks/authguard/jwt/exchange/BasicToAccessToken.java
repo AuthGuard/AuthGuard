@@ -34,7 +34,7 @@ public class BasicToAccessToken implements Exchange {
                 .build();
 
         return basicAuth.authenticateAndGetAccount(request)
-                .thenApply(account -> {
+                .thenCompose(account -> {
                     if (request.getRestrictions() == null) {
                         return accessTokenProvider.generateToken(account, options);
                     } else {

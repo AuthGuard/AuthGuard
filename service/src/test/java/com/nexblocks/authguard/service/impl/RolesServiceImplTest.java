@@ -22,14 +22,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class RolesServiceImplTest {
     private RolesRepository rolesRepository;
-    private MessageBus messageBus;
 
     private RolesService rolesService;
+
+    private static final String[] SKIPPED_FIELDS = new String[] { "id", "createdAt", "lastModified" };
 
     @BeforeEach
     void setup() {
         rolesRepository = Mockito.mock(RolesRepository.class);
-        messageBus = Mockito.mock(MessageBus.class);
+        MessageBus messageBus = Mockito.mock(MessageBus.class);
 
         rolesService = new RolesServiceImpl(rolesRepository, new ServiceMapperImpl(), messageBus) ;
     }
@@ -48,7 +49,7 @@ class RolesServiceImplTest {
                 RoleBO.builder().name("role-2").build()
         );
 
-        List<RoleBO> actual = rolesService.getAll("main");
+        List<RoleBO> actual = rolesService.getAll("main").join();
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -68,7 +69,9 @@ class RolesServiceImplTest {
 
         RoleBO actual = rolesService.create(request).join();
 
-        assertThat(actual).isEqualToIgnoringGivenFields(request, "id", "createdAt", "lastModified");
+        assertThat(actual).usingRecursiveComparison()
+                .ignoringFields(SKIPPED_FIELDS)
+                .isEqualTo(request);
     }
 
     @Test
@@ -89,7 +92,8 @@ class RolesServiceImplTest {
         Mockito.when(rolesRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, RoleDO.class)));
 
-        assertThatThrownBy(() -> rolesService.create(request)).isInstanceOf(ServiceConflictException.class);
+        assertThatThrownBy(() -> rolesService.create(request).join())
+                .hasCauseInstanceOf(ServiceConflictException.class);
     }
 
     @Test
@@ -105,7 +109,7 @@ class RolesServiceImplTest {
                 .name("role")
                 .build();
 
-        Optional<RoleBO> actual = rolesService.getRoleByName("role", "main");
+        Optional<RoleBO> actual = rolesService.getRoleByName("role", "main").join();
 
         assertThat(actual).contains(expected);
     }

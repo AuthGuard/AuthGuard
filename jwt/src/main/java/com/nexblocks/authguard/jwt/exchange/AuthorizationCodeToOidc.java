@@ -41,7 +41,7 @@ public class AuthorizationCodeToOidc implements Exchange {
         final TokenRestrictionsBO restrictions = getRestrictions(accountToken);
 
         return accountsServiceAdapter.getAccount(accountToken.getAssociatedAccountId())
-                .thenApply(account -> openIdConnectTokenProvider.generateToken(account, restrictions));
+                .thenCompose(account -> openIdConnectTokenProvider.generateToken(account, restrictions));
     }
 
     private TokenRestrictionsBO getRestrictions(final AccountTokenDO accountToken) {

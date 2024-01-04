@@ -54,8 +54,8 @@ public class BasicAuthProvider {
         return handleBasicAuthentication(basicToken);
     }
 
-    public AccountBO getAccount(final AuthRequestBO request) {
-        return verifyCredentialsAndGetAccount(request.getIdentifier(), request.getDomain()).join();
+    public CompletableFuture<AccountBO> getAccount(final AuthRequestBO request) {
+        return verifyCredentialsAndGetAccount(request.getIdentifier(), request.getDomain());
     }
 
     public CompletableFuture<AccountBO> getAccountAsync(final AuthRequestBO request) {

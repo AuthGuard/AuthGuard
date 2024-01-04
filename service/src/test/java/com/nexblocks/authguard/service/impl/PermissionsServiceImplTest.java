@@ -22,14 +22,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PermissionsServiceImplTest {
     private PermissionsRepository permissionsRepository;
-    private MessageBus messageBus;
 
     private PermissionsService permissionsService;
+
+    private static final String[] SKIPPED_FIELDS = { "id", "createdAt", "lastModified" };
 
     @BeforeEach
     void setup() {
         permissionsRepository = Mockito.mock(PermissionsRepository.class);
-        messageBus = Mockito.mock(MessageBus.class);
+        MessageBus messageBus = Mockito.mock(MessageBus.class);
 
         permissionsService = new PermissionsServiceImpl(permissionsRepository, new ServiceMapperImpl(), messageBus) ;
     }
@@ -50,7 +51,9 @@ class PermissionsServiceImplTest {
 
         PermissionBO actual = permissionsService.create(request).join();
 
-        assertThat(actual).isEqualToIgnoringGivenFields(request, "id", "createdAt", "lastModified");
+        assertThat(actual).usingRecursiveComparison()
+                .ignoringFields(SKIPPED_FIELDS)
+                .isEqualTo(request);
     }
 
     @Test
@@ -116,7 +119,7 @@ class PermissionsServiceImplTest {
                 PermissionBO.builder().group("test").name("write").build()
         );
 
-        List<PermissionBO> actual = permissionsService.getAll("main");
+        List<PermissionBO> actual = permissionsService.getAll("main").join();
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -136,7 +139,7 @@ class PermissionsServiceImplTest {
                 PermissionBO.builder().group("test").name("write").build()
         );
 
-        List<PermissionBO> actual = permissionsService.getAllForGroup("test", "main");
+        List<PermissionBO> actual = permissionsService.getAllForGroup("test", "main").join();
 
         assertThat(actual).isEqualTo(expected);
     }

@@ -182,7 +182,7 @@ class VerificationServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(otpProvider.generateToken(account))
-                .thenReturn(otp);
+                .thenReturn(CompletableFuture.completedFuture(otp));
 
         final AuthResponseBO actual = verificationService.sendPhoneNumberVerification(101);
 
@@ -208,7 +208,7 @@ class VerificationServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(otpProvider.generateToken(account))
-                .thenReturn(otp);
+                .thenReturn(CompletableFuture.completedFuture(otp));
 
         final AuthResponseBO actual = verificationService.sendPhoneNumberVerificationByIdentifier("username", "main");
 

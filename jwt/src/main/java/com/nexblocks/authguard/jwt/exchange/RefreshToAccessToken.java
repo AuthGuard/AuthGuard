@@ -116,7 +116,7 @@ public class RefreshToAccessToken implements Exchange {
                 .build();
 
         return getAccount(accountId, accountToken)
-                .thenApply(account -> accessTokenProvider.generateToken(account, tokenRestrictions, options));
+                .thenCompose(account -> accessTokenProvider.generateToken(account, tokenRestrictions, options));
     }
 
     private CompletableFuture<AccountBO> getAccount(final long accountId, final AccountTokenDO accountToken) {

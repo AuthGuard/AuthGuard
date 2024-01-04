@@ -24,10 +24,10 @@ public class BasicToOIdC implements Exchange {
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
         return basicAuth.authenticateAndGetAccount(request)
-                .thenApply(account -> generateTokens(account, request.getRestrictions()));
+                .thenCompose(account -> generateTokens(account, request.getRestrictions()));
     }
 
-    private AuthResponseBO generateTokens(final AccountBO account, final TokenRestrictionsBO restrictions) {
+    private CompletableFuture<AuthResponseBO> generateTokens(final AccountBO account, final TokenRestrictionsBO restrictions) {
         final TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("basic")
                 .build();

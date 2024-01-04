@@ -71,20 +71,19 @@ public class PermissionsServiceImpl implements PermissionsService {
     }
 
     @Override
-    public List<PermissionBO> getAll(final String domain) {
-        return permissionsRepository.getAll(domain).join()
-                .stream()
-                .map(serviceMapper::toBO)
-                .collect(Collectors.toList());
+    public CompletableFuture<List<PermissionBO>> getAll(final String domain) {
+        return permissionsRepository.getAll(domain)
+                .thenApply(list -> list.stream()
+                        .map(serviceMapper::toBO)
+                        .collect(Collectors.toList()));
     }
 
     @Override
-    public List<PermissionBO> getAllForGroup(final String group, final String domain) {
+    public CompletableFuture<List<PermissionBO>> getAllForGroup(final String group, final String domain) {
         return permissionsRepository.getAllForGroup(group, domain)
-                .join()
-                .stream()
-                .map(serviceMapper::toBO)
-                .collect(Collectors.toList());
+                .thenApply(list -> list.stream()
+                        .map(serviceMapper::toBO)
+                        .collect(Collectors.toList()));
     }
 
     @Override

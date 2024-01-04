@@ -42,7 +42,7 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
         if (admins.isEmpty() && oneTimeAdmins.isEmpty()) {
             log.info("No admin accounts were found, a one-time admin account will be created");
 
-            if (rolesService.getRoleByName(OTA_ROLE, RESERVED_DOMAIN).isEmpty()) {
+            if (rolesService.getRoleByName(OTA_ROLE, RESERVED_DOMAIN).join().isEmpty()) {
                 log.info("Default role {} wasn't found and will be created", OTA_ROLE);
 
                 final RoleBO created = createRole(OTA_ROLE);

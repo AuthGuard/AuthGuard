@@ -1,7 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
 import com.google.inject.Inject;
-import com.nexblocks.authguard.api.access.AuthGuardRoles;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.UserIdentifier;
 import com.nexblocks.authguard.api.dto.entities.*;
@@ -17,9 +16,9 @@ import com.nexblocks.authguard.rest.util.IdempotencyHeader;
 import com.nexblocks.authguard.service.AccountLocksService;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.ApplicationsService;
-import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
-import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.model.Client;
+import com.nexblocks.authguard.service.model.*;
+import com.nexblocks.authguard.service.util.AsyncUtils;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 
@@ -94,188 +93,161 @@ public class AccountsRoute extends AccountsApi {
 
     @Override
     public void getById(final Context context) {
-        final Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParam("id", Long.class);
 
         if (!accountId.isValid()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Optional<AccountDTO> account = accountsService.getById(accountId.get()).join()
-                .map(restMapper::toDTO);
+        CompletableFuture<AccountDTO> account = accountsService.getById(accountId.get())
+                .thenCompose(AsyncUtils::fromAccountOptional)
+                .thenApply(restMapper::toDTO);
 
-        if (account.isPresent()) {
-            context.status(200).json(account.get());
-        } else {
-            context.status(404)
-                    .json(new Error(ErrorCode.ACCOUNT_DOES_NOT_EXIST.getCode(), "Account not found"));
-        }
+        context.json(account);
     }
 
     @Override
     public void getByIdentifier(final Context context) {
-        final String identifier = context.pathParam("identifier");
-        final String domain = context.pathParam("domain");
+        String identifier = context.pathParam("identifier");
+        String domain = context.pathParam("domain");
 
-        final Optional<AccountBO> account = accountsService.getByIdentifier(identifier, domain).join();
-
-        if (account.isPresent()) {
-            context.status(200).json(account.get());
-        } else {
-            context.status(404)
-                    .json(new Error(ErrorCode.ACCOUNT_DOES_NOT_EXIST.getCode(), "Account not found"));
+        if (!ActorDomainVerifier.verifyActorDomain(context, domain)) {
+            return;
         }
+
+        CompletableFuture<AccountDTO> account = accountsService.getByIdentifier(identifier, domain)
+                .thenCompose(AsyncUtils::fromAccountOptional)
+                .thenApply(restMapper::toDTO);
+
+        context.json(account);
     }
 
     @Override
     public void identifierExists(final Context context) {
-        final String domain = context.pathParam("domain");
+        String domain = context.pathParam("domain");
 
         if (!ActorDomainVerifier.verifyActorDomain(context, domain)) {
             return;
         }
 
-        final String identifier = context.pathParam("identifier");
+        String identifier = context.pathParam("identifier");
 
-        final boolean exists = accountsService.getByIdentifier(identifier, domain).join()
-                .isPresent();
+        CompletableFuture<ExistsResponseDTO> exists = accountsService.getByIdentifier(identifier, domain)
+                .thenCompose(AsyncUtils::fromAccountOptional)
+                .thenApply(ignored -> ExistsResponseDTO.builder().success(true).build());
 
-        if (exists) {
-            context.status(200);
-        } else {
-            context.status(404);
-        }
+        context.json(exists);
     }
 
     @Override
     public void deleteAccount(final Context context) {
-        final Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParam("id", Long.class);
 
         if (!accountId.isValid()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Optional<AccountDTO> account = accountsService.delete(accountId.get()).join()
-                .map(restMapper::toDTO);
+        CompletableFuture<AccountDTO> account = accountsService.delete(accountId.get())
+                .thenCompose(AsyncUtils::fromAccountOptional)
+                .thenApply(restMapper::toDTO);
 
-        if (account.isPresent()) {
-            context.status(200).json(account.get());
-        } else {
-            context.status(404)
-                    .json(new Error(ErrorCode.ACCOUNT_DOES_NOT_EXIST.getCode(), "Account not found"));
-        }
+        context.json(account);
     }
 
     @Override
     public void patchAccount(final Context context) {
-        final Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParam("id", Long.class);
 
         if (!accountId.isValid()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
         
-        final UpdateAccountRequestDTO request = updateAccountRequestBodyHandler.getValidated(context);
+        UpdateAccountRequestDTO request = updateAccountRequestBodyHandler.getValidated(context);
 
-        final Optional<AccountDTO> account = accountsService.patch(accountId.get(), restMapper.toBO(request)).join()
-                .map(restMapper::toDTO);
+        CompletableFuture<AccountDTO> account = accountsService.patch(accountId.get(), restMapper.toBO(request))
+                .thenCompose(AsyncUtils::fromAccountOptional)
+                .thenApply(restMapper::toDTO);
 
-        if (account.isPresent()) {
-            context.status(200).json(account.get());
-        } else {
-            context.status(404)
-                    .json(new Error(ErrorCode.ACCOUNT_DOES_NOT_EXIST.getCode(), "Account not found"));
-        }
+        context.json(account);
     }
 
     @Override
     public void getByExternalId(final Context context) {
-        final String accountId = context.pathParam("id");
+        String accountId = context.pathParam("id");
 
-        final Optional<AccountDTO> account = accountsService.getByExternalId(accountId).join()
-                .map(restMapper::toDTO);
+        CompletableFuture<AccountDTO> account = accountsService.getByExternalId(accountId)
+                .thenCompose(AsyncUtils::fromAccountOptional)
+                .thenApply(restMapper::toDTO);
 
-        if (account.isPresent()) {
-            context.status(200).json(account.get());
-        } else {
-            context.status(404)
-                    .json(new Error(ErrorCode.ACCOUNT_DOES_NOT_EXIST.getCode(), "Account not found"));
-        }
+        context.json(account);
     }
 
     @Override
     public void getByEmail(final Context context) {
-        final String domain = context.pathParam("domain");
-        final String email = context.pathParam("email");
+        String domain = context.pathParam("domain");
+        String email = context.pathParam("email");
 
-        final Optional<AccountDTO> account = accountsService.getByEmail(email, domain).join()
-                .map(restMapper::toDTO);
+        CompletableFuture<AccountDTO> account = accountsService.getByEmail(email, domain)
+                .thenCompose(AsyncUtils::fromAccountOptional)
+                .thenApply(restMapper::toDTO);
 
-        if (account.isPresent()) {
-            context.status(200).json(account.get());
-        } else {
-            context.status(404)
-                    .json(new Error(ErrorCode.ACCOUNT_DOES_NOT_EXIST.getCode(), "Account not found"));
-        }
+        context.json(account);
     }
 
     @Override
     public void emailExists(final Context context) {
-        final String domain = context.pathParam("domain");
-        final String email = context.pathParam("email");
+        String domain = context.pathParam("domain");
+        String email = context.pathParam("email");
 
         if (!ActorDomainVerifier.verifyActorDomain(context, domain)) {
             return;
         }
 
-        final boolean exists = accountsService.getByEmail(email, domain).join().isPresent();
+        CompletableFuture<ExistsResponseDTO> exists = accountsService.getByEmail(email, domain)
+                .thenCompose(AsyncUtils::fromAccountOptional)
+                .thenApply(ignored -> ExistsResponseDTO.builder()
+                        .success(true)
+                        .build());
 
-        if (exists) {
-            context.status(200);
-        } else {
-            context.status(404);
-        }
+        context.json(exists);
     }
 
     @Override
     public void updatePermissions(final Context context) {
-        final Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParam("id", Long.class);
 
         if (!accountId.isValid()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
         
-        final PermissionsRequestDTO request = permissionsRequestBodyHandler.getValidated(context);
+        PermissionsRequestDTO request = permissionsRequestBodyHandler.getValidated(context);
 
-        final List<PermissionBO> permissions = request.getPermissions().stream()
+        List<PermissionBO> permissions = request.getPermissions().stream()
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
 
-        final Optional<AccountDTO> updatedAccount;
+        CompletableFuture<Optional<AccountBO>> updatedAccount;
 
         if (request.getAction() == PermissionsRequest.Action.GRANT) {
-            updatedAccount = accountsService.grantPermissions(accountId.get(), permissions).join().map(restMapper::toDTO);
+            updatedAccount = accountsService.grantPermissions(accountId.get(), permissions);
         } else {
-            updatedAccount = accountsService.revokePermissions(accountId.get(), permissions).join().map(restMapper::toDTO);
+            updatedAccount = accountsService.revokePermissions(accountId.get(), permissions);
         }
 
-        if (updatedAccount.isPresent()) {
-            context.status(200).json(updatedAccount.get());
-        } else {
-            context.status(404)
-                    .json(new Error(ErrorCode.ACCOUNT_DOES_NOT_EXIST.getCode(), "Account not found"));
-        }
+        context.json(updatedAccount.thenCompose(AsyncUtils::fromAccountOptional).thenApply(restMapper::toDTO));
     }
 
     @Override
     public void updateRoles(final Context context) {
-        final Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParam("id", Long.class);
 
         if (!accountId.isValid()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
         
-        final RolesRequestDTO request = rolesRequestBodyHandler.getValidated(context);
+        RolesRequestDTO request = rolesRequestBodyHandler.getValidated(context);
 
-        final CompletableFuture<Optional<AccountBO>> updatedAccount;
+        CompletableFuture<Optional<AccountBO>> updatedAccount;
 
         if (request.getAction() == RolesRequest.Action.GRANT) {
             updatedAccount = accountsService.grantRoles(accountId.get(), request.getRoles());
@@ -283,81 +255,75 @@ public class AccountsRoute extends AccountsApi {
             updatedAccount = accountsService.revokeRoles(accountId.get(), request.getRoles());
         }
 
-        context.json(updatedAccount.thenApply(opt -> opt.map(restMapper::toDTO)));
+        context.json(updatedAccount.thenCompose(AsyncUtils::fromAccountOptional).thenApply(restMapper::toDTO));
     }
 
     @Override
     public void getApps(final Context context) {
-        final Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParam("id", Long.class);
 
         if (!accountId.isValid()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final List<AppDTO> apps = applicationsService.getByAccountId(accountId.get())
-                .stream()
-                .map(restMapper::toDTO)
-                .collect(Collectors.toList());
+        CompletableFuture<List<AppDTO>> apps = applicationsService.getByAccountId(accountId.get())
+                .thenApply(list -> list.stream()
+                        .map(restMapper::toDTO)
+                        .collect(Collectors.toList()));
 
-        context.status(200).json(apps);
+        context.json(apps);
     }
 
     @Override
     public void activate(final Context context) {
-        final Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParam("id", Long.class);
 
         if (!accountId.isValid()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Optional<AccountDTO> account = accountsService.activate(accountId.get()).join()
-                .map(restMapper::toDTO);
+        CompletableFuture<AccountDTO> account = accountsService.activate(accountId.get())
+                .thenCompose(AsyncUtils::fromAccountOptional)
+                .thenApply(restMapper::toDTO);
 
-        if (account.isPresent()) {
-            context.status(200).json(account.get());
-        } else {
-            context.status(404).json(new Error("404", "No account with ID " + accountId + " exists"));
-        }
+        context.json(account);
     }
 
     @Override
     public void deactivate(final Context context) {
-        final Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParam("id", Long.class);
 
         if (!accountId.isValid()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Optional<AccountDTO> account = accountsService.deactivate(accountId.get()).join()
-                .map(restMapper::toDTO);
+        CompletableFuture<AccountDTO> account = accountsService.deactivate(accountId.get())
+                .thenCompose(AsyncUtils::fromAccountOptional)
+                .thenApply(restMapper::toDTO);
 
-        if (account.isPresent()) {
-            context.status(200).json(account.get());
-        } else {
-            context.status(404).json(new Error("404", "No account with ID " + accountId.get() + " exists"));
-        }
+        context.json(account);
     }
 
     @Override
     public void getActiveLocks(final Context context) {
-        final Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParam("id", Long.class);
 
         if (!accountId.isValid()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        final Collection<AccountLockDTO> locks = accountLocksService.getActiveLocksByAccountId(accountId.get())
-                .stream()
-                .map(restMapper::toDTO)
-                .collect(Collectors.toList());
+        CompletableFuture<Collection<AccountLockDTO>> locks = accountLocksService.getActiveLocksByAccountId(accountId.get())
+                .thenApply(list -> list.stream()
+                        .map(restMapper::toDTO)
+                        .collect(Collectors.toList()));
 
-        context.status(200).json(locks);
+        context.json(locks);
     }
 
-    private boolean canPerform(final Context context, final CreateAccountRequestDTO request) {
+    private boolean canPerform(final Context context, CreateAccountRequestDTO request) {
         if (context.attribute("actor") instanceof ClientBO) {
-            final ClientBO actor = context.attribute("actor");
-            final boolean isAuthClient = actor.getClientType() == Client.ClientType.AUTH;
+            ClientBO actor = context.attribute("actor");
+            boolean isAuthClient = actor.getClientType() == Client.ClientType.AUTH;
 
             /*
              * Clients shouldn't have both auth and admin client
@@ -370,7 +336,7 @@ public class AccountsRoute extends AccountsApi {
         return true;
     }
 
-    private boolean canPerform(final ClientBO actor, final CreateAccountRequestDTO request) {
+    private boolean canPerform(final ClientBO actor, CreateAccountRequestDTO request) {
         if (request.getEmail() != null && request.getEmail().isVerified()) {
             return false;
         }
@@ -400,7 +366,7 @@ public class AccountsRoute extends AccountsApi {
                 return false;
             }
 
-            final UserIdentifierDTO identifier = request.getIdentifiers().get(0);
+            UserIdentifierDTO identifier = request.getIdentifiers().get(0);
 
             if (identifier.getType() != UserIdentifier.Type.USERNAME) {
                 return false;

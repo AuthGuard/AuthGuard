@@ -64,7 +64,7 @@ public class EntitiesBootstrap implements BootstrapStep {
         roles.stream()
                 .map(roleName -> RoleBO.builder().domain(domain).name(roleName).build())
                 .forEach(role -> {
-                    if (rolesService.getRoleByName(role.getName(), domain).isPresent()) {
+                    if (rolesService.getRoleByName(role.getName(), domain).join().isPresent()) {
                         log.info("Role {} already exists in domain {}", role.getName(), domain);
 
                         return;
@@ -81,14 +81,14 @@ public class EntitiesBootstrap implements BootstrapStep {
             return;
         }
 
-        final List<PermissionBO> permissionBOS = permissions.stream()
+        List<PermissionBO> permissionBOS = permissions.stream()
                 .map(permission -> PermissionBO.builder()
                         .group(permission.getGroup())
                         .name(permission.getName())
                         .build())
                 .collect(Collectors.toList());
 
-        final List<PermissionBO> existing = permissionsService.validate(permissionBOS, domain)
+        List<PermissionBO> existing = permissionsService.validate(permissionBOS, domain)
                 .stream()
                 .map(permission -> PermissionBO.builder()
                         .group(permission.getGroup())
@@ -100,7 +100,7 @@ public class EntitiesBootstrap implements BootstrapStep {
             log.info("No new permissions to create for domain {}", domain);
         }
 
-        final List<PermissionBO> difference = permissionBOS.stream()
+        List<PermissionBO> difference = permissionBOS.stream()
                 .filter(permission -> !existing.contains(permission))
                 .collect(Collectors.toList());
 

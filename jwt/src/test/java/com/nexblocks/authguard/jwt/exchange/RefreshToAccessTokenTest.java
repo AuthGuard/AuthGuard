@@ -75,7 +75,7 @@ class RefreshToAccessTokenTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accessTokenProvider.generateToken(account, null, TokenOptionsBO.builder().build()))
-                .thenReturn(newTokens);
+                .thenReturn(CompletableFuture.completedFuture(newTokens));
 
         // do
         AuthResponseBO actual = refreshToAccessToken.exchange(authRequest).join();
@@ -129,7 +129,7 @@ class RefreshToAccessTokenTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accessTokenProvider.generateToken(account, restrictions, TokenOptionsBO.builder().build()))
-                .thenReturn(newTokens);
+                .thenReturn(CompletableFuture.completedFuture(newTokens));
 
         // do
         AuthResponseBO actual = refreshToAccessToken.exchange(authRequest).join();
@@ -170,7 +170,7 @@ class RefreshToAccessTokenTest {
     }
 
     @Test
-    void exchangeNoAccount() throws InterruptedException {
+    void exchangeNoAccount() {
         // data
         long accountId = 101;
         String refreshToken = "refresh_token";
@@ -266,7 +266,7 @@ class RefreshToAccessTokenTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accessTokenProvider.generateToken(account, null, tokenOptions))
-                .thenReturn(newTokens);
+                .thenReturn(CompletableFuture.completedFuture(newTokens));
 
         // do
         final AuthResponseBO actual = refreshToAccessToken.exchange(authRequest).join();

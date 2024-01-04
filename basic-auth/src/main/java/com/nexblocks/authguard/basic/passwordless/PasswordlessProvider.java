@@ -19,7 +19,7 @@ import com.nexblocks.authguard.service.util.ID;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.OffsetDateTime;
+import java.util.concurrent.CompletableFuture;
 
 @ProvidesToken("passwordless")
 public class PasswordlessProvider implements AuthProvider {
@@ -45,37 +45,39 @@ public class PasswordlessProvider implements AuthProvider {
     }
 
     @Override
-    public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO tokenOptions) {
+    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+                                                           final TokenOptionsBO tokenOptions) {
         if (!account.isActive()) {
             throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
         }
 
-        final String token = randomToken();
+        String token = randomToken();
 
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .id(ID.generate())
                 .associatedAccountId(account.getId())
                 .token(token)
                 .expiresAt(Instant.now().plus(tokenTtl))
                 .build();
 
-        final AccountTokenDO persistedToken = accountTokensRepository.save(accountToken).join();
+        return accountTokensRepository.save(accountToken)
+                .thenApply(persistedToken -> {
+                    PasswordlessMessageBody messageBody =
+                            new PasswordlessMessageBody(persistedToken, account, tokenOptions);
 
-        final PasswordlessMessageBody messageBody =
-                new PasswordlessMessageBody(persistedToken, account, tokenOptions);
+                    messageBus.publish(PASSWORDLESS_CHANNEL, Messages.passwordlessGenerated(messageBody));
 
-        messageBus.publish(PASSWORDLESS_CHANNEL, Messages.passwordlessGenerated(messageBody));
-
-        return AuthResponseBO.builder()
-                .type(TOKEN_TYPE)
-                .token(persistedToken.getId())
-                .entityType(EntityType.ACCOUNT)
-                .entityId(account.getId())
-                .build();
+                    return AuthResponseBO.builder()
+                            .type(TOKEN_TYPE)
+                            .token(persistedToken.getId())
+                            .entityType(EntityType.ACCOUNT)
+                            .entityId(account.getId())
+                            .build();
+                });
     }
 
     @Override
-    public AuthResponseBO generateToken(final AccountBO account) {
+    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account) {
         throw new UnsupportedOperationException("Use the method which accepts TokenOptionsBO");
     }
 

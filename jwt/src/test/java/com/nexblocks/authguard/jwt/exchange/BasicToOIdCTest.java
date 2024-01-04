@@ -17,7 +17,6 @@ class BasicToOIdCTest {
     private BasicAuthProvider basicAuth;
     private AccessTokenProvider accessTokenProvider;
     private IdTokenProvider idTokenProvider;
-    private OpenIdConnectTokenProvider openIdConnectTokenProvider;
 
     private BasicToOIdC basicToOIdC;
 
@@ -27,7 +26,7 @@ class BasicToOIdCTest {
         accessTokenProvider = Mockito.mock(AccessTokenProvider.class);
         idTokenProvider = Mockito.mock(IdTokenProvider.class);
 
-        openIdConnectTokenProvider = new OpenIdConnectTokenProvider(accessTokenProvider, idTokenProvider);
+        OpenIdConnectTokenProvider openIdConnectTokenProvider = new OpenIdConnectTokenProvider(accessTokenProvider, idTokenProvider);
 
         basicToOIdC = new BasicToOIdC(basicAuth, openIdConnectTokenProvider);
     }
@@ -58,10 +57,10 @@ class BasicToOIdCTest {
                 .thenReturn(CompletableFuture.completedFuture(account));
 
         Mockito.when(accessTokenProvider.generateToken(account, authRequest.getRestrictions(), options))
-                .thenReturn(accessTokenResponse);
+                .thenReturn(CompletableFuture.completedFuture(accessTokenResponse));
 
         Mockito.when(idTokenProvider.generateToken(account))
-                .thenReturn(idTokenResponse);
+                .thenReturn(CompletableFuture.completedFuture(idTokenResponse));
 
         AuthResponseBO actual = basicToOIdC.exchange(authRequest).join();
 

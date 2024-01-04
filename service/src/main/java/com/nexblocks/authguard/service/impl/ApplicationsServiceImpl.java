@@ -6,12 +6,14 @@ import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.ApplicationsService;
 import com.nexblocks.authguard.service.IdempotencyService;
+import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.google.inject.Inject;
+import com.nexblocks.authguard.service.util.AsyncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,10 +80,9 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public Optional<AppBO> getByExternalId(final long externalId) {
+    public CompletableFuture<Optional<AppBO>> getByExternalId(final long externalId) {
         return applicationsRepository.getById(externalId)
-                .thenApply(optional -> optional.map(serviceMapper::toBO))
-                .join();
+                .thenApply(optional -> optional.map(serviceMapper::toBO));
     }
 
     @Override
@@ -100,47 +101,50 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public Optional<AppBO> activate(final long id) {
-        return getById(id).join()
-                .flatMap(app -> {
+    public CompletableFuture<AppBO> activate(final long id) {
+        return getById(id)
+                .thenCompose(AsyncUtils::fromAppOptional)
+                .thenCompose(app -> {
                     LOG.info("Activate application request. appId={}, domain={}", app.getId(), app.getDomain());
 
                     AppBO activated = app.withActive(true);
-                    Optional<AppBO> persisted = this.update(activated).join();
+                    return update(activated)
+                            .thenApply(persisted -> {
+                                if (persisted.isPresent()) {
+                                    LOG.info("Application activated. appId={}, domain={}", app.getId(), app.getDomain());
+                                    return persisted.get();
+                                }
 
-                    if (persisted.isPresent()) {
-                        LOG.info("Application activated. appId={}, domain={}", app.getId(), app.getDomain());
-                    } else {
-                        LOG.info("Failed to activate application. appId={}, domain={}", app.getId(), app.getDomain());
-                    }
-
-                    return persisted;
+                                LOG.info("Failed to activate application. appId={}, domain={}", app.getId(), app.getDomain());
+                                throw new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST, "Application does not exist");
+                            });
                 });
     }
 
     @Override
-    public Optional<AppBO> deactivate(final long id) {
-        return getById(id).join()
-                .flatMap(app -> {
-                    LOG.info("Deactivate application request. appId={}, domain={}", app.getId(), app.getDomain());
+    public CompletableFuture<AppBO> deactivate(final long id) {
+        return getById(id)
+                .thenCompose(AsyncUtils::fromAppOptional)
+                .thenCompose(app -> {
+                    LOG.info("Activate application request. appId={}, domain={}", app.getId(), app.getDomain());
 
                     AppBO deactivated = app.withActive(false);
-                    Optional<AppBO> persisted = this.update(deactivated).join();
+                    return update(deactivated)
+                            .thenApply(persisted -> {
+                                if (persisted.isPresent()) {
+                                    LOG.info("Application deactivated. appId={}, domain={}", app.getId(), app.getDomain());
+                                    return persisted.get();
+                                }
 
-                    if (persisted.isPresent()) {
-                        LOG.info("Application deactivated. appId={}, domain={}", app.getId(), app.getDomain());
-                    } else {
-                        LOG.info("Failed to deactivate application. appId={}, domain={}", app.getId(), app.getDomain());
-                    }
-
-                    return persisted;
+                                LOG.info("Failed to deactivate application. appId={}, domain={}", app.getId(), app.getDomain());
+                                throw new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST, "Application does not exist");
+                            });
                 });
     }
 
     @Override
-    public List<AppBO> getByAccountId(final long accountId) {
+    public CompletableFuture<List<AppBO>> getByAccountId(final long accountId) {
         return applicationsRepository.getAllForAccount(accountId)
-                .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()))
-                .join();
+                .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()));
     }
 }

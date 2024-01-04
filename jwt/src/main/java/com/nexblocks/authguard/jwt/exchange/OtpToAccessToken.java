@@ -39,11 +39,11 @@ public class OtpToAccessToken implements Exchange {
                                 "Failed to generate access token"));
                     }
 
-                    return CompletableFuture.completedFuture(generate(opt.get(), request));
+                    return generate(opt.get(), request);
                 });
     }
 
-    private AuthResponseBO generate(final AccountBO account, final AuthRequestBO request) {
+    private CompletableFuture<AuthResponseBO> generate(final AccountBO account, final AuthRequestBO request) {
         TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("otp")
                 .userAgent(request.getUserAgent())

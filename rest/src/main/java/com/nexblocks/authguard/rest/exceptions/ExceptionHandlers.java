@@ -2,10 +2,7 @@ package com.nexblocks.authguard.rest.exceptions;
 
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.RequestValidationError;
-import com.nexblocks.authguard.service.exceptions.IdempotencyException;
-import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
-import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
-import com.nexblocks.authguard.service.exceptions.ServiceException;
+import com.nexblocks.authguard.service.exceptions.*;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.IdempotentRecordBO;
 import io.javalin.http.Context;
@@ -19,15 +16,24 @@ public class ExceptionHandlers {
     private static final Logger LOG = LoggerFactory.getLogger(ExceptionHandlers.class);
 
     public static void serviceException(final ServiceException e, final Context context) {
-        LOG.info("Service exception was thrown");
+        LOG.debug("Service exception was thrown", e);
 
         final Error error = new Error(e.getErrorCode(), e.getMessage());
         context.status(400)
                 .json(error);
     }
 
+    public static void serviceNotFoundException(final ServiceNotFoundException e, final Context context) {
+        LOG.debug("Service not found exception was thrown", e);
+
+        final Error error = new Error(e.getErrorCode(), e.getMessage());
+        context.status(404)
+                .json(error);
+    }
+
+
     public static void serviceConflictException(final ServiceConflictException e, final Context context) {
-        LOG.info("Service conflict exception was thrown");
+        LOG.debug("Service conflict exception was thrown", e);
 
         final Error error = new Error(e.getErrorCode(), e.getMessage());
         context.status(409)
@@ -35,7 +41,7 @@ public class ExceptionHandlers {
     }
 
     public static void serviceAuthorizationException(final ServiceAuthorizationException e, final Context context) {
-        LOG.info("Service authorization exception was thrown");
+        LOG.debug("Service authorization exception was thrown", e);
 
         final Error error = new Error(e.getErrorCode(), e.getMessage());
         /*
@@ -86,6 +92,8 @@ public class ExceptionHandlers {
             serviceAuthorizationException((ServiceAuthorizationException) cause, context);
         } else if (cause instanceof ServiceConflictException) {
             serviceConflictException((ServiceConflictException) cause, context);
+        } else if (cause instanceof ServiceNotFoundException) {
+            serviceNotFoundException((ServiceNotFoundException) cause, context);
         } else if (cause instanceof ServiceException) {
             serviceException((ServiceException) cause, context);
         } else if (cause instanceof RuntimeJsonException) {

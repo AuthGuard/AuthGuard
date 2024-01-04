@@ -89,7 +89,7 @@ class ExchangeServiceImplTest {
                 .entityId(101)
                 .build();
 
-        Assertions.assertThat(exchangeService.exchange(authRequest, "basic", "basic", requestContext))
+        Assertions.assertThat(exchangeService.exchange(authRequest, "basic", "basic", requestContext).join())
                 .isEqualTo(expected);
 
         Mockito.verify(exchangeAttemptsService).create(ExchangeAttemptBO.builder()
@@ -125,7 +125,7 @@ class ExchangeServiceImplTest {
                 .build();
         final RequestContextBO requestContext = RequestContextBO.builder().build();
 
-        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "unknown", "unknown", requestContext))
+        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "unknown", "unknown", requestContext).join())
                 .isInstanceOf(ServiceException.class);
     }
 
@@ -145,7 +145,7 @@ class ExchangeServiceImplTest {
                 .build();
         final RequestContextBO requestContext = RequestContextBO.builder().build();
 
-        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "basic", "empty", requestContext))
+        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "basic", "empty", requestContext).join())
                 .hasCauseInstanceOf(ServiceException.class);
 
         Mockito.verify(emb).publish(Mockito.eq(ExchangeServiceImpl.CHANNEL), Mockito.any());
@@ -167,7 +167,7 @@ class ExchangeServiceImplTest {
                 .build();
         final RequestContextBO requestContext = RequestContextBO.builder().build();
 
-        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "basic", "exception", requestContext))
+        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "basic", "exception", requestContext).join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
 
         Mockito.verify(exchangeAttemptsService).create(ExchangeAttemptBO.builder()
@@ -213,7 +213,7 @@ class ExchangeServiceImplTest {
                 .entityId(101)
                 .build();
 
-        Assertions.assertThat(exchangeService.exchange(authRequest, "basic", "basic", requestContext))
+        Assertions.assertThat(exchangeService.exchange(authRequest, "basic", "basic", requestContext).join())
                 .isEqualTo(expected);
 
         Mockito.verify(exchangeAttemptsService).create(ExchangeAttemptBO.builder()

@@ -43,7 +43,7 @@ public class DefaultRolesBootstrap implements BootstrapStep {
 
         defaultRolesByDomain.forEach((domain, defaultRoles) -> {
             defaultRoles.forEach(role -> {
-                if (rolesService.getRoleByName(role, domain).isEmpty()) {
+                if (rolesService.getRoleByName(role, domain).join().isEmpty()) {
                     log.info("Default role {} for domain {} wasn't found and will be created", role, domain);
 
                     final RoleBO created = createRole(role, domain);

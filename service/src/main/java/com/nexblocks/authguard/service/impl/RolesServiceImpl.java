@@ -39,26 +39,28 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public List<RoleBO> getAll(final String domain) {
+    public CompletableFuture<List<RoleBO>> getAll(final String domain) {
         return rolesRepository.getAll(domain)
-                .join()
-                .stream()
-                .map(serviceMapper::toBO)
-                .collect(Collectors.toList());
+                .thenApply(list -> list.stream()
+                        .map(serviceMapper::toBO)
+                        .collect(Collectors.toList()));
     }
 
     @Override
     public CompletableFuture<RoleBO> create(final RoleBO role) {
         LOG.debug("New role request. role={}, domain={}", role.getName(), role.getDomain());
 
-        if (getRoleByName(role.getName(), role.getDomain()).isPresent()) {
-            LOG.info("Role already exists. role={}, domain={}", role.getName(), role.getDomain());
+        return getRoleByName(role.getName(), role.getDomain())
+                .thenCompose(opt -> {
+                    if (opt.isPresent()) {
+                        LOG.info("Role already exists. role={}, domain={}", role.getName(), role.getDomain());
 
-            throw new ServiceConflictException(ErrorCode.ROLE_ALREADY_EXISTS,
-                    "Role " + role.getName() + " already exists");
-        }
+                        return CompletableFuture.failedFuture(new ServiceConflictException(ErrorCode.ROLE_ALREADY_EXISTS,
+                                "Role " + role.getName() + " already exists"));
+                    }
 
-        return persistenceService.create(role);
+                    return persistenceService.create(role);
+                });
     }
 
     @Override
@@ -79,10 +81,9 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public Optional<RoleBO> getRoleByName(final String name, final String domain) {
+    public CompletableFuture<Optional<RoleBO>> getRoleByName(final String name, final String domain) {
         return rolesRepository.getByName(name, domain)
-                .thenApply(optional -> optional.map(serviceMapper::toBO))
-                .join();
+                .thenApply(optional -> optional.map(serviceMapper::toBO));
     }
 
     @Override

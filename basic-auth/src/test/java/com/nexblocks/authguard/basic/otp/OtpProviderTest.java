@@ -1,11 +1,11 @@
 package com.nexblocks.authguard.basic.otp;
 
 import com.nexblocks.authguard.basic.config.OtpConfig;
+import com.nexblocks.authguard.basic.config.OtpMode;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.OtpRepository;
 import com.nexblocks.authguard.dal.model.OneTimePasswordDO;
 import com.nexblocks.authguard.emb.MessageBus;
-import com.nexblocks.authguard.basic.config.OtpMode;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.AccountBO;
@@ -28,7 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 class OtpProviderTest {
-    private final EasyRandom random = new EasyRandom(new EasyRandomParameters()
+    private EasyRandom random = new EasyRandom(new EasyRandomParameters()
             .excludeField(field -> field.getName().equals("initShim"))
             .collectionSizeRange(1, 4));
 
@@ -41,7 +41,7 @@ class OtpProviderTest {
         mockOtpRepository = Mockito.mock(OtpRepository.class);
         messageBus = Mockito.mock(MessageBus.class);
 
-        final ConfigContext configContext = Mockito.mock(ConfigContext.class);
+        ConfigContext configContext = Mockito.mock(ConfigContext.class);
 
         Mockito.when(configContext.asConfigBean(OtpConfig.class)).thenReturn(otpConfig);
         Mockito.when(mockOtpRepository.save(Mockito.any()))
@@ -52,7 +52,7 @@ class OtpProviderTest {
 
     @Test
     void generateToken() {
-        final OtpConfig otpConfig = OtpConfig.builder()
+        OtpConfig otpConfig = OtpConfig.builder()
                 .mode(OtpMode.ALPHANUMERIC)
                 .length(6)
                 .lifeTime("5m")
@@ -60,26 +60,29 @@ class OtpProviderTest {
 
         setup(otpConfig);
 
-        final AccountBO account = random.nextObject(AccountBO.class).withActive(true);
+        AccountBO account = random.nextObject(AccountBO.class).withActive(true);
 
-        final AuthResponseBO expected = AuthResponseBO.builder()
+        AuthResponseBO expected = AuthResponseBO.builder()
                 .type("otp")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .build();
 
-        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+        TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
 
-        final AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions);
+        AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions).join();
 
-        assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
+        assertThat(generated)
+                .usingRecursiveComparison()
+                .ignoringFields("token")
+                .isEqualTo(expected);
         assertThat(generated.getToken()).isNotNull();
 
-        final ArgumentCaptor<OneTimePasswordDO> argumentCaptor = ArgumentCaptor.forClass(OneTimePasswordDO.class);
+        ArgumentCaptor<OneTimePasswordDO> argumentCaptor = ArgumentCaptor.forClass(OneTimePasswordDO.class);
 
         Mockito.verify(mockOtpRepository).save(argumentCaptor.capture());
 
-        final OneTimePasswordDO persisted = argumentCaptor.getValue();
+        OneTimePasswordDO persisted = argumentCaptor.getValue();
 
         assertThat(persisted.getAccountId()).isEqualTo(account.getId());
         assertThat(persisted.getExpiresAt())
@@ -95,7 +98,7 @@ class OtpProviderTest {
 
     @Test
     void generateAlphabetic() {
-        final OtpConfig otpConfig = OtpConfig.builder()
+        OtpConfig otpConfig = OtpConfig.builder()
                 .mode(OtpMode.ALPHABETIC)
                 .length(6)
                 .lifeTime("5m")
@@ -103,26 +106,29 @@ class OtpProviderTest {
 
         setup(otpConfig);
 
-        final AccountBO account = random.nextObject(AccountBO.class).withActive(true);
+        AccountBO account = random.nextObject(AccountBO.class).withActive(true);
 
-        final AuthResponseBO expected = AuthResponseBO.builder()
+        AuthResponseBO expected = AuthResponseBO.builder()
                 .type("otp")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .build();
 
-        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+        TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
 
-        final AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions);
+        AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions).join();
 
-        assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
+        assertThat(generated)
+                .usingRecursiveComparison()
+                .ignoringFields("token")
+                .isEqualTo(expected);
         assertThat(generated.getToken()).isNotNull();
 
-        final ArgumentCaptor<OneTimePasswordDO> argumentCaptor = ArgumentCaptor.forClass(OneTimePasswordDO.class);
+        ArgumentCaptor<OneTimePasswordDO> argumentCaptor = ArgumentCaptor.forClass(OneTimePasswordDO.class);
 
         Mockito.verify(mockOtpRepository).save(argumentCaptor.capture());
 
-        final OneTimePasswordDO persisted = argumentCaptor.getValue();
+        OneTimePasswordDO persisted = argumentCaptor.getValue();
 
         assertThat(persisted.getAccountId()).isEqualTo(account.getId());
         assertThat(persisted.getExpiresAt())
@@ -142,7 +148,7 @@ class OtpProviderTest {
 
     @Test
     void generateNumeric() {
-        final OtpConfig otpConfig = OtpConfig.builder()
+        OtpConfig otpConfig = OtpConfig.builder()
                 .mode(OtpMode.NUMERIC)
                 .length(6)
                 .lifeTime("5m")
@@ -150,26 +156,29 @@ class OtpProviderTest {
 
         setup(otpConfig);
 
-        final AccountBO account = random.nextObject(AccountBO.class).withActive(true);
+        AccountBO account = random.nextObject(AccountBO.class).withActive(true);
 
-        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+        TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
 
-        final AuthResponseBO expected = AuthResponseBO.builder()
+        AuthResponseBO expected = AuthResponseBO.builder()
                 .type("otp")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .build();
 
-        final AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions);
+        AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions).join();
 
-        assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
+        assertThat(generated)
+                .usingRecursiveComparison()
+                .ignoringFields("token")
+                .isEqualTo(expected);
         assertThat(generated.getToken()).isNotNull();
 
-        final ArgumentCaptor<OneTimePasswordDO> argumentCaptor = ArgumentCaptor.forClass(OneTimePasswordDO.class);
+        ArgumentCaptor<OneTimePasswordDO> argumentCaptor = ArgumentCaptor.forClass(OneTimePasswordDO.class);
 
         Mockito.verify(mockOtpRepository).save(argumentCaptor.capture());
 
-        final OneTimePasswordDO persisted = argumentCaptor.getValue();
+        OneTimePasswordDO persisted = argumentCaptor.getValue();
 
         assertThat(persisted.getAccountId()).isEqualTo(account.getId());
         assertThat(persisted.getExpiresAt())
@@ -189,7 +198,7 @@ class OtpProviderTest {
 
     @Test
     void generateTokenForInactiveAccount() {
-        final OtpConfig otpConfig = OtpConfig.builder()
+        OtpConfig otpConfig = OtpConfig.builder()
                 .mode(OtpMode.ALPHANUMERIC)
                 .length(6)
                 .lifeTime("5m")
@@ -197,8 +206,8 @@ class OtpProviderTest {
 
         setup(otpConfig);
 
-        final AccountBO account = random.nextObject(AccountBO.class).withActive(false);
-        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+        AccountBO account = random.nextObject(AccountBO.class).withActive(false);
+        TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
 
         assertThatThrownBy(() -> otpProvider.generateToken(account, tokenOptions))
                 .isInstanceOf(ServiceAuthorizationException.class);

@@ -9,6 +9,7 @@ import org.mockito.Mockito;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,9 +30,9 @@ class SessionVerifierTest {
                 .build();
 
         Mockito.when(sessionsService.getByToken(session.getSessionToken()))
-                .thenReturn(Optional.of(session));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(session)));
 
-        Long accountId = sessionVerifier.verifyAccountToken(session.getSessionToken());
+        Long accountId = sessionVerifier.verifyAccountTokenAsync(session.getSessionToken()).join();
 
         assertThat(accountId).isEqualTo(session.getAccountId());
     }
@@ -42,10 +43,10 @@ class SessionVerifierTest {
         SessionVerifier sessionVerifier = new SessionVerifier(sessionsService);
 
         Mockito.when(sessionsService.getByToken(any()))
-                .thenReturn(Optional.empty());
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        assertThatThrownBy(() -> sessionVerifier.verifyAccountToken("invalid"))
-                .isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> sessionVerifier.verifyAccountTokenAsync("invalid").join())
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
@@ -61,9 +62,9 @@ class SessionVerifierTest {
                 .build();
 
         Mockito.when(sessionsService.getByToken(session.getSessionToken()))
-                .thenReturn(Optional.of(session));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(session)));
 
-        assertThatThrownBy(() -> sessionVerifier.verifyAccountToken("session-id"))
-                .isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> sessionVerifier.verifyAccountTokenAsync(session.getSessionToken()).join())
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 }

@@ -1,7 +1,7 @@
 package com.nexblocks.authguard.extensions;
 
-import com.nexblocks.authguard.dal.persistence.ExchangeAttemptsRepository;
 import com.nexblocks.authguard.dal.model.ExchangeAttemptDO;
+import com.nexblocks.authguard.dal.persistence.ExchangeAttemptsRepository;
 import com.nexblocks.authguard.emb.model.EventType;
 import com.nexblocks.authguard.emb.model.Message;
 import com.nexblocks.authguard.extensions.config.ImmutableAccountLockerConfig;
@@ -15,7 +15,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,10 +42,10 @@ class AccountLockerTest {
     @Test
     void onMessageNoLock() {
         // data
-        final AuthMessage authMessage = AuthMessage.success("basic", "session",
+         AuthMessage authMessage = AuthMessage.success("basic", "session",
                 EntityType.ACCOUNT, 101L);
 
-        final Message<Object> message = Message.builder()
+         Message<Object> message = Message.builder()
                 .eventType(EventType.AUTHENTICATION)
                 .bodyType(AuthMessage.class)
                 .messageBody(authMessage)
@@ -61,7 +60,7 @@ class AccountLockerTest {
         accountLocker.onMessage(message);
 
         // verify
-        final ArgumentCaptor<Instant> timeArgumentCaptor = ArgumentCaptor.forClass(Instant.class);
+         ArgumentCaptor<Instant> timeArgumentCaptor = ArgumentCaptor.forClass(Instant.class);
 
         Mockito.verify(exchangeAttemptsRepository)
                 .findByEntityAndTimestamp(Mockito.eq(101L), timeArgumentCaptor.capture());
@@ -81,10 +80,10 @@ class AccountLockerTest {
     @Test
     void onMessageLock() {
         // data
-        final AuthMessage authMessage = AuthMessage.success("basic", "session",
+         AuthMessage authMessage = AuthMessage.success("basic", "session",
                 EntityType.ACCOUNT, 101L);
 
-        final Message<Object> message = Message.builder()
+         Message<Object> message = Message.builder()
                 .eventType(EventType.AUTHENTICATION)
                 .bodyType(AuthMessage.class)
                 .messageBody(authMessage)
@@ -103,8 +102,8 @@ class AccountLockerTest {
         accountLocker.onMessage(message);
 
         // verify
-        final ArgumentCaptor<Instant> timeArgumentCaptor = ArgumentCaptor.forClass(Instant.class);
-        final ArgumentCaptor<AccountLockBO> accountLockArgumentCaptor = ArgumentCaptor.forClass(AccountLockBO.class);
+         ArgumentCaptor<Instant> timeArgumentCaptor = ArgumentCaptor.forClass(Instant.class);
+         ArgumentCaptor<AccountLockBO> accountLockArgumentCaptor = ArgumentCaptor.forClass(AccountLockBO.class);
 
         Mockito.verify(exchangeAttemptsRepository)
                 .findByEntityAndTimestamp(Mockito.eq(101L), timeArgumentCaptor.capture());
@@ -134,10 +133,10 @@ class AccountLockerTest {
     @Test
     void onMessageNotAuth() {
         // data
-        final AuthMessage authMessage = AuthMessage.success("basic", "session",
+         AuthMessage authMessage = AuthMessage.success("basic", "session",
                 EntityType.ACCOUNT, 101L);
 
-        final Message<Object> message = Message.builder()
+         Message<Object> message = Message.builder()
                 .eventType(EventType.EMAIL_VERIFICATION)
                 .bodyType(AuthMessage.class)
                 .messageBody(authMessage)
@@ -154,10 +153,10 @@ class AccountLockerTest {
     @Test
     void onMessageAuthWrongBodyType() {
         // data
-        final AuthMessage authMessage = AuthMessage.success("basic", "session",
+         AuthMessage authMessage = AuthMessage.success("basic", "session",
                 EntityType.ACCOUNT, 101L);
 
-        final Message<Object> message = Message.builder()
+         Message<Object> message = Message.builder()
                 .eventType(EventType.AUTHENTICATION)
                 .bodyType(ImmutableAccountLockerConfig.class)
                 .messageBody(authMessage)
@@ -174,10 +173,10 @@ class AccountLockerTest {
     @Test
     void onMessageAuthNotAccount() {
         // data
-        final AuthMessage authMessage = AuthMessage.success("basic", "session",
+         AuthMessage authMessage = AuthMessage.success("basic", "session",
                 EntityType.APPLICATION, 101L);
 
-        final Message<Object> message = Message.builder()
+         Message<Object> message = Message.builder()
                 .eventType(EventType.AUTHENTICATION)
                 .bodyType(AuthMessage.class)
                 .messageBody(authMessage)

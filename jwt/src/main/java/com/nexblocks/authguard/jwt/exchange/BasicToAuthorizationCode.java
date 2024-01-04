@@ -24,6 +24,6 @@ public class BasicToAuthorizationCode implements Exchange {
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
         return basicAuth.authenticateAndGetAccount(request)
-                .thenApply(account -> authorizationCodeProvider.generateToken(account, request.getRestrictions()));
+                .thenCompose(account -> authorizationCodeProvider.generateToken(account, request.getRestrictions()));
     }
 }

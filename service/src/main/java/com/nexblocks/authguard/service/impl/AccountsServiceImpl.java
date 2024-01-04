@@ -119,8 +119,10 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> getByIdUnsafe(final long id) {
-        return persistenceService.getById(id);
+    public CompletableFuture<AccountBO> getByIdUnsafe(final long id) {
+        return persistenceService.getById(id)
+                .thenCompose(opt -> opt.map(CompletableFuture::completedFuture)
+                        .orElseGet(() -> CompletableFuture.failedFuture(new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "Account does not exist"))));
     }
 
     @Override
@@ -169,15 +171,11 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public CompletableFuture<Optional<AccountBO>> activate(final long accountId) {
         return getByIdUnsafe(accountId)
-                .thenCompose(opt -> {
-                    if (opt.isPresent()) {
-                        AccountBO activated = opt.get().withActive(true);
-                        LOG.info("Activate account request. accountId={}, domain={}", activated.getId(), activated.getDomain());
+                .thenCompose(account -> {
+                    AccountBO activated = account.withActive(true);
+                    LOG.info("Activate account request. accountId={}, domain={}", activated.getId(), activated.getDomain());
 
-                        return this.update(activated);
-                    }
-
-                    return CompletableFuture.completedFuture(opt);
+                    return this.update(activated);
                 }).thenApply(persisted -> {
                     if (persisted.isPresent()) {
                         LOG.info("Account activated. accountId={}, domain={}", accountId, persisted.get().getDomain());
@@ -192,15 +190,11 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public CompletableFuture<Optional<AccountBO>> deactivate(final long accountId) {
         return getByIdUnsafe(accountId)
-                .thenCompose(opt -> {
-                    if (opt.isPresent()) {
-                        AccountBO deactivated = opt.get().withActive(false);
-                        LOG.info("Deactivate account request. accountId={}, domain={}", deactivated.getId(), deactivated.getDomain());
+                .thenCompose(account -> {
+                    AccountBO deactivated = account.withActive(false);
+                    LOG.info("Deactivate account request. accountId={}, domain={}", deactivated.getId(), deactivated.getDomain());
 
-                        return this.update(deactivated);
-                    }
-
-                    return CompletableFuture.completedFuture(opt);
+                    return this.update(deactivated);
                 }).thenApply(persisted -> {
                     if (persisted.isPresent()) {
                         LOG.info("Account deactivated. accountId={}, domain={}", persisted.get().getId(), persisted.get().getDomain());
@@ -215,11 +209,7 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public CompletableFuture<Optional<AccountBO>> patch(final long accountId, final AccountBO account) {
         return getByIdUnsafe(accountId)
-                .thenCompose(opt -> {
-                    AccountBO existing = opt
-                            .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID "
-                                    + accountId + " was found"));
-
+                .thenCompose(existing -> {
                     AccountBO merged = AccountUpdateMerger.merge(existing, account);
 
                     boolean emailUpdated = !ValueComparator.emailsEqual(existing.getEmail(), merged.getEmail());
@@ -290,10 +280,7 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public CompletableFuture<Optional<AccountBO>> grantPermissions(final long accountId, final List<PermissionBO> permissions) {
         return getByIdUnsafe(accountId)
-                .thenCompose(opt -> {
-                    AccountBO account = opt.orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
-                            "No account with ID " + accountId + " was found"));
-
+                .thenCompose(account -> {
                     List<PermissionBO> verifiedPermissions = permissionsService.validate(permissions, account.getDomain());
 
                     LOG.info("Grant account permissions request. accountId={}, domain={}, permissions={}",
@@ -326,10 +313,7 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public CompletableFuture<Optional<AccountBO>> revokePermissions(final long accountId, final List<PermissionBO> permissions) {
         return getByIdUnsafe(accountId)
-                .thenCompose(opt -> {
-                    AccountBO account = opt.orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
-                            "No account with ID " + accountId + " was found"));
-
+                .thenCompose(account -> {
                     Set<String> permissionsFullNames = permissions.stream()
                             .map(Permission::getFullName)
                             .collect(Collectors.toSet());
@@ -356,10 +340,7 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public CompletableFuture<Optional<AccountBO>> grantRoles(final long accountId, final List<String> roles) {
         return getByIdUnsafe(accountId)
-                .thenCompose(opt -> {
-                    AccountBO account = opt.orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
-                            "No account with ID " + accountId + " was found"));
-
+                .thenCompose(account -> {
                     verifyRolesOrFail(roles, account.getDomain());
 
                     LOG.info("Grant account roles request. accountId={}, domain={}, permissions={}",
@@ -384,10 +365,7 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public CompletableFuture<Optional<AccountBO>> revokeRoles(final long accountId, final List<String> roles) {
         return getByIdUnsafe(accountId)
-                .thenCompose(opt -> {
-                    AccountBO account = opt.orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
-                            "No account with ID " + accountId + " was found"));
-
+                .thenCompose(account -> {
                     LOG.info("Revoke account roles request. accountId={}, domain={}, permissions={}",
                             account.getId(), account.getDomain(), roles);
 

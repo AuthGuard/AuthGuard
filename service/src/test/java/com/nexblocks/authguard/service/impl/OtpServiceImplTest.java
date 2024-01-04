@@ -12,19 +12,21 @@ import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.concurrent.CompletableFuture;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class OtpServiceImplTest {
-    private final EasyRandom random = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
+    private EasyRandom random = new EasyRandom(new EasyRandomParameters().collectionSizeRange(1, 4));
 
     private ExchangeService mockExchangeService;
 
     private OtpServiceImpl otpService;
 
-    void setup(final OtpConfig otpConfig) {
+    void setup(OtpConfig otpConfig) {
         mockExchangeService = Mockito.mock(ExchangeService.class);
 
-        final ConfigContext configContext = Mockito.mock(ConfigContext.class);
+        ConfigContext configContext = Mockito.mock(ConfigContext.class);
 
         Mockito.when(configContext.asConfigBean(OtpConfig.class)).thenReturn(otpConfig);
 
@@ -33,25 +35,25 @@ class OtpServiceImplTest {
 
     @Test
     void authenticate() {
-        final OtpConfig otpConfig = OtpConfig.builder()
+        OtpConfig otpConfig = OtpConfig.builder()
                 .generateToken("accessToken")
                 .build();
 
         setup(otpConfig);
 
-        final OneTimePasswordDO otp = random.nextObject(OneTimePasswordDO.class);
-        final AuthResponseBO tokens = random.nextObject(AuthResponseBO.class);
+        OneTimePasswordDO otp = random.nextObject(OneTimePasswordDO.class);
+        AuthResponseBO tokens = random.nextObject(AuthResponseBO.class);
 
-        final String otpToken = otp.getId() + ":" + otp.getPassword();
-        final AuthRequestBO authRequest = AuthRequestBO.builder()
+        String otpToken = otp.getId() + ":" + otp.getPassword();
+        AuthRequestBO authRequest = AuthRequestBO.builder()
                 .token(otpToken)
                 .build();
-        final RequestContextBO requestContext = RequestContextBO.builder().build();
+        RequestContextBO requestContext = RequestContextBO.builder().build();
 
         Mockito.when(mockExchangeService.exchange(authRequest, "otp", otpConfig.getGenerateToken(), requestContext))
-                .thenReturn(tokens);
+                .thenReturn(CompletableFuture.completedFuture(tokens));
 
-        final AuthResponseBO generated = otpService.authenticate(otp.getId(), otp.getPassword(), requestContext);
+        AuthResponseBO generated = otpService.authenticate(otp.getId(), otp.getPassword(), requestContext).join();
 
         assertThat(generated).isEqualTo(tokens);
     }

@@ -32,7 +32,7 @@ public class AdminRolesBootstrap implements BootstrapStep {
             throw new IllegalStateException("Admin role name cannot be null in accounts configuration");
         }
 
-        if (rolesService.getRoleByName(adminRoleName, RESERVED_DOMAIN).isEmpty()) {
+        if (rolesService.getRoleByName(adminRoleName, RESERVED_DOMAIN).join().isEmpty()) {
             log.info("Admin role {} wasn't found and will be created", adminRoleName);
 
             final RoleBO adminRole = createRole(adminRoleName);

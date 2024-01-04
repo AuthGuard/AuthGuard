@@ -39,11 +39,11 @@ public class OtpToOidc implements Exchange {
                                 "The account associated with that token does not exist"));
                     }
 
-                    return CompletableFuture.completedFuture(generate(opt.get()));
+                    return generate(opt.get());
                 });
     }
 
-    private AuthResponseBO generate(final AccountBO account) {
+    private CompletableFuture<AuthResponseBO> generate(final AccountBO account) {
         TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("otp")
                 .build();

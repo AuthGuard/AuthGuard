@@ -24,6 +24,6 @@ public class BasicToIdToken implements Exchange {
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
         return basicAuth.authenticateAndGetAccount(request)
-                .thenApply(idTokenProvider::generateToken);
+                .thenCompose(idTokenProvider::generateToken);
     }
 }

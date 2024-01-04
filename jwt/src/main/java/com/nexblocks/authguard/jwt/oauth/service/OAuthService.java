@@ -3,6 +3,9 @@ package com.nexblocks.authguard.jwt.oauth.service;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.google.common.collect.Maps;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.jwt.oauth.OAuthServiceClient;
 import com.nexblocks.authguard.jwt.oauth.ResponseType;
@@ -18,16 +21,11 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AccountEmailBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.nexblocks.authguard.service.model.SessionBO;
-import com.google.common.collect.Maps;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import io.vavr.control.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -67,13 +65,14 @@ public class OAuthService {
      * @param provider The name of a provider as stated in the configuration.
      */
     public CompletableFuture<String> getAuthorizationUrl(final String provider) {
-        final OAuthServiceClient client = Optional.ofNullable(providersClients.get(provider))
+        OAuthServiceClient client = Optional.ofNullable(providersClients.get(provider))
                 .orElseThrow(() -> new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid identity provider"));
-
-        return CompletableFuture.supplyAsync(() -> sessionsService.create(SessionBO.builder()
+        SessionBO session = SessionBO.builder()
                 .expiresAt(Instant.now().plus(stateTtl))
-                .build()))
-                .thenApply(session -> client.createAuthorizationUrl(session.getSessionToken(), ResponseType.CODE));
+                .build();
+
+        return sessionsService.create(session)
+                .thenApply(created -> client.createAuthorizationUrl(created.getSessionToken(), ResponseType.CODE));
     }
 
     /**
@@ -88,10 +87,10 @@ public class OAuthService {
      */
     public CompletableFuture<TokensResponse> exchangeAuthorizationCode(final String provider, final String state,
                                                                        final String authorizationCode) {
-        final OAuthServiceClient client = Optional.ofNullable(providersClients.get(provider))
+        OAuthServiceClient client = Optional.ofNullable(providersClients.get(provider))
                 .orElseThrow(() -> new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid identity provider"));
 
-        return CompletableFuture.supplyAsync(() -> sessionsService.getByToken(state))
+        return sessionsService.getByToken(state)
                 .thenCompose(sessionOptional -> sessionOptional
                         .map(session -> doExchange(client, authorizationCode, session))
                         .orElseThrow(() ->

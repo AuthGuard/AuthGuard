@@ -71,7 +71,7 @@ class AuthorizationCodeToOidcTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(openIdConnectTokenProvider.generateToken(account, (TokenRestrictionsBO) null))
-                .thenReturn(authResponse);
+                .thenReturn(CompletableFuture.completedFuture(authResponse));
 
         AuthResponseBO actual = authorizationCodeToOidc.exchange(authRequest).join();
 
@@ -107,7 +107,7 @@ class AuthorizationCodeToOidcTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(openIdConnectTokenProvider.generateToken(account, serviceMapper.toBO(accountToken.getTokenRestrictions())))
-                .thenReturn(authResponse);
+                .thenReturn(CompletableFuture.completedFuture(authResponse));
 
         AuthResponseBO actual = authorizationCodeToOidc.exchange(authRequest).join();
 

@@ -4,8 +4,10 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 
-public interface PasswordlessService {
-    AuthResponseBO authenticate(AuthRequestBO authRequest, RequestContextBO requestContext);
+import java.util.concurrent.CompletableFuture;
 
-    AuthResponseBO authenticate(String passwordlessToken, RequestContextBO requestContext);
+public interface PasswordlessService {
+    CompletableFuture<AuthResponseBO> authenticate(AuthRequestBO authRequest, RequestContextBO requestContext);
+
+    CompletableFuture<AuthResponseBO> authenticate(String passwordlessToken, RequestContextBO requestContext);
 }
