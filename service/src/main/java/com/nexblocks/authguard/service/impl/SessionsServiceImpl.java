@@ -1,5 +1,7 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.SessionsRepository;
 import com.nexblocks.authguard.dal.model.SessionDO;
@@ -11,10 +13,9 @@ import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.SessionBO;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.ID;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public class SessionsServiceImpl implements SessionsService {
     private final String CHANNEL = "sessions";
@@ -46,7 +47,7 @@ public class SessionsServiceImpl implements SessionsService {
     }
 
     @Override
-    public SessionBO create(final SessionBO session) {
+    public CompletableFuture<SessionBO> create(final SessionBO session) {
         final SessionDO sessionDO = serviceMapper.toDO(session);
 
         sessionDO.setId(ID.generate());
@@ -56,27 +57,24 @@ public class SessionsServiceImpl implements SessionsService {
                 .thenApply(created -> {
                     emb.publish(CHANNEL, Messages.created(created));
                     return serviceMapper.toBO(created);
-                }).join();
+                });
     }
 
     @Override
-    public Optional<SessionBO> getById(final long id) {
+    public CompletableFuture<Optional<SessionBO>> getById(final long id) {
         return sessionsRepository.getById(id)
-                .thenApply(opt -> opt.map(serviceMapper::toBO))
-                .join();
+                .thenApply(opt -> opt.map(serviceMapper::toBO));
     }
 
     @Override
-    public Optional<SessionBO> getByToken(final String token) {
+    public CompletableFuture<Optional<SessionBO>> getByToken(final String token) {
         return sessionsRepository.getByToken(token)
-                .thenApply(opt -> opt.map(serviceMapper::toBO))
-                .join();
+                .thenApply(opt -> opt.map(serviceMapper::toBO));
     }
 
     @Override
-    public Optional<SessionBO> deleteByToken(final String token) {
+    public CompletableFuture<Optional<SessionBO>> deleteByToken(final String token) {
         return sessionsRepository.deleteByToken(token)
-                .thenApply(opt -> opt.map(serviceMapper::toBO))
-                .join();
+                .thenApply(opt -> opt.map(serviceMapper::toBO));
     }
 }

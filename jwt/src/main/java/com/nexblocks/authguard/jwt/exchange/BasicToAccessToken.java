@@ -8,7 +8,8 @@ import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
-import io.vavr.control.Either;
+
+import java.util.concurrent.CompletableFuture;
 
 @TokenExchange(from = "basic", to = "accessToken")
 public class BasicToAccessToken implements Exchange {
@@ -22,7 +23,7 @@ public class BasicToAccessToken implements Exchange {
     }
 
     @Override
-    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
+    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
         final TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("basic")
                 .userAgent(request.getUserAgent())
@@ -33,7 +34,7 @@ public class BasicToAccessToken implements Exchange {
                 .build();
 
         return basicAuth.authenticateAndGetAccount(request)
-                .map(account -> {
+                .thenCompose(account -> {
                     if (request.getRestrictions() == null) {
                         return accessTokenProvider.generateToken(account, options);
                     } else {

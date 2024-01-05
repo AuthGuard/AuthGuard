@@ -28,7 +28,7 @@ class IdTokenProviderTest {
     private static final String KEY = "file:src/test/resources/hmac256.pem";
     private static final String ISSUER = "test";
 
-    private final static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters()
+    private static EasyRandom RANDOM = new EasyRandom(new EasyRandomParameters()
             .excludeField(field -> field.getName().equals("initShim"))
             .collectionSizeRange(1, 4));
     private TokenEncryptorAdapter tokenEncryptor;
@@ -65,10 +65,10 @@ class IdTokenProviderTest {
 
     @Test
     void generate() {
-        final IdTokenProvider idTokenProvider = newProviderInstance(jwtConfig());
+        IdTokenProvider idTokenProvider = newProviderInstance(jwtConfig());
 
-        final AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(true);
-        final AuthResponseBO tokens = idTokenProvider.generateToken(account);
+        AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(true);
+        AuthResponseBO tokens = idTokenProvider.generateToken(account).join();
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
@@ -80,13 +80,13 @@ class IdTokenProviderTest {
 
     @Test
     void generateEncrypted() {
-        final IdTokenProvider idTokenProvider = newProviderInstance(jwtConfigWithEncryption());
+        IdTokenProvider idTokenProvider = newProviderInstance(jwtConfigWithEncryption());
 
         Mockito.when(tokenEncryptor.encryptAndEncode(Mockito.any()))
                 .thenAnswer(invocation -> Either.right("encrypted"));
 
-        final AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(true);
-        final AuthResponseBO tokens = idTokenProvider.generateToken(account);
+        AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(true);
+        AuthResponseBO tokens = idTokenProvider.generateToken(account).join();
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isEqualTo("encrypted");
@@ -94,9 +94,9 @@ class IdTokenProviderTest {
         assertThat(tokens.getToken()).isNotEqualTo(tokens.getRefreshToken());
     }
 
-    private void verifyToken(final String token, final long subject, final String jti,
-                             final List<PermissionBO> permissions, final List<String> scopes) {
-        final Verification verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
+    private void verifyToken(final String token, long subject, String jti,
+                             List<PermissionBO> permissions, List<String> scopes) {
+        Verification verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
                 .withIssuer(ISSUER)
                 .withSubject("" + subject);
 
@@ -104,7 +104,7 @@ class IdTokenProviderTest {
             verifier.withJWTId(jti);
         }
 
-        final DecodedJWT decodedJWT = verifier.build().verify(token);
+        DecodedJWT decodedJWT = verifier.build().verify(token);
 
         if (permissions != null) {
             assertThat(decodedJWT.getClaim("permissions").asArray(String.class)).hasSameSizeAs(permissions);
@@ -115,8 +115,8 @@ class IdTokenProviderTest {
         }
     }
 
-    private void verifyToken(final DecodedJWT decodedJWT, final String subject) {
-        final JWTVerifier verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
+    private void verifyToken(final DecodedJWT decodedJWT, String subject) {
+        JWTVerifier verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
                 .build();
 
         verifier.verify(decodedJWT);

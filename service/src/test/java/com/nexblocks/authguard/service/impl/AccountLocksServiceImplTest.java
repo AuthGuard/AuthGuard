@@ -32,7 +32,7 @@ class AccountLocksServiceImplTest {
 
     @Test
     void getActiveLocksByAccountId() {
-        final Instant now = Instant.now();
+        Instant now = Instant.now();
 
         Mockito.when(repository.findByAccountId(101))
                 .thenReturn(CompletableFuture.completedFuture(
@@ -48,8 +48,8 @@ class AccountLocksServiceImplTest {
                         )
                 ));
 
-        final Collection<AccountLockBO> actual = service.getActiveLocksByAccountId(101);
-        final Collection<AccountLockBO> expected = Collections.singletonList(AccountLockBO.builder()
+        Collection<AccountLockBO> actual = service.getActiveLocksByAccountId(101).join();
+        Collection<AccountLockBO> expected = Collections.singletonList(AccountLockBO.builder()
                 .accountId(101L)
                 .expiresAt(now.plus(Duration.ofMinutes(5)))
                 .build());
@@ -59,7 +59,7 @@ class AccountLocksServiceImplTest {
 
     @Test
     void delete() {
-        final Instant now = Instant.now();
+        Instant now = Instant.now();
 
         Mockito.when(repository.delete(1))
                 .thenReturn(CompletableFuture.completedFuture(
@@ -69,8 +69,8 @@ class AccountLocksServiceImplTest {
                                 .build())
                 ));
 
-        final Optional<AccountLockBO> actual = service.delete(1);
-        final AccountLockBO expected = AccountLockBO.builder()
+        Optional<AccountLockBO> actual = service.delete(1).join();
+        AccountLockBO expected = AccountLockBO.builder()
                 .accountId(101L)
                 .expiresAt(now.plus(Duration.ofMinutes(5)))
                 .build();

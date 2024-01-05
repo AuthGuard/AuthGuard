@@ -9,8 +9,7 @@ import com.nexblocks.authguard.service.auth.AuthVerifier;
 import com.nexblocks.authguard.service.config.StrategyConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
-import com.nexblocks.authguard.service.model.EntityType;
-import io.vavr.control.Either;
+import io.vavr.control.Try;
 
 public class JwtTokenVerifier implements AuthVerifier {
     private final StrategyConfig strategy;
@@ -32,18 +31,18 @@ public class JwtTokenVerifier implements AuthVerifier {
         this.verifier = JWT.require(algorithm).build();
     }
 
-    Either<Exception, DecodedJWT> verify(final String token) {
+    Try<DecodedJWT> verify(final String token) {
         try {
-            final DecodedJWT decoded = JWT.decode(token);
-            final DecodedJWT verified = verifier.verify(decoded);
+            DecodedJWT decoded = JWT.decode(token);
+            DecodedJWT verified = verifier.verify(decoded);
 
             if (this.verifyJti(verified)) {
-                return Either.right(verified);
+                return Try.success(verified);
             } else {
-                return Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid JTI"));
+                return Try.failure(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid JTI"));
             }
         } catch (final JWTVerificationException e) {
-            return Either.left(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid JWT"));
+            return Try.failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid JWT"));
         }
     }
 
@@ -52,13 +51,15 @@ public class JwtTokenVerifier implements AuthVerifier {
     }
 
     @Override
-    public Either<Exception, Long> verifyAccountToken(String token) {
-        return verify(token).flatMap(payload -> {
-            try {
-                return Either.right(Long.parseLong(payload.getSubject()));
-            } catch (Exception e) {
-                return Either.left(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid JWT subject"));
-            }
-        });
+    public Long verifyAccountToken(String token) {
+        return verify(token)
+                .flatMap(payload -> {
+                    try {
+                        return Try.success(Long.parseLong(payload.getSubject()));
+                    } catch (Exception e) {
+                        return Try.failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid JWT subject"));
+                    }
+                })
+                .get();
     }
 }

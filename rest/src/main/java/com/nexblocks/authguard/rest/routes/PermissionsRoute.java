@@ -1,6 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
-import com.nexblocks.authguard.api.dto.entities.Error;
+import com.google.inject.Inject;
 import com.nexblocks.authguard.api.dto.entities.PermissionDTO;
 import com.nexblocks.authguard.api.dto.requests.CreatePermissionRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
@@ -11,13 +11,13 @@ import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.service.PermissionsService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
-import com.nexblocks.authguard.service.model.PermissionBO;
-import com.google.inject.Inject;
+import com.nexblocks.authguard.service.util.AsyncUtils;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class PermissionsRoute extends PermissionsApi {
@@ -36,70 +36,63 @@ public class PermissionsRoute extends PermissionsApi {
     }
 
     public void create(final Context context) {
-        final CreatePermissionRequestDTO permission = createPermissionRequestBodyHandler.getValidated(context);
-        final PermissionBO created = permissionsService.create(restMapper.toBO(permission));
+        CreatePermissionRequestDTO permission = createPermissionRequestBodyHandler.getValidated(context);
+        CompletableFuture<PermissionDTO> created = permissionsService.create(restMapper.toBO(permission))
+                .thenApply(restMapper::toDTO);
 
-        context.status(201)
-                .json(restMapper.toDTO(created));
+        context.status(201).json(created);
     }
 
     @Override
     public void getById(final Context context) {
-        final Validator<Long> id = context.pathParam("id", Long.class);
+        Validator<Long> id = context.pathParam("id", Long.class);
 
         if (!id.isValid()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        permissionsService.getById(id.get())
-                .map(restMapper::toDTO)
-                .ifPresentOrElse(
-                        context::json,
-                        // or else
-                        () -> context.status(404)
-                                .json(new Error(ErrorCode.PERMISSION_DOES_NOT_EXIST.getCode(),
-                                        "No role with ID " + id.get() + " exists"))
-                );
+        CompletableFuture<PermissionDTO> permission = permissionsService.getById(id.get())
+                .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.PERMISSION_DOES_NOT_EXIST, "Permission does not exist"))
+                .thenApply(restMapper::toDTO);
+
+        context.json(permission);
     }
 
     @Override
     public void deleteById(final Context context) {
-        final Validator<Long> id = context.pathParam("id", Long.class);
+        Validator<Long> id = context.pathParam("id", Long.class);
 
         if (!id.isValid()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        permissionsService.delete(id.get())
-                .map(restMapper::toDTO)
-                .ifPresentOrElse(
-                        context::json,
-                        // or else
-                        () -> context.status(404)
-                                .json(new Error(ErrorCode.PERMISSION_DOES_NOT_EXIST.getCode(),
-                                        "No role with ID " + id.get() + " exists"))
-                );
+        CompletableFuture<PermissionDTO> permission = permissionsService.delete(id.get())
+                .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.PERMISSION_DOES_NOT_EXIST, "Permission does not exist"))
+                .thenApply(restMapper::toDTO);
+
+        context.json(permission);
     }
 
     @Override
     public void getByGroup(final Context context) {
-        final String group = context.pathParam("group");
-        final String domain = context.pathParam("domain");
+        String group = context.pathParam("group");
+        String domain = context.pathParam("domain");
 
-        final List<PermissionDTO> permissions = permissionsService.getAllForGroup(group, domain)
-                .stream()
-                .map(restMapper::toDTO)
-                .collect(Collectors.toList());
+        CompletableFuture<List<PermissionDTO>> permissions = permissionsService.getAllForGroup(group, domain)
+                .thenApply(list -> list.stream()
+                        .map(restMapper::toDTO)
+                        .collect(Collectors.toList()));
 
         context.json(permissions);
     }
 
     public void getAll(final Context context) {
-        final String domain = context.pathParam("domain");
+        String domain = context.pathParam("domain");
 
-        final List<PermissionDTO> permissions = permissionsService.getAll(domain).stream()
-                .map(restMapper::toDTO)
-                .collect(Collectors.toList());
+        CompletableFuture<List<PermissionDTO>> permissions = permissionsService.getAll(domain)
+                .thenApply(list -> list.stream()
+                        .map(restMapper::toDTO)
+                        .collect(Collectors.toList()));
 
         context.json(permissions);
     }

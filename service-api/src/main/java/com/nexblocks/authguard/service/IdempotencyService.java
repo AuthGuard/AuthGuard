@@ -15,4 +15,8 @@ public interface IdempotencyService {
     <T extends Entity> CompletableFuture<T> performOperation(Supplier<T> operation,
                                                              String idempotentKey,
                                                              String entityType);
+
+    <T extends Entity> CompletableFuture<T> performOperationAsync(Supplier<CompletableFuture<T>> operation,
+                                                                  String idempotentKey,
+                                                                  String entityType);
 }

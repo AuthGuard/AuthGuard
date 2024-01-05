@@ -5,10 +5,11 @@ import com.nexblocks.authguard.jwt.AccessTokenProvider;
 import com.nexblocks.authguard.jwt.IdTokenProvider;
 import com.nexblocks.authguard.jwt.OpenIdConnectTokenProvider;
 import com.nexblocks.authguard.service.model.*;
-import io.vavr.control.Either;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,7 +17,6 @@ class BasicToOIdCTest {
     private BasicAuthProvider basicAuth;
     private AccessTokenProvider accessTokenProvider;
     private IdTokenProvider idTokenProvider;
-    private OpenIdConnectTokenProvider openIdConnectTokenProvider;
 
     private BasicToOIdC basicToOIdC;
 
@@ -26,45 +26,45 @@ class BasicToOIdCTest {
         accessTokenProvider = Mockito.mock(AccessTokenProvider.class);
         idTokenProvider = Mockito.mock(IdTokenProvider.class);
 
-        openIdConnectTokenProvider = new OpenIdConnectTokenProvider(accessTokenProvider, idTokenProvider);
+        OpenIdConnectTokenProvider openIdConnectTokenProvider = new OpenIdConnectTokenProvider(accessTokenProvider, idTokenProvider);
 
         basicToOIdC = new BasicToOIdC(basicAuth, openIdConnectTokenProvider);
     }
 
     @Test
     void exchange() {
-        final AccountBO account = AccountBO.builder().id(101).build();
+        AccountBO account = AccountBO.builder().id(101).build();
 
-        final AuthRequestBO authRequest = AuthRequestBO.builder()
+        AuthRequestBO authRequest = AuthRequestBO.builder()
                 .identifier("username")
                 .password("password")
                 .build();
 
-        final AuthResponseBO accessTokenResponse = AuthResponseBO.builder()
+        AuthResponseBO accessTokenResponse = AuthResponseBO.builder()
                 .token("access token")
                 .refreshToken("refresh token")
                 .build();
 
-        final AuthResponseBO idTokenResponse = AuthResponseBO.builder()
+        AuthResponseBO idTokenResponse = AuthResponseBO.builder()
                 .token("id token")
                 .build();
 
-        final TokenOptionsBO options = TokenOptionsBO.builder()
+        TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("basic")
                 .build();
 
         Mockito.when(basicAuth.authenticateAndGetAccount(authRequest))
-                .thenReturn(Either.right(account));
+                .thenReturn(CompletableFuture.completedFuture(account));
 
         Mockito.when(accessTokenProvider.generateToken(account, authRequest.getRestrictions(), options))
-                .thenReturn(accessTokenResponse);
+                .thenReturn(CompletableFuture.completedFuture(accessTokenResponse));
 
         Mockito.when(idTokenProvider.generateToken(account))
-                .thenReturn(idTokenResponse);
+                .thenReturn(CompletableFuture.completedFuture(idTokenResponse));
 
-        final Either<Exception, AuthResponseBO> actual = basicToOIdC.exchange(authRequest);
+        AuthResponseBO actual = basicToOIdC.exchange(authRequest).join();
 
-        final AuthResponseBO expected = AuthResponseBO.builder()
+        AuthResponseBO expected = AuthResponseBO.builder()
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .type("oidc")
@@ -75,7 +75,6 @@ class BasicToOIdCTest {
                         .build())
                 .build();
 
-        assertThat(actual.isRight()).isTrue();
-        assertThat(actual.get()).isEqualTo(expected);
+        assertThat(actual).isEqualTo(expected);
     }
 }

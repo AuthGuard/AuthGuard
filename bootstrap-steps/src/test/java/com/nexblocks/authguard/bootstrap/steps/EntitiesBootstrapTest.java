@@ -13,8 +13,7 @@ import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.concurrent.CompletableFuture;
 
 class EntitiesBootstrapTest {
 
@@ -28,7 +27,7 @@ class EntitiesBootstrapTest {
         rolesService = Mockito.mock(RolesService.class);
         permissionsService = Mockito.mock(PermissionsService.class);
 
-        final BootstrapEntitiesConfig entitiesConfig = BootstrapEntitiesConfig.builder()
+         BootstrapEntitiesConfig entitiesConfig = BootstrapEntitiesConfig.builder()
                 .putDomains("test", DomainEntitiesConfig.builder()
                         .addRoles("user", "admin", "existing")
                         .addPermissions(PermissionConfig.builder()
@@ -50,10 +49,13 @@ class EntitiesBootstrapTest {
     @Test
     void run() {
         Mockito.when(rolesService.getRoleByName("existing", "test"))
-                .thenReturn(Optional.of(RoleBO.builder()
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(RoleBO.builder()
                         .domain("test")
                         .name("existing")
-                        .build()));
+                        .build())));
+
+        Mockito.when(rolesService.getRoleByName(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         Mockito.when(permissionsService.validate(Mockito.anyList(), Mockito.anyString()))
                 .thenReturn(Collections.singletonList(PermissionBO.builder()

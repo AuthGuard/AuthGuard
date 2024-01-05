@@ -19,6 +19,7 @@ import com.nexblocks.authguard.service.model.ApiKeyBO;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.ClientBO;
+import com.nexblocks.authguard.service.util.AsyncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +28,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -63,118 +65,127 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     }
 
     @Override
-    public ApiKeyBO create(final ApiKeyBO apiKey) {
+    public CompletableFuture<ApiKeyBO> create(final ApiKeyBO apiKey) {
         return persistenceService.create(apiKey);
     }
 
     @Override
-    public Optional<ApiKeyBO> getById(final long apiKeyId) {
+    public CompletableFuture<Optional<ApiKeyBO>> getById(final long apiKeyId) {
         return persistenceService.getById(apiKeyId);
     }
 
     @Override
-    public Optional<ApiKeyBO> update(final ApiKeyBO entity) {
+    public CompletableFuture<Optional<ApiKeyBO>> update(final ApiKeyBO entity) {
         throw new UnsupportedOperationException("API keys cannot be updated");
     }
 
     @Override
-    public Optional<ApiKeyBO> delete(final long id) {
+    public CompletableFuture<Optional<ApiKeyBO>> delete(final long id) {
         LOG.info("API key delete request. accountId={}", id);
 
         return persistenceService.delete(id);
     }
 
     @Override
-    public ApiKeyBO generateApiKey(final long appId, final String type, final Duration duration) {
-        final AppBO app = applicationsService.getById(appId)
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST,
-                        "No app with ID " + appId + " found"));
-
-        return generateApiKey(app, type, duration);
+    public CompletableFuture<ApiKeyBO> generateApiKey(final long appId, final String type, final Duration duration) {
+        return applicationsService.getById(appId)
+                .thenCompose(AsyncUtils::fromAppOptional)
+                .thenCompose(app -> generateApiKey(app, type, duration));
     }
 
     @Override
-    public ApiKeyBO generateClientApiKey(long clientId, String type, Duration duration) {
-        final ClientBO client = clientsService.getById(clientId)
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST,
-                        "No client with ID " + clientId + " found"));
-
-        return generateClientApiKey(client, type, duration);
+    public CompletableFuture<ApiKeyBO> generateClientApiKey(final long clientId, final String type, final Duration duration) {
+        return clientsService.getById(clientId)
+                .thenCompose(AsyncUtils::fromClientOptional)
+                .thenCompose(client -> generateClientApiKey(client, type, duration));
     }
 
     @Override
-    public ApiKeyBO generateApiKey(final AppBO app, final String type, final Duration duration) {
-        final ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
+    public CompletableFuture<ApiKeyBO> generateApiKey(final AppBO app, final String type, final Duration duration) {
+        ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
 
         LOG.info("API key request. appId={}, domain={}, type={}, duration={}",
                 app.getId(), app.getDomain(), type, duration);
 
-        final Instant expirationInstant = getExpirationInstant(duration);
-        final AuthResponseBO token = apiKeyExchange.generateKey(app, expirationInstant);
-        final String generatedKey = (String) token.getToken();
-        final String hashedKey = apiKeyHash.hash(generatedKey);
-        final ApiKeyBO toCreate = mapApiKey(app.getId(), hashedKey, type, false, expirationInstant);
+        Instant expirationInstant = getExpirationInstant(duration);
+        AuthResponseBO token = apiKeyExchange.generateKey(app, expirationInstant);
+        String generatedKey = (String) token.getToken();
+        String hashedKey = apiKeyHash.hash(generatedKey);
+        ApiKeyBO toCreate = mapApiKey(app.getId(), hashedKey, type, false, expirationInstant);
 
-        final ApiKeyBO persisted = create(toCreate);
+        return create(toCreate)
+                .thenApply(persisted -> {
+                    LOG.info("API key generated. appId={}, domain={}, type={}, keyId={}, expiresAt={}",
+                            app.getId(), app.getDomain(), type, persisted.getId(), persisted.getExpiresAt());
 
-        LOG.info("API key generated. appId={}, domain={}, type={}, keyId={}, expiresAt={}",
-                app.getId(), app.getDomain(), type, persisted.getId(), persisted.getExpiresAt());
-
-        return persisted.withKey(generatedKey); // we store the hashed version, but we return the clear version
+                    return persisted.withKey(generatedKey); // we store the hashed version, but we return the clear version
+                });
     }
 
     @Override
-    public ApiKeyBO generateClientApiKey(ClientBO client, String type, Duration duration) {
-        final ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
+    public CompletableFuture<ApiKeyBO> generateClientApiKey(ClientBO client, String type, Duration duration) {
+        ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
 
         LOG.info("API key request. clientId={}, domain={}, type={}, duration={}",
                 client.getId(), client.getDomain(), type, duration);
 
-        final Instant expirationInstant = getExpirationInstant(duration);
-        final AuthResponseBO token = apiKeyExchange.generateKey(client, expirationInstant);
-        final String generatedKey = (String) token.getToken();
-        final String hashedKey = apiKeyHash.hash(generatedKey);
-        final ApiKeyBO toCreate = mapApiKey(client.getId(), hashedKey, type, true, expirationInstant);
+        Instant expirationInstant = getExpirationInstant(duration);
+        AuthResponseBO token = apiKeyExchange.generateKey(client, expirationInstant);
+        String generatedKey = (String) token.getToken();
+        String hashedKey = apiKeyHash.hash(generatedKey);
+        ApiKeyBO toCreate = mapApiKey(client.getId(), hashedKey, type, true, expirationInstant);
 
-        final ApiKeyBO persisted = create(toCreate);
+        return create(toCreate)
+                .thenApply(persisted -> {
+                    LOG.info("API key generated. clientId={}, domain={}, type={}, keyId={}, expiresAt={}",
+                            client.getId(), client.getDomain(), type, persisted.getId(), persisted.getExpiresAt());
 
-        LOG.info("API key generated. clientId={}, domain={}, type={}, keyId={}, expiresAt={}",
-                client.getId(), client.getDomain(), type, persisted.getId(), persisted.getExpiresAt());
-
-        return persisted.withKey(generatedKey); // we store the hashed version, but we return the clear version
+                    return persisted.withKey(generatedKey); // we store the hashed version, but we return the clear version
+                });
     }
 
     @Override
-    public List<ApiKeyBO> getByAppId(final long appId) {
+    public CompletableFuture<List<ApiKeyBO>> getByAppId(final long appId) {
         return apiKeysRepository.getByAppId(appId)
                 .thenApply(list -> list.stream()
                         .map(serviceMapper::toBO)
-                        .collect(Collectors.toList()))
-                .join();
+                        .collect(Collectors.toList()));
     }
 
     @Override
-    public Optional<AppBO> validateApiKey(final String key, final String type) {
-        final ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
+    public CompletableFuture<AppBO> validateApiKey(final String key, final String type) {
+        ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
 
         return apiKeyExchange.verifyAndGetAppId(key)
-                .thenApply(optional -> optional.flatMap(applicationsService::getById))
-                .join();
+                .thenCompose(optional -> {
+                    if (optional.isEmpty()) {
+                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.INVALID_TOKEN, "Token is invalid or expired"));
+                    }
+
+                    return applicationsService.getById(optional.get());
+                })
+                .thenCompose(AsyncUtils::fromAppOptional);
 
     }
 
     @Override
-    public Optional<ClientBO> validateClientApiKey(String key, String type) {
-        final ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
+    public CompletableFuture<ClientBO> validateClientApiKey(String key, String type) {
+        ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
 
         return apiKeyExchange.verifyAndGetClientId(key)
-                .thenApply(optional -> optional.flatMap(clientsService::getById))
-                .join();
+                .thenCompose(optional -> {
+                    if (optional.isEmpty()) {
+                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.INVALID_TOKEN, "Token is invalid or expired"));
+                    }
+
+                    return clientsService.getById(optional.get());
+                })
+                .thenCompose(AsyncUtils::fromClientOptional);
     }
 
     private ApiKeyBO mapApiKey(final long appId, final String key, final String type, boolean forClient,
                                final Instant expiresAt) {
-        final ApiKeyBO.Builder builder = ApiKeyBO.builder()
+        ApiKeyBO.Builder builder = ApiKeyBO.builder()
                 .appId(appId)
                 .key(key)
                 .type(type)

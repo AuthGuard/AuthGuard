@@ -6,7 +6,8 @@ import com.nexblocks.authguard.jwt.OpenIdConnectTokenProvider;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.model.*;
-import io.vavr.control.Either;
+
+import java.util.concurrent.CompletableFuture;
 
 @TokenExchange(from = "basic", to = "oidc")
 public class BasicToOIdC implements Exchange {
@@ -21,12 +22,12 @@ public class BasicToOIdC implements Exchange {
     }
 
     @Override
-    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
+    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
         return basicAuth.authenticateAndGetAccount(request)
-                .map(account -> generateTokens(account, request.getRestrictions()));
+                .thenCompose(account -> generateTokens(account, request.getRestrictions()));
     }
 
-    private AuthResponseBO generateTokens(final AccountBO account, final TokenRestrictionsBO restrictions) {
+    private CompletableFuture<AuthResponseBO> generateTokens(final AccountBO account, final TokenRestrictionsBO restrictions) {
         final TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("basic")
                 .build();

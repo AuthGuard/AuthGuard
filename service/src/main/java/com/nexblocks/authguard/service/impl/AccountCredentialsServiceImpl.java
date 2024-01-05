@@ -18,6 +18,7 @@ import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.messaging.ResetTokenMessage;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
+import com.nexblocks.authguard.service.util.AsyncUtils;
 import com.nexblocks.authguard.service.util.CredentialsManager;
 import com.nexblocks.authguard.service.util.ID;
 import org.slf4j.Logger;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class AccountCredentialsServiceImpl implements AccountCredentialsService {
@@ -67,223 +69,222 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
         this.cryptographicRandom = new CryptographicRandom();
     }
 
-    public Optional<AccountBO> getByIdUnsafe(final long id) {
-        return accountsService.getByIdUnsafe(id);
-    }
-
     @Override
-    public Optional<AccountBO> updatePassword(final long id, final String plainPassword) {
-        final AccountBO existing = accountsService.getById(id)
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
+    public CompletableFuture<AccountBO> updatePassword(final long id, final String plainPassword) {
+        return accountsService.getByIdUnsafe(id)
+                .thenCompose(existing -> {
+                    HashedPasswordBO newPassword = credentialsManager.verifyAndHashPassword(plainPassword);
+                    AccountBO update = existing
+                            .withHashedPassword(newPassword)
+                            .withPasswordUpdatedAt(Instant.now());
 
-        LOG.info("Password update request. accountId={}, domain={}", id, existing.getDomain());
+                    return doUpdate(existing, update)
+                            .thenApply(result -> {
+                                storePasswordUpdateRecord(existing);
 
-        final HashedPasswordBO newPassword = credentialsManager.verifyAndHashPassword(plainPassword);
-        final AccountBO update = existing
-                .withHashedPassword(newPassword)
-                .withPasswordUpdatedAt(Instant.now());
+                                LOG.info("Password updated. accountId={}, domain={}", id, existing.getDomain());
 
-        return doUpdate(existing, update)
-                .map(result -> {
-                    storePasswordUpdateRecord(existing);
-
-                    LOG.info("Password updated. accountId={}, domain={}", id, existing.getDomain());
-
-                    return result;
+                                return result;
+                            });
                 });
     }
 
     @Override
-    public Optional<AccountBO> addIdentifiers(final long id, final List<UserIdentifierBO> identifiers) {
-        final AccountBO existing = getByIdUnsafe(id)
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
+    public CompletableFuture<AccountBO> addIdentifiers(final long id, final List<UserIdentifierBO> identifiers) {
+        return accountsService.getByIdUnsafe(id)
+                .thenCompose(existing -> {
+                    LOG.info("Add identifiers request. accountId={}, domain={}", id, existing.getDomain());
 
-        LOG.info("Add identifiers request. accountId={}, domain={}", id, existing.getDomain());
+                    final Set<String> existingIdentifiers = existing.getIdentifiers().stream()
+                            .map(UserIdentifierBO::getIdentifier)
+                            .collect(Collectors.toSet());
 
-        final Set<String> existingIdentifiers = existing.getIdentifiers().stream()
-                .map(UserIdentifierBO::getIdentifier)
-                .collect(Collectors.toSet());
+                    final List<UserIdentifierBO> combined = new ArrayList<>(existing.getIdentifiers());
 
-        final List<UserIdentifierBO> combined = new ArrayList<>(existing.getIdentifiers());
+                    for (final UserIdentifierBO identifier : identifiers) {
+                        if (existingIdentifiers.contains(identifier.getIdentifier())) {
+                            throw new ServiceConflictException(ErrorCode.IDENTIFIER_ALREADY_EXISTS, "Duplicate identifier for " + id);
+                        }
 
-        for (final UserIdentifierBO identifier : identifiers) {
-            if (existingIdentifiers.contains(identifier.getIdentifier())) {
-                throw new ServiceConflictException(ErrorCode.IDENTIFIER_ALREADY_EXISTS, "Duplicate identifier for " + id);
-            }
-
-            combined.add(UserIdentifierBO.builder().from(identifier)
-                    .active(true)
-                    .domain(existing.getDomain())
-                    .build());
-        }
-
-        final AccountBO updated = AccountBO.builder().from(existing)
-                .identifiers(combined)
-                .build();
-
-        return doUpdate(existing, updated);
-    }
-
-    @Override
-    public Optional<AccountBO> removeIdentifiers(final long id, final List<String> identifiers) {
-        final AccountBO existing = getByIdUnsafe(id)
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No credentials with ID " + id));
-
-        LOG.info("Remove identifiers request. accountId={}, domain={}", id, existing.getDomain());
-
-        final List<UserIdentifierBO> updatedIdentifiers = existing.getIdentifiers().stream()
-                .map(identifier -> {
-                    if (identifiers.contains(identifier.getIdentifier())) {
-                        return identifier.withActive(false);
+                        combined.add(UserIdentifierBO.builder().from(identifier)
+                                .active(true)
+                                .domain(existing.getDomain())
+                                .build());
                     }
 
-                    return identifier;
-                })
-                .collect(Collectors.toList());
+                    final AccountBO updated = AccountBO.builder().from(existing)
+                            .identifiers(combined)
+                            .build();
 
-        final AccountBO updated = AccountBO.builder().from(existing)
-                .identifiers(updatedIdentifiers)
-                .build();
-
-        return doUpdate(existing, updated)
-                .map(result -> {
-                    updatedIdentifiers.forEach(oldIdentifier ->
-                            storeIdentifierUpdateRecord(existing, oldIdentifier, CredentialsAudit.Action.DEACTIVATED));
-
-                    return result;
+                    return doUpdate(existing, updated);
                 });
     }
 
     @Override
-    public Optional<AccountBO> replaceIdentifier(final long id, final String oldIdentifier, final UserIdentifierBO newIdentifier) {
-        final AccountBO existing = getByIdUnsafe(id)
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "No account with ID " + id));
+    public CompletableFuture<AccountBO> removeIdentifiers(final long id, final List<String> identifiers) {
+        return accountsService.getByIdUnsafe(id)
+                .thenCompose(existing -> {
+                    LOG.info("Remove identifiers request. accountId={}, domain={}", id, existing.getDomain());
 
-        LOG.info("Replace identifiers request. accountId={}, domain={}", id, existing.getDomain());
+                    final List<UserIdentifierBO> updatedIdentifiers = existing.getIdentifiers().stream()
+                            .map(identifier -> {
+                                if (identifiers.contains(identifier.getIdentifier())) {
+                                    return identifier.withActive(false);
+                                }
 
-        final Optional<UserIdentifierBO> matchedIdentifier = existing.getIdentifiers()
-                .stream()
-                .filter(identifier -> identifier.getIdentifier().equals(oldIdentifier))
-                .findFirst();
+                                return identifier;
+                            })
+                            .collect(Collectors.toList());
 
-        if (matchedIdentifier.isEmpty()) {
-            throw new ServiceException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "Credentials " + id + " has no identifier " + oldIdentifier);
-        }
+                    final AccountBO updated = AccountBO.builder().from(existing)
+                            .identifiers(updatedIdentifiers)
+                            .build();
 
-        final Set<UserIdentifierBO> newIdentifiers = existing.getIdentifiers()
-                .stream()
-                .map(identifier -> {
-                    if (identifier.getIdentifier().equals(oldIdentifier)) {
-                        return UserIdentifierBO.builder()
-                                .identifier(newIdentifier.getIdentifier())
-                                .active(newIdentifier.isActive())
-                                .type(identifier.getType())
-                                .domain(identifier.getDomain())
-                                .build();
+                    return doUpdate(existing, updated)
+                            .thenApply(result -> {
+                                updatedIdentifiers.forEach(oldIdentifier ->
+                                        storeIdentifierUpdateRecord(existing, oldIdentifier, CredentialsAudit.Action.DEACTIVATED));
+
+                                return result;
+                            });
+                });
+    }
+
+    @Override
+    public CompletableFuture<AccountBO> replaceIdentifier(final long id, final String oldIdentifier, final UserIdentifierBO newIdentifier) {
+        return accountsService.getByIdUnsafe(id)
+                .thenCompose(existing -> {
+                    LOG.info("Replace identifiers request. accountId={}, domain={}", id, existing.getDomain());
+
+                    final Optional<UserIdentifierBO> matchedIdentifier = existing.getIdentifiers()
+                            .stream()
+                            .filter(identifier -> identifier.getIdentifier().equals(oldIdentifier))
+                            .findFirst();
+
+                    if (matchedIdentifier.isEmpty()) {
+                        throw new ServiceException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "Credentials " + id + " has no identifier " + oldIdentifier);
                     }
 
-                    return identifier;
-                })
-                .collect(Collectors.toSet());
+                    final Set<UserIdentifierBO> newIdentifiers = existing.getIdentifiers()
+                            .stream()
+                            .map(identifier -> {
+                                if (identifier.getIdentifier().equals(oldIdentifier)) {
+                                    return UserIdentifierBO.builder()
+                                            .identifier(newIdentifier.getIdentifier())
+                                            .active(newIdentifier.isActive())
+                                            .type(identifier.getType())
+                                            .domain(identifier.getDomain())
+                                            .build();
+                                }
 
-        final AccountBO update = existing.withIdentifiers(newIdentifiers);
+                                return identifier;
+                            })
+                            .collect(Collectors.toSet());
 
-        return doUpdate(existing, update)
-                .map(result -> {
-                    storeIdentifierUpdateRecord(existing, matchedIdentifier.get(), CredentialsAudit.Action.UPDATED);
+                    final AccountBO update = existing.withIdentifiers(newIdentifiers);
 
-                    return result;
+                    return doUpdate(existing, update)
+                            .thenApply(result -> {
+                                storeIdentifierUpdateRecord(existing, matchedIdentifier.get(), CredentialsAudit.Action.UPDATED);
+
+                                return result;
+                            });
                 });
     }
 
     @Override
-    public PasswordResetTokenBO generateResetToken(final String identifier, final boolean returnToken, final String domain) {
-        final AccountBO account = accountsService.getByIdentifier(identifier, domain)
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "Unknown identifier"));
+    public CompletableFuture<PasswordResetTokenBO> generateResetToken(final String identifier, final boolean returnToken, final String domain) {
+        return accountsService.getByIdentifier(identifier, domain)
+                .thenCompose(AsyncUtils::fromAccountOptional)
+                .thenCompose(account -> {
+                    LOG.info("Generate password reset token request. accountId={}, domain={}", account.getId(), account.getDomain());
 
-        LOG.info("Generate password reset token request. accountId={}, domain={}", account.getId(), account.getDomain());
+                    final Instant now = Instant.now();
 
-        final Instant now = Instant.now();
+                    final AccountTokenDO accountToken = AccountTokenDO
+                            .builder()
+                            .id(ID.generate())
+                            .createdAt(now)
+                            .token(cryptographicRandom.base64Url(RESET_TOKEN_SIZE))
+                            .associatedAccountId(account.getId())
+                            .expiresAt(now.plus(TOKEN_LIFETIME))
+                            .build();
 
-        final AccountTokenDO accountToken = AccountTokenDO
-                .builder()
-                .id(ID.generate())
-                .createdAt(now)
-                .token(cryptographicRandom.base64Url(RESET_TOKEN_SIZE))
-                .associatedAccountId(account.getId())
-                .expiresAt(now.plus(TOKEN_LIFETIME))
-                .build();
+                    return accountTokensRepository.save(accountToken)
+                            .thenApply(persistedToken -> {
+                                LOG.info("Password reset token persisted. accountId={}, domain={}, tokenId={}, expiresAt={}",
+                                        account.getId(), account.getDomain(), accountToken.getId(), accountToken.getExpiresAt());
 
-        final AccountTokenDO persistedToken = accountTokensRepository.save(accountToken).join();
+                                messageBus.publish(CREDENTIALS_CHANNEL,
+                                        Messages.resetTokenGenerated(new ResetTokenMessage(account, persistedToken)));
 
-        LOG.info("Password reset token persisted. accountId={}, domain={}, tokenId={}, expiresAt={}",
-                account.getId(), account.getDomain(), accountToken.getId(), accountToken.getExpiresAt());
-
-        messageBus.publish(CREDENTIALS_CHANNEL,
-                Messages.resetTokenGenerated(new ResetTokenMessage(account, persistedToken)));
-
-        return PasswordResetTokenBO.builder()
-                .token(returnToken ? persistedToken.getToken() : null)
-                .issuedAt(now.toEpochMilli() / 1000)
-                .expiresAt(persistedToken.getExpiresAt().toEpochMilli() / 1000)
-                .build();
-    }
-
-    @Override
-    public Optional<AccountBO> resetPasswordByToken(final String token, final String plainPassword) {
-        final AccountTokenDO accountToken = accountTokensRepository.getByToken(token)
-                .join()
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
-                        "AccountDO token " + token + " does not exist"));
-
-        LOG.info("Password reset by token request. tokenId={}", accountToken.getId());
-
-        if (accountToken.getExpiresAt().isBefore(Instant.now())) {
-            throw new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token " + token + " has expired");
-        }
-
-        return updatePassword(accountToken.getAssociatedAccountId(), plainPassword);
-    }
-
-    @Override
-    public Optional<AccountBO> replacePassword(final String identifier,
-                                               final String oldPassword,
-                                               final String newPassword, final String domain) {
-        final AccountBO credentials = accountsService.getByIdentifierUnsafe(identifier, domain)
-                .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST, "Unknown identifier"));
-
-        LOG.info("Password replace request. accountId={}, domain={}", credentials.getId(), domain);
-
-        if (!securePassword.verify(oldPassword, credentials.getHashedPassword())) {
-            LOG.info("Password mismatch in replace request. accountId={}, domain={}", credentials.getId(), domain);
-
-            throw new ServiceException(ErrorCode.PASSWORDS_DO_NOT_MATCH, "Passwords do not match");
-        }
-
-        final HashedPasswordBO newHashedPassword = credentialsManager.verifyAndHashPassword(newPassword);
-        final AccountBO update = credentials
-                .withHashedPassword(newHashedPassword)
-                .withPasswordUpdatedAt(Instant.now());
-
-        return doUpdate(credentials, update)
-                .map(result -> {
-                    storePasswordUpdateRecord(credentials);
-
-                    return result;
+                                return PasswordResetTokenBO.builder()
+                                        .token(returnToken ? persistedToken.getToken() : null)
+                                        .issuedAt(now.toEpochMilli() / 1000)
+                                        .expiresAt(persistedToken.getExpiresAt().toEpochMilli() / 1000)
+                                        .build();
+                            });
                 });
     }
 
-    private Optional<AccountBO> doUpdate(final AccountBO existing, final AccountBO updated) {
+    @Override
+    public CompletableFuture<AccountBO> resetPasswordByToken(final String token, final String plainPassword) {
+        return accountTokensRepository.getByToken(token)
+                .thenCompose(opt -> {
+                    AccountTokenDO accountToken = opt.orElseThrow(() -> new ServiceNotFoundException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
+                                    "AccountDO token " + token + " does not exist"));
+
+                    LOG.info("Password reset by token request. tokenId={}", accountToken.getId());
+
+                    if (accountToken.getExpiresAt().isBefore(Instant.now())) {
+                        throw new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token " + token + " has expired");
+                    }
+
+                    return updatePassword(accountToken.getAssociatedAccountId(), plainPassword);
+                });
+    }
+
+    @Override
+    public CompletableFuture<AccountBO> replacePassword(final String identifier,
+                                                        final String oldPassword,
+                                                        final String newPassword, final String domain) {
+        return accountsService.getByIdentifierUnsafe(identifier, domain)
+                .thenCompose(AsyncUtils::fromAccountOptional)
+                .thenCompose(credentials -> {
+                    LOG.info("Password replace request. accountId={}, domain={}", credentials.getId(), domain);
+
+                    if (!securePassword.verify(oldPassword, credentials.getHashedPassword())) {
+                        LOG.info("Password mismatch in replace request. accountId={}, domain={}", credentials.getId(), domain);
+
+                        throw new ServiceException(ErrorCode.PASSWORDS_DO_NOT_MATCH, "Passwords do not match");
+                    }
+
+                    final HashedPasswordBO newHashedPassword = credentialsManager.verifyAndHashPassword(newPassword);
+                    final AccountBO update = credentials
+                            .withHashedPassword(newHashedPassword)
+                            .withPasswordUpdatedAt(Instant.now());
+
+                    return doUpdate(credentials, update)
+                            .thenApply(result -> {
+                                storePasswordUpdateRecord(credentials);
+
+                                return result;
+                            });
+                });
+    }
+
+    private CompletableFuture<AccountBO> doUpdate(final AccountBO existing, final AccountBO updated) {
         LOG.info("Account credentials update. accountId={}, domain={}", existing.getId(), existing.getDomain());
         storeAuditAttempt(existing);
 
         return accountsService.update(updated)
-                .map(c -> {
-                    messageBus.publish(CREDENTIALS_CHANNEL, Messages.updated(c));
+                .thenApply(persisted -> persisted.map(c -> {
+                            messageBus.publish(CREDENTIALS_CHANNEL, Messages.updated(c));
 
-                    return c;
-                })
-                .map(credentialsManager::removeSensitiveInformation);
+                            return c;
+                        })
+                        .map(credentialsManager::removeSensitiveInformation)
+                        .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "Account does not exist")));
     }
 
     private void storeIdentifierUpdateRecord(final AccountBO credentials, final UserIdentifierBO update,

@@ -20,5 +20,7 @@ public interface CreateAppRequest {
     List<PermissionDTO> getPermissions();
     List<String> getScopes();
     List<String> getRoles();
-    boolean isActive();
+
+    @Value.Default
+    default boolean isActive() { return true; }
 }

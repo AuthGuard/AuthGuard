@@ -5,6 +5,8 @@ import com.nexblocks.authguard.api.dto.requests.AuthRequestDTO;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.mappers.RestMapperImpl;
 import com.nexblocks.authguard.service.AuthenticationService;
+import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
+import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
@@ -17,14 +19,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AuthRouteTest extends AbstractRouteTest {
-    private static final String ENDPOINT = "auth";
+    private static String ENDPOINT = "auth";
 
     AuthRouteTest() {
         super(ENDPOINT);
@@ -46,25 +48,25 @@ class AuthRouteTest extends AbstractRouteTest {
 
     @Test
     void authenticate() {
-        final AuthRequestDTO requestDTO = randomObject(AuthRequestDTO.class);
-        final AuthRequestBO requestBO = restMapper.toBO(requestDTO)
+        AuthRequestDTO requestDTO = randomObject(AuthRequestDTO.class);
+        AuthRequestBO requestBO = restMapper.toBO(requestDTO)
                 .withClientId("201");
-        final AuthResponseBO tokensBO = AuthResponseBO.builder()
+        AuthResponseBO tokensBO = AuthResponseBO.builder()
                 .token("token")
                 .build();
-        final AuthResponseDTO tokensDTO = mapper().toDTO(tokensBO);
+        AuthResponseDTO tokensDTO = mapper().toDTO(tokensBO);
 
         Mockito.when(authenticationService.authenticate(Mockito.eq(requestBO), Mockito.any()))
-                .thenReturn(Optional.of(tokensBO));
+                .thenReturn(CompletableFuture.completedFuture(tokensBO));
 
-        final ValidatableResponse httpResponse = given()
+        ValidatableResponse httpResponse = given()
                 .body(requestDTO)
                 .post(url("authenticate"))
                 .then()
                 .statusCode(200)
                 .contentType(ContentType.JSON);
 
-        final AuthResponseDTO responseBody = httpResponse.extract()
+        AuthResponseDTO responseBody = httpResponse.extract()
                 .response()
                 .body()
                 .as(AuthResponseDTO.class);
@@ -74,25 +76,25 @@ class AuthRouteTest extends AbstractRouteTest {
 
     @Test
     void authenticateAuthClient() {
-        final AuthRequestDTO requestDTO = randomObject(AuthRequestDTO.class);
-        final AuthRequestBO requestBO = restMapper.toBO(requestDTO)
+        AuthRequestDTO requestDTO = randomObject(AuthRequestDTO.class);
+        AuthRequestBO requestBO = restMapper.toBO(requestDTO)
                 .withClientId("201");
-        final AuthResponseBO tokensBO = AuthResponseBO.builder()
+        AuthResponseBO tokensBO = AuthResponseBO.builder()
                 .token("token")
                 .build();
-        final AuthResponseDTO tokensDTO = mapper().toDTO(tokensBO);
+        AuthResponseDTO tokensDTO = mapper().toDTO(tokensBO);
 
         Mockito.when(authenticationService.authenticate(Mockito.eq(requestBO), Mockito.any()))
-                .thenReturn(Optional.of(tokensBO));
+                .thenReturn(CompletableFuture.completedFuture(tokensBO));
 
-        final ValidatableResponse httpResponse = given()
+        ValidatableResponse httpResponse = given()
                 .body(requestDTO)
                 .post(url("authenticate"))
                 .then()
 //                .statusCode(200)
                 .contentType(ContentType.JSON);
 
-        final AuthResponseDTO responseBody = httpResponse.extract()
+        AuthResponseDTO responseBody = httpResponse.extract()
                 .response()
                 .body()
                 .as(AuthResponseDTO.class);
@@ -102,7 +104,7 @@ class AuthRouteTest extends AbstractRouteTest {
 
     @Test
     void authenticateAuthClientWithViolations() {
-        final AuthRequestDTO requestDTO = AuthRequestDTO.builder()
+        AuthRequestDTO requestDTO = AuthRequestDTO.builder()
                 .identifier("identifier")
                 .domain("test")
                 .sourceIp("ip")
@@ -120,7 +122,7 @@ class AuthRouteTest extends AbstractRouteTest {
 
     @Test
     void authenticateAuthClientWithWrongDomain() {
-        final AuthRequestDTO requestDTO = AuthRequestDTO.builder()
+        AuthRequestDTO requestDTO = AuthRequestDTO.builder()
                 .identifier("identifier")
                 .domain("else")
                 .sourceIp("ip")
@@ -138,11 +140,12 @@ class AuthRouteTest extends AbstractRouteTest {
 
     @Test
     void authenticateUnsuccessful() {
-        final AuthRequestDTO requestDTO = randomObject(AuthRequestDTO.class);
-        final AuthRequestBO requestBO = restMapper.toBO(requestDTO);
-        final RequestContextBO requestContext = RequestContextBO.builder().build();
+        AuthRequestDTO requestDTO = randomObject(AuthRequestDTO.class);
+        AuthRequestBO requestBO = restMapper.toBO(requestDTO)
+                .withClientId("201");
 
-        Mockito.when(authenticationService.authenticate(requestBO, requestContext)).thenReturn(Optional.empty());
+        Mockito.when(authenticationService.authenticate(Mockito.eq(requestBO), Mockito.any()))
+                .thenReturn(CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE, "")));
 
         given()
                 .body(requestDTO)

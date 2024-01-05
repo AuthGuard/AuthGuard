@@ -3,6 +3,9 @@ package com.nexblocks.authguard.jwt.oauth.service;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.google.common.collect.Maps;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.jwt.oauth.OAuthServiceClient;
 import com.nexblocks.authguard.jwt.oauth.ResponseType;
@@ -18,16 +21,11 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AccountEmailBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.nexblocks.authguard.service.model.SessionBO;
-import com.google.common.collect.Maps;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import io.vavr.control.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -67,13 +65,14 @@ public class OAuthService {
      * @param provider The name of a provider as stated in the configuration.
      */
     public CompletableFuture<String> getAuthorizationUrl(final String provider) {
-        final OAuthServiceClient client = Optional.ofNullable(providersClients.get(provider))
+        OAuthServiceClient client = Optional.ofNullable(providersClients.get(provider))
                 .orElseThrow(() -> new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid identity provider"));
-
-        return CompletableFuture.supplyAsync(() -> sessionsService.create(SessionBO.builder()
+        SessionBO session = SessionBO.builder()
                 .expiresAt(Instant.now().plus(stateTtl))
-                .build()))
-                .thenApply(session -> client.createAuthorizationUrl(session.getSessionToken(), ResponseType.CODE));
+                .build();
+
+        return sessionsService.create(session)
+                .thenApply(created -> client.createAuthorizationUrl(created.getSessionToken(), ResponseType.CODE));
     }
 
     /**
@@ -88,27 +87,29 @@ public class OAuthService {
      */
     public CompletableFuture<TokensResponse> exchangeAuthorizationCode(final String provider, final String state,
                                                                        final String authorizationCode) {
-        final OAuthServiceClient client = Optional.ofNullable(providersClients.get(provider))
+        OAuthServiceClient client = Optional.ofNullable(providersClients.get(provider))
                 .orElseThrow(() -> new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid identity provider"));
 
-        return CompletableFuture.supplyAsync(() -> sessionsService.getByToken(state))
+        return sessionsService.getByToken(state)
                 .thenCompose(sessionOptional -> sessionOptional
                         .map(session -> doExchange(client, authorizationCode, session))
                         .orElseThrow(() ->
                                 new ServiceAuthorizationException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
                                         "The provided state is either invalid or has expired")))
-                .thenApply(tokensResponse -> {
+                .thenCompose(tokensResponse -> {
                     if (client.getConfiguration().isAccountProvider()) {
                         if (tokensResponse.getIdToken() == null) {
                             LOG.warn("Provider {} was set as an account provider but no ID was found in the response", provider);
-                        } else {
-                            final AccountBO account = getOrCreateAccount(client, authorizationCode, tokensResponse.getIdToken());
-
-                            tokensResponse.setAccountId(account.getId());
+                            return CompletableFuture.completedFuture(tokensResponse);
                         }
+                        return getOrCreateAccount(client, authorizationCode, tokensResponse.getIdToken())
+                                .thenApply(account -> {
+                                    tokensResponse.setAccountId(account.getId());
+                                    return tokensResponse;
+                                });
                     }
 
-                    return tokensResponse;
+                    return CompletableFuture.completedFuture(tokensResponse);
                 });
     }
 
@@ -129,39 +130,41 @@ public class OAuthService {
         }
     }
 
-    private AccountBO getOrCreateAccount(final OAuthServiceClient serviceClient, final String authorizationCode,
-                                         final String idToken) {
-        final ImmutableOAuthClientConfiguration configuration = serviceClient.getConfiguration();
+    private CompletableFuture<AccountBO> getOrCreateAccount(final OAuthServiceClient serviceClient,
+                                                            final String authorizationCode,
+                                                            final String idToken) {
+        ImmutableOAuthClientConfiguration configuration = serviceClient.getConfiguration();
 
-        final DecodedJWT decoded = JWT.decode(idToken);
-        final String externalId = decoded.getSubject();
+        DecodedJWT decoded = JWT.decode(idToken);
+        String externalId = decoded.getSubject();
 
-        final Optional<AccountBO> account = accountsService.getByExternalId(externalId);
+        return accountsService.getByExternalId(externalId)
+                .thenCompose(account -> {
+                    if (account.isPresent()) {
+                        return CompletableFuture.completedFuture(account.get());
+                    }
 
-        if (account.isPresent()) {
-            return account.get();
-        }
+                    AccountBO.Builder newAccount = AccountBO.builder()
+                            .externalId(externalId)
+                            .social(true)
+                            .identityProvider(configuration.getProvider());
 
-        final AccountBO.Builder newAccount = AccountBO.builder()
-                .externalId(externalId)
-                .social(true)
-                .identityProvider(configuration.getProvider());
+                    if (configuration.getEmailField() != null) {
+                        Claim emailClaim = decoded.getClaim(configuration.getEmailField());
 
-        if (configuration.getEmailField() != null) {
-            final Claim emailClaim = decoded.getClaim(configuration.getEmailField());
+                        if (!emailClaim.isNull()) {
+                            newAccount.email(AccountEmailBO.builder()
+                                    .email(emailClaim.asString())
+                                    .build());
+                        }
+                    }
 
-            if (!emailClaim.isNull()) {
-                newAccount.email(AccountEmailBO.builder()
-                        .email(emailClaim.asString())
-                        .build());
-            }
-        }
+                    RequestContextBO requestContext = RequestContextBO.builder()
+                            .source(configuration.getProvider())
+                            .idempotentKey(authorizationCode)
+                            .build();
 
-        final RequestContextBO requestContext = RequestContextBO.builder()
-                .source(configuration.getProvider())
-                .idempotentKey(authorizationCode)
-                .build();
-
-        return accountsService.create(newAccount.build(), requestContext);
+                    return accountsService.create(newAccount.build(), requestContext);
+                });
     }
 }

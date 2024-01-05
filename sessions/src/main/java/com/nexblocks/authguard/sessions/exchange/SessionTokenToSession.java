@@ -7,13 +7,12 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.SessionBO;
-import com.nexblocks.authguard.service.model.AuthResponseBO;
-import io.vavr.control.Either;
 
 import java.time.Instant;
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @TokenExchange(from = "sessionToken", to = "session")
 public class SessionTokenToSession implements Exchange {
@@ -27,24 +26,25 @@ public class SessionTokenToSession implements Exchange {
     }
 
     @Override
-    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
-        final Optional<SessionBO> sessionOpt = sessionsService.getByToken(request.getToken());
+    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+        return sessionsService.getByToken(request.getToken())
+                .thenCompose(sessionOpt -> {
+                    if (sessionOpt.isEmpty()) {
+                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Session token does not exist"));
+                    }
 
-        if (sessionOpt.isEmpty()) {
-            return Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Session token does not exist"));
-        }
+                    SessionBO session = sessionOpt.get();
 
-        final SessionBO session = sessionOpt.get();
+                    if (session.getExpiresAt().isBefore(Instant.now())) {
+                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Session token has expired"));
+                    }
 
-        if (session.getExpiresAt().isBefore(Instant.now())) {
-            return Either.left(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Session token has expired"));
-        }
-
-        return Either.right(AuthResponseBO.builder()
-                .type(TOKEN_TYPE)
-                .token(session)
-                .entityType(EntityType.ACCOUNT)
-                .entityId(session.getAccountId())
-                .build());
+                    return CompletableFuture.completedFuture(AuthResponseBO.builder()
+                            .type(TOKEN_TYPE)
+                            .token(session)
+                            .entityType(EntityType.ACCOUNT)
+                            .entityId(session.getAccountId())
+                            .build());
+                });
     }
 }

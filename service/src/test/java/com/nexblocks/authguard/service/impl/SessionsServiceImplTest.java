@@ -37,7 +37,7 @@ class SessionsServiceImplTest {
 
     @Test
     void create() {
-        final SessionBO sessionBO = SessionBO.builder()
+        SessionBO sessionBO = SessionBO.builder()
                 .accountId(101)
                 .data(Collections.singletonMap("key", "value"))
                 .build();
@@ -45,9 +45,11 @@ class SessionsServiceImplTest {
         Mockito.when(repository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, SessionDO.class)));
 
-        final SessionBO created = service.create(sessionBO);
+        SessionBO created = service.create(sessionBO).join();
 
-        assertThat(created).isEqualToIgnoringGivenFields(sessionBO, "id", "sessionToken");
+        assertThat(created).usingRecursiveComparison()
+                .ignoringFields("id", "sessionToken")
+                .isEqualTo(sessionBO);
         assertThat(created.getId()).isNotNull();
 
         Mockito.verify(repository).save(Mockito.any());
@@ -56,7 +58,7 @@ class SessionsServiceImplTest {
 
     @Test
     void getById() {
-        final SessionDO sessionDO = SessionDO.builder()
+        SessionDO sessionDO = SessionDO.builder()
                 .id(1)
                 .accountId(101)
                 .data(Collections.singletonMap("key", "value"))
@@ -65,15 +67,15 @@ class SessionsServiceImplTest {
         Mockito.when(repository.getById(sessionDO.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(sessionDO)));
 
-        final SessionBO expected = serviceMapper.toBO(sessionDO);
-        final Optional<SessionBO> actual = service.getById(sessionDO.getId());
+        SessionBO expected = serviceMapper.toBO(sessionDO);
+        Optional<SessionBO> actual = service.getById(sessionDO.getId()).join();
 
         assertThat(actual).contains(expected);
     }
 
     @Test
     void getByToken() {
-        final SessionDO sessionDO = SessionDO.builder()
+        SessionDO sessionDO = SessionDO.builder()
                 .id(1)
                 .accountId(101)
                 .sessionToken("token")
@@ -83,15 +85,15 @@ class SessionsServiceImplTest {
         Mockito.when(repository.getByToken(sessionDO.getSessionToken()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(sessionDO)));
 
-        final SessionBO expected = serviceMapper.toBO(sessionDO);
-        final Optional<SessionBO> actual = service.getByToken(sessionDO.getSessionToken());
+        SessionBO expected = serviceMapper.toBO(sessionDO);
+        Optional<SessionBO> actual = service.getByToken(sessionDO.getSessionToken()).join();
 
         assertThat(actual).contains(expected);
     }
 
     @Test
     void deleteByToken() {
-        final SessionDO sessionDO = SessionDO.builder()
+        SessionDO sessionDO = SessionDO.builder()
                 .id(1)
                 .accountId(101)
                 .sessionToken("token")
@@ -101,8 +103,8 @@ class SessionsServiceImplTest {
         Mockito.when(repository.deleteByToken(sessionDO.getSessionToken()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(sessionDO)));
 
-        final SessionBO expected = serviceMapper.toBO(sessionDO);
-        final Optional<SessionBO> actual = service.deleteByToken(sessionDO.getSessionToken());
+        SessionBO expected = serviceMapper.toBO(sessionDO);
+        Optional<SessionBO> actual = service.deleteByToken(sessionDO.getSessionToken()).join();
 
         assertThat(actual).contains(expected);
     }

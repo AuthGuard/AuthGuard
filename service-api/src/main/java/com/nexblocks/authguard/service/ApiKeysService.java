@@ -6,18 +6,18 @@ import com.nexblocks.authguard.service.model.ClientBO;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public interface ApiKeysService extends CrudService<ApiKeyBO> {
-    ApiKeyBO generateApiKey(long appId, String type, Duration duration);
-    ApiKeyBO generateClientApiKey(long clientId, String type, Duration duration);
+    CompletableFuture<ApiKeyBO> generateApiKey(long appId, String type, Duration duration);
+    CompletableFuture<ApiKeyBO> generateClientApiKey(long clientId, String type, Duration duration);
 
-    ApiKeyBO generateApiKey(AppBO app, String type, Duration duration);
-    ApiKeyBO generateClientApiKey(ClientBO client, String type, Duration duration);
+    CompletableFuture<ApiKeyBO> generateApiKey(AppBO app, String type, Duration duration);
+    CompletableFuture<ApiKeyBO> generateClientApiKey(ClientBO client, String type, Duration duration);
 
-    List<ApiKeyBO> getByAppId(long appId);
+    CompletableFuture<List<ApiKeyBO>> getByAppId(long appId);
 
-    Optional<AppBO> validateApiKey(String key, String type);
+    CompletableFuture<AppBO> validateApiKey(String key, String type);
 
-    Optional<ClientBO> validateClientApiKey(String key, String type);
+    CompletableFuture<ClientBO> validateClientApiKey(String key, String type);
 }

@@ -11,13 +11,15 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.UserIdentifierBO;
-import io.vavr.control.Either;
+import com.nexblocks.authguard.service.util.AsyncUtils;
+import io.vavr.control.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public class BasicAuthProvider {
     private static final String RESERVED_DOMAIN = "global";
@@ -38,19 +40,29 @@ public class BasicAuthProvider {
         LOG.debug("Initialized with password implementation {}", this.securePassword.getClass());
     }
 
-    public Either<Exception, AccountBO> authenticateAndGetAccount(final AuthRequestBO authRequest) {
+    public CompletableFuture<AccountBO> authenticateAndGetAccount(final AuthRequestBO authRequest) {
         return verifyCredentialsAndGetAccount(authRequest.getIdentifier(), authRequest.getPassword(), authRequest.getDomain());
     }
 
-    public Either<Exception, AccountBO> authenticateAndGetAccount(final String basicToken) {
+    /**
+     * Performs basic authentication using a basic token in the form of
+     * base64(username:password). To be used only for authenticating request
+     * 'Authorization' headers made to AuthGuard. For any other scenario, use
+     * authenticateAndGetAccount(AuthRequest);
+     */
+    public CompletableFuture<AccountBO> authenticateAndGetAccount(final String basicToken) {
         return handleBasicAuthentication(basicToken);
     }
 
-    public Either<Exception, AccountBO> getAccount(final AuthRequestBO request) {
+    public CompletableFuture<AccountBO> getAccount(final AuthRequestBO request) {
         return verifyCredentialsAndGetAccount(request.getIdentifier(), request.getDomain());
     }
 
-    private Either<Exception, AccountBO> handleBasicAuthentication(final String base64Credentials) {
+    public CompletableFuture<AccountBO> getAccountAsync(final AuthRequestBO request) {
+        return verifyCredentialsAndGetAccount(request.getIdentifier(), request.getDomain());
+    }
+
+    private CompletableFuture<AccountBO> handleBasicAuthentication(final String base64Credentials) {
         final String[] decoded = new String(Base64.getDecoder().decode(base64Credentials)).split(":");
 
         if (decoded.length != 2) {
@@ -63,65 +75,70 @@ public class BasicAuthProvider {
         return verifyCredentialsAndGetAccount(username, password, RESERVED_DOMAIN);
     }
 
-    private Either<Exception, AccountBO> verifyCredentialsAndGetAccount(final String username, final String password, final String domain) {
-        final Optional<AccountBO> credentialsOpt = accountsService.getByIdentifierUnsafe(username, domain);
+    private CompletableFuture<AccountBO> verifyCredentialsAndGetAccount(final String username, final String password, final String domain) {
+        return accountsService.getByIdentifierUnsafe(username, domain)
+                .thenCompose(opt -> {
+                    if (opt.isEmpty()) {
+                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
+                                "Identifier does not exist"));
+                    }
 
-        // TODO replace this with Either mapping
-        return credentialsOpt
-                .map(account -> tryVerifyCredentials(account, username, password))
-                .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
-                        "Identifier " + username + " does not exist")));
+                    return AsyncUtils.fromTry(tryVerifyCredentials(opt.get(), username, password));
+                });
     }
 
-    private Either<Exception, AccountBO> tryVerifyCredentials(final AccountBO account, final String identifier,
-                                                              final String password) {
+    private Try<AccountBO> tryVerifyCredentials(final AccountBO account, final String identifier, final String password) {
+        if (!account.isActive()) {
+            return Try.failure(new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Inactive account"));
+        }
+
         final Optional<Exception> validationError = checkIdentifier(account, identifier);
 
         if (validationError.isPresent()) {
-            return Either.left(validationError.get());
+            return Try.failure(validationError.get());
         }
 
         return checkIfExpired(account)
                 .flatMap(valid -> checkPasswordsMatch(valid, password));
     }
 
-    private Either<Exception, AccountBO> checkIfExpired(final AccountBO credentials) {
+    private Try<AccountBO> checkIfExpired(final AccountBO credentials) {
         // check if expired
         if (securePasswordProvider.passwordsExpire()) {
             if (credentials.getPasswordUpdatedAt() == null) {
-                return Either.left(new IllegalStateException("Credentials " + credentials.getId() + " passwordUpdatedAt was null"));
+                return Try.failure(new IllegalStateException("Credentials " + credentials.getId() + " passwordUpdatedAt was null"));
             }
 
             final Instant expiresAt = credentials.getPasswordUpdatedAt()
                     .plus(securePasswordProvider.getPasswordTtl());
 
             if (expiresAt.isBefore(Instant.now())) {
-                return Either.left(new ServiceAuthorizationException(ErrorCode.PASSWORD_EXPIRED,
+                return Try.failure(new ServiceAuthorizationException(ErrorCode.PASSWORD_EXPIRED,
                         "Password has already expired", EntityType.ACCOUNT, credentials.getId()));
             }
         }
 
         // check if the version is too old
         if (credentials.getPasswordVersion() < securePasswordProvider.getMinimumVersion()) {
-            return Either.left(new ServiceAuthorizationException(ErrorCode.PASSWORD_EXPIRED,
+            return Try.failure(new ServiceAuthorizationException(ErrorCode.PASSWORD_EXPIRED,
                     "Password has already expired", EntityType.ACCOUNT, credentials.getId()));
         }
 
-        return Either.right(credentials);
+        return Try.success(credentials);
     }
 
-    private Either<Exception, AccountBO> checkPasswordsMatch(final AccountBO credentials, final String password) {
+    private Try<AccountBO> checkPasswordsMatch(final AccountBO credentials, final String password) {
         final SecurePassword securePasswordImplementation = getPasswordImplementation(credentials);
 
         if (securePasswordImplementation == null) {
-            return Either.left(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
+            return Try.failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
                     "Unable to map password version", EntityType.ACCOUNT, credentials.getId()));
         }
 
         if (securePasswordImplementation.verify(password, credentials.getHashedPassword())) {
-            return Either.right(credentials);
+            return Try.success(credentials);
         } else {
-            return Either.left(new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH,
+            return Try.failure(new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH,
                     "Passwords do not match", EntityType.ACCOUNT, credentials.getId()));
         }
     }
@@ -135,21 +152,22 @@ public class BasicAuthProvider {
         return securePasswordProvider.getPreviousVersions().get(credentials.getPasswordVersion());
     }
 
-    private Either<Exception, AccountBO> verifyCredentialsAndGetAccount(final String username, final String domain) {
-        final Optional<AccountBO> credentials = accountsService.getByIdentifierUnsafe(username, domain);
+    private CompletableFuture<AccountBO> verifyCredentialsAndGetAccount(final String username, final String domain) {
+        return accountsService.getByIdentifierUnsafe(username, domain)
+                .thenCompose(credentials -> {
+                    if (credentials.isEmpty()) {
+                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
+                                "Identifier does not exist"));
+                    }
 
-        if (credentials.isPresent()) {
-            final Optional<Exception> validationError = checkIdentifier(credentials.get(), username);
+                    Optional<Exception> validationError = checkIdentifier(credentials.get(), username);
 
-            if (validationError.isPresent()) {
-                return Either.left(validationError.get());
-            }
+                    if (validationError.isPresent()) {
+                        return CompletableFuture.failedFuture(validationError.get());
+                    }
 
-            return Either.right(credentials.get());
-        } else {
-            return Either.left(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
-                    "Identifier " + username + " does not exist"));
-        }
+                    return CompletableFuture.completedFuture(credentials.get());
+                });
     }
 
     private Optional<Exception> checkIdentifier(final AccountBO credentials,

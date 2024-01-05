@@ -33,7 +33,7 @@ class PasswordlessProviderTest {
         accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
         messageBus = Mockito.mock(MessageBus.class);
 
-        final ConfigContext configContext = Mockito.mock(ConfigContext.class);
+        ConfigContext configContext = Mockito.mock(ConfigContext.class);
 
         Mockito.when(configContext.asConfigBean(PasswordlessConfig.class)).thenReturn(passwordlessConfig);
         Mockito.when(accountTokensRepository.save(Mockito.any()))
@@ -44,36 +44,36 @@ class PasswordlessProviderTest {
 
     @Test
     void generateToken() {
-        final PasswordlessConfig passwordlessConfig = PasswordlessConfig.builder()
+        PasswordlessConfig passwordlessConfig = PasswordlessConfig.builder()
                 .randomSize(32)
                 .tokenLife("5m")
                 .build();
 
         setup(passwordlessConfig);
 
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .id(101)
                 .active(true)
                 .build();
 
-        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+        TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
 
-        final AuthResponseBO expected = AuthResponseBO.builder()
+        AuthResponseBO expected = AuthResponseBO.builder()
                 .type("passwordless")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .build();
 
-        final AuthResponseBO generated = passwordlessProvider.generateToken(account, tokenOptions);
+        AuthResponseBO generated = passwordlessProvider.generateToken(account, tokenOptions).join();
 
         assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(generated.getToken()).isNotNull();
 
-        final ArgumentCaptor<AccountTokenDO> argumentCaptor = ArgumentCaptor.forClass(AccountTokenDO.class);
+        ArgumentCaptor<AccountTokenDO> argumentCaptor = ArgumentCaptor.forClass(AccountTokenDO.class);
 
         Mockito.verify(accountTokensRepository).save(argumentCaptor.capture());
 
-        final AccountTokenDO persisted = argumentCaptor.getValue();
+        AccountTokenDO persisted = argumentCaptor.getValue();
 
         assertThat(persisted.getAssociatedAccountId()).isEqualTo(account.getId());
         assertThat(persisted.getExpiresAt())
@@ -88,18 +88,18 @@ class PasswordlessProviderTest {
 
     @Test
     void generateTokenForInactiveAccount() {
-        final PasswordlessConfig passwordlessConfig = PasswordlessConfig.builder()
+        PasswordlessConfig passwordlessConfig = PasswordlessConfig.builder()
                 .randomSize(32)
                 .tokenLife("5m")
                 .build();
 
         setup(passwordlessConfig);
 
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .active(false)
                 .build();
 
-        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+        TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
 
         assertThatThrownBy(() -> passwordlessProvider.generateToken(account, tokenOptions))
                 .isInstanceOf(ServiceAuthorizationException.class);

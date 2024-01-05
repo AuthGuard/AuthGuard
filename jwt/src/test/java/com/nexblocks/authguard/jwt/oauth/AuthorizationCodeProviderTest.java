@@ -15,13 +15,14 @@ import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AuthorizationCodeProviderTest {
 
     private ConfigContext config() {
-        final ObjectNode configNode = new ObjectNode(JsonNodeFactory.instance)
+        ObjectNode configNode = new ObjectNode(JsonNodeFactory.instance)
                 .put("lifeTime", "5m")
                 .put("randomSize", 128);
 
@@ -30,21 +31,24 @@ class AuthorizationCodeProviderTest {
 
     @Test
     void generateToken() {
-        final AccountTokensRepository accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
-        final AuthorizationCodeProvider authorizationCodeProvider =
+        AccountTokensRepository accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
+        AuthorizationCodeProvider authorizationCodeProvider =
                 new AuthorizationCodeProvider(accountTokensRepository, new ServiceMapperImpl(), config());
 
-        final AccountBO account = AccountBO.builder()
+        Mockito.when(accountTokensRepository.save(Mockito.any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
+
+        AccountBO account = AccountBO.builder()
                 .id(101)
                 .build();
 
-        final AuthResponseBO tokens = authorizationCodeProvider.generateToken(account);
+        AuthResponseBO tokens = authorizationCodeProvider.generateToken(account).join();
 
         assertThat(tokens.getType()).isEqualTo("authorizationCode");
         assertThat(tokens.getToken()).isNotNull();
         assertThat(tokens.getRefreshToken()).isNull();
 
-        final ArgumentCaptor<AccountTokenDO> argCaptor = ArgumentCaptor.forClass(AccountTokenDO.class);
+        ArgumentCaptor<AccountTokenDO> argCaptor = ArgumentCaptor.forClass(AccountTokenDO.class);
 
         Mockito.verify(accountTokensRepository, Mockito.times(1))
                 .save(argCaptor.capture());

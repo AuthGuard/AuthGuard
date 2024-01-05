@@ -2,7 +2,9 @@ package com.nexblocks.authguard.rest.routes;
 
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
+import com.nexblocks.authguard.api.dto.entities.ActionTokenDTO;
 import com.nexblocks.authguard.api.dto.entities.ActionTokenRequestType;
+import com.nexblocks.authguard.api.dto.entities.AuthResponseDTO;
 import com.nexblocks.authguard.api.dto.requests.ActionTokenRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
@@ -11,15 +13,13 @@ import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.service.ActionTokenService;
-import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.model.ActionTokenBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.service.model.AuthResponseBO;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
-import io.vavr.control.Try;
 
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 
 @DependsOnConfiguration("otp")
 public class ActionTokensRoute extends ActionTokensApi {
@@ -39,7 +39,7 @@ public class ActionTokensRoute extends ActionTokensApi {
 
     @Override
     public void createOtp(final Context context) {
-        final Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParam("id", Long.class);
 
         if (!accountId.isValid()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
@@ -51,40 +51,33 @@ public class ActionTokensRoute extends ActionTokensApi {
             ));
         }
 
-        final Try<AuthResponseBO> result = actionTokenService.generateOtp(accountId.get());
+        CompletableFuture<AuthResponseDTO> result = actionTokenService.generateOtp(accountId.get())
+                .thenApply(restMapper::toDTO);
 
-        if (result.isFailure()) {
-            throw (ServiceException) result.getCause();
-        }
-
-        context.status(201).json(restMapper.toDTO(result.get()));
+        context.status(201).json(result);
     }
 
     @Override
     public void createToken(final Context context) {
-        final ActionTokenRequestDTO request = actionTokenRequestBodyHandler.getValidated(context);
+        ActionTokenRequestDTO request = actionTokenRequestBodyHandler.getValidated(context);
 
-        final Try<ActionTokenBO> result;
+        CompletableFuture<ActionTokenBO> result;
 
         if (request.getType() == ActionTokenRequestType.OTP) {
             result = actionTokenService.generateFromOtp(request.getOtp().getPasswordId(),
                     request.getOtp().getPassword(), request.getAction());
         } else {
-            final AuthRequestBO authRequest = restMapper.toBO(request.getBasic());
+            AuthRequestBO authRequest = restMapper.toBO(request.getBasic());
             result = actionTokenService.generateFromBasicAuth(authRequest, request.getAction());
         }
 
-        if (result.isFailure()) {
-            throw (ServiceException) result.getCause();
-        }
-
-        context.status(201).json(restMapper.toDTO(result.get()));
+        context.status(201).json(result.thenApply(restMapper::toDTO));
     }
 
     @Override
     public void verifyToken(final Context context) {
-        final String token = context.queryParam("token");
-        final String action = context.queryParam("action");
+        String token = context.queryParam("token");
+        String action = context.queryParam("action");
 
         if (token == null) {
             throw new RequestValidationException(Collections.singletonList(
@@ -98,12 +91,10 @@ public class ActionTokensRoute extends ActionTokensApi {
             ));
         }
 
-        final Try<ActionTokenBO> result = actionTokenService.verifyToken(token, action);
+        CompletableFuture<ActionTokenDTO> result = actionTokenService.verifyToken(token, action)
+                .thenApply(restMapper::toDTO);
 
-        if (result.isFailure()) {
-            throw (ServiceException) result.getCause();
-        }
 
-        context.status(200).json(restMapper.toDTO(result.get()));
+        context.status(200).json(result);
     }
 }

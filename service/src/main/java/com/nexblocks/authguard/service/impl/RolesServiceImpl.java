@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class RolesServiceImpl implements RolesService {
@@ -38,54 +39,51 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public List<RoleBO> getAll(final String domain) {
+    public CompletableFuture<List<RoleBO>> getAll(final String domain) {
         return rolesRepository.getAll(domain)
-                .join()
-                .stream()
-                .map(serviceMapper::toBO)
-                .collect(Collectors.toList());
+                .thenApply(list -> list.stream()
+                        .map(serviceMapper::toBO)
+                        .collect(Collectors.toList()));
     }
 
     @Override
-    public RoleBO create(final RoleBO role) {
+    public CompletableFuture<RoleBO> create(final RoleBO role) {
         LOG.debug("New role request. role={}, domain={}", role.getName(), role.getDomain());
 
-        if (getRoleByName(role.getName(), role.getDomain()).isPresent()) {
-            LOG.info("Role already exists. role={}, domain={}", role.getName(), role.getDomain());
+        return getRoleByName(role.getName(), role.getDomain())
+                .thenCompose(opt -> {
+                    if (opt.isPresent()) {
+                        LOG.info("Role already exists. role={}, domain={}", role.getName(), role.getDomain());
 
-            throw new ServiceConflictException(ErrorCode.ROLE_ALREADY_EXISTS,
-                    "Role " + role.getName() + " already exists");
-        }
+                        return CompletableFuture.failedFuture(new ServiceConflictException(ErrorCode.ROLE_ALREADY_EXISTS,
+                                "Role " + role.getName() + " already exists"));
+                    }
 
-        RoleBO persisted = persistenceService.create(role);
-
-        LOG.info("New role created. role={}, domain={}", role.getName(), role.getDomain());
-
-        return persisted;
+                    return persistenceService.create(role);
+                });
     }
 
     @Override
-    public Optional<RoleBO> getById(final long id) {
+    public CompletableFuture<Optional<RoleBO>> getById(final long id) {
         return persistenceService.getById(id);
     }
 
     @Override
-    public Optional<RoleBO> update(final RoleBO entity) {
+    public CompletableFuture<Optional<RoleBO>> update(final RoleBO entity) {
         throw new UnsupportedOperationException("Roles cannot be updated");
     }
 
     @Override
-    public Optional<RoleBO> delete(final long id) {
+    public CompletableFuture<Optional<RoleBO>> delete(final long id) {
         LOG.info("Request to delete role. roleId={}", id);
 
         return persistenceService.delete(id);
     }
 
     @Override
-    public Optional<RoleBO> getRoleByName(final String name, final String domain) {
+    public CompletableFuture<Optional<RoleBO>> getRoleByName(final String name, final String domain) {
         return rolesRepository.getByName(name, domain)
-                .thenApply(optional -> optional.map(serviceMapper::toBO))
-                .join();
+                .thenApply(optional -> optional.map(serviceMapper::toBO));
     }
 
     @Override

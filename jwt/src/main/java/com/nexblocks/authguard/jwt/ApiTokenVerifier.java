@@ -7,7 +7,6 @@ import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.vavr.control.Either;
 
 public class ApiTokenVerifier implements AuthVerifier {
     private final JwtTokenVerifier jwtVerifier;
@@ -23,7 +22,7 @@ public class ApiTokenVerifier implements AuthVerifier {
     }
 
     @Override
-    public Either<Exception, Long> verifyAccountToken(final String token) {
+    public Long verifyAccountToken(final String token) {
         return jwtVerifier.verifyAccountToken(token);
     }
 }

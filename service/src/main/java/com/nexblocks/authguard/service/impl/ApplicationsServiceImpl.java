@@ -6,17 +6,20 @@ import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.ApplicationsService;
 import com.nexblocks.authguard.service.IdempotencyService;
+import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.google.inject.Inject;
+import com.nexblocks.authguard.service.util.AsyncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class ApplicationsServiceImpl implements ApplicationsService {
@@ -46,38 +49,44 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public AppBO create(final AppBO app, final RequestContextBO requestContext) {
-        return idempotencyService.performOperation(() -> doCreate(app), requestContext.getIdempotentKey(), app.getEntityType())
-                .join();
+    public CompletableFuture<AppBO> create(final AppBO app, final RequestContextBO requestContext) {
+        return idempotencyService.performOperationAsync(() -> doCreate(app),
+                requestContext.getIdempotentKey(), app.getEntityType());
     }
 
-    private AppBO doCreate(final AppBO app) {
+    private CompletableFuture<AppBO> doCreate(final AppBO app) {
         /*
          * It's undecided whether an app should be under an
          * account or not. So for now, we only check that the
          * account exists if it's set.
          */
-        if (app.getParentAccountId() != null && accountsService.getById(app.getParentAccountId()).isEmpty()) {
-            throw new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " + app.getParentAccountId() + " exists");
+        if (app.getParentAccountId() != null) {
+            return accountsService.getById(app.getParentAccountId())
+                    .thenCompose(opt -> {
+                        if (opt.isEmpty()) {
+                            throw new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " + app.getParentAccountId() + " exists");
+                        }
+
+                        return persistenceService.create(app);
+                    });
         }
 
         return persistenceService.create(app);
     }
 
     @Override
-    public Optional<AppBO> getById(final long id) {
+    public CompletableFuture<Optional<AppBO>> getById(final long id) {
         return persistenceService.getById(id);
     }
 
     @Override
-    public Optional<AppBO> getByExternalId(final long externalId) {
+    public CompletableFuture<Optional<AppBO>> getByExternalId(final long externalId) {
         return applicationsRepository.getById(externalId)
-                .thenApply(optional -> optional.map(serviceMapper::toBO))
-                .join();
+                .thenApply(optional -> optional.map(serviceMapper::toBO));
     }
 
     @Override
-    public Optional<AppBO> update(final AppBO app) {
+    public CompletableFuture<Optional<AppBO>> update(final AppBO app) {
         LOG.info("Application update request. accountId={}", app.getId());
 
         // FIXME accountId cannot be updated
@@ -85,54 +94,57 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public Optional<AppBO> delete(final long id) {
+    public CompletableFuture<Optional<AppBO>> delete(final long id) {
         LOG.info("Application delete request. accountId={}", id);
 
         return persistenceService.delete(id);
     }
 
     @Override
-    public Optional<AppBO> activate(final long id) {
+    public CompletableFuture<AppBO> activate(final long id) {
         return getById(id)
-                .flatMap(app -> {
+                .thenCompose(AsyncUtils::fromAppOptional)
+                .thenCompose(app -> {
                     LOG.info("Activate application request. appId={}, domain={}", app.getId(), app.getDomain());
 
                     AppBO activated = app.withActive(true);
-                    Optional<AppBO> persisted = this.update(activated);
+                    return update(activated)
+                            .thenApply(persisted -> {
+                                if (persisted.isPresent()) {
+                                    LOG.info("Application activated. appId={}, domain={}", app.getId(), app.getDomain());
+                                    return persisted.get();
+                                }
 
-                    if (persisted.isPresent()) {
-                        LOG.info("Application activated. appId={}, domain={}", app.getId(), app.getDomain());
-                    } else {
-                        LOG.info("Failed to activate application. appId={}, domain={}", app.getId(), app.getDomain());
-                    }
-
-                    return persisted;
+                                LOG.info("Failed to activate application. appId={}, domain={}", app.getId(), app.getDomain());
+                                throw new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST, "Application does not exist");
+                            });
                 });
     }
 
     @Override
-    public Optional<AppBO> deactivate(final long id) {
+    public CompletableFuture<AppBO> deactivate(final long id) {
         return getById(id)
-                .flatMap(app -> {
-                    LOG.info("Deactivate application request. appId={}, domain={}", app.getId(), app.getDomain());
+                .thenCompose(AsyncUtils::fromAppOptional)
+                .thenCompose(app -> {
+                    LOG.info("Activate application request. appId={}, domain={}", app.getId(), app.getDomain());
 
                     AppBO deactivated = app.withActive(false);
-                    Optional<AppBO> persisted = this.update(deactivated);
+                    return update(deactivated)
+                            .thenApply(persisted -> {
+                                if (persisted.isPresent()) {
+                                    LOG.info("Application deactivated. appId={}, domain={}", app.getId(), app.getDomain());
+                                    return persisted.get();
+                                }
 
-                    if (persisted.isPresent()) {
-                        LOG.info("Application deactivated. appId={}, domain={}", app.getId(), app.getDomain());
-                    } else {
-                        LOG.info("Failed to deactivate application. appId={}, domain={}", app.getId(), app.getDomain());
-                    }
-
-                    return persisted;
+                                LOG.info("Failed to deactivate application. appId={}, domain={}", app.getId(), app.getDomain());
+                                throw new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST, "Application does not exist");
+                            });
                 });
     }
 
     @Override
-    public List<AppBO> getByAccountId(final long accountId) {
+    public CompletableFuture<List<AppBO>> getByAccountId(final long accountId) {
         return applicationsRepository.getAllForAccount(accountId)
-                .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()))
-                .join();
+                .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()));
     }
 }

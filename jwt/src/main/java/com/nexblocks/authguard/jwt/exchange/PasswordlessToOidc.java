@@ -12,7 +12,8 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
-import io.vavr.control.Either;
+
+import java.util.concurrent.CompletableFuture;
 
 @TokenExchange(from = "passwordless", to = "oidc")
 public class PasswordlessToOidc implements Exchange {
@@ -30,20 +31,24 @@ public class PasswordlessToOidc implements Exchange {
     }
 
     @Override
-    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
-        return passwordlessVerifier.verifyAccountToken(request.getToken())
-                .map(accountsService::getById)
-                .flatMap(accountOpt -> accountOpt
-                        .map(this::generate)
-                        .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
-                                "Failed to generate access token"))));
+    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+        return passwordlessVerifier.verifyAccountTokenAsync(request.getToken())
+                .thenCompose(accountsService::getById)
+                .thenCompose(opt -> {
+                    if (opt.isEmpty()) {
+                        return CompletableFuture.failedFuture(
+                                new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "The account associated with that token does not exist"));
+                    }
+
+                    return generate(opt.get());
+                });
     }
 
-    private Either<Exception, AuthResponseBO> generate(final AccountBO account) {
-        final TokenOptionsBO options = TokenOptionsBO.builder()
+    private CompletableFuture<AuthResponseBO> generate(final AccountBO account) {
+        TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("passwordless")
                 .build();
 
-        return Either.right(openIdConnectTokenProvider.generateToken(account, options));
+        return openIdConnectTokenProvider.generateToken(account, options);
     }
 }

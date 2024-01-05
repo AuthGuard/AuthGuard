@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.basic.exchange;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.basic.BasicAuthProvider;
 import com.nexblocks.authguard.basic.otp.OtpProvider;
 import com.nexblocks.authguard.service.exchange.Exchange;
@@ -7,9 +8,9 @@ import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.mappers.TokenOptionsMapper;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
-import com.google.inject.Inject;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
-import io.vavr.control.Either;
+
+import java.util.concurrent.CompletableFuture;
 
 @TokenExchange(from = "basic", to = "otp")
 public class BasicToOtp implements Exchange {
@@ -23,10 +24,10 @@ public class BasicToOtp implements Exchange {
     }
 
     @Override
-    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
+    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
         return basicAuth.authenticateAndGetAccount(request)
-                .map(account -> {
-                    final TokenOptionsBO tokenOptions = TokenOptionsMapper.fromAuthRequest(request);
+                .thenCompose(account -> {
+                    TokenOptionsBO tokenOptions = TokenOptionsMapper.fromAuthRequest(request);
 
                     return otpProvider.generateToken(account, tokenOptions);
                 });

@@ -27,6 +27,7 @@ import java.time.format.DateTimeParseException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class AuthRoute extends AuthApi {
@@ -51,97 +52,89 @@ public class AuthRoute extends AuthApi {
 
     @Override
     public void authenticate(final Context context) {
-        final Optional<AuthRequestDTO> authRequest = getValidRequestOrFail(context);
+        Optional<AuthRequestDTO> authRequest = getValidRequestOrFail(context);
 
         if (authRequest.isEmpty()) {
             return;
         }
 
-        final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
+        RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
+        AuthRequestBO bo = restMapper.toBO(authRequest.get());
 
-        final Optional<AuthResponseDTO> tokens = authenticationService
-                .authenticate(restMapper.toBO(authRequest.get()), requestContext)
-                .map(restMapper::toDTO);
+        CompletableFuture<AuthResponseDTO> tokens = authenticationService
+                .authenticate(bo, requestContext)
+                .thenApply(restMapper::toDTO);
 
-        if (tokens.isPresent()) {
-            context.json(tokens.get());
-        } else {
-            context.status(400).json(new Error("400", "Failed to authenticate user"));
-        }
+        context.json(tokens);
     }
 
     @Override
     public void logout(final Context context) {
-        final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
-        final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
+        AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
+        RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        authenticationService.logout(restMapper.toBO(authenticationRequest), requestContext)
-                .ifPresentOrElse(
-                        tokens -> context.json(restMapper.toDTO(tokens)),
-                        () -> context.status(400).json(new Error("400", "Failed to log user out"))
-                );
+        CompletableFuture<AuthResponseBO> result = authenticationService.logout(
+                restMapper.toBO(authenticationRequest), requestContext);
+
+        context.json(result);
     }
 
     @Override
     public void refresh(final Context context) {
-        final Optional<AuthRequestDTO> authRequest = getValidRequestOrFail(context);
+        Optional<AuthRequestDTO> authRequest = getValidRequestOrFail(context);
 
         if (authRequest.isEmpty()) {
             return;
         }
 
-        final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
+        RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        final Optional<AuthResponseDTO> tokens =
-                authenticationService.refresh(restMapper.toBO(authRequest.get()), requestContext)
-                .map(restMapper::toDTO);
+        CompletableFuture<AuthResponseDTO> tokens = authenticationService.refresh(restMapper.toBO(authRequest.get()), requestContext)
+                .thenApply(restMapper::toDTO);
 
-        if (tokens.isPresent()) {
-            context.json(tokens.get());
-        } else {
-            context.status(400).json(new Error("400", "Failed to refresh tokens"));
-        }
+        context.json(tokens);
     }
 
     @Override
     public void exchange(final Context context) {
-        final Optional<AuthRequestDTO> authRequest = getValidRequestOrFail(context);
+        Optional<AuthRequestDTO> authRequest = getValidRequestOrFail(context);
 
         if (authRequest.isEmpty()) {
             return;
         }
 
-        final String from = context.queryParam("from");
-        final String to = context.queryParam("to");
+        String from = context.queryParam("from");
+        String to = context.queryParam("to");
 
-        final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
+        RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        final AuthResponseBO tokens = exchangeService
-                .exchange(restMapper.toBO(authRequest.get()), from, to, requestContext);
+        CompletableFuture<AuthResponseDTO> tokens = exchangeService.exchange(restMapper.toBO(authRequest.get()), from, to, requestContext)
+                .thenApply(restMapper::toDTO);
 
-        context.json(restMapper.toDTO(tokens));
+        context.json(tokens);
     }
 
     @Override
     public void clearToken(final Context context) {
-        final AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
-        final String tokenType = context.queryParam("tokenType");
+        AuthRequestDTO authenticationRequest = authRequestBodyHandler.getValidated(context);
+        String tokenType = context.queryParam("tokenType");
 
         if (tokenType == null) {
             context.status(400)
                     .json(new Error("400", "Missing 'tokenType' query parameter"));
         } else {
-            final AuthResponseBO tokens = exchangeService.delete(restMapper.toBO(authenticationRequest), tokenType);
+            CompletableFuture<AuthResponseDTO> tokens = exchangeService.delete(restMapper.toBO(authenticationRequest), tokenType)
+                    .thenApply(restMapper::toDTO);
 
-            context.json(restMapper.toDTO(tokens));
+            context.json(tokens);
         }
     }
 
     @Override
     public void getExchangeAttempts(final Context context) {
-        final Validator<Long> entityId = context.queryParam("entityId", Long.class);
-        final Instant fromTimestamp = parseOffsetDateTime(context.queryParam("fromTimestamp"));
-        final String fromExchange = context.queryParam("fromExchange");
+        Validator<Long> entityId = context.queryParam("entityId", Long.class);
+        Instant fromTimestamp = parseOffsetDateTime(context.queryParam("fromTimestamp"));
+        String fromExchange = context.queryParam("fromExchange");
 
         // take care of checking the parameters
         if (entityId.getOrNull() == null) {
@@ -161,13 +154,13 @@ public class AuthRoute extends AuthApi {
         }
 
         // do the real work
-        final ExchangeAttemptsQueryBO query = ExchangeAttemptsQueryBO.builder()
+        ExchangeAttemptsQueryBO query = ExchangeAttemptsQueryBO.builder()
                 .entityId(entityId.get())
                 .fromTimestamp(fromTimestamp)
                 .fromExchange(fromExchange)
                 .build();
 
-        final Collection<ExchangeAttemptDTO> attempts = exchangeAttemptsService.find(query)
+        Collection<ExchangeAttemptDTO> attempts = exchangeAttemptsService.find(query)
                 .stream()
                 .map(restMapper::toDTO)
                 .collect(Collectors.toList());
@@ -178,11 +171,11 @@ public class AuthRoute extends AuthApi {
     private Optional<AuthRequestDTO> getValidRequestOrFail(final Context context) {
         AuthRequestDTO authRequest = authRequestBodyHandler.getValidated(context);
 
-        final Optional<ClientBO> actor = Requester.getIfApp(context);
+        Optional<ClientBO> actor = Requester.getIfApp(context);
 
         if (actor.isPresent()) {
-            final ClientBO client = actor.get();
-            final boolean isAuthClient = Requester.isAuthClient(client);
+            ClientBO client = actor.get();
+            boolean isAuthClient = Requester.isAuthClient(client);
 
             if (isAuthClient) {
                 if (!Requester.authClientCanPerform(authRequest)) {

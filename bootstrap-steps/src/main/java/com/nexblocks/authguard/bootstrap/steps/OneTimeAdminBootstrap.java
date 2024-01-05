@@ -36,13 +36,13 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
 
     @Override
     public void run() {
-        final List<AccountBO> admins = accountsService.getAdmins();
-        final List<AccountBO> oneTimeAdmins = accountsService.getByRole(OTA_ROLE, RESERVED_DOMAIN);
+        final List<AccountBO> admins = accountsService.getAdmins().join();
+        final List<AccountBO> oneTimeAdmins = accountsService.getByRole(OTA_ROLE, RESERVED_DOMAIN).join();
 
         if (admins.isEmpty() && oneTimeAdmins.isEmpty()) {
             log.info("No admin accounts were found, a one-time admin account will be created");
 
-            if (rolesService.getRoleByName(OTA_ROLE, RESERVED_DOMAIN).isEmpty()) {
+            if (rolesService.getRoleByName(OTA_ROLE, RESERVED_DOMAIN).join().isEmpty()) {
                 log.info("Default role {} wasn't found and will be created", OTA_ROLE);
 
                 final RoleBO created = createRole(OTA_ROLE);
@@ -53,7 +53,7 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
                     .idempotentKey(UUID.randomUUID().toString())
                     .build();
 
-            final AccountBO createdAccount = accountsService.create(oneTimeAccount(), requestContext);
+            final AccountBO createdAccount = accountsService.create(oneTimeAccount(), requestContext).join();
 
             log.info("A one-time admin account was created with {}", createdAccount.getIdentifiers());
         }
@@ -97,7 +97,7 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
                 .domain(RESERVED_DOMAIN)
                 .build();
 
-        return rolesService.create(role);
+        return rolesService.create(role).join();
     }
 
 }

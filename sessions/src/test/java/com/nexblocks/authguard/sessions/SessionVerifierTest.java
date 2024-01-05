@@ -3,25 +3,26 @@ package com.nexblocks.authguard.sessions;
 import com.nexblocks.authguard.service.SessionsService;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.model.SessionBO;
-import io.vavr.control.Either;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 
 class SessionVerifierTest {
 
     @Test
     void verify() {
-        final SessionsService sessionsService = Mockito.mock(SessionsService.class);
-        final SessionVerifier sessionVerifier = new SessionVerifier(sessionsService);
+        SessionsService sessionsService = Mockito.mock(SessionsService.class);
+        SessionVerifier sessionVerifier = new SessionVerifier(sessionsService);
 
-        final SessionBO session = SessionBO.builder()
+        SessionBO session = SessionBO.builder()
                 .id(1)
                 .sessionToken("token")
                 .accountId(101)
@@ -29,33 +30,31 @@ class SessionVerifierTest {
                 .build();
 
         Mockito.when(sessionsService.getByToken(session.getSessionToken()))
-                .thenReturn(Optional.of(session));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(session)));
 
-        final Either<Exception, Long> accountId = sessionVerifier.verifyAccountToken(session.getSessionToken());
+        Long accountId = sessionVerifier.verifyAccountTokenAsync(session.getSessionToken()).join();
 
-        assertThat(accountId.get()).isEqualTo(session.getAccountId());
+        assertThat(accountId).isEqualTo(session.getAccountId());
     }
 
     @Test
     void verifyNonExistingSession() {
-        final SessionsService sessionsService = Mockito.mock(SessionsService.class);
-        final SessionVerifier sessionVerifier = new SessionVerifier(sessionsService);
+        SessionsService sessionsService = Mockito.mock(SessionsService.class);
+        SessionVerifier sessionVerifier = new SessionVerifier(sessionsService);
 
         Mockito.when(sessionsService.getByToken(any()))
-                .thenReturn(Optional.empty());
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        final Either<Exception, Long> result = sessionVerifier.verifyAccountToken("invalid");
-
-        assertThat(result.isLeft());
-        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> sessionVerifier.verifyAccountTokenAsync("invalid").join())
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
     void verifyExpiredSession() {
-        final SessionsService sessionsService = Mockito.mock(SessionsService.class);
-        final SessionVerifier sessionVerifier = new SessionVerifier(sessionsService);
+        SessionsService sessionsService = Mockito.mock(SessionsService.class);
+        SessionVerifier sessionVerifier = new SessionVerifier(sessionsService);
 
-        final SessionBO session = SessionBO.builder()
+        SessionBO session = SessionBO.builder()
                 .id(1)
                 .sessionToken("token")
                 .accountId(101)
@@ -63,11 +62,9 @@ class SessionVerifierTest {
                 .build();
 
         Mockito.when(sessionsService.getByToken(session.getSessionToken()))
-                .thenReturn(Optional.of(session));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(session)));
 
-        final Either<Exception, Long> result = sessionVerifier.verifyAccountToken("session-id");
-
-        assertThat(result.isLeft());
-        assertThat(result.getLeft()).isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> sessionVerifier.verifyAccountTokenAsync(session.getSessionToken()).join())
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 }

@@ -10,6 +10,8 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 
+import java.util.concurrent.CompletableFuture;
+
 public class PasswordlessServiceImpl implements PasswordlessService {
     private final ExchangeService exchangeService;
     private final PasswordlessConfig passwordlessConfig;
@@ -22,12 +24,12 @@ public class PasswordlessServiceImpl implements PasswordlessService {
     }
 
     @Override
-    public AuthResponseBO authenticate(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
+    public CompletableFuture<AuthResponseBO> authenticate(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
         return exchangeService.exchange(authRequest, "passwordless", passwordlessConfig.getGenerateToken(), requestContext);
     }
 
     @Override
-    public AuthResponseBO authenticate(final String passwordlessToken, final RequestContextBO requestContext) {
+    public CompletableFuture<AuthResponseBO> authenticate(final String passwordlessToken, final RequestContextBO requestContext) {
         return authenticate(AuthRequestBO.builder().token(passwordlessToken).build(), requestContext);
     }
 }

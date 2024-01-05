@@ -2,8 +2,9 @@ package com.nexblocks.authguard.service.exchange;
 
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
-import io.vavr.control.Either;
+
+import java.util.concurrent.CompletableFuture;
 
 public interface Exchange {
-    Either<Exception, AuthResponseBO> exchange(AuthRequestBO request);
+    CompletableFuture<AuthResponseBO> exchange(AuthRequestBO request);
 }

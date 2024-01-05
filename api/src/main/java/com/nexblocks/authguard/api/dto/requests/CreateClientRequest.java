@@ -18,6 +18,11 @@ public interface CreateClientRequest {
     String getBaseUrl();
     ClientType getClientType();
 
+    @Value.Default
+    default boolean isActive() {
+        return true;
+    }
+
     enum ClientType {
         AUTH,
         ADMIN

@@ -16,6 +16,7 @@ import com.nexblocks.authguard.service.util.ID;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
 
 @ProvidesToken("authorizationCode")
 public class AuthorizationCodeProvider implements AuthProvider {
@@ -40,23 +41,8 @@ public class AuthorizationCodeProvider implements AuthProvider {
     }
 
     @Override
-    public AuthResponseBO generateToken(final AccountBO account) {
-        return generateToken(account, null, null);
-    }
-
-    @Override
-    public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO options) {
-        return generateToken(account, null, options);
-    }
-
-    @Override
-    public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions) {
-        return generateToken(account, restrictions, null);
-    }
-
-    @Override
-    public AuthResponseBO generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
-                                        final TokenOptionsBO options) {
+    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+                                                           final TokenOptionsBO options) {
         final String code = random.base64(config.getRandomSize());
 
         final AccountTokenDO accountToken = AccountTokenDO.builder()
@@ -68,14 +54,13 @@ public class AuthorizationCodeProvider implements AuthProvider {
                 .tokenRestrictions(serviceMapper.toDO(restrictions))
                 .build();
 
-        accountTokensRepository.save(accountToken);
-
-        return AuthResponseBO.builder()
-                .type("authorizationCode")
-                .token(code)
-                .entityType(EntityType.ACCOUNT)
-                .entityId(account.getId())
-                .build();
+        return accountTokensRepository.save(accountToken)
+                .thenApply(ignored -> AuthResponseBO.builder()
+                        .type("authorizationCode")
+                        .token(code)
+                        .entityType(EntityType.ACCOUNT)
+                        .entityId(account.getId())
+                        .build());
     }
 
     @Override

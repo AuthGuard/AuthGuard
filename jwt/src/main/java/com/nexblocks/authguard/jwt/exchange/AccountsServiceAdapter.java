@@ -5,7 +5,8 @@ import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountBO;
-import io.vavr.control.Either;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * An adapter class to wrap {@link AccountsService} to
@@ -20,10 +21,10 @@ public class AccountsServiceAdapter {
         this.accountsService = accountsService;
     }
 
-    public Either<Exception, AccountBO> getAccount(final long accountId) {
+    public CompletableFuture<AccountBO> getAccount(final long accountId) {
         return accountsService.getById(accountId)
-                .<Either<Exception, AccountBO>>map(Either::right)
-                .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
-                        "Account " + accountId + " does not exist")));
+                .thenCompose(opt -> opt.map(CompletableFuture::completedFuture)
+                        .orElseGet(() -> CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
+                                "Account does not exist"))));
     }
 }

@@ -63,4 +63,29 @@ public class IdempotencyServiceImpl implements IdempotencyService {
                     return result;
                 });
     }
+
+    @Override
+    public <T extends Entity> CompletableFuture<T> performOperationAsync(Supplier<CompletableFuture<T>> operation, String idempotentKey, String entityType) {
+        return findByKeyAndEntityType(idempotentKey, entityType)
+                .thenCompose(record -> {
+                    if (record.isPresent()) {
+                        throw new IdempotencyException(record.get());
+                    }
+
+                    return operation.get();
+                })
+                .thenApply(result -> {
+                    final IdempotentRecordBO record = IdempotentRecordBO.builder()
+                            .id(ID.generate())
+                            .entityId(result.getId())
+                            .entityType(result.getEntityType())
+                            .idempotentKey(idempotentKey)
+                            .build();
+
+                    // we don't have to wait for this to finish
+                    CompletableFuture.runAsync(() -> create(record));
+
+                    return result;
+                });
+    }
 }

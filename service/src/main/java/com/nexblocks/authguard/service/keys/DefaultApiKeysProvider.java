@@ -9,6 +9,8 @@ import com.nexblocks.authguard.service.config.ApiKeysConfig;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
 
+import java.util.concurrent.CompletableFuture;
+
 @ProvidesToken("apiKey")
 public class DefaultApiKeysProvider implements AuthProvider {
     private final String TOKEN_TYPE = "api_key";
@@ -31,7 +33,8 @@ public class DefaultApiKeysProvider implements AuthProvider {
     }
 
     @Override
-    public AuthResponseBO generateToken(final AccountBO account) {
+    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+                                                           final TokenOptionsBO options) {
         throw new UnsupportedOperationException("API keys cannot be generated for an account");
     }
 

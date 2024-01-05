@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @ProvidesToken("sessionToken")
@@ -37,12 +38,8 @@ public class SessionProvider implements AuthProvider {
     }
 
     @Override
-    public AuthResponseBO generateToken(final AccountBO account) {
-        return generateToken(account, (TokenOptionsBO) null);
-    }
-
-    @Override
-    public AuthResponseBO generateToken(final AccountBO account, final TokenOptionsBO options) {
+    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+                                                           final TokenOptionsBO options) {
         if (!account.isActive()) {
             throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
         }
@@ -52,8 +49,8 @@ public class SessionProvider implements AuthProvider {
         data.put(SessionKeys.ACCOUNT_ID, "" + account.getId());
         data.put(SessionKeys.ROLES, String.join(",", account.getRoles()));
         data.put(SessionKeys.PERMISSIONS, account.getPermissions().stream()
-                        .map(Permission::getFullName)
-                        .collect(Collectors.joining(",")));
+                .map(Permission::getFullName)
+                .collect(Collectors.joining(",")));
 
         if (options != null) {
             if (options.getSource() != null) {
@@ -71,15 +68,14 @@ public class SessionProvider implements AuthProvider {
                 .data(data)
                 .build();
 
-        final SessionBO created = sessionsService.create(session);
-
-        return AuthResponseBO.builder()
-                .type(TOKEN_TYPE)
-                .token(created.getSessionToken())
-                .entityType(EntityType.ACCOUNT)
-                .entityId(account.getId())
-                .validFor(sessionTtl.getSeconds())
-                .build();
+        return sessionsService.create(session)
+                .thenApply(created -> AuthResponseBO.builder()
+                        .type(TOKEN_TYPE)
+                        .token(created.getSessionToken())
+                        .entityType(EntityType.ACCOUNT)
+                        .entityId(account.getId())
+                        .validFor(sessionTtl.getSeconds())
+                        .build());
     }
 
     @Override
@@ -88,14 +84,15 @@ public class SessionProvider implements AuthProvider {
     }
 
     @Override
-    public AuthResponseBO delete(final AuthRequestBO authRequest) {
+    public CompletableFuture<AuthResponseBO> delete(final AuthRequestBO authRequest) {
         return sessionsService.deleteByToken(authRequest.getToken())
-                .map(session -> AuthResponseBO.builder()
-                        .type(TOKEN_TYPE)
-                        .entityType(EntityType.ACCOUNT)
-                        .entityId(session.getAccountId())
-                        .token(session.getSessionToken())
-                        .build())
-                .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid session token"));
+                .thenApply(opt -> opt
+                        .map(session -> AuthResponseBO.builder()
+                                .type(TOKEN_TYPE)
+                                .entityType(EntityType.ACCOUNT)
+                                .entityId(session.getAccountId())
+                                .token(session.getSessionToken())
+                                .build())
+                        .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid session token")));
     }
 }

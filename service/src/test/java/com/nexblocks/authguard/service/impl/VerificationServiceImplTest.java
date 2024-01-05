@@ -13,7 +13,6 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AccountEmailBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.PhoneNumberBO;
-import io.vavr.control.Either;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -61,7 +60,7 @@ class VerificationServiceImplTest {
                 .build();
 
         Mockito.when(accountsService.getById(101))
-                .thenReturn(Optional.of(account));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accountTokensRepository.getByToken("verification-token"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(AccountTokenDO.builder()
@@ -96,7 +95,7 @@ class VerificationServiceImplTest {
                 .build();
 
         Mockito.when(accountsService.getById(101))
-                .thenReturn(Optional.of(account));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accountTokensRepository.getByToken("verification-token"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(AccountTokenDO.builder()
@@ -124,7 +123,7 @@ class VerificationServiceImplTest {
                 .build();
 
         Mockito.when(accountsService.getById(101))
-                .thenReturn(Optional.of(account));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accountTokensRepository.getByToken("verification-token"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(AccountTokenDO.builder()
@@ -151,7 +150,7 @@ class VerificationServiceImplTest {
                 .build();
 
         Mockito.when(accountsService.getById(101))
-                .thenReturn(Optional.of(account));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accountTokensRepository.getByToken("verification-token"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(AccountTokenDO.builder()
@@ -180,10 +179,10 @@ class VerificationServiceImplTest {
                 .build();
 
         Mockito.when(accountsService.getById(101))
-                .thenReturn(Optional.of(account));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(otpProvider.generateToken(account))
-                .thenReturn(otp);
+                .thenReturn(CompletableFuture.completedFuture(otp));
 
         final AuthResponseBO actual = verificationService.sendPhoneNumberVerification(101);
 
@@ -206,10 +205,10 @@ class VerificationServiceImplTest {
                 .build();
 
         Mockito.when(accountsService.getByIdentifier("username", "main"))
-                .thenReturn(Optional.of(account));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(otpProvider.generateToken(account))
-                .thenReturn(otp);
+                .thenReturn(CompletableFuture.completedFuture(otp));
 
         final AuthResponseBO actual = verificationService.sendPhoneNumberVerificationByIdentifier("username", "main");
 
@@ -227,10 +226,10 @@ class VerificationServiceImplTest {
                 .build();
 
         Mockito.when(accountsService.getById(101))
-                .thenReturn(Optional.of(account));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
-        Mockito.when(otpVerifier.verifyAccountToken("1:123456"))
-                .thenReturn(Either.right(101L));
+        Mockito.when(otpVerifier.verifyAccountTokenAsync("1:123456"))
+                .thenReturn(CompletableFuture.completedFuture(101L));;
 
         // TODO account argument captor
         verificationService.verifyPhoneNumber(1, "123456", "33334444");
@@ -247,10 +246,10 @@ class VerificationServiceImplTest {
                 .build();
 
         Mockito.when(accountsService.getById(101))
-                .thenReturn(Optional.of(account));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
-        Mockito.when(otpVerifier.verifyAccountToken("1:123456"))
-                .thenReturn(Either.right(101L));
+        Mockito.when(otpVerifier.verifyAccountTokenAsync("1:123456"))
+                .thenReturn(CompletableFuture.completedFuture(101L));;
 
         assertThatThrownBy(() -> verificationService.verifyPhoneNumber(1, "123456", "9999999"))
                 .isInstanceOf(ServiceException.class);
@@ -263,10 +262,10 @@ class VerificationServiceImplTest {
                 .build();
 
         Mockito.when(accountsService.getById(101))
-                .thenReturn(Optional.of(account));
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
-        Mockito.when(otpVerifier.verifyAccountToken("1:123456"))
-                .thenReturn(Either.right(101L));
+        Mockito.when(otpVerifier.verifyAccountTokenAsync("1:123456"))
+                .thenReturn(CompletableFuture.completedFuture(101L));
 
         assertThatThrownBy(() -> verificationService.verifyPhoneNumber(1, "123456", "9999999"))
                 .isInstanceOf(ServiceException.class);
@@ -275,10 +274,10 @@ class VerificationServiceImplTest {
     @Test
     void verifyPhoneNumberNonExistingAccount() {
         Mockito.when(accountsService.getById(101))
-                .thenReturn(Optional.empty());
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        Mockito.when(otpVerifier.verifyAccountToken("1:123456"))
-                .thenReturn(Either.right(101L));
+        Mockito.when(otpVerifier.verifyAccountTokenAsync("1:123456"))
+                .thenReturn(CompletableFuture.completedFuture(101L));;
 
         assertThatThrownBy(() -> verificationService.verifyPhoneNumber(1, "123456", "9999999"))
                 .isInstanceOf(ServiceException.class);

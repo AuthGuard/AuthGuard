@@ -20,6 +20,7 @@ import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -30,16 +31,16 @@ class AuthenticationServiceImplTest {
     private AccountLocksService accountLocksService;
     private AuthenticationService authenticationService;
 
-    private final static EasyRandom RANDOM = new EasyRandom();
+    private static EasyRandom RANDOM = new EasyRandom();
 
     @BeforeAll
     void setup() {
         exchangeService = Mockito.mock(ExchangeService.class);
         accountLocksService = Mockito.mock(AccountLocksService.class);
 
-        final ConfigContext configContext = Mockito.mock(ConfigContext.class);
+        ConfigContext configContext = Mockito.mock(ConfigContext.class);
 
-        final AuthenticationConfig config = AuthenticationConfig.builder()
+        AuthenticationConfig config = AuthenticationConfig.builder()
                 .generateToken("accessToken")
                 .build();
 
@@ -56,64 +57,65 @@ class AuthenticationServiceImplTest {
 
     @Test
     void authenticate() {
-        final String username = "username";
-        final String password = "password";
-        final AuthRequestBO authRequest = AuthRequestBO.builder()
+        String username = "username";
+        String password = "password";
+        AuthRequestBO authRequest = AuthRequestBO.builder()
                 .identifier(username)
                 .password(password)
                 .build();
 
-        final AuthResponseBO tokens = RANDOM.nextObject(AuthResponseBO.class);
-        final RequestContextBO requestContext = RequestContextBO.builder().build();
+        AuthResponseBO tokens = RANDOM.nextObject(AuthResponseBO.class);
+        RequestContextBO requestContext = RequestContextBO.builder().build();
 
         Mockito.when(exchangeService.exchange(authRequest, "basic", "accessToken", requestContext))
-                .thenReturn(tokens);
+                .thenReturn(CompletableFuture.completedFuture(tokens));
 
         Mockito.when(accountLocksService.getActiveLocksByAccountId(tokens.getEntityId()))
-                .thenReturn(Collections.emptyList());
+                .thenReturn(CompletableFuture.completedFuture(Collections.emptyList()));
 
-        final Optional<AuthResponseBO> result = authenticationService.authenticate(authRequest, requestContext);
+        AuthResponseBO result = authenticationService.authenticate(authRequest, requestContext).join();
 
-        assertThat(result).isPresent().contains(tokens);
+        assertThat(result).isEqualTo(tokens);
     }
 
     @Test
     void authenticateLockedAccount() {
-        final String username = "username";
-        final String password = "password";
-        final AuthRequestBO authRequest = AuthRequestBO.builder()
+        String username = "username";
+        String password = "password";
+        AuthRequestBO authRequest = AuthRequestBO.builder()
                 .identifier(username)
                 .password(password)
                 .build();
 
-        final AuthResponseBO tokens = RANDOM.nextObject(AuthResponseBO.class);
-        final RequestContextBO requestContext = RequestContextBO.builder().build();
+        AuthResponseBO tokens = RANDOM.nextObject(AuthResponseBO.class);
+        RequestContextBO requestContext = RequestContextBO.builder().build();
 
         Mockito.when(exchangeService.exchange(authRequest, "basic", "accessToken", requestContext))
-                .thenReturn(tokens);
+                .thenReturn(CompletableFuture.completedFuture(tokens));
 
         Mockito.when(accountLocksService.getActiveLocksByAccountId(tokens.getEntityId()))
-                .thenReturn(Collections.singleton(AccountLockBO.builder().build()));
+                .thenReturn(CompletableFuture.completedFuture(Collections.singleton(AccountLockBO.builder().build())));
 
-        assertThatThrownBy(() -> authenticationService.authenticate(authRequest, requestContext))
-                .isInstanceOf(ServiceAuthorizationException.class)
+        assertThatThrownBy(() -> authenticationService.authenticate(authRequest, requestContext).join())
+                .hasCauseInstanceOf(ServiceAuthorizationException.class)
+                .cause()
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCOUNT_IS_LOCKED.getCode());
     }
 
     @Test
     void refresh() {
-        final AuthRequestBO authRequest = AuthRequestBO.builder()
+        AuthRequestBO authRequest = AuthRequestBO.builder()
                 .token("refresh_token")
                 .build();
 
-        final AuthResponseBO tokens = RANDOM.nextObject(AuthResponseBO.class);
-        final RequestContextBO requestContext = RequestContextBO.builder().build();
+        AuthResponseBO tokens = RANDOM.nextObject(AuthResponseBO.class);
+        RequestContextBO requestContext = RequestContextBO.builder().build();
 
         Mockito.when(exchangeService.exchange(authRequest, "refresh", "accessToken", requestContext))
-                .thenReturn(tokens);
+                .thenReturn(CompletableFuture.completedFuture(tokens));
 
-        final Optional<AuthResponseBO> result = authenticationService.refresh(authRequest, requestContext);
+        AuthResponseBO result = authenticationService.refresh(authRequest, requestContext).join();
 
-        assertThat(result).isPresent().contains(tokens);
+        assertThat(result).isEqualTo(tokens);
     }
 }

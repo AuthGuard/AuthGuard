@@ -5,6 +5,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.concurrent.CompletableFuture;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -24,26 +26,26 @@ class OpenIdConnectTokenProviderTest {
 
     @Test
     void generateToken() {
-        final AccountBO account = AccountBO.builder().id(101).build();
+        AccountBO account = AccountBO.builder().id(101).build();
 
-        final AuthResponseBO accessTokenResponse = AuthResponseBO.builder()
+        AuthResponseBO accessTokenResponse = AuthResponseBO.builder()
                 .token("access token")
                 .refreshToken("refresh token")
                 .build();
 
-        final AuthResponseBO idTokenResponse = AuthResponseBO.builder()
+        AuthResponseBO idTokenResponse = AuthResponseBO.builder()
                 .token("id token")
                 .build();
 
         Mockito.when(accessTokenProvider.generateToken(account, null, null))
-                .thenReturn(accessTokenResponse);
+                .thenReturn(CompletableFuture.completedFuture(accessTokenResponse));
 
         Mockito.when(idTokenProvider.generateToken(account))
-                .thenReturn(idTokenResponse);
+                .thenReturn(CompletableFuture.completedFuture(idTokenResponse));
 
-        final AuthResponseBO actual = openIdConnectTokenProvider.generateToken(account);
+        AuthResponseBO actual = openIdConnectTokenProvider.generateToken(account).join();
 
-        final AuthResponseBO expected = AuthResponseBO.builder()
+        AuthResponseBO expected = AuthResponseBO.builder()
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .type("oidc")
@@ -59,34 +61,34 @@ class OpenIdConnectTokenProviderTest {
 
     @Test
     void generateTokenWithRestrictions() {
-        final AccountBO account = AccountBO.builder().id(101).build();
+        AccountBO account = AccountBO.builder().id(101).build();
 
-        final TokenRestrictionsBO restrictions = TokenRestrictionsBO.builder()
+        TokenRestrictionsBO restrictions = TokenRestrictionsBO.builder()
                 .addPermissions("permission")
                 .build();
 
-        final AuthResponseBO accessTokenResponse = AuthResponseBO.builder()
+        AuthResponseBO accessTokenResponse = AuthResponseBO.builder()
                 .token("access token")
                 .refreshToken("refresh token")
                 .build();
 
-        final AuthResponseBO idTokenResponse = AuthResponseBO.builder()
+        AuthResponseBO idTokenResponse = AuthResponseBO.builder()
                 .token("id token")
                 .build();
 
-        final TokenOptionsBO options = TokenOptionsBO.builder()
+        TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("source")
                 .build();
 
         Mockito.when(accessTokenProvider.generateToken(account, restrictions, options))
-                .thenReturn(accessTokenResponse);
+                .thenReturn(CompletableFuture.completedFuture(accessTokenResponse));
 
         Mockito.when(idTokenProvider.generateToken(account))
-                .thenReturn(idTokenResponse);
+                .thenReturn(CompletableFuture.completedFuture(idTokenResponse));
 
-        final AuthResponseBO actual = openIdConnectTokenProvider.generateToken(account, restrictions, options);
+        AuthResponseBO actual = openIdConnectTokenProvider.generateToken(account, restrictions, options).join();
 
-        final AuthResponseBO expected = AuthResponseBO.builder()
+        AuthResponseBO expected = AuthResponseBO.builder()
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
                 .type("oidc")
@@ -102,7 +104,7 @@ class OpenIdConnectTokenProviderTest {
 
     @Test
     void generateTokenApps() {
-        final AppBO app = AppBO.builder().build();
+        AppBO app = AppBO.builder().build();
 
         assertThatThrownBy(() -> openIdConnectTokenProvider.generateToken(app))
                 .isInstanceOf(UnsupportedOperationException.class);

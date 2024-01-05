@@ -12,11 +12,9 @@ import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
 import com.nexblocks.authguard.service.model.*;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.CompletableFuture;
 
 @ProvidesToken("jwtApiKey")
 public class JwtApiKeyProvider implements AuthProvider {
@@ -42,7 +40,8 @@ public class JwtApiKeyProvider implements AuthProvider {
     }
 
     @Override
-    public AuthResponseBO generateToken(final AccountBO account) {
+    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+                                                           final TokenOptionsBO options) {
         throw new UnsupportedOperationException("API keys cannot be generated for an account");
     }
 

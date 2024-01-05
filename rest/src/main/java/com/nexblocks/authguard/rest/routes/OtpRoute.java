@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.google.inject.Inject;
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
 import com.nexblocks.authguard.api.dto.entities.AuthResponseDTO;
 import com.nexblocks.authguard.api.dto.requests.OtpRequestDTO;
@@ -8,9 +9,10 @@ import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
 import com.nexblocks.authguard.rest.util.RequestContextExtractor;
 import com.nexblocks.authguard.service.OtpService;
-import com.google.inject.Inject;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 import io.javalin.http.Context;
+
+import java.util.concurrent.CompletableFuture;
 
 @DependsOnConfiguration("otp")
 public class OtpRoute extends OtpApi {
@@ -27,10 +29,11 @@ public class OtpRoute extends OtpApi {
     }
 
     public void verify(final Context context) {
-        final OtpRequestDTO body = otpRequestBodyHandler.getValidated(context);
-        final RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
+        OtpRequestDTO body = otpRequestBodyHandler.getValidated(context);
+        RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        final AuthResponseDTO tokens = restMapper.toDTO(otpService.authenticate(body.getPasswordId(), body.getPassword(), requestContext));
+        CompletableFuture<AuthResponseDTO> tokens = otpService.authenticate(body.getPasswordId(), body.getPassword(), requestContext)
+                .thenApply(restMapper::toDTO);
 
         context.json(tokens);
     }

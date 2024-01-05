@@ -6,9 +6,8 @@ import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
-import io.vavr.control.Either;
 
-public class AccessTokenVerifier{
+public class AccessTokenVerifier {
     private final JwtTokenVerifier jwtTokenVerifier;
 
     @Inject
@@ -27,8 +26,8 @@ public class AccessTokenVerifier{
         this.jwtTokenVerifier = new JwtTokenVerifier(strategy, jti, algorithm);
     }
 
-    public Either<Exception, String> verify(final String token) {
-        return jwtTokenVerifier.verifyAccountToken(token)
-                .map(ignored -> token);
+    public String verify(final String token) {
+        jwtTokenVerifier.verifyAccountToken(token);
+        return token;
     }
 }

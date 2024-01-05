@@ -9,6 +9,8 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import io.vavr.control.Either;
 
+import java.util.concurrent.CompletableFuture;
+
 @TokenExchange(from = "encryptedToken", to = "accessToken")
 public class EncryptedToAccessToken implements Exchange {
     private static final String TOKEN_TYPE = "accessToken";
@@ -23,13 +25,18 @@ public class EncryptedToAccessToken implements Exchange {
     }
 
     @Override
-    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
-        final String encrypted = request.getToken();
-        return tokenEncryptor.decryptEncoded(encrypted)
-                .flatMap(accessTokenVerifier::verify)
-                .map(token -> AuthResponseBO.builder()
-                        .type(TOKEN_TYPE)
-                        .token(token)
-                        .build());
+    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+        String encrypted = request.getToken();
+        Either<Exception, String> decrypted = tokenEncryptor.decryptEncoded(encrypted)
+                .map(accessTokenVerifier::verify);
+
+        if (decrypted.isLeft()) {
+            return CompletableFuture.failedFuture(decrypted.getLeft());
+        }
+
+        return CompletableFuture.completedFuture(AuthResponseBO.builder()
+                .type(TOKEN_TYPE)
+                .token(decrypted.get())
+                .build());
     }
 }

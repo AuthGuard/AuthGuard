@@ -4,8 +4,10 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 
-public interface OtpService {
-    AuthResponseBO authenticate(AuthRequestBO authRequest, RequestContextBO requestContext);
+import java.util.concurrent.CompletableFuture;
 
-    AuthResponseBO authenticate(long passwordId, String otp, RequestContextBO requestContext);
+public interface OtpService {
+    CompletableFuture<AuthResponseBO> authenticate(AuthRequestBO authRequest, RequestContextBO requestContext);
+
+    CompletableFuture<AuthResponseBO> authenticate(long passwordId, String otp, RequestContextBO requestContext);
 }

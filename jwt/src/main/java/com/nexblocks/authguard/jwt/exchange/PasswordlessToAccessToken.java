@@ -12,7 +12,8 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
-import io.vavr.control.Either;
+
+import java.util.concurrent.CompletableFuture;
 
 @TokenExchange(from = "passwordless", to = "accessToken")
 public class PasswordlessToAccessToken implements Exchange {
@@ -30,17 +31,21 @@ public class PasswordlessToAccessToken implements Exchange {
     }
 
     @Override
-    public Either<Exception, AuthResponseBO> exchange(final AuthRequestBO request) {
-        return passwordlessVerifier.verifyAccountToken(request.getToken())
-                .map(accountsService::getById)
-                .flatMap(accountOpt -> accountOpt
-                        .map(account -> generate(account, request))
-                        .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
-                                "Failed to generate access token"))));
+    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+        return passwordlessVerifier.verifyAccountTokenAsync(request.getToken())
+                .thenCompose(accountsService::getById)
+                .thenCompose(opt -> {
+                    if (opt.isEmpty()) {
+                        return CompletableFuture.failedFuture(
+                                new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "The account associated with that token does not exist"));
+                    }
+
+                    return generate(opt.get(), request);
+                });
     }
 
-    private Either<Exception, AuthResponseBO> generate(final AccountBO account, final AuthRequestBO request) {
-        final TokenOptionsBO options = TokenOptionsBO.builder()
+    private CompletableFuture<AuthResponseBO> generate(final AccountBO account, final AuthRequestBO request) {
+        TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("passwordless")
                 .userAgent(request.getUserAgent())
                 .sourceIp(request.getSourceIp())
@@ -49,6 +54,6 @@ public class PasswordlessToAccessToken implements Exchange {
                 .deviceId(request.getDeviceId())
                 .build();
 
-        return Either.right(accessTokenProvider.generateToken(account, options));
+        return accessTokenProvider.generateToken(account, options);
     }
 }
