@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.jwt.oauth.service;
 
+import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.jwt.exchange.PkceParameters;
 import com.nexblocks.authguard.jwt.oauth.route.ImmutableOpenIdConnectRequest;
 import com.nexblocks.authguard.jwt.oauth.route.OpenIdConnectRequest;
@@ -40,13 +41,16 @@ class OpenIdConnectServiceTest {
 
     private ExchangeService exchangeService;
     private ClientsService clientsService;
+    private AccountTokensRepository accountTokensRepository;
     private OpenIdConnectService openIdConnectService;
 
     @BeforeEach
     void setup() {
         exchangeService = Mockito.mock(ExchangeService.class);
         clientsService = Mockito.mock(ClientsService.class);
-        openIdConnectService = new OpenIdConnectService(clientsService, exchangeService);
+        accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
+
+        openIdConnectService = new OpenIdConnectService(clientsService, exchangeService, accountTokensRepository);
     }
 
     @Test
@@ -169,6 +173,38 @@ class OpenIdConnectServiceTest {
                 .domain("test")
                 .clientType(Client.ClientType.SSO)
                 .baseUrl("test-domain.com")
+                .build();
+
+        OpenIdConnectRequest request = ImmutableOpenIdConnectRequest.builder()
+                .responseType("code")
+                .clientId("1")
+                .redirectUri("http://test.com/oidc/login")
+                .identifier("user")
+                .password("password")
+                .build();
+
+        RequestContextBO context = RequestContextBO.builder().build();
+
+        Mockito.when(clientsService.getById(1))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
+
+        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(request, context).join())
+                .hasCauseInstanceOf(ServiceException.class)
+                .cause();
+
+        cause.extracting(e -> ((ServiceException) e).getErrorCode())
+                .isEqualTo(ErrorCode.GENERIC_AUTH_FAILURE.getCode());
+
+        cause.extracting(Throwable::getMessage)
+                .isEqualTo("Redirect URL doesn't match the client base URL");
+    }
+
+    @Test
+    void processAuthRedirectUrlDifferentHostEmptyBaseUrl() {
+        ClientBO client = ClientBO.builder()
+                .domain("test")
+                .clientType(Client.ClientType.SSO)
+                .baseUrl("")
                 .build();
 
         OpenIdConnectRequest request = ImmutableOpenIdConnectRequest.builder()

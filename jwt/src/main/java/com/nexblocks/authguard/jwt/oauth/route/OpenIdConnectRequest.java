@@ -16,6 +16,7 @@ import java.util.List;
         unsafeDefaultAndDerived = true
 )
 public interface OpenIdConnectRequest {
+    // TODO this is a lot in one place, split it up
     String getResponseType();
     String getClientId();
     List<String> getScope();
@@ -32,4 +33,6 @@ public interface OpenIdConnectRequest {
     String getCodeChallengeMethod();
     String getCodeChallenge();
     String getCodeVerifier();
+
+    String getRequestToken();
 }

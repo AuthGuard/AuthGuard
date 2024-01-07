@@ -178,19 +178,15 @@
         async function login(identifier, password) {
             let searchParams = new URLSearchParams(window.location.search);
             let clientId = searchParams.get("client_id");
-            let responseType = searchParams.get("response_type");
-            let scope = searchParams.get("scope");
             let redirectUri = searchParams.get("redirect_uri");
-            let state = searchParams.get("state");
+            let token = searchParams.get("token");
 
             let requestBody = {
                 identifier: identifier,
                 password: password,
-                responseType: responseType,
                 clientId: clientId,
-                scope: scope.split(","),
                 redirectUri: redirectUri,
-                state: state
+                requestToken: token
             };
 
             return await post("/oidc/auth", requestBody);
