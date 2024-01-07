@@ -1,19 +1,29 @@
 package com.nexblocks.authguard.jwt.oauth.service;
 
 import com.google.inject.Inject;
+import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
+import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.jwt.exchange.PkceParameters;
+import com.nexblocks.authguard.jwt.oauth.route.ImmutableOpenIdConnectRequest;
 import com.nexblocks.authguard.jwt.oauth.route.OpenIdConnectRequest;
 import com.nexblocks.authguard.service.ClientsService;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
+import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
-import com.nexblocks.authguard.service.util.AsyncUtils;
+import com.nexblocks.authguard.service.random.CryptographicRandom;
+import com.nexblocks.authguard.service.util.ID;
 import io.vavr.control.Try;
 import okhttp3.HttpUrl;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 
 public class OpenIdConnectService {
@@ -22,18 +32,83 @@ public class OpenIdConnectService {
     private static final String REFRESH_TOKEN_TYPE = "refresh";
     private static final String OIDC_TOKEN_TYPE = "oidc";
     private static final String ACCESS_TOKEN_TYPE = "accessToken";
+    private static final int REQUEST_TOKEN_SIZE = 64;
+    private static final Duration TOKEN_TTL = Duration.ofDays(1);
 
     private final ClientsService clientsService;
     private final ExchangeService exchangeService;
+    private final AccountTokensRepository accountTokensRepository;
+    private final CryptographicRandom cryptographicRandom;
 
     @Inject
-    public OpenIdConnectService(ClientsService clientsService, ExchangeService exchangeService) {
+    public OpenIdConnectService(ClientsService clientsService, ExchangeService exchangeService,
+                                AccountTokensRepository accountTokensRepository) {
         this.clientsService = clientsService;
         this.exchangeService = exchangeService;
+        this.accountTokensRepository = accountTokensRepository;
+        this.cryptographicRandom = new CryptographicRandom();
+    }
+
+    public CompletableFuture<AccountTokenDO> createRequestToken(final RequestContextBO requestContext,
+                                                                final OpenIdConnectRequest request) {
+        String token = cryptographicRandom.base64Url(REQUEST_TOKEN_SIZE);
+        Map<String, String> parameters = new TreeMap<>();
+
+        parameters.put(OAuthConst.Params.ResponseType, request.getResponseType());
+        parameters.put(OAuthConst.Params.RedirectUri, request.getRedirectUri());
+        parameters.put(OAuthConst.Params.State, request.getState());
+        parameters.put(OAuthConst.Params.Scope, String.join(",", request.getScope()));
+        parameters.put(OAuthConst.Params.CodeChallengeMethod, request.getCodeChallengeMethod());
+        parameters.put(OAuthConst.Params.CodeChallenge, request.getCodeChallenge());
+
+        AccountTokenDO accountToken = AccountTokenDO.builder()
+                .id(ID.generate())
+                .token(token)
+                .userAgent(requestContext.getUserAgent())
+                .sourceIp(requestContext.getSource())
+                .clientId(request.getClientId())
+                .expiresAt(Instant.now().plus(TOKEN_TTL))
+                .additionalInformation(parameters)
+                .build();
+
+        return accountTokensRepository.save(accountToken);
+    }
+
+    public CompletableFuture<OpenIdConnectRequest> getRequestFromToken(final String token,
+                                                                       final RequestContextBO requestContext) {
+        return accountTokensRepository.getByToken(token)
+                .thenCompose(opt -> {
+                    if (opt.isEmpty()) {
+                        return CompletableFuture.failedFuture(new ServiceNotFoundException(ErrorCode.INVALID_TOKEN,
+                                "invalid_token"));
+                    }
+
+                    AccountTokenDO accountToken = opt.get();
+                    Map<String, String> parameters = accountToken.getAdditionalInformation();
+
+                    ImmutableOpenIdConnectRequest request = ImmutableOpenIdConnectRequest.builder()
+                            .clientId(accountToken.getClientId())
+                            .responseType(parameters.get(OAuthConst.Params.ResponseType))
+                            .redirectUri(parameters.get(OAuthConst.Params.RedirectUri))
+                            .state(parameters.get(OAuthConst.Params.State))
+                            .scope(List.of(parameters.get(OAuthConst.Params.Scope).split(",")))
+                            .codeChallengeMethod(parameters.get(OAuthConst.Params.CodeChallengeMethod))
+                            .codeChallenge(parameters.get(OAuthConst.Params.CodeChallenge))
+                            .build();
+
+                    if (!Objects.equals(accountToken.getUserAgent(), requestContext.getUserAgent())) {
+                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
+                                "invalid_user_agent"));
+                    }
+
+                    // TODO what else should we check?
+
+                    return CompletableFuture.completedFuture(request);
+                });
     }
 
     public CompletableFuture<AuthResponseBO> processAuth(OpenIdConnectRequest request, RequestContextBO requestContext) {
-        if (!Objects.equals(request.getResponseType(), "code")) {
+        if (!Objects.equals(request.getResponseType(), OAuthConst.ResponseTypes.Code)) {
             return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
                     "Invalid response type"));
         }
@@ -48,7 +123,9 @@ public class OpenIdConnectService {
         }
 
         return clientsService.getById(parsedId)
-                .thenCompose(AsyncUtils::fromClientOptional)
+                .thenCompose(opt -> opt
+                        .map(CompletableFuture::completedFuture)
+                        .orElseGet(() -> CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.APP_DOES_NOT_EXIST, "Client does not exist"))))
                 .thenCompose(client -> {
                     if (client.getClientType() != Client.ClientType.SSO) {
                         return CompletableFuture.failedFuture(new ServiceException(ErrorCode.CLIENT_NOT_PERMITTED,
@@ -104,7 +181,7 @@ public class OpenIdConnectService {
                     "Client isn't permitted to perform OIDC requests"));
         }
 
-        final HttpUrl parsedUrl = HttpUrl.parse(redirectUri);
+        HttpUrl parsedUrl = HttpUrl.parse(redirectUri);
 
         if (parsedUrl == null) {
             return Try.failure(new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE,
