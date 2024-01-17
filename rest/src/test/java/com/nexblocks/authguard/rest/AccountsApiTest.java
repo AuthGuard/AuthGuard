@@ -94,6 +94,6 @@ class AccountsApiTest extends AbstractRouteTest {
         assertThat(response).isEqualToIgnoringGivenFields(requestDTO,
                 "id", "deleted", "createdAt", "lastModified", "passwordUpdatedAt",
                 "social", "identityProvider", "passwordVersion");
-        assertThat(response.getId()).isEqualTo(serviceResponse.getId());
+        assertThat(response.getId()).isEqualTo(String.valueOf(serviceResponse.getId()));
     }
 }

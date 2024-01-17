@@ -14,7 +14,7 @@ import java.time.Instant;
 public interface ApiKeyRequest {
     boolean isForClient();
     String getKeyType();
-    Long getAppId();
+    String getAppId();
     Instant getExpiresAt();
     DurationRequestDTO getValidFor();
 }

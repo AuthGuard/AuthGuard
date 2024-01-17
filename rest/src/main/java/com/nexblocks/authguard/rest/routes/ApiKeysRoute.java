@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.nexblocks.authguard.api.dto.entities.ApiKeyDTO;
 import com.nexblocks.authguard.api.dto.requests.ApiKeyRequestDTO;
 import com.nexblocks.authguard.api.dto.requests.ApiKeyVerificationRequestDTO;
+import com.nexblocks.authguard.api.dto.validation.IdParser;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.ApiKeysApi;
@@ -46,8 +47,8 @@ public class ApiKeysRoute extends ApiKeysApi {
         Duration validFor = request.getValidFor() == null ? Duration.ZERO : request.getValidFor().toDuration();
 
         CompletableFuture<ApiKeyBO> key = request.isForClient() ?
-                apiKeysService.generateClientApiKey(request.getAppId(), request.getKeyType(), validFor) :
-                apiKeysService.generateApiKey(request.getAppId(), request.getKeyType(), validFor);
+                apiKeysService.generateClientApiKey(IdParser.from(request.getAppId()), request.getKeyType(), validFor) :
+                apiKeysService.generateApiKey(IdParser.from(request.getAppId()), request.getKeyType(), validFor);
 
         context.status(201).json(key.thenApply(restMapper::toDTO));
     }

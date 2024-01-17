@@ -6,6 +6,7 @@ import com.nexblocks.authguard.api.dto.entities.ActionTokenDTO;
 import com.nexblocks.authguard.api.dto.entities.ActionTokenRequestType;
 import com.nexblocks.authguard.api.dto.entities.AuthResponseDTO;
 import com.nexblocks.authguard.api.dto.requests.ActionTokenRequestDTO;
+import com.nexblocks.authguard.api.dto.validation.IdParser;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.ActionTokensApi;
@@ -64,7 +65,7 @@ public class ActionTokensRoute extends ActionTokensApi {
         CompletableFuture<ActionTokenBO> result;
 
         if (request.getType() == ActionTokenRequestType.OTP) {
-            result = actionTokenService.generateFromOtp(request.getOtp().getPasswordId(),
+            result = actionTokenService.generateFromOtp(IdParser.from(request.getOtp().getPasswordId()),
                     request.getOtp().getPassword(), request.getAction());
         } else {
             AuthRequestBO authRequest = restMapper.toBO(request.getBasic());

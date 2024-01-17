@@ -15,7 +15,7 @@ import java.util.List;
 public interface CreateAppRequest {
     String getExternalId();
     String getName();
-    Long getAccountId();
+    String getAccountId();
     String getDomain();
     List<PermissionDTO> getPermissions();
     List<String> getScopes();

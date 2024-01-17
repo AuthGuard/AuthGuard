@@ -2,7 +2,7 @@ openapi: 3.0.3
 
 info:
   title: AuthGuard API
-  version: 0.13.0
+  version: 0.20.0
 
 security:
   - apiKey: []
@@ -255,108 +255,31 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /accounts/complete:
-    post:
-      operationId: createAccountWithCredentials
-      description: Create an account as well as its credentials
+  /accounts/domain/{domain}/identifier/{identifier}:
+    get:
+      operationId: getAccountByIdentifier
+      description: Get account by identifier
       tags:
         - Accounts
       parameters:
-        - $ref:  "#/components/parameters/IdempotentKeyHeader"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateCompleteAccountRequest" 
-      responses:
-        201:
-          description: Success
-          $ref: "#/components/responses/CompleteAccountResponse"
-        400:
-          description: Bad request
-          $ref: "#/components/responses/ErrorResponse"
-        409:
-          description: Conflict - if the idempotent key header was used to create an account before
-          $ref: "#/components/responses/ErrorResponse"
-
-  # ----------------- credentials -----------------
-  /credentials:
-    post:
-      operationId: createCredentials
-      description: Create credentials
-      tags:
-        - Credentials
-      parameters:
-        - $ref:  "#/components/parameters/IdempotentKeyHeader"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref:  "#/components/schemas/CreateCredentialsRequest"
-      responses:
-        201:
-          description: Success
-          $ref:  "#/components/responses/CredentialsResponse"
-        400:
-          description: Bad request
-          $ref: "#/components/responses/ErrorResponse"
-        409:
-          description: Conflict - if the idempotent key header was used to create credentials before
-          $ref: "#/components/responses/ErrorResponse"
-
-  /credentials/{id}:
-    get:
-      operationId: getCredentialsById
-      description: Get credentials by ID
-      tags:
-        - Credentials
-      parameters:
-        - $ref: "#/components/parameters/IdParameter"
-      responses:
-        200:
-          description: Success
-          $ref: "#/components/responses/CredentialsResponse"
-        404:
-          description: Not found
-          $ref: "#/components/responses/ErrorResponse"
-    delete:
-      operationId: deleteCredentials
-      description: Delete credentials by ID
-      tags:
-        - Credentials
-      parameters:
-        - $ref: "#/components/parameters/IdParameter"
-      responses:
-        200:
-          description: Success
-          $ref: "#/components/responses/CredentialsResponse"
-        404:
-          description: Not found
-          $ref: "#/components/responses/ErrorResponse"
-
-  /credentials/identifier/{identifier}:
-    get:
-      operationId: getCredentialsByIdentifier
-      description: Get credentials by identifier
-      tags:
-        - Credentials
-      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdentifierParameter"
       responses:
         200:
           description: Success
-          $ref: "#/components/responses/CredentialsResponse"
+          $ref: "#/components/responses/AccountResponse"
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /credentials/identifier/{identifier}/exists:
+  /accounts/domain/{domain}/identifier/{identifier}/exists:
     get:
       operationId: identifierExists
       description: Check whether an identifier exists or not
       tags:
-        - Credentials
+        - Accounts
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdentifierParameter"
       responses:
         200:
@@ -364,6 +287,7 @@ paths:
         404:
           description: Not found
 
+  # ----------------- credentials -----------------
   /credentials/{id}/password:
     patch:
       operationId: updatePassword
@@ -380,7 +304,7 @@ paths:
       responses:
         200:
           description: Success
-          $ref: "#/components/responses/CredentialsResponse"
+          $ref: "#/components/responses/AccountResponse"
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
@@ -401,7 +325,7 @@ paths:
       responses:
         200:
           description: Success
-          $ref: "#/components/responses/CredentialsResponse"
+          $ref: "#/components/responses/AccountResponse"
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
@@ -424,7 +348,7 @@ paths:
       responses:
         200:
           description: Success
-          $ref: "#/components/responses/CredentialsResponse"
+          $ref: "#/components/responses/AccountResponse"
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
@@ -468,7 +392,7 @@ paths:
       responses:
         200:
           description: Success
-          $ref: "#/components/responses/CredentialsResponse"
+          $ref: "#/components/responses/AccountResponse"
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
@@ -753,6 +677,8 @@ paths:
       description: Get an API key by ID
       tags:
         - API Keys
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
       requestBody:
         content:
           application/json:
@@ -770,6 +696,8 @@ paths:
       description: Delete an API key by ID
       tags:
         - API Keys
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
       requestBody:
         content:
           application/json:
@@ -802,19 +730,6 @@ paths:
         400:
           description: Bad request
           $ref: "#/components/responses/ErrorResponse"
-    
-    get:
-      operationId: getAllRoles
-      description: Get all roles
-      tags:
-        - Roles
-      responses:
-        201:
-          description: Success
-          $ref: "#/components/responses/RolesArrayResponse"
-        400:
-          description: Bad request
-          $ref: "#/components/responses/ErrorResponse"
 
   /roles/{id}:
     get:
@@ -822,6 +737,8 @@ paths:
       description: Get role by ID
       tags:
         - Roles
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
           description: Success
@@ -835,6 +752,8 @@ paths:
       description: Delete a role
       tags:
         - Roles
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
           description: Success
@@ -843,12 +762,31 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /roles/name/{name}:
+  /roles/domain/{domain}/:
+    get:
+      operationId: getAllRoles
+      description: Get all roles
+      tags:
+        - Roles
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+      responses:
+        201:
+          description: Success
+          $ref: "#/components/responses/RolesArrayResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
+
+  /roles/domain/{domain}/roles/name/{name}:
     get:
       operationId: getRoleByName
       description: Get a role by its name
       tags:
         - Roles
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+        - $ref: "#/components/parameters/NameParameter"
       responses:
         200:
           description: Success
@@ -876,20 +814,6 @@ paths:
         400:
           description: Bad request
           $ref: "#/components/responses/ErrorResponse"
-    get:
-      operationId: getPermissions
-      description: Get all permissions
-      tags:
-        - Permissions
-      parameters:
-        - name: group
-          in: query
-          schema: 
-            type: string
-      responses:
-        200:
-          description: Success
-          $ref: "#/components/responses/PermissionsArrayResponse"
 
   /permissions/{id}:
     get:
@@ -897,6 +821,8 @@ paths:
       description: Get a permission by ID
       tags:
         - Permissions
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
           description: Success
@@ -909,6 +835,8 @@ paths:
       description: Delete a permission by ID
       tags:
         - Permissions
+      parameters:
+        - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
           description: Success
@@ -916,13 +844,29 @@ paths:
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
+  
+  /permissions/domain/{domain}/:
+    get:
+      operationId: getAllPermissions
+      description: Get all permissions
+      tags:
+        - Permissions
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/PermissionsArrayResponse"
 
-  /permissions/group/{group}:
+  /permissions/domain/{domain}/group/{group}:
     get:
       operationId: getPermissionsByGroupName
       description: Get a permissions by group name
       tags:
         - Permissions
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+        - $ref: "#/components/parameters/GroupParameter"
       responses:
         200:
           description: Success
@@ -1198,10 +1142,31 @@ components:
       in: path
       required: true
       schema:
+        type: number
+
+    DomainParameter:
+      name: domain
+      in: path
+      required: true
+      schema:
         type: string
 
     IdentifierParameter:
       name: identifier
+      in: path
+      required: true
+      schema:
+        type: string
+
+    NameParameter:
+      name: name
+      in: path
+      required: true
+      schema:
+        type: string
+
+    GroupParameter:
+      name: group
       in: path
       required: true
       schema:
@@ -1242,20 +1207,6 @@ components:
         application/json:
               schema:
                 $ref: "#/components/schemas/Account"
-
-    CredentialsResponse:
-      description: _
-      content:
-        application/json:
-              schema:
-                $ref: "#/components/schemas/Credentials"
-
-    CompleteAccountResponse:
-      description: _
-      content:
-        application/json:
-              schema:
-                $ref: "#/components/schemas/AccountWithCredentials"
 
     ApplicationResponse:
       description: _
@@ -1361,16 +1312,6 @@ components:
                 $ref: "#/components/schemas/ActionToken"        
 
   schemas:
-    AccountWithCredentials:
-      type: object
-      properties:
-        account:
-          type: object
-          $ref: "#/components/schemas/Account"
-        credentials:
-          type: object
-          $ref: "#/components/schemas/Credentials"
-
     Account:
       type: object
       properties:
@@ -1412,18 +1353,6 @@ components:
           description: A collection of custom information to be attached to the account
           type: object
 
-    Credentials:
-      type: object
-      properties:
-        accountId:
-          type: string
-        domain:
-          type: string
-        identifiers:
-          type: array
-          items:
-            $ref: "#/components/schemas/UserIdentifier"
-
     UserIdentifier:
       type: object
       properties:
@@ -1435,8 +1364,8 @@ components:
             - PHONE_NUMBER
         identifier:
           type: string
-        domain:
-          type: string
+        active:
+          type: boolean
 
     Application:
       type: object
@@ -1503,6 +1432,8 @@ components:
     Permission:
       type: object
       properties:
+        id:
+          type: string
         group:
           type: string
         name:
@@ -1522,6 +1453,8 @@ components:
     Role:
       type: object
       properties:
+        id:
+          type: string
         name:
           type: string
         domain:
@@ -1627,6 +1560,7 @@ components:
       type: object
       required:
         - domain
+        - identifiers
       properties:
         externalId:
           type: string
@@ -1639,6 +1573,12 @@ components:
         lastName:
           type: string
         fullName:
+          type: string
+        identifiers:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserIdentifier"
+        plainPassword:
           type: string
         email:
           type: object
@@ -1689,8 +1629,11 @@ components:
       type: object
       required:
         - domain
+        - name
       properties:
         externalId:
+          type: string
+        name:
           type: string
         domain:
           type: string
@@ -1731,38 +1674,11 @@ components:
             - AUTH
             - ADMIN
 
-    CreateCredentialsRequest:
-      type: object
-      required:
-        - domain
-        - identifiers
-      properties:
-        accountId:
-          type: string
-        domain:
-          type: string
-        identifiers:
-          type: array
-          items:
-            $ref: "#/components/schemas/UserIdentifier"
-        plainPassword:
-          type: string
-
     UpdateCredentialsPasswordRequest:
       type: object
       properties:
         plainPassword:
           type: string
-
-    CreateCompleteAccountRequest:
-      type: object
-      properties:
-        account:
-          type: object
-          $ref: "#/components/schemas/CreateAccountRequest"
-        credentials:
-          type: object
-          $ref: "#/components/schemas/CreateCredentialsRequest"
 
     ApiKeyRequest:
       type: object

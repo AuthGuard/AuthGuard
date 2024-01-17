@@ -8,6 +8,6 @@ import java.time.Instant;
 @Value.Immutable
 @DTOStyle
 public interface AccountLock {
-    long getAccountId();
+    String getAccountId();
     Instant getExpiresAt();
 }

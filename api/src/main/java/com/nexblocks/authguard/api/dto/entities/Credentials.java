@@ -11,7 +11,7 @@ import java.util.List;
 @DTOStyle
 @JsonDeserialize(as = CredentialsDTO.class)
 public interface Credentials {
-    long getId();
+    String getId();
     Instant getCreatedAt();
     Instant getLastModified();
     Instant getPasswordUpdatedAt();

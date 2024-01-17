@@ -12,12 +12,12 @@ import java.time.Instant;
 @JsonSerialize(as = ClientDTO.class)
 @JsonDeserialize(as = ClientDTO.class)
 public interface Client {
-    long getId();
+    String getId();
     Instant getCreatedAt();
     Instant getLastModified();
     String getExternalId();
     String getName();
-    Long getAccountId();
+    String getAccountId();
     String getDomain();
     String getBaseUrl();
     String getClientType();

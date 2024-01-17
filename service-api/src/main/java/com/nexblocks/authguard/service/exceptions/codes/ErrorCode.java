@@ -49,7 +49,8 @@ public enum ErrorCode {
     LDAP_ERROR("LD.031"),
 
     MISSING_REQUEST_QUERY("RQ.011"),
-    INVALID_REQUEST_QUERY("RQ.012");
+    INVALID_REQUEST_QUERY("RQ.012"),
+    INVALID_REQUEST_VALUE("RQ.013");
 
     private final String code;
 

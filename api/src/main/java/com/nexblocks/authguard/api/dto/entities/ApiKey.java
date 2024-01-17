@@ -12,10 +12,10 @@ import java.time.Instant;
 @JsonSerialize(as = ApiKeyDTO.class)
 @JsonDeserialize(as = ApiKeyDTO.class)
 public interface ApiKey {
-    long getId();
+    String getId();
     Instant getCreatedAt();
     Instant getLastModified();
-    Long getAppId();
+    String getAppId();
     String getKey();
     String getType();
     boolean isForClient();

@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
 import com.nexblocks.authguard.api.dto.entities.AuthResponseDTO;
 import com.nexblocks.authguard.api.dto.requests.OtpRequestDTO;
+import com.nexblocks.authguard.api.dto.validation.IdParser;
 import com.nexblocks.authguard.api.routes.OtpApi;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
@@ -32,7 +33,7 @@ public class OtpRoute extends OtpApi {
         OtpRequestDTO body = otpRequestBodyHandler.getValidated(context);
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        CompletableFuture<AuthResponseDTO> tokens = otpService.authenticate(body.getPasswordId(), body.getPassword(), requestContext)
+        CompletableFuture<AuthResponseDTO> tokens = otpService.authenticate(IdParser.from(body.getPasswordId()), body.getPassword(), requestContext)
                 .thenApply(restMapper::toDTO);
 
         context.json(tokens);
