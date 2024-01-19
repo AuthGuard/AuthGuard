@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.api.dto.requests;
 
+import com.nexblocks.authguard.api.dto.entities.DomainScoped;
 import com.nexblocks.authguard.api.dto.entities.PermissionDTO;
 import com.nexblocks.authguard.api.dto.style.DTOStyle;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -12,11 +13,10 @@ import java.util.List;
 @DTOStyle
 @JsonDeserialize(as = CreateAppRequestDTO.class)
 @JsonSerialize(as = CreateAppRequestDTO.class)
-public interface CreateAppRequest {
+public interface CreateAppRequest extends DomainScoped {
     String getExternalId();
     String getName();
     String getAccountId();
-    String getDomain();
     List<PermissionDTO> getPermissions();
     List<String> getScopes();
     List<String> getRoles();

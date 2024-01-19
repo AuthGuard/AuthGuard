@@ -14,7 +14,7 @@ import java.util.Map;
 @DTOStyle
 @JsonSerialize(as = AccountDTO.class)
 @JsonDeserialize(as = AccountDTO.class)
-public interface Account {
+public interface Account extends DomainScoped {
     String getId();
     Instant getCreatedAt();
     Instant getLastModified();
@@ -28,7 +28,6 @@ public interface Account {
     String getMiddleName();
     String getLastName();
     String getFullName();
-    String getDomain();
 
     List<PermissionDTO> getPermissions();
     List<String> getRoles();

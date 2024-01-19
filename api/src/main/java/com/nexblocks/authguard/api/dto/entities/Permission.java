@@ -11,11 +11,10 @@ import java.time.Instant;
 @DTOStyle
 @JsonSerialize(as = PermissionDTO.class)
 @JsonDeserialize(as = PermissionDTO.class)
-public interface Permission {
+public interface Permission extends DomainScoped {
     String getId();
     Instant getCreatedAt();
     Instant getLastModified();
     String getGroup();
     String getName();
-    String getDomain();
 }

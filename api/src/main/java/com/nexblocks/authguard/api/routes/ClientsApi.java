@@ -8,7 +8,7 @@ import static io.javalin.apibuilder.ApiBuilder.*;
 public abstract class ClientsApi implements ApiRoute {
     @Override
     public String getPath() {
-        return "clients";
+        return "/domains/:domain/clients";
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.nexblocks.authguard.rest.routes;
 
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.dto.entities.ApiKeyDTO;
+import com.nexblocks.authguard.api.dto.entities.AppDTO;
 import com.nexblocks.authguard.api.dto.requests.ApiKeyRequestDTO;
 import com.nexblocks.authguard.api.dto.requests.ApiKeyVerificationRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.IdParser;
@@ -72,7 +73,8 @@ public class ApiKeysRoute extends ApiKeysApi {
     public void verify(final Context context) {
         ApiKeyVerificationRequestDTO verificationRequest = verificationRequestBodyHandler.getValidated(context);
 
-        CompletableFuture<AppBO> app = apiKeysService.validateApiKey(verificationRequest.getKey(), verificationRequest.getKeyType());
+        CompletableFuture<AppDTO> app = apiKeysService.validateApiKey(verificationRequest.getKey(), verificationRequest.getKeyType())
+                .thenApply(restMapper::toDTO);
 
         context.json(app);
     }

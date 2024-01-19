@@ -50,7 +50,8 @@ public enum ErrorCode {
 
     MISSING_REQUEST_QUERY("RQ.011"),
     INVALID_REQUEST_QUERY("RQ.012"),
-    INVALID_REQUEST_VALUE("RQ.013");
+    INVALID_REQUEST_VALUE("RQ.013"),
+    ENTITY_OUT_OF_SCOPE("RQ.0.014");
 
     private final String code;
 

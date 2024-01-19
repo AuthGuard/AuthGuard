@@ -9,10 +9,9 @@ import org.immutables.value.Value;
 @DTOStyle
 @JsonSerialize(as = UserIdentifierDTO.class)
 @JsonDeserialize(as = UserIdentifierDTO.class)
-public interface UserIdentifier {
+public interface UserIdentifier extends DomainScoped {
     Type getType();
     String getIdentifier();
-    String getDomain();
 
     @Value.Default
     default boolean isActive() {

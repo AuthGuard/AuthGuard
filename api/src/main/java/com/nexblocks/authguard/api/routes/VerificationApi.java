@@ -9,7 +9,7 @@ public abstract class VerificationApi implements ApiRoute {
 
     @Override
     public String getPath() {
-        return "verification";
+        return "/domains/:domain/verification";
     }
 
     @Override

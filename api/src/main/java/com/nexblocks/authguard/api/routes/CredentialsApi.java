@@ -9,7 +9,7 @@ public abstract class CredentialsApi implements ApiRoute {
 
     @Override
     public String getPath() {
-        return "credentials";
+        return "/domains/:domain/credentials";
     }
 
     @Override
