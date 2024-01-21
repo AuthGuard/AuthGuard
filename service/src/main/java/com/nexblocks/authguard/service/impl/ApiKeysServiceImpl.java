@@ -8,7 +8,6 @@ import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.ApplicationsService;
 import com.nexblocks.authguard.service.ClientsService;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
-import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.exchange.ApiKeyExchange;
 import com.nexblocks.authguard.service.exchange.KeyExchange;
@@ -70,32 +69,34 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     }
 
     @Override
-    public CompletableFuture<Optional<ApiKeyBO>> getById(final long apiKeyId) {
+    public CompletableFuture<Optional<ApiKeyBO>> getById(final long apiKeyId, final String domain) {
         return persistenceService.getById(apiKeyId);
     }
 
     @Override
-    public CompletableFuture<Optional<ApiKeyBO>> update(final ApiKeyBO entity) {
+    public CompletableFuture<Optional<ApiKeyBO>> update(final ApiKeyBO entity, final String domain) {
         throw new UnsupportedOperationException("API keys cannot be updated");
     }
 
     @Override
-    public CompletableFuture<Optional<ApiKeyBO>> delete(final long id) {
+    public CompletableFuture<Optional<ApiKeyBO>> delete(final long id, final String domain) {
         LOG.info("API key delete request. accountId={}", id);
 
-        return persistenceService.delete(id);
+        return getById(id, domain).thenCompose(ignored -> persistenceService.delete(id));
     }
 
     @Override
-    public CompletableFuture<ApiKeyBO> generateApiKey(final long appId, final String type, final Duration duration) {
-        return applicationsService.getById(appId)
+    public CompletableFuture<ApiKeyBO> generateApiKey(final long appId, final String domain, final String type,
+                                                      final Duration duration) {
+        return applicationsService.getById(appId, domain)
                 .thenCompose(AsyncUtils::fromAppOptional)
                 .thenCompose(app -> generateApiKey(app, type, duration));
     }
 
     @Override
-    public CompletableFuture<ApiKeyBO> generateClientApiKey(final long clientId, final String type, final Duration duration) {
-        return clientsService.getById(clientId)
+    public CompletableFuture<ApiKeyBO> generateClientApiKey(final long clientId, final String domain, final String type,
+                                                            final Duration duration) {
+        return clientsService.getById(clientId, domain)
                 .thenCompose(AsyncUtils::fromClientOptional)
                 .thenCompose(client -> generateClientApiKey(client, type, duration));
     }
@@ -145,7 +146,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     }
 
     @Override
-    public CompletableFuture<List<ApiKeyBO>> getByAppId(final long appId) {
+    public CompletableFuture<List<ApiKeyBO>> getByAppId(final long appId, final String domain) {
         return apiKeysRepository.getByAppId(appId)
                 .thenApply(list -> list.stream()
                         .map(serviceMapper::toBO)
@@ -153,7 +154,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     }
 
     @Override
-    public CompletableFuture<AppBO> validateApiKey(final String key, final String type) {
+    public CompletableFuture<AppBO> validateApiKey(final String key, final String domain, final String type) {
         ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
 
         return apiKeyExchange.verifyAndGetAppId(key)
@@ -162,14 +163,13 @@ public class ApiKeysServiceImpl implements ApiKeysService {
                         return CompletableFuture.failedFuture(new ServiceException(ErrorCode.INVALID_TOKEN, "Token is invalid or expired"));
                     }
 
-                    return applicationsService.getById(optional.get());
+                    return applicationsService.getById(optional.get(), domain);
                 })
                 .thenCompose(AsyncUtils::fromAppOptional);
-
     }
 
     @Override
-    public CompletableFuture<ClientBO> validateClientApiKey(String key, String type) {
+    public CompletableFuture<ClientBO> validateClientApiKey(final String key, final String type) {
         ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
 
         return apiKeyExchange.verifyAndGetClientId(key)
@@ -178,7 +178,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
                         return CompletableFuture.failedFuture(new ServiceException(ErrorCode.INVALID_TOKEN, "Token is invalid or expired"));
                     }
 
-                    return clientsService.getById(optional.get());
+                    return clientsService.getByIdUnchecked(optional.get());
                 })
                 .thenCompose(AsyncUtils::fromClientOptional);
     }

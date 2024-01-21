@@ -32,7 +32,7 @@ public class OtpToOidc implements Exchange {
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
         return otpVerifier.verifyAccountTokenAsync(request.getToken())
-                .thenCompose(accountsService::getById)
+                .thenCompose(id -> accountsService.getById(id, request.getDomain()))
                 .thenCompose(opt -> {
                     if (opt.isEmpty()) {
                         return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,

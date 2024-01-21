@@ -138,7 +138,7 @@ public class OAuthService {
         DecodedJWT decoded = JWT.decode(idToken);
         String externalId = decoded.getSubject();
 
-        return accountsService.getByExternalId(externalId)
+        return accountsService.getByExternalIdUnchecked(externalId)
                 .thenCompose(account -> {
                     if (account.isPresent()) {
                         return CompletableFuture.completedFuture(account.get());

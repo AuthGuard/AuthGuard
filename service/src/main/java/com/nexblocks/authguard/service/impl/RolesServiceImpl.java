@@ -64,17 +64,17 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public CompletableFuture<Optional<RoleBO>> getById(final long id) {
+    public CompletableFuture<Optional<RoleBO>> getById(final long id, String domain) {
         return persistenceService.getById(id);
     }
 
     @Override
-    public CompletableFuture<Optional<RoleBO>> update(final RoleBO entity) {
+    public CompletableFuture<Optional<RoleBO>> update(final RoleBO entity, String domain) {
         throw new UnsupportedOperationException("Roles cannot be updated");
     }
 
     @Override
-    public CompletableFuture<Optional<RoleBO>> delete(final long id) {
+    public CompletableFuture<Optional<RoleBO>> delete(final long id, String domain) {
         LOG.info("Request to delete role. roleId={}", id);
 
         return persistenceService.delete(id);

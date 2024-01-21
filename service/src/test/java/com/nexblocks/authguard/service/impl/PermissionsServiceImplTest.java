@@ -93,14 +93,14 @@ class PermissionsServiceImplTest {
         Mockito.when(permissionsRepository.getById(permission.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(permission)));
 
-        Optional<PermissionBO> actual = permissionsService.getById(permission.getId()).join();
+        Optional<PermissionBO> actual = permissionsService.getById(permission.getId(), "main").join();
 
         assertThat(actual).contains(expected);
     }
 
     @Test
     void update() {
-        assertThatThrownBy(() -> permissionsService.update(PermissionBO.builder().build()))
+        assertThatThrownBy(() -> permissionsService.update(PermissionBO.builder().build(), "main"))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
 
@@ -161,7 +161,7 @@ class PermissionsServiceImplTest {
         Mockito.when(permissionsRepository.delete(permission.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(permission)));
 
-        Optional<PermissionBO> actual = permissionsService.delete(permission.getId()).join();
+        Optional<PermissionBO> actual = permissionsService.delete(permission.getId(), "main").join();
 
         assertThat(actual).contains(expected);
     }

@@ -12,10 +12,10 @@ import com.nexblocks.authguard.api.routes.ApiKeysApi;
 import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
+import com.nexblocks.authguard.rest.util.Domain;
 import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.ApiKeyBO;
-import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.util.AsyncUtils;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
@@ -46,10 +46,11 @@ public class ApiKeysRoute extends ApiKeysApi {
     public void generate(final Context context) {
         ApiKeyRequestDTO request = apiKeyRequestBodyHandler.getValidated(context);
         Duration validFor = request.getValidFor() == null ? Duration.ZERO : request.getValidFor().toDuration();
+        String domain = Domain.fromContext(context);
 
         CompletableFuture<ApiKeyBO> key = request.isForClient() ?
-                apiKeysService.generateClientApiKey(IdParser.from(request.getAppId()), request.getKeyType(), validFor) :
-                apiKeysService.generateApiKey(IdParser.from(request.getAppId()), request.getKeyType(), validFor);
+                apiKeysService.generateClientApiKey(IdParser.from(request.getAppId()), domain, request.getKeyType(), validFor) :
+                apiKeysService.generateApiKey(IdParser.from(request.getAppId()), domain, request.getKeyType(), validFor);
 
         context.status(201).json(key.thenApply(restMapper::toDTO));
     }
@@ -62,7 +63,7 @@ public class ApiKeysRoute extends ApiKeysApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<ApiKeyDTO> apiKey = apiKeysService.getById(apiKeyId.get())
+        CompletableFuture<ApiKeyDTO> apiKey = apiKeysService.getById(apiKeyId.get(), Domain.fromContext(context))
                 .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.API_KEY_DOES_NOT_EXIST, "API key does not exist"))
                 .thenApply(restMapper::toDTO);
 
@@ -73,8 +74,8 @@ public class ApiKeysRoute extends ApiKeysApi {
     public void verify(final Context context) {
         ApiKeyVerificationRequestDTO verificationRequest = verificationRequestBodyHandler.getValidated(context);
 
-        CompletableFuture<AppDTO> app = apiKeysService.validateApiKey(verificationRequest.getKey(), verificationRequest.getKeyType())
-                .thenApply(restMapper::toDTO);
+        CompletableFuture<AppDTO> app = apiKeysService.validateApiKey(verificationRequest.getKey(), Domain.fromContext(context),
+                        verificationRequest.getKeyType()).thenApply(restMapper::toDTO);
 
         context.json(app);
     }
@@ -87,7 +88,7 @@ public class ApiKeysRoute extends ApiKeysApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<ApiKeyDTO> apiKey = apiKeysService.delete(apiKeyId.get())
+        CompletableFuture<ApiKeyDTO> apiKey = apiKeysService.delete(apiKeyId.get(), Domain.fromContext(context))
                 .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.API_KEY_DOES_NOT_EXIST, "API key does not exist"))
                 .thenApply(restMapper::toDTO);
 

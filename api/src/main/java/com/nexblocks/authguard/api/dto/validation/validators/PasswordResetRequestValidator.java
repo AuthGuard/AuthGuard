@@ -13,6 +13,7 @@ public class PasswordResetRequestValidator implements Validator<PasswordResetReq
     @Override
     public List<Violation> validate(final PasswordResetRequestDTO obj) {
         return FluentValidator.begin()
+                .validate("domain", obj.getDomain(), Constraints.required)
                 .validate("identifier", obj.getIdentifier(), identifier -> {
                     if (!obj.isByToken() && identifier == null) {
                         return Collections.singletonList(

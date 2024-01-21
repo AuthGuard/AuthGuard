@@ -36,7 +36,7 @@ public class PasswordlessToSession implements Exchange {
                 .build();
 
         return passwordlessVerifier.verifyAccountTokenAsync(request.getToken())
-                .thenCompose(accountsService::getById)
+                .thenCompose(id -> accountsService.getById(id, request.getDomain()))
                 .thenCompose(opt -> {
                     if (opt.isEmpty()) {
                         throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "Account does not exist");

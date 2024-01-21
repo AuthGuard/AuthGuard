@@ -59,7 +59,7 @@ class VerificationServiceImplTest {
                         .build())
                 .build();
 
-        Mockito.when(accountsService.getById(101))
+        Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accountTokensRepository.getByToken("verification-token"))
@@ -71,9 +71,9 @@ class VerificationServiceImplTest {
 
         final ArgumentCaptor<AccountBO> accountCaptor = ArgumentCaptor.forClass(AccountBO.class);
 
-        verificationService.verifyEmail("verification-token");
+        verificationService.verifyEmail("verification-token", "main");
 
-        Mockito.verify(accountsService).update(accountCaptor.capture());
+        Mockito.verify(accountsService).update(accountCaptor.capture(), Mockito.eq("main"));
 
         assertThat(accountCaptor.getValue()).isNotNull();
         assertThat(accountCaptor.getValue())
@@ -94,7 +94,7 @@ class VerificationServiceImplTest {
                         .build())
                 .build();
 
-        Mockito.when(accountsService.getById(101))
+        Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accountTokensRepository.getByToken("verification-token"))
@@ -104,7 +104,7 @@ class VerificationServiceImplTest {
                         .additionalInformation(ImmutableMap.of("email", "wrong@test.com"))
                         .build())));
 
-        assertThatThrownBy(() -> verificationService.verifyEmail("verification-token"))
+        assertThatThrownBy(() -> verificationService.verifyEmail("verification-token", "main"))
                 .isInstanceOf(ServiceException.class);
     }
 
@@ -122,7 +122,7 @@ class VerificationServiceImplTest {
                         .build())
                 .build();
 
-        Mockito.when(accountsService.getById(101))
+        Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accountTokensRepository.getByToken("verification-token"))
@@ -131,7 +131,7 @@ class VerificationServiceImplTest {
                         .expiresAt(Instant.now().plusSeconds(2))
                         .build())));
 
-        assertThatThrownBy(() -> verificationService.verifyEmail("verification-token"))
+        assertThatThrownBy(() -> verificationService.verifyEmail("verification-token", "main"))
                 .isInstanceOf(ServiceException.class);
     }
 
@@ -149,7 +149,7 @@ class VerificationServiceImplTest {
                         .build())
                 .build();
 
-        Mockito.when(accountsService.getById(101))
+        Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accountTokensRepository.getByToken("verification-token"))
@@ -159,7 +159,7 @@ class VerificationServiceImplTest {
                         .additionalInformation(ImmutableMap.of("email", "wrong@test.com"))
                         .build())));
 
-        assertThatThrownBy(() -> verificationService.verifyEmail("verification-token"))
+        assertThatThrownBy(() -> verificationService.verifyEmail("verification-token", "main"))
                 .isInstanceOf(ServiceException.class);
     }
 
@@ -178,13 +178,13 @@ class VerificationServiceImplTest {
                 .token("123456")
                 .build();
 
-        Mockito.when(accountsService.getById(101))
+        Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(otpProvider.generateToken(account))
                 .thenReturn(CompletableFuture.completedFuture(otp));
 
-        final AuthResponseBO actual = verificationService.sendPhoneNumberVerification(101);
+        final AuthResponseBO actual = verificationService.sendPhoneNumberVerification(101, "main");
 
         assertThat(actual).isEqualTo(otp);
     }
@@ -225,14 +225,14 @@ class VerificationServiceImplTest {
                         .build())
                 .build();
 
-        Mockito.when(accountsService.getById(101))
+        Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(otpVerifier.verifyAccountTokenAsync("1:123456"))
                 .thenReturn(CompletableFuture.completedFuture(101L));;
 
         // TODO account argument captor
-        verificationService.verifyPhoneNumber(1, "123456", "33334444");
+        verificationService.verifyPhoneNumber(1, "main", "123456", "33334444");
     }
 
     @Test
@@ -245,13 +245,13 @@ class VerificationServiceImplTest {
                         .build())
                 .build();
 
-        Mockito.when(accountsService.getById(101))
+        Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(otpVerifier.verifyAccountTokenAsync("1:123456"))
                 .thenReturn(CompletableFuture.completedFuture(101L));;
 
-        assertThatThrownBy(() -> verificationService.verifyPhoneNumber(1, "123456", "9999999"))
+        assertThatThrownBy(() -> verificationService.verifyPhoneNumber(1, "main", "123456", "9999999"))
                 .isInstanceOf(ServiceException.class);
     }
 
@@ -261,25 +261,25 @@ class VerificationServiceImplTest {
                 .id(101)
                 .build();
 
-        Mockito.when(accountsService.getById(101))
+        Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(otpVerifier.verifyAccountTokenAsync("1:123456"))
                 .thenReturn(CompletableFuture.completedFuture(101L));
 
-        assertThatThrownBy(() -> verificationService.verifyPhoneNumber(1, "123456", "9999999"))
+        assertThatThrownBy(() -> verificationService.verifyPhoneNumber(1, "main", "123456", "9999999"))
                 .isInstanceOf(ServiceException.class);
     }
 
     @Test
     void verifyPhoneNumberNonExistingAccount() {
-        Mockito.when(accountsService.getById(101))
+        Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         Mockito.when(otpVerifier.verifyAccountTokenAsync("1:123456"))
                 .thenReturn(CompletableFuture.completedFuture(101L));;
 
-        assertThatThrownBy(() -> verificationService.verifyPhoneNumber(1, "123456", "9999999"))
+        assertThatThrownBy(() -> verificationService.verifyPhoneNumber(1, "main", "123456", "9999999"))
                 .isInstanceOf(ServiceException.class);
     }
 }

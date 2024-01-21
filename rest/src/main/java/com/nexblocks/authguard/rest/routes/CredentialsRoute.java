@@ -16,6 +16,7 @@ import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestJsonMapper;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
+import com.nexblocks.authguard.rest.util.Domain;
 import com.nexblocks.authguard.service.AccountCredentialsService;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.Client;
@@ -58,7 +59,8 @@ public class CredentialsRoute extends CredentialsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<AccountDTO> result = credentialsService.updatePassword(credentialsId.get(), credentials.getPlainPassword())
+        CompletableFuture<AccountDTO> result = credentialsService.updatePassword(credentialsId.get(),
+                        credentials.getPlainPassword(), Domain.fromContext(context))
                 .thenApply(restMapper::toDTO);
 
         context.json(result);
@@ -86,9 +88,10 @@ public class CredentialsRoute extends CredentialsApi {
         CompletableFuture<AccountBO> result;
 
         if (request.getOldIdentifier() != null) {
-            result = credentialsService.replaceIdentifier(credentialsId.get(), request.getOldIdentifier(), identifiers.get(0));
+            result = credentialsService.replaceIdentifier(credentialsId.get(), request.getOldIdentifier(),
+                    identifiers.get(0), Domain.fromContext(context));
         } else {
-            result = credentialsService.addIdentifiers(credentialsId.get(), identifiers);
+            result = credentialsService.addIdentifiers(credentialsId.get(), identifiers, Domain.fromContext(context));
         }
 
         context.json(result.thenApply(restMapper::toDTO));
@@ -106,7 +109,8 @@ public class CredentialsRoute extends CredentialsApi {
                 .map(UserIdentifierDTO::getIdentifier)
                 .collect(Collectors.toList());
 
-        CompletableFuture<AccountDTO> result = credentialsService.removeIdentifiers(credentialsId.get(), identifiers)
+        CompletableFuture<AccountDTO> result = credentialsService.removeIdentifiers(credentialsId.get(), identifiers,
+                        Domain.fromContext(context))
                 .thenApply(restMapper::toDTO);
 
         context.json(result);
@@ -142,7 +146,8 @@ public class CredentialsRoute extends CredentialsApi {
         CompletableFuture<AccountBO> result;
 
         if (request.isByToken()) {
-            result = credentialsService.resetPasswordByToken(request.getResetToken(), request.getNewPassword());
+            result = credentialsService.resetPasswordByToken(request.getResetToken(), request.getNewPassword(),
+                    Domain.fromContext(context));
         } else {
             result = credentialsService.replacePassword(request.getIdentifier(), request.getOldPassword(),
                     request.getNewPassword(), request.getDomain());

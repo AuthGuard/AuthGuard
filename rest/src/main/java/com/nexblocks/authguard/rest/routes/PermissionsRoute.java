@@ -9,6 +9,7 @@ import com.nexblocks.authguard.api.routes.PermissionsApi;
 import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
+import com.nexblocks.authguard.rest.util.Domain;
 import com.nexblocks.authguard.service.PermissionsService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.util.AsyncUtils;
@@ -51,7 +52,7 @@ public class PermissionsRoute extends PermissionsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<PermissionDTO> permission = permissionsService.getById(id.get())
+        CompletableFuture<PermissionDTO> permission = permissionsService.getById(id.get(), Domain.fromContext(context))
                 .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.PERMISSION_DOES_NOT_EXIST, "Permission does not exist"))
                 .thenApply(restMapper::toDTO);
 
@@ -66,7 +67,7 @@ public class PermissionsRoute extends PermissionsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<PermissionDTO> permission = permissionsService.delete(id.get())
+        CompletableFuture<PermissionDTO> permission = permissionsService.delete(id.get(), Domain.fromContext(context))
                 .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.PERMISSION_DOES_NOT_EXIST, "Permission does not exist"))
                 .thenApply(restMapper::toDTO);
 

@@ -50,12 +50,12 @@ public class PermissionsServiceImpl implements PermissionsService {
     }
 
     @Override
-    public CompletableFuture<Optional<PermissionBO>> getById(final long id) {
+    public CompletableFuture<Optional<PermissionBO>> getById(final long id, String domain) {
         return persistenceService.getById(id);
     }
 
     @Override
-    public CompletableFuture<Optional<PermissionBO>> update(final PermissionBO entity) {
+    public CompletableFuture<Optional<PermissionBO>> update(final PermissionBO entity, String domain) {
         throw new UnsupportedOperationException("Permissions cannot be updated");
     }
 
@@ -87,7 +87,7 @@ public class PermissionsServiceImpl implements PermissionsService {
     }
 
     @Override
-    public CompletableFuture<Optional<PermissionBO>> delete(final long id) {
+    public CompletableFuture<Optional<PermissionBO>> delete(final long id, String domain) {
         LOG.info("Request to delete permission. permissionId={}", id);
 
         return persistenceService.delete(id);

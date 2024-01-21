@@ -59,11 +59,11 @@ class ActionTokenServiceImplTest {
                 .token("password-id")
                 .build();
 
-        Mockito.when(accountsService.getById(101))
+        Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountBO)));
         Mockito.when(otpProvider.generateToken(accountBO)).thenReturn(CompletableFuture.completedFuture(otpResponse));
 
-        AuthResponseBO response = actionTokenService.generateOtp(101).join();
+        AuthResponseBO response = actionTokenService.generateOtp(101, "main").join();
 
         assertThat(response).isEqualTo(otpResponse);
     }
@@ -103,12 +103,12 @@ class ActionTokenServiceImplTest {
         String otpToken = "1:otp";
 
         Mockito.when(otpVerifier.verifyAccountTokenAsync(otpToken)).thenReturn(CompletableFuture.completedFuture(account.getId()));
-        Mockito.when(accountsService.getById(101))
+        Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
         Mockito.when(accountTokensRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
 
-        ActionTokenBO actual = actionTokenService.generateFromOtp(1, "otp", "something").join();
+        ActionTokenBO actual = actionTokenService.generateFromOtp(1, "main", "otp", "something").join();
         ActionTokenBO expected = ActionTokenBO.builder()
                 .accountId(account.getId())
                 .validFor(Duration.ofMinutes(5).toSeconds())

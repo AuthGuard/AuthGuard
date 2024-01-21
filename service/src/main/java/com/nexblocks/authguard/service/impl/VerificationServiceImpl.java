@@ -48,7 +48,7 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     @Override
-    public void verifyEmail(final String verificationToken) {
+    public void verifyEmail(final String verificationToken, String domain) {
         final AccountTokenDO accountToken = accountTokensRepository.getByToken(verificationToken)
                 .join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
@@ -64,15 +64,15 @@ public class VerificationServiceImpl implements VerificationService {
         LOG.info("Email verification request. tokenId={}, expiresAt={}, accountId={}",
                 accountToken.getId(), accountToken.getExpiresAt(), accountToken.getAssociatedAccountId());
 
-        final String verifiedEmail = Optional.ofNullable(accountToken.getAdditionalInformation())
+        String verifiedEmail = Optional.ofNullable(accountToken.getAdditionalInformation())
                 .map(additional -> additional.get(TARGET_EMAIL_PROPERTY))
                 .orElseThrow(() -> new ServiceException(ErrorCode.INVALID_TOKEN, "Invalid account token: no valid additional information"));
 
-        final AccountBO account = accountsService.getById(accountToken.getAssociatedAccountId()).join()
+        AccountBO account = accountsService.getById(accountToken.getAssociatedAccountId(), domain).join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                         "Account " + accountToken.getAssociatedAccountId() + " does not exist"));
 
-        final AccountBO updated;
+        AccountBO updated;
 
         if (verifiedEmail.equals(account.getEmail().getEmail())) {
             updated = account.withEmail(account.getEmail().withVerified(true));
@@ -84,15 +84,15 @@ public class VerificationServiceImpl implements VerificationService {
         }
 
         try {
-            accountsService.update(updated);
+            accountsService.update(updated, domain);
         } catch (final Exception e) {
             LOG.error("Failed to update account after email verification", e);
         }
     }
 
     @Override
-    public AuthResponseBO sendPhoneNumberVerification(final long accountId) {
-        final AccountBO account = accountsService.getById(accountId).join()
+    public AuthResponseBO sendPhoneNumberVerification(final long accountId, String domain) {
+        AccountBO account = accountsService.getById(accountId, domain).join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                         "Account " + accountId + " does not exist"));
 
@@ -101,7 +101,7 @@ public class VerificationServiceImpl implements VerificationService {
 
     @Override
     public AuthResponseBO sendPhoneNumberVerificationByIdentifier(final String identifier, final String domain) {
-        final AccountBO account = accountsService.getByIdentifier(identifier, domain).join()
+        AccountBO account = accountsService.getByIdentifier(identifier, domain).join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                         "No account with that identifier exists"));
 
@@ -109,11 +109,11 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     @Override
-    public void verifyPhoneNumber(final long passwordId, final String otp, final String phoneNumber) {
+    public void verifyPhoneNumber(final long passwordId, final String domain, final String otp, final String phoneNumber) {
         String token = passwordId + ":" + otp;
         Long accountId = otpVerifier.verifyAccountTokenAsync(token).join();
 
-        Optional<AccountBO> account = accountsService.getById(accountId).join();
+        Optional<AccountBO> account = accountsService.getById(accountId, domain).join();
 
         if (account.isEmpty()) {
             LOG.info("Phone number verification request for deleted account. passwordId={}, accountId={}", passwordId, accountId);
@@ -138,7 +138,7 @@ public class VerificationServiceImpl implements VerificationService {
                 .build());
 
         try {
-            accountsService.update(updated);
+            accountsService.update(updated, domain);
         } catch (final Exception e) {
             LOG.error("Failed to update account after phone number verification", e);
         }

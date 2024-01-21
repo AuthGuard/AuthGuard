@@ -22,7 +22,7 @@ public class AccountsServiceAdapter {
     }
 
     public CompletableFuture<AccountBO> getAccount(final long accountId) {
-        return accountsService.getById(accountId)
+        return accountsService.getByIdUnchecked(accountId)
                 .thenCompose(opt -> opt.map(CompletableFuture::completedFuture)
                         .orElseGet(() -> CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                                 "Account does not exist"))));

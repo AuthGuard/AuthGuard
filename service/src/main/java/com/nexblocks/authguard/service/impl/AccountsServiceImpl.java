@@ -113,22 +113,41 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> getById(final long accountId) {
+    public CompletableFuture<Optional<AccountBO>> getById(final long accountId, final String domain) {
         return persistenceService.getById(accountId)
-                .thenApply(opt -> opt.map(credentialsManager::removeSensitiveInformation));
+                .thenApply(opt -> opt
+                        .filter(account -> Objects.equals(account.getDomain(), domain))
+                        .map(credentialsManager::removeSensitiveInformation));
     }
 
     @Override
-    public CompletableFuture<AccountBO> getByIdUnsafe(final long id) {
+    public CompletableFuture<AccountBO> getByIdUnsafe(final long id, final String domain) {
         return persistenceService.getById(id)
-                .thenCompose(opt -> opt.map(CompletableFuture::completedFuture)
+                .thenCompose(opt -> opt
+                        .filter(account -> Objects.equals(account.getDomain(), domain))
+                        .map(CompletableFuture::completedFuture)
                         .orElseGet(() -> CompletableFuture.failedFuture(new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "Account does not exist"))));
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> getByExternalId(final String externalId) {
+    public CompletableFuture<Optional<AccountBO>> getByIdUnchecked(final long id) {
+        return persistenceService.getById(id);
+    }
+
+    @Override
+    public CompletableFuture<Optional<AccountBO>> getByExternalId(final String externalId, String domain) {
         return accountsRepository.getByExternalId(externalId)
-                .thenApply(opt -> opt.map(serviceMapper::toBO)
+                .thenApply(opt -> opt
+                        .filter(account -> Objects.equals(account.getDomain(), domain))
+                        .map(serviceMapper::toBO)
+                        .map(credentialsManager::removeSensitiveInformation));
+    }
+
+    @Override
+    public CompletableFuture<Optional<AccountBO>> getByExternalIdUnchecked(String externalId) {
+        return accountsRepository.getByExternalId(externalId)
+                .thenApply(opt -> opt
+                        .map(serviceMapper::toBO)
                         .map(credentialsManager::removeSensitiveInformation));
     }
 
@@ -155,27 +174,27 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> update(final AccountBO account) {
+    public CompletableFuture<Optional<AccountBO>> update(final AccountBO account, String domain) {
         LOG.info("Account update request. accountId={}, domain={}", account.getId(), account.getDomain());
 
         return persistenceService.update(account);
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> delete(final long accountId) {
+    public CompletableFuture<Optional<AccountBO>> delete(final long accountId, String domain) {
         LOG.info("Account delete request. accountId={}", accountId);
 
         return persistenceService.delete(accountId);
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> activate(final long accountId) {
-        return getByIdUnsafe(accountId)
+    public CompletableFuture<Optional<AccountBO>> activate(final long accountId, String domain) {
+        return getByIdUnsafe(accountId, domain)
                 .thenCompose(account -> {
                     AccountBO activated = account.withActive(true);
                     LOG.info("Activate account request. accountId={}, domain={}", activated.getId(), activated.getDomain());
 
-                    return this.update(activated);
+                    return this.update(activated, account.getDomain());
                 }).thenApply(persisted -> {
                     if (persisted.isPresent()) {
                         LOG.info("Account activated. accountId={}, domain={}", accountId, persisted.get().getDomain());
@@ -188,13 +207,13 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> deactivate(final long accountId) {
-        return getByIdUnsafe(accountId)
+    public CompletableFuture<Optional<AccountBO>> deactivate(final long accountId, String domain) {
+        return getByIdUnsafe(accountId, domain)
                 .thenCompose(account -> {
                     AccountBO deactivated = account.withActive(false);
                     LOG.info("Deactivate account request. accountId={}, domain={}", deactivated.getId(), deactivated.getDomain());
 
-                    return this.update(deactivated);
+                    return this.update(deactivated, account.getDomain());
                 }).thenApply(persisted -> {
                     if (persisted.isPresent()) {
                         LOG.info("Account deactivated. accountId={}, domain={}", persisted.get().getId(), persisted.get().getDomain());
@@ -207,8 +226,8 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> patch(final long accountId, final AccountBO account) {
-        return getByIdUnsafe(accountId)
+    public CompletableFuture<Optional<AccountBO>> patch(final long accountId, final AccountBO account, String domain) {
+        return getByIdUnsafe(accountId, domain)
                 .thenCompose(existing -> {
                     AccountBO merged = AccountUpdateMerger.merge(existing, account);
 
@@ -244,7 +263,7 @@ public class AccountsServiceImpl implements AccountsService {
                     }
 
                     AccountBO accountUpdate = merged;
-                    return update(accountUpdate)
+                    return update(accountUpdate, existing.getDomain())
                             .thenApply(updated -> {
                                 updated.ifPresent(updatedAccount -> {
                                     // we could merge both email and backup email messages, but we kept them separate for now
@@ -278,8 +297,8 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> grantPermissions(final long accountId, final List<PermissionBO> permissions) {
-        return getByIdUnsafe(accountId)
+    public CompletableFuture<Optional<AccountBO>> grantPermissions(final long accountId, final List<PermissionBO> permissions, String domain) {
+        return getByIdUnsafe(accountId, domain)
                 .thenCompose(account -> {
                     List<PermissionBO> verifiedPermissions = permissionsService.validate(permissions, account.getDomain());
 
@@ -311,8 +330,8 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> revokePermissions(final long accountId, final List<PermissionBO> permissions) {
-        return getByIdUnsafe(accountId)
+    public CompletableFuture<Optional<AccountBO>> revokePermissions(final long accountId, final List<PermissionBO> permissions, String domain) {
+        return getByIdUnsafe(accountId, domain)
                 .thenCompose(account -> {
                     Set<String> permissionsFullNames = permissions.stream()
                             .map(Permission::getFullName)
@@ -338,8 +357,8 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> grantRoles(final long accountId, final List<String> roles) {
-        return getByIdUnsafe(accountId)
+    public CompletableFuture<Optional<AccountBO>> grantRoles(final long accountId, final List<String> roles, String domain) {
+        return getByIdUnsafe(accountId, domain)
                 .thenCompose(account -> {
                     verifyRolesOrFail(roles, account.getDomain());
 
@@ -363,8 +382,8 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> revokeRoles(final long accountId, final List<String> roles) {
-        return getByIdUnsafe(accountId)
+    public CompletableFuture<Optional<AccountBO>> revokeRoles(final long accountId, final List<String> roles, String domain) {
+        return getByIdUnsafe(accountId, domain)
                 .thenCompose(account -> {
                     LOG.info("Revoke account roles request. accountId={}, domain={}, permissions={}",
                             account.getId(), account.getDomain(), roles);

@@ -53,8 +53,8 @@ public class ActionTokenServiceImpl implements ActionTokenService {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> generateOtp(final long accountId) {
-        return accountsService.getById(accountId)
+    public CompletableFuture<AuthResponseBO> generateOtp(final long accountId, final String domain) {
+        return accountsService.getById(accountId, domain)
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenCompose(account -> {
                     LOG.info("Generate OTP for action token request. accountId={}, domain={}", account.getId(), account.getDomain());
@@ -81,11 +81,11 @@ public class ActionTokenServiceImpl implements ActionTokenService {
     }
 
     @Override
-    public CompletableFuture<ActionTokenBO> generateFromOtp(final long passwordId, final String otp, final String action) {
+    public CompletableFuture<ActionTokenBO> generateFromOtp(final long passwordId, String domain, final String otp, final String action) {
         String otpToken = passwordId + ":" + otp;
 
         return otpVerifier.verifyAccountTokenAsync(otpToken)
-                .thenCompose(accountsService::getById)
+                .thenCompose(id -> accountsService.getById(id, domain))
                 .thenCompose(result -> {
                     if (result.isEmpty()) {
                         LOG.warn("Verified OTP request but the account doesn't exist. passwordId={}", passwordId);

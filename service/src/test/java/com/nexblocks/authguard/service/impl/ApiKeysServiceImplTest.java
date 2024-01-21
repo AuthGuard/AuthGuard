@@ -106,7 +106,7 @@ class ApiKeysServiceImplTest {
                 .id(appId)
                 .build();
 
-        Mockito.when(applicationsService.getById(appId))
+        Mockito.when(applicationsService.getById(appId, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
         Mockito.when(apiKeysRepository.save(Mockito.any()))
@@ -117,7 +117,7 @@ class ApiKeysServiceImplTest {
                         .token(key)
                         .build());
 
-        ApiKeyBO actual = apiKeysService.generateApiKey(appId, "test", Duration.ZERO).join();
+        ApiKeyBO actual = apiKeysService.generateApiKey(appId, "main", "test", Duration.ZERO).join();
 
         assertThat(actual.getAppId()).isEqualTo(appId);
         assertThat(actual.getKey()).isEqualTo(key);
@@ -147,7 +147,7 @@ class ApiKeysServiceImplTest {
                 .build();
         Duration duration = Duration.ofDays(1);
 
-        Mockito.when(applicationsService.getById(appId))
+        Mockito.when(applicationsService.getById(appId, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
         Mockito.when(apiKeysRepository.save(Mockito.any()))
@@ -158,7 +158,7 @@ class ApiKeysServiceImplTest {
                         .token(key)
                         .build());
 
-        ApiKeyBO actual = apiKeysService.generateApiKey(appId, "test", duration).join();
+        ApiKeyBO actual = apiKeysService.generateApiKey(appId, "main", "test", duration).join();
 
         assertThat(actual.getAppId()).isEqualTo(appId);
         assertThat(actual.getKey()).isEqualTo(key);
@@ -185,10 +185,10 @@ class ApiKeysServiceImplTest {
     void generateApiKeyNonExistingApp() {
         long appId = 1;
 
-        Mockito.when(applicationsService.getById(appId))
+        Mockito.when(applicationsService.getById(appId, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        assertThatThrownBy(() -> apiKeysService.generateApiKey(appId, "test", Duration.ZERO).join())
+        assertThatThrownBy(() -> apiKeysService.generateApiKey(appId, "main", "test", Duration.ZERO).join())
                 .hasCauseInstanceOf(ServiceNotFoundException.class);
     }
 
@@ -199,10 +199,10 @@ class ApiKeysServiceImplTest {
                 .id(appId)
                 .build();
 
-        Mockito.when(applicationsService.getById(appId))
+        Mockito.when(applicationsService.getById(appId, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
-        assertThatThrownBy(() -> apiKeysService.generateApiKey(appId, "none", Duration.ZERO).join())
+        assertThatThrownBy(() -> apiKeysService.generateApiKey(appId, "main", "none", Duration.ZERO).join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -219,7 +219,7 @@ class ApiKeysServiceImplTest {
         Mockito.when(apiKeysRepository.getByAppId(appId))
                 .thenReturn(CompletableFuture.completedFuture(Collections.singletonList(apiKeyDO)));
 
-        List<ApiKeyBO> actual = apiKeysService.getByAppId(appId).join();
+        List<ApiKeyBO> actual = apiKeysService.getByAppId(appId, "main").join();
 
         assertThat(actual).isEqualTo(Collections.singletonList(apiKeyBO));
     }
@@ -235,10 +235,10 @@ class ApiKeysServiceImplTest {
         Mockito.when(apiKeyExchange.verifyAndGetAppId(key))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(appId)));
 
-        Mockito.when(applicationsService.getById(appId))
+        Mockito.when(applicationsService.getById(appId, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
-        AppBO actual = apiKeysService.validateApiKey(key, "test").join();
+        AppBO actual = apiKeysService.validateApiKey(key, "main", "test").join();
 
         assertThat(actual).isEqualTo(app);
     }
@@ -251,7 +251,7 @@ class ApiKeysServiceImplTest {
                 .id(clientId)
                 .build();
 
-        Mockito.when(clientsService.getById(clientId))
+        Mockito.when(clientsService.getById(clientId, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
         Mockito.when(apiKeysRepository.save(Mockito.any()))
@@ -262,7 +262,7 @@ class ApiKeysServiceImplTest {
                         .token(key)
                         .build());
 
-        ApiKeyBO actual = apiKeysService.generateClientApiKey(clientId, "test", Duration.ZERO).join();
+        ApiKeyBO actual = apiKeysService.generateClientApiKey(clientId, "main", "test", Duration.ZERO).join();
 
         assertThat(actual.getAppId()).isEqualTo(clientId);
         assertThat(actual.getKey()).isEqualTo(key);
@@ -292,7 +292,7 @@ class ApiKeysServiceImplTest {
                 .build();
         Duration duration = Duration.ofDays(1);
 
-        Mockito.when(clientsService.getById(clientId))
+        Mockito.when(clientsService.getById(clientId, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
         Mockito.when(apiKeysRepository.save(Mockito.any()))
@@ -303,7 +303,7 @@ class ApiKeysServiceImplTest {
                         .token(key)
                         .build());
 
-        ApiKeyBO actual = apiKeysService.generateClientApiKey(clientId, "test", duration).join();
+        ApiKeyBO actual = apiKeysService.generateClientApiKey(clientId, "main", "test", duration).join();
 
         assertThat(actual.getAppId()).isEqualTo(clientId);
         assertThat(actual.getKey()).isEqualTo(key);
@@ -330,10 +330,10 @@ class ApiKeysServiceImplTest {
     void generateClientApiKeyNonExistingApp() {
         long clientId = 2;
 
-        Mockito.when(clientsService.getById(clientId))
+        Mockito.when(clientsService.getById(clientId, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        assertThatThrownBy(() -> apiKeysService.generateClientApiKey(clientId, "test", Duration.ZERO).join())
+        assertThatThrownBy(() -> apiKeysService.generateClientApiKey(clientId, "main", "test", Duration.ZERO).join())
                 .hasCauseInstanceOf(ServiceNotFoundException.class);
     }
 
@@ -344,10 +344,10 @@ class ApiKeysServiceImplTest {
                 .id(clientId)
                 .build();
 
-        Mockito.when(clientsService.getById(clientId))
+        Mockito.when(clientsService.getById(clientId, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
-        assertThatThrownBy(() -> apiKeysService.generateClientApiKey(clientId, "none", Duration.ZERO).join())
+        assertThatThrownBy(() -> apiKeysService.generateClientApiKey(clientId, "main", "none", Duration.ZERO).join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -362,7 +362,7 @@ class ApiKeysServiceImplTest {
         Mockito.when(apiKeyExchange.verifyAndGetAppId(key))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(clientId)));
 
-        Mockito.when(clientsService.getById(clientId))
+        Mockito.when(clientsService.getByIdUnchecked(clientId))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
         ClientBO actual = apiKeysService.validateClientApiKey(key, "test").join();
@@ -383,7 +383,7 @@ class ApiKeysServiceImplTest {
         Mockito.when(apiKeysRepository.getById(id))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
 
-        Optional<ApiKeyBO> actual = apiKeysService.getById(id).join();
+        Optional<ApiKeyBO> actual = apiKeysService.getById(id, "main").join();
 
         assertThat(actual).contains(apiKeyBO);
     }
@@ -398,10 +398,13 @@ class ApiKeysServiceImplTest {
                 .id(id)
                 .build();
 
+        Mockito.when(apiKeysRepository.getById(id))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
+
         Mockito.when(apiKeysRepository.delete(id))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
 
-        Optional<ApiKeyBO> actual = apiKeysService.delete(id).join();
+        Optional<ApiKeyBO> actual = apiKeysService.delete(id, "main").join();
 
         assertThat(actual).contains(apiKeyBO);
     }

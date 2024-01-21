@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -56,7 +57,7 @@ public class ClientsServiceImpl implements ClientsService {
 
     private CompletableFuture<ClientBO> doCreate(final ClientBO client) {
         if (client.getAccountId() != null) {
-            return accountsService.getById(client.getAccountId())
+            return accountsService.getById(client.getAccountId(), client.getDomain())
                     .thenCompose(opt -> {
                         if (opt.isEmpty()) {
                             throw new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
@@ -71,18 +72,26 @@ public class ClientsServiceImpl implements ClientsService {
     }
 
     @Override
-    public CompletableFuture<Optional<ClientBO>> getById(final long id) {
+    public CompletableFuture<Optional<ClientBO>> getById(final long id, final String domain) {
+        return persistenceService.getById(id)
+                .thenApply(opt -> opt.filter(client -> Objects.equals(client.getDomain(), domain)));
+    }
+
+    @Override
+    public CompletableFuture<Optional<ClientBO>> getByIdUnchecked(final long id) {
         return persistenceService.getById(id);
     }
 
     @Override
-    public CompletableFuture<Optional<ClientBO>> getByExternalId(final String externalId) {
+    public CompletableFuture<Optional<ClientBO>> getByExternalId(final String externalId, final String domain) {
         return clientsRepository.getByExternalId(externalId)
-                .thenApply(optional -> optional.map(serviceMapper::toBO));
+                .thenApply(optional -> optional
+                        .filter(client -> Objects.equals(client.getDomain(), domain))
+                        .map(serviceMapper::toBO));
     }
 
     @Override
-    public CompletableFuture<Optional<ClientBO>> update(final ClientBO client) {
+    public CompletableFuture<Optional<ClientBO>> update(final ClientBO client, final String domain) {
         LOG.info("Client update request. accountId={}", client.getId());
 
         // FIXME accountId cannot be updated
@@ -90,22 +99,22 @@ public class ClientsServiceImpl implements ClientsService {
     }
 
     @Override
-    public CompletableFuture<Optional<ClientBO>> delete(final long id) {
+    public CompletableFuture<Optional<ClientBO>> delete(final long id, String domain) {
         LOG.info("Client delete request. accountId={}", id);
 
         return persistenceService.delete(id);
     }
 
     @Override
-    public CompletableFuture<ClientBO> activate(final long id) {
-        return getById(id)
+    public CompletableFuture<ClientBO> activate(final long id, final String domain) {
+        return getById(id, domain)
                 .thenCompose(AsyncUtils::fromClientOptional)
                 .thenCompose(client -> {
                     LOG.info("Activate client request. clientId={}, domain={}", client.getId(), client.getDomain());
 
                     ClientBO activated = client.withActive(true);
 
-                    return update(activated)
+                    return update(activated, domain)
                             .thenApply(persisted -> {
                                 if (persisted.isPresent()) {
                                     LOG.info("Client activated. clientId={}, domain={}", client.getId(), client.getDomain());
@@ -119,15 +128,15 @@ public class ClientsServiceImpl implements ClientsService {
     }
 
     @Override
-    public CompletableFuture<ClientBO> deactivate(final long id) {
-        return getById(id)
+    public CompletableFuture<ClientBO> deactivate(final long id, final String domain) {
+        return getById(id, domain)
                 .thenCompose(AsyncUtils::fromClientOptional)
                 .thenCompose(client -> {
                     LOG.info("Deactivate client request. clientId={}, domain={}", client.getId(), client.getDomain());
 
                     ClientBO deactivated = client.withActive(false);
 
-                    return update(deactivated)
+                    return update(deactivated, domain)
                             .thenApply(persisted -> {
                                 if (persisted.isPresent()) {
                                     LOG.info("Client deactivated. clientId={}, domain={}", client.getId(), client.getDomain());
@@ -141,7 +150,7 @@ public class ClientsServiceImpl implements ClientsService {
     }
 
     @Override
-    public CompletableFuture<List<ClientBO>> getByAccountId(final long accountId) {
+    public CompletableFuture<List<ClientBO>> getByAccountId(final long accountId, final String domain) {
         return clientsRepository.getAllForAccount(accountId)
                 .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()));
     }

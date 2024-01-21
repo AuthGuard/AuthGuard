@@ -56,14 +56,15 @@ class ApplicationsServiceImplTest {
 
     @Test
     void create() {
-        AppBO app = random.nextObject(AppBO.class);
+        AppBO app = random.nextObject(AppBO.class)
+                .withDomain("main");
 
         String idempotentKey = "idempotent-key";
         RequestContextBO requestContext = RequestContextBO.builder()
                 .idempotentKey(idempotentKey)
                 .build();
 
-        Mockito.when(accountsService.getById(app.getParentAccountId()))
+        Mockito.when(accountsService.getById(app.getParentAccountId(), "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(random.nextObject(AccountBO.class))));
 
         Mockito.when(applicationsRepository.save(any()))
@@ -89,12 +90,13 @@ class ApplicationsServiceImplTest {
     @Test
     void getById() {
         AppBO app = random.nextObject(AppBO.class)
+                .withDomain("main")
                 .withDeleted(false);
 
         Mockito.when(applicationsRepository.getById(Mockito.anyLong()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(serviceMapper.toDO(app))));
 
-        Optional<AppBO> retrieved = applicationsService.getById(1).join();
+        Optional<AppBO> retrieved = applicationsService.getById(1, "main").join();
         List<PermissionBO> expectedPermissions = app.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
                 .collect(Collectors.toList());
@@ -114,7 +116,7 @@ class ApplicationsServiceImplTest {
         Mockito.when(applicationsRepository.delete(app.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
-        applicationsService.delete(app.getId());
+        applicationsService.delete(app.getId(), "main");
 
         Mockito.verify(applicationsRepository).delete(app.getId());
     }
@@ -124,13 +126,14 @@ class ApplicationsServiceImplTest {
         AppDO app = random.nextObject(AppDO.class);
 
         app.setActive(false);
+        app.setDomain("main");
 
         Mockito.when(applicationsRepository.getById(app.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
         Mockito.when(applicationsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
 
-        AppBO updated = applicationsService.activate(app.getId()).join();
+        AppBO updated = applicationsService.activate(app.getId(), "main").join();
 
         assertThat(updated).isNotNull();
         assertThat(updated.isActive()).isTrue();
@@ -141,13 +144,14 @@ class ApplicationsServiceImplTest {
         AppDO app = random.nextObject(AppDO.class);
 
         app.setActive(true);
+        app.setDomain("main");
 
         Mockito.when(applicationsRepository.getById(app.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
         Mockito.when(applicationsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
 
-        AppBO updated = applicationsService.deactivate(app.getId()).join();
+        AppBO updated = applicationsService.deactivate(app.getId(), "main").join();
 
         assertThat(updated).isNotNull();
         assertThat(updated.isActive()).isFalse();

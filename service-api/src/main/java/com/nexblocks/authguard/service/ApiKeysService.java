@@ -9,15 +9,15 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public interface ApiKeysService extends CrudService<ApiKeyBO> {
-    CompletableFuture<ApiKeyBO> generateApiKey(long appId, String type, Duration duration);
-    CompletableFuture<ApiKeyBO> generateClientApiKey(long clientId, String type, Duration duration);
+    CompletableFuture<ApiKeyBO> generateApiKey(long appId, String domain, String type, Duration duration);
+    CompletableFuture<ApiKeyBO> generateClientApiKey(long clientId, String domain, String type, Duration duration);
 
     CompletableFuture<ApiKeyBO> generateApiKey(AppBO app, String type, Duration duration);
     CompletableFuture<ApiKeyBO> generateClientApiKey(ClientBO client, String type, Duration duration);
 
-    CompletableFuture<List<ApiKeyBO>> getByAppId(long appId);
+    CompletableFuture<List<ApiKeyBO>> getByAppId(long appId, String domain);
 
-    CompletableFuture<AppBO> validateApiKey(String key, String type);
+    CompletableFuture<AppBO> validateApiKey(String key, String domain, String type);
 
     CompletableFuture<ClientBO> validateClientApiKey(String key, String type);
 }

@@ -269,7 +269,7 @@ class AccountsServiceImplTest {
         Mockito.when(accountsRepository.getById(Mockito.anyLong()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
 
-        Optional<AccountBO> retrieved = accountService.getById(0).join();
+        Optional<AccountBO> retrieved = accountService.getById(0, "main").join();
         List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
                 .collect(Collectors.toList());
@@ -311,7 +311,7 @@ class AccountsServiceImplTest {
                 RANDOM.nextObject(PermissionBO.class).withEntityType(null)
         );
 
-        Optional<AccountBO> updated = accountService.grantPermissions(account.getId(), permissions).join();
+        Optional<AccountBO> updated = accountService.grantPermissions(account.getId(), permissions, "main").join();
 
         assertThat(updated).isPresent();
         assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(account);
@@ -330,7 +330,7 @@ class AccountsServiceImplTest {
                 RANDOM.nextObject(PermissionBO.class)
         );
 
-        assertThatThrownBy(() -> accountService.grantPermissions(account.getId(), permissions).join())
+        assertThatThrownBy(() -> accountService.grantPermissions(account.getId(), permissions, "main").join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -348,7 +348,7 @@ class AccountsServiceImplTest {
                 RANDOM.nextObject(PermissionBO.class)
         );
 
-        assertThatThrownBy(() -> accountService.grantPermissions(account.getId(), permissions).join())
+        assertThatThrownBy(() -> accountService.grantPermissions(account.getId(), permissions, "main").join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -372,7 +372,7 @@ class AccountsServiceImplTest {
                 currentPermissions.get(1)
         );
 
-        Optional<AccountBO> updated = accountService.revokePermissions(account.getId(), permissionsToRevoke).join();
+        Optional<AccountBO> updated = accountService.revokePermissions(account.getId(), permissionsToRevoke, "main").join();
 
         assertThat(updated).isPresent();
         assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(account);
@@ -395,7 +395,7 @@ class AccountsServiceImplTest {
 
         Mockito.when(rolesService.verifyRoles(roles, "main")).thenReturn(roles);
 
-        Optional<AccountBO> updated = accountService.grantRoles(account.getId(), roles).join();
+        Optional<AccountBO> updated = accountService.grantRoles(account.getId(), roles, "main").join();
 
         assertThat(updated).isPresent();
         assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(account);
@@ -420,7 +420,7 @@ class AccountsServiceImplTest {
 
         Mockito.when(rolesService.verifyRoles(roles, "main")).thenReturn(validRoles);
 
-        assertThatThrownBy(() -> accountService.grantRoles(account.getId(), roles).join())
+        assertThatThrownBy(() -> accountService.grantRoles(account.getId(), roles, "main").join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -440,7 +440,7 @@ class AccountsServiceImplTest {
 
         Mockito.when(rolesService.verifyRoles(roles, "other")).thenReturn(roles);
 
-        assertThatThrownBy(() -> accountService.grantRoles(account.getId(), roles).join())
+        assertThatThrownBy(() -> accountService.grantRoles(account.getId(), roles, "main").join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -459,7 +459,7 @@ class AccountsServiceImplTest {
                 currentRoles.get(1)
         );
 
-        Optional<AccountBO> updated = accountService.revokeRoles(account.getId(), rolesToRevoke).join();
+        Optional<AccountBO> updated = accountService.revokeRoles(account.getId(), rolesToRevoke, "main").join();
 
         assertThat(updated).isPresent();
         assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(account);
@@ -495,7 +495,7 @@ class AccountsServiceImplTest {
         Mockito.when(accountsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
-        Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update).join();
+        Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update, "main").join();
         AccountBO expected = accountBO
                 .withIdentifiers(Arrays.asList(
                         UserIdentifierBO.builder()
@@ -567,7 +567,7 @@ class AccountsServiceImplTest {
         Mockito.when(accountsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
-        Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update).join();
+        Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update, "main").join();
         AccountBO expected = accountBO
                 .withIdentifiers(Arrays.asList(
                         UserIdentifierBO.builder()
@@ -624,7 +624,7 @@ class AccountsServiceImplTest {
         Mockito.when(accountsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
-        Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update).join();
+        Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update, "main").join();
 
         List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
@@ -665,7 +665,7 @@ class AccountsServiceImplTest {
         Mockito.when(accountsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
-        Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update).join();
+        Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update, "main").join();
 
         List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
@@ -698,7 +698,7 @@ class AccountsServiceImplTest {
         Mockito.when(accountsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
-        Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update).join();
+        Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update, "main").join();
 
         List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
@@ -769,7 +769,7 @@ class AccountsServiceImplTest {
         Mockito.when(accountsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
-        Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update).join();
+        Optional<AccountBO> updated = accountService.patch(accountDO.getId(), update, "main").join();
         AccountBO expected = accountBO
                 .withIdentifiers(Arrays.asList(
                         UserIdentifierBO.builder()
@@ -824,7 +824,7 @@ class AccountsServiceImplTest {
         Mockito.when(accountsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
-        AccountBO updated = accountService.activate(accountDO.getId()).join().orElse(null);
+        AccountBO updated = accountService.activate(accountDO.getId(), "main").join().orElse(null);
         List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
                 .collect(Collectors.toList());
@@ -847,7 +847,7 @@ class AccountsServiceImplTest {
         Mockito.when(accountsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
 
-        AccountBO updated = accountService.deactivate(accountDO.getId()).join().orElse(null);
+        AccountBO updated = accountService.deactivate(accountDO.getId(), "main").join().orElse(null);
 
         assertThat(updated).isNotNull();
         compareAccounts(updated, accountBO.withPermissions(expectedPermissions).withActive(false));

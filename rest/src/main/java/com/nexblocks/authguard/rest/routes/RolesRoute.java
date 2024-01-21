@@ -9,6 +9,7 @@ import com.nexblocks.authguard.api.routes.RolesApi;
 import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
+import com.nexblocks.authguard.rest.util.Domain;
 import com.nexblocks.authguard.service.RolesService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.util.AsyncUtils;
@@ -52,7 +53,7 @@ public class RolesRoute extends RolesApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<RoleDTO> role = rolesService.getById(id.get())
+        CompletableFuture<RoleDTO> role = rolesService.getById(id.get(), Domain.fromContext(context))
                 .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.ROLE_DOES_NOT_EXIST, "Role does not exist"))
                 .thenApply(restMapper::toDTO);
 
@@ -67,7 +68,7 @@ public class RolesRoute extends RolesApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<RoleDTO> role = rolesService.delete(id.get())
+        CompletableFuture<RoleDTO> role = rolesService.delete(id.get(), Domain.fromContext(context))
                 .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.ROLE_DOES_NOT_EXIST, "Role does not exist"))
                 .thenApply(restMapper::toDTO);
 
