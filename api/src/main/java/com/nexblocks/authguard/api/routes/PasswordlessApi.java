@@ -9,7 +9,7 @@ public abstract class PasswordlessApi implements ApiRoute {
 
     @Override
     public String getPath() {
-        return "passwordless";
+        return "/domains/:domain/passwordless";
     }
 
     @Override

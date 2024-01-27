@@ -186,7 +186,7 @@ class OAuthServiceTest {
                     return CompletableFuture.completedFuture(argWithId);
                 });
 
-        Mockito.when(accountsService.getByExternalId(Mockito.any()))
+        Mockito.when(accountsService.getByExternalIdUnchecked(Mockito.any()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
          TokensResponse actual = oAuthService.exchangeAuthorizationCode("account_test", "random", "code")
@@ -210,7 +210,7 @@ class OAuthServiceTest {
                     return CompletableFuture.completedFuture(Optional.of(session));
                 });
 
-        Mockito.when(accountsService.getByExternalId("1"))
+        Mockito.when(accountsService.getByExternalIdUnchecked("1"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(AccountBO.builder().id(1).build())));
 
          TokensResponse actual = oAuthService.exchangeAuthorizationCode("account_test", "random", "code")

@@ -9,7 +9,7 @@ public abstract class RolesApi implements ApiRoute {
 
     @Override
     public String getPath() {
-        return "roles";
+        return "/domains/:domain/roles";
     }
 
     @Override
@@ -17,8 +17,8 @@ public abstract class RolesApi implements ApiRoute {
         post("/", this::create, ActorRoles.adminClient());
         get("/:id", this::getById, ActorRoles.adminClient());;
         delete("/:id", this::deleteById, ActorRoles.adminClient());;
-        get("/domain/:domain/name/:name", this::getByName, ActorRoles.adminClient());
-        get("/domain/:domain", this::getAll, ActorRoles.adminClient());
+        get("/name/:name", this::getByName, ActorRoles.adminClient());
+        get("", this::getAll, ActorRoles.adminClient());
     }
 
     public abstract void create(final Context context);

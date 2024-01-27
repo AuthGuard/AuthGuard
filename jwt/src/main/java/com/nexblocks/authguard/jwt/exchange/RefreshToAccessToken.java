@@ -120,7 +120,7 @@ public class RefreshToAccessToken implements Exchange {
     }
 
     private CompletableFuture<AccountBO> getAccount(final long accountId, final AccountTokenDO accountToken) {
-        return accountsService.getById(accountId)
+        return accountsService.getByIdUnchecked(accountId)
                 .thenCompose(opt -> {
                     if (opt.isEmpty()) {
                         return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,

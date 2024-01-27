@@ -71,7 +71,7 @@ class RefreshToAccessTokenTest {
         Mockito.when(accountTokensRepository.getByToken(authRequest.getToken()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
 
-        Mockito.when(accountsService.getById(accountId))
+        Mockito.when(accountsService.getByIdUnchecked(accountId))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accessTokenProvider.generateToken(account, null, TokenOptionsBO.builder().build()))
@@ -125,7 +125,7 @@ class RefreshToAccessTokenTest {
         Mockito.when(accountTokensRepository.getByToken(authRequest.getToken()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
 
-        Mockito.when(accountsService.getById(accountId))
+        Mockito.when(accountsService.getByIdUnchecked(accountId))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accessTokenProvider.generateToken(account, restrictions, TokenOptionsBO.builder().build()))
@@ -189,7 +189,7 @@ class RefreshToAccessTokenTest {
         Mockito.when(accountTokensRepository.getByToken(authRequest.getToken()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
 
-        Mockito.when(accountsService.getById(accountId))
+        Mockito.when(accountsService.getByIdUnchecked(accountId))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         // do
@@ -262,7 +262,7 @@ class RefreshToAccessTokenTest {
         Mockito.when(accountTokensRepository.getByToken(authRequest.getToken()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
 
-        Mockito.when(accountsService.getById(accountId))
+        Mockito.when(accountsService.getByIdUnchecked(accountId))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accessTokenProvider.generateToken(account, null, tokenOptions))

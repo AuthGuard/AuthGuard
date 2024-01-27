@@ -9,7 +9,7 @@ public abstract class ApiKeysApi implements ApiRoute {
 
     @Override
     public String getPath() {
-        return "keys";
+        return "/domains/:domain/keys";
     }
 
     @Override

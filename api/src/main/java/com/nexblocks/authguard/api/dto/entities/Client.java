@@ -11,14 +11,13 @@ import java.time.Instant;
 @DTOStyle
 @JsonSerialize(as = ClientDTO.class)
 @JsonDeserialize(as = ClientDTO.class)
-public interface Client {
-    long getId();
+public interface Client extends DomainScoped {
+    String getId();
     Instant getCreatedAt();
     Instant getLastModified();
     String getExternalId();
     String getName();
-    Long getAccountId();
-    String getDomain();
+    String getAccountId();
     String getBaseUrl();
     String getClientType();
     boolean isActive();

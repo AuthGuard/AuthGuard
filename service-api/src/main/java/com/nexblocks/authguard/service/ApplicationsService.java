@@ -7,8 +7,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public interface ApplicationsService extends IdempotentCrudService<AppBO> {
-    CompletableFuture<Optional<AppBO>> getByExternalId(long externalId);
-    CompletableFuture<AppBO> activate(long id);
-    CompletableFuture<AppBO> deactivate(long id);
-    CompletableFuture<List<AppBO>> getByAccountId(long accountId);
+    CompletableFuture<Optional<AppBO>> getByExternalId(long externalId, String domain);
+    CompletableFuture<AppBO> activate(long id, String domain);
+    CompletableFuture<AppBO> deactivate(long id, String domain);
+    CompletableFuture<List<AppBO>> getByAccountId(long accountId, String domain);
 }

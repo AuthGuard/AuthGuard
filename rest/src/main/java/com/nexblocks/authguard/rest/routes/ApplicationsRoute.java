@@ -3,19 +3,19 @@ package com.nexblocks.authguard.rest.routes;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.dto.entities.ApiKeyDTO;
 import com.nexblocks.authguard.api.dto.entities.AppDTO;
-import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.requests.CreateAppRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.ApplicationsApi;
+import com.nexblocks.authguard.rest.access.EntityDomainChecker;
 import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestJsonMapper;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
+import com.nexblocks.authguard.rest.util.Domain;
 import com.nexblocks.authguard.rest.util.IdempotencyHeader;
 import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.ApplicationsService;
-import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.nexblocks.authguard.service.util.AsyncUtils;
 import io.javalin.core.validation.Validator;
@@ -23,7 +23,6 @@ import io.javalin.http.Context;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -68,7 +67,7 @@ public class ApplicationsRoute extends ApplicationsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<AppDTO> application = applicationsService.getById(applicationId.get())
+        CompletableFuture<AppDTO> application = applicationsService.getById(applicationId.get(), Domain.fromContext(context))
                 .thenCompose(AsyncUtils::fromAppOptional)
                 .thenApply(restMapper::toDTO);
 
@@ -82,7 +81,7 @@ public class ApplicationsRoute extends ApplicationsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<AppDTO> application = applicationsService.getByExternalId(applicationId.get())
+        CompletableFuture<AppDTO> application = applicationsService.getByExternalId(applicationId.get(), Domain.fromContext(context))
                 .thenCompose(AsyncUtils::fromAppOptional)
                 .thenApply(restMapper::toDTO);
 
@@ -92,7 +91,9 @@ public class ApplicationsRoute extends ApplicationsApi {
     public void update(final Context context) {
         AppDTO app = RestJsonMapper.asClass(context.body(), AppDTO.class);
 
-        CompletableFuture<AppDTO> application = applicationsService.update(restMapper.toBO(app))
+        EntityDomainChecker.checkEntityDomainOrFail(app, context);
+
+        CompletableFuture<AppDTO> application = applicationsService.update(restMapper.toBO(app), Domain.fromContext(context))
                 .thenCompose(AsyncUtils::fromAppOptional)
                 .thenApply(restMapper::toDTO);
 
@@ -106,7 +107,7 @@ public class ApplicationsRoute extends ApplicationsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<AppDTO> application = applicationsService.delete(applicationId.get())
+        CompletableFuture<AppDTO> application = applicationsService.delete(applicationId.get(), Domain.fromContext(context))
                 .thenCompose(AsyncUtils::fromAppOptional)
                 .thenApply(restMapper::toDTO);
 
@@ -120,7 +121,7 @@ public class ApplicationsRoute extends ApplicationsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<AppDTO> application = applicationsService.activate(applicationId.get())
+        CompletableFuture<AppDTO> application = applicationsService.activate(applicationId.get(), Domain.fromContext(context))
                 .thenApply(restMapper::toDTO);
 
         context.json(application);
@@ -133,7 +134,7 @@ public class ApplicationsRoute extends ApplicationsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<AppDTO> application = applicationsService.deactivate(applicationId.get())
+        CompletableFuture<AppDTO> application = applicationsService.deactivate(applicationId.get(), Domain.fromContext(context))
                 .thenApply(restMapper::toDTO);
 
         context.json(application);
@@ -147,7 +148,7 @@ public class ApplicationsRoute extends ApplicationsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<List<ApiKeyDTO>> keys = apiKeysService.getByAppId(applicationId.get())
+        CompletableFuture<List<ApiKeyDTO>> keys = apiKeysService.getByAppId(applicationId.get(), Domain.fromContext(context))
                 .thenApply(list -> list
                         .stream()
                         .map(restMapper::toDTO)

@@ -1,8 +1,10 @@
 package com.nexblocks.authguard.rest.util;
 
+import com.nexblocks.authguard.api.dto.entities.DomainScoped;
 import com.nexblocks.authguard.api.dto.validation.Validator;
 import com.nexblocks.authguard.api.dto.validation.validators.Validators;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
+import com.nexblocks.authguard.rest.access.EntityDomainChecker;
 import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestJsonMapper;
 import io.javalin.http.Context;
@@ -23,8 +25,13 @@ public class BodyHandler<T> {
     }
 
     public T getValidated(final Context context) {
-        final T body = RestJsonMapper.asClass(context.body(), bodyClass);
-        final List<Violation> violations = validator.validate(body);
+        T body = RestJsonMapper.asClass(context.body(), bodyClass);
+
+        if (DomainScoped.class.isAssignableFrom(body.getClass())) {
+            EntityDomainChecker.checkEntityDomainOrFail((DomainScoped) body, context);
+        }
+
+        List<Violation> violations = validator.validate(body);
 
         if (!violations.isEmpty()) {
             throw new RequestValidationException(violations);
@@ -46,7 +53,7 @@ public class BodyHandler<T> {
         }
 
         public BodyHandler<T> build() {
-            final Validator<T> validator = Validators.getForClass(bodyClass);
+            Validator<T> validator = Validators.getForClass(bodyClass);
 
             if (validator == null) {
                 throw new IllegalStateException("No validator was found for class " + bodyClass);

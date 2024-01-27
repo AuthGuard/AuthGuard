@@ -2,6 +2,7 @@ package com.nexblocks.authguard.rest.server;
 
 import com.nexblocks.authguard.rest.access.AuthorizationHandler;
 import com.google.inject.Injector;
+import com.nexblocks.authguard.rest.access.DomainAuthorizationHandler;
 import io.javalin.Javalin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,8 @@ public class ServerMiddlewareHandlers implements JavalinAppConfigurer {
     public void configure(final Javalin app) {
         app.before(context -> context.attribute("time", System.currentTimeMillis()));
         app.before(injector.getInstance(AuthorizationHandler.class));
+
+        app.before("/domain/:domain", new DomainAuthorizationHandler());
 
         app.after(context -> {
             final Long now = System.currentTimeMillis();

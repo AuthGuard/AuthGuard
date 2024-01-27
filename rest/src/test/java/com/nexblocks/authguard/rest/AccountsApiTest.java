@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AccountsApiTest extends AbstractRouteTest {
     private static final Logger LOG = LoggerFactory.getLogger(AccountsApiTest.class);
 
-    private static final String ENDPOINT = "accounts";
+    private static final String ENDPOINT = "domains/main/accounts";
 
     AccountsApiTest() {
         super(ENDPOINT);
@@ -50,7 +50,7 @@ class AccountsApiTest extends AbstractRouteTest {
 
     @Test
     void create() {
-        final CreateAccountRequestDTO requestDTO = CreateAccountRequestDTO.builder()
+        CreateAccountRequestDTO requestDTO = CreateAccountRequestDTO.builder()
                 .externalId("external")
                 .email(AccountEmailDTO.builder()
                         .email("email@server.com")
@@ -65,19 +65,19 @@ class AccountsApiTest extends AbstractRouteTest {
                 ))
                 .plainPassword("password")
                 .build();
-        final RequestContextBO requestContext = RequestContextBO.builder()
+        RequestContextBO requestContext = RequestContextBO.builder()
                 .idempotentKey(UUID.randomUUID().toString())
                 .build();
 
-        final AccountBO accountBO = mapper().toBO(requestDTO);
-        final AccountBO serviceResponse = accountBO.withId(UUID.randomUUID().getMostSignificantBits());
+        AccountBO accountBO = mapper().toBO(requestDTO);
+        AccountBO serviceResponse = accountBO.withId(UUID.randomUUID().getMostSignificantBits());
 
         Mockito.when(accountsService.create(Mockito.eq(accountBO), Mockito.any()))
                 .thenReturn(CompletableFuture.completedFuture(serviceResponse));
 
         LOG.info("Request {}", requestDTO);
 
-        final ValidatableResponse httpResponse = given().body(requestDTO)
+        ValidatableResponse httpResponse = given().body(requestDTO)
                 .contentType(ContentType.JSON)
                 .header(IdempotencyHeader.HEADER_NAME, requestContext.getIdempotentKey())
                 .post(url())
@@ -85,7 +85,7 @@ class AccountsApiTest extends AbstractRouteTest {
                 .statusCode(201)
                 .contentType(ContentType.JSON);
 
-        final AccountDTO response = httpResponse
+        AccountDTO response = httpResponse
                 .extract()
                 .response()
                 .getBody()
@@ -94,6 +94,6 @@ class AccountsApiTest extends AbstractRouteTest {
         assertThat(response).isEqualToIgnoringGivenFields(requestDTO,
                 "id", "deleted", "createdAt", "lastModified", "passwordUpdatedAt",
                 "social", "identityProvider", "passwordVersion");
-        assertThat(response.getId()).isEqualTo(serviceResponse.getId());
+        assertThat(response.getId()).isEqualTo(String.valueOf(serviceResponse.getId()));
     }
 }

@@ -9,7 +9,7 @@ public abstract class AccountsApi implements ApiRoute {
 
     @Override
     public String getPath() {
-        return "accounts";
+        return "/domains/:domain/accounts";
     }
 
     public void addEndpoints() {
@@ -18,12 +18,12 @@ public abstract class AccountsApi implements ApiRoute {
         get("/:id", this::getById, ActorRoles.adminClient());
         delete("/:id", this::deleteAccount, ActorRoles.adminClient());
         patch("/:id", this::patchAccount, ActorRoles.adminClient());
-        get("/domain/:domain/identifier/:identifier", this::getByIdentifier, ActorRoles.adminClient());
-        get("/domain/:domain/identifier/:identifier/exists", this::identifierExists, ActorRoles.adminOrAuthClient());
+        get("/identifier/:identifier", this::getByIdentifier, ActorRoles.adminClient());
+        get("/identifier/:identifier/exists", this::identifierExists, ActorRoles.adminOrAuthClient());
 
         get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
-        get("/domain/:domain/email/:email", this::getByEmail, ActorRoles.adminClient());
-        get("/domain/:domain/email/:email/exists", this::emailExists, ActorRoles.adminOrAuthClient());
+        get("/email/:email", this::getByEmail, ActorRoles.adminClient());
+        get("/email/:email/exists", this::emailExists, ActorRoles.adminOrAuthClient());
 
         patch("/:id/permissions", this::updatePermissions, ActorRoles.adminClient());
         patch("/:id/roles", this::updateRoles, ActorRoles.adminClient());

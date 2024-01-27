@@ -12,20 +12,24 @@ import java.util.concurrent.CompletableFuture;
  * AccountDO service interface.
  */
 public interface AccountsService extends IdempotentCrudService<AccountBO> {
-    CompletableFuture<AccountBO> getByIdUnsafe(long id);
+    CompletableFuture<AccountBO> getByIdUnsafe(long id, String domain);
 
-    CompletableFuture<Optional<AccountBO>> getByExternalId(String externalId);
+    CompletableFuture<Optional<AccountBO>> getByIdUnchecked(long id);
+
+    CompletableFuture<Optional<AccountBO>> getByExternalId(String externalId, String domain);
+
+    CompletableFuture<Optional<AccountBO>> getByExternalIdUnchecked(String externalId);
 
     CompletableFuture<Optional<AccountBO>> getByEmail(String email, String domain);
 
     CompletableFuture<Optional<AccountBO>> getByIdentifier(String identifier, String domain);
     CompletableFuture<Optional<AccountBO>> getByIdentifierUnsafe(String identifier, String domain);
 
-    CompletableFuture<Optional<AccountBO>> activate(long accountId);
+    CompletableFuture<Optional<AccountBO>> activate(long accountId, String domain);
 
-    CompletableFuture<Optional<AccountBO>> deactivate(long accountId);
+    CompletableFuture<Optional<AccountBO>> deactivate(long accountId, String domain);
 
-    CompletableFuture<Optional<AccountBO>> patch(long accountId, AccountBO account);
+    CompletableFuture<Optional<AccountBO>> patch(long accountId, AccountBO account, String domain);
 
     /**
      * Grant permissions to an account. This should only updatePatch
@@ -33,7 +37,7 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
      *
      * @throws ServiceNotFoundException if no account was found.
      */
-    CompletableFuture<Optional<AccountBO>> grantPermissions(long accountId, List<PermissionBO> permissions);
+    CompletableFuture<Optional<AccountBO>> grantPermissions(long accountId, List<PermissionBO> permissions, String domain);
 
     /**
      * Revoke permissions of an account. This should only updatePatch
@@ -41,7 +45,7 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
      *
      * @throws ServiceNotFoundException if no account was found.
      */
-    CompletableFuture<Optional<AccountBO>> revokePermissions(long accountId, List<PermissionBO> permissions);
+    CompletableFuture<Optional<AccountBO>> revokePermissions(long accountId, List<PermissionBO> permissions, String domain);
 
     /**
      * Grant roles to an account. This should only updatePatch the roles
@@ -49,7 +53,7 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
      *
      * @throws ServiceNotFoundException if no account was found.
      */
-    CompletableFuture<Optional<AccountBO>> grantRoles(long accountId, List<String> roles);
+    CompletableFuture<Optional<AccountBO>> grantRoles(long accountId, List<String> roles, String domain);
 
     /**
      * Revoke roles of an account. This should only updatePatch the roles
@@ -57,7 +61,7 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
      *
      * @throws ServiceNotFoundException if no account was found.
      */
-    CompletableFuture<Optional<AccountBO>> revokeRoles(long accountId, List<String> roles);
+    CompletableFuture<Optional<AccountBO>> revokeRoles(long accountId, List<String> roles, String domain);
 
     /**
      * Finds a list of all admins. This is useful only when deciding

@@ -67,7 +67,7 @@ class AuthorizationCodeToOidcTest {
         Mockito.when(authorizationCodeVerifier.verifyAndGetAccountTokenAsync(authRequest.getToken()))
                 .thenReturn(CompletableFuture.completedFuture(accountToken));
 
-        Mockito.when(accountsService.getById(accountToken.getAssociatedAccountId()))
+        Mockito.when(accountsService.getByIdUnchecked(accountToken.getAssociatedAccountId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(openIdConnectTokenProvider.generateToken(account, (TokenRestrictionsBO) null))
@@ -103,7 +103,7 @@ class AuthorizationCodeToOidcTest {
         Mockito.when(authorizationCodeVerifier.verifyAndGetAccountTokenAsync(authRequest.getToken()))
                 .thenReturn(CompletableFuture.completedFuture(accountToken));
 
-        Mockito.when(accountsService.getById(accountToken.getAssociatedAccountId()))
+        Mockito.when(accountsService.getByIdUnchecked(accountToken.getAssociatedAccountId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(openIdConnectTokenProvider.generateToken(account, serviceMapper.toBO(accountToken.getTokenRestrictions())))

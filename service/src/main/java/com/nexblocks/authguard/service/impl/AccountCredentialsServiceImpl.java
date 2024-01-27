@@ -70,15 +70,15 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     }
 
     @Override
-    public CompletableFuture<AccountBO> updatePassword(final long id, final String plainPassword) {
-        return accountsService.getByIdUnsafe(id)
+    public CompletableFuture<AccountBO> updatePassword(final long id, final String plainPassword, final String domain) {
+        return accountsService.getByIdUnsafe(id, domain)
                 .thenCompose(existing -> {
                     HashedPasswordBO newPassword = credentialsManager.verifyAndHashPassword(plainPassword);
                     AccountBO update = existing
                             .withHashedPassword(newPassword)
                             .withPasswordUpdatedAt(Instant.now());
 
-                    return doUpdate(existing, update)
+                    return doUpdate(existing, update, domain)
                             .thenApply(result -> {
                                 storePasswordUpdateRecord(existing);
 
@@ -90,8 +90,9 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     }
 
     @Override
-    public CompletableFuture<AccountBO> addIdentifiers(final long id, final List<UserIdentifierBO> identifiers) {
-        return accountsService.getByIdUnsafe(id)
+    public CompletableFuture<AccountBO> addIdentifiers(final long id, final List<UserIdentifierBO> identifiers,
+                                                       final String domain) {
+        return accountsService.getByIdUnsafe(id, domain)
                 .thenCompose(existing -> {
                     LOG.info("Add identifiers request. accountId={}, domain={}", id, existing.getDomain());
 
@@ -116,13 +117,13 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                             .identifiers(combined)
                             .build();
 
-                    return doUpdate(existing, updated);
+                    return doUpdate(existing, updated, domain);
                 });
     }
 
     @Override
-    public CompletableFuture<AccountBO> removeIdentifiers(final long id, final List<String> identifiers) {
-        return accountsService.getByIdUnsafe(id)
+    public CompletableFuture<AccountBO> removeIdentifiers(final long id, final List<String> identifiers, final String domain) {
+        return accountsService.getByIdUnsafe(id, domain)
                 .thenCompose(existing -> {
                     LOG.info("Remove identifiers request. accountId={}, domain={}", id, existing.getDomain());
 
@@ -140,7 +141,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                             .identifiers(updatedIdentifiers)
                             .build();
 
-                    return doUpdate(existing, updated)
+                    return doUpdate(existing, updated, domain)
                             .thenApply(result -> {
                                 updatedIdentifiers.forEach(oldIdentifier ->
                                         storeIdentifierUpdateRecord(existing, oldIdentifier, CredentialsAudit.Action.DEACTIVATED));
@@ -151,8 +152,9 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     }
 
     @Override
-    public CompletableFuture<AccountBO> replaceIdentifier(final long id, final String oldIdentifier, final UserIdentifierBO newIdentifier) {
-        return accountsService.getByIdUnsafe(id)
+    public CompletableFuture<AccountBO> replaceIdentifier(final long id, final String oldIdentifier,
+                                                          final UserIdentifierBO newIdentifier, final String domain) {
+        return accountsService.getByIdUnsafe(id, domain)
                 .thenCompose(existing -> {
                     LOG.info("Replace identifiers request. accountId={}, domain={}", id, existing.getDomain());
 
@@ -183,7 +185,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
 
                     final AccountBO update = existing.withIdentifiers(newIdentifiers);
 
-                    return doUpdate(existing, update)
+                    return doUpdate(existing, update, domain)
                             .thenApply(result -> {
                                 storeIdentifierUpdateRecord(existing, matchedIdentifier.get(), CredentialsAudit.Action.UPDATED);
 
@@ -193,7 +195,8 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     }
 
     @Override
-    public CompletableFuture<PasswordResetTokenBO> generateResetToken(final String identifier, final boolean returnToken, final String domain) {
+    public CompletableFuture<PasswordResetTokenBO> generateResetToken(final String identifier, final boolean returnToken,
+                                                                      final String domain) {
         return accountsService.getByIdentifier(identifier, domain)
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenCompose(account -> {
@@ -228,7 +231,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     }
 
     @Override
-    public CompletableFuture<AccountBO> resetPasswordByToken(final String token, final String plainPassword) {
+    public CompletableFuture<AccountBO> resetPasswordByToken(final String token, final String plainPassword, final String domain) {
         return accountTokensRepository.getByToken(token)
                 .thenCompose(opt -> {
                     AccountTokenDO accountToken = opt.orElseThrow(() -> new ServiceNotFoundException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
@@ -240,7 +243,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                         throw new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token " + token + " has expired");
                     }
 
-                    return updatePassword(accountToken.getAssociatedAccountId(), plainPassword);
+                    return updatePassword(accountToken.getAssociatedAccountId(), plainPassword, domain);
                 });
     }
 
@@ -264,7 +267,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                             .withHashedPassword(newHashedPassword)
                             .withPasswordUpdatedAt(Instant.now());
 
-                    return doUpdate(credentials, update)
+                    return doUpdate(credentials, update, domain)
                             .thenApply(result -> {
                                 storePasswordUpdateRecord(credentials);
 
@@ -273,11 +276,11 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                 });
     }
 
-    private CompletableFuture<AccountBO> doUpdate(final AccountBO existing, final AccountBO updated) {
+    private CompletableFuture<AccountBO> doUpdate(final AccountBO existing, final AccountBO updated, final String domain) {
         LOG.info("Account credentials update. accountId={}, domain={}", existing.getId(), existing.getDomain());
         storeAuditAttempt(existing);
 
-        return accountsService.update(updated)
+        return accountsService.update(updated, domain)
                 .thenApply(persisted -> persisted.map(c -> {
                             messageBus.publish(CREDENTIALS_CHANNEL, Messages.updated(c));
 

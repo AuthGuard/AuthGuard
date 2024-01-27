@@ -5,6 +5,7 @@ import com.nexblocks.authguard.api.dto.entities.RequestValidationError;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.VerificationApi;
+import com.nexblocks.authguard.rest.util.Domain;
 import com.nexblocks.authguard.service.VerificationService;
 import com.google.inject.Inject;
 import io.javalin.http.Context;
@@ -29,7 +30,7 @@ public class VerificationRoute extends VerificationApi {
             )));
         }
 
-        verificationService.verifyEmail(token);
+        verificationService.verifyEmail(token, Domain.fromContext(context));
 
         context.status(200);
     }

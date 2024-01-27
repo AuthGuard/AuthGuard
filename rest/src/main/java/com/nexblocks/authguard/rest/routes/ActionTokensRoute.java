@@ -6,12 +6,14 @@ import com.nexblocks.authguard.api.dto.entities.ActionTokenDTO;
 import com.nexblocks.authguard.api.dto.entities.ActionTokenRequestType;
 import com.nexblocks.authguard.api.dto.entities.AuthResponseDTO;
 import com.nexblocks.authguard.api.dto.requests.ActionTokenRequestDTO;
+import com.nexblocks.authguard.api.dto.validation.IdParser;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.ActionTokensApi;
 import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
+import com.nexblocks.authguard.rest.util.Domain;
 import com.nexblocks.authguard.service.ActionTokenService;
 import com.nexblocks.authguard.service.model.ActionTokenBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
@@ -51,7 +53,7 @@ public class ActionTokensRoute extends ActionTokensApi {
             ));
         }
 
-        CompletableFuture<AuthResponseDTO> result = actionTokenService.generateOtp(accountId.get())
+        CompletableFuture<AuthResponseDTO> result = actionTokenService.generateOtp(accountId.get(), Domain.fromContext(context))
                 .thenApply(restMapper::toDTO);
 
         context.status(201).json(result);
@@ -64,8 +66,8 @@ public class ActionTokensRoute extends ActionTokensApi {
         CompletableFuture<ActionTokenBO> result;
 
         if (request.getType() == ActionTokenRequestType.OTP) {
-            result = actionTokenService.generateFromOtp(request.getOtp().getPasswordId(),
-                    request.getOtp().getPassword(), request.getAction());
+            result = actionTokenService.generateFromOtp(IdParser.from(request.getOtp().getPasswordId()),
+                    Domain.fromContext(context), request.getOtp().getPassword(), request.getAction());
         } else {
             AuthRequestBO authRequest = restMapper.toBO(request.getBasic());
             result = actionTokenService.generateFromBasicAuth(authRequest, request.getAction());

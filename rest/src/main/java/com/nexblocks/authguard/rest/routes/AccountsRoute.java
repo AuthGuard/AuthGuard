@@ -12,6 +12,7 @@ import com.nexblocks.authguard.rest.access.ActorDomainVerifier;
 import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
+import com.nexblocks.authguard.rest.util.Domain;
 import com.nexblocks.authguard.rest.util.IdempotencyHeader;
 import com.nexblocks.authguard.service.AccountLocksService;
 import com.nexblocks.authguard.service.AccountsService;
@@ -99,7 +100,7 @@ public class AccountsRoute extends AccountsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<AccountDTO> account = accountsService.getById(accountId.get())
+        CompletableFuture<AccountDTO> account = accountsService.getById(accountId.get(), Domain.fromContext(context))
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenApply(restMapper::toDTO);
 
@@ -147,7 +148,7 @@ public class AccountsRoute extends AccountsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<AccountDTO> account = accountsService.delete(accountId.get())
+        CompletableFuture<AccountDTO> account = accountsService.delete(accountId.get(), Domain.fromContext(context))
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenApply(restMapper::toDTO);
 
@@ -164,7 +165,7 @@ public class AccountsRoute extends AccountsApi {
         
         UpdateAccountRequestDTO request = updateAccountRequestBodyHandler.getValidated(context);
 
-        CompletableFuture<AccountDTO> account = accountsService.patch(accountId.get(), restMapper.toBO(request))
+        CompletableFuture<AccountDTO> account = accountsService.patch(accountId.get(), restMapper.toBO(request), Domain.fromContext(context))
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenApply(restMapper::toDTO);
 
@@ -175,7 +176,7 @@ public class AccountsRoute extends AccountsApi {
     public void getByExternalId(final Context context) {
         String accountId = context.pathParam("id");
 
-        CompletableFuture<AccountDTO> account = accountsService.getByExternalId(accountId)
+        CompletableFuture<AccountDTO> account = accountsService.getByExternalId(accountId, Domain.fromContext(context))
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenApply(restMapper::toDTO);
 
@@ -229,9 +230,9 @@ public class AccountsRoute extends AccountsApi {
         CompletableFuture<Optional<AccountBO>> updatedAccount;
 
         if (request.getAction() == PermissionsRequest.Action.GRANT) {
-            updatedAccount = accountsService.grantPermissions(accountId.get(), permissions);
+            updatedAccount = accountsService.grantPermissions(accountId.get(), permissions, Domain.fromContext(context));
         } else {
-            updatedAccount = accountsService.revokePermissions(accountId.get(), permissions);
+            updatedAccount = accountsService.revokePermissions(accountId.get(), permissions, Domain.fromContext(context));
         }
 
         context.json(updatedAccount.thenCompose(AsyncUtils::fromAccountOptional).thenApply(restMapper::toDTO));
@@ -250,9 +251,9 @@ public class AccountsRoute extends AccountsApi {
         CompletableFuture<Optional<AccountBO>> updatedAccount;
 
         if (request.getAction() == RolesRequest.Action.GRANT) {
-            updatedAccount = accountsService.grantRoles(accountId.get(), request.getRoles());
+            updatedAccount = accountsService.grantRoles(accountId.get(), request.getRoles(), Domain.fromContext(context));
         } else {
-            updatedAccount = accountsService.revokeRoles(accountId.get(), request.getRoles());
+            updatedAccount = accountsService.revokeRoles(accountId.get(), request.getRoles(), Domain.fromContext(context));
         }
 
         context.json(updatedAccount.thenCompose(AsyncUtils::fromAccountOptional).thenApply(restMapper::toDTO));
@@ -266,7 +267,7 @@ public class AccountsRoute extends AccountsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<List<AppDTO>> apps = applicationsService.getByAccountId(accountId.get())
+        CompletableFuture<List<AppDTO>> apps = applicationsService.getByAccountId(accountId.get(), Domain.fromContext(context))
                 .thenApply(list -> list.stream()
                         .map(restMapper::toDTO)
                         .collect(Collectors.toList()));
@@ -282,7 +283,7 @@ public class AccountsRoute extends AccountsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<AccountDTO> account = accountsService.activate(accountId.get())
+        CompletableFuture<AccountDTO> account = accountsService.activate(accountId.get(), Domain.fromContext(context))
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenApply(restMapper::toDTO);
 
@@ -297,7 +298,7 @@ public class AccountsRoute extends AccountsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<AccountDTO> account = accountsService.deactivate(accountId.get())
+        CompletableFuture<AccountDTO> account = accountsService.deactivate(accountId.get(), Domain.fromContext(context))
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenApply(restMapper::toDTO);
 

@@ -11,10 +11,9 @@ import java.time.Instant;
 @DTOStyle
 @JsonDeserialize(as = RoleDTO.class)
 @JsonSerialize(as = RoleDTO.class)
-public interface Role {
-    long getId();
+public interface Role extends DomainScoped {
+    String getId();
     Instant getCreatedAt();
     Instant getLastModified();
     String getName();
-    String getDomain();
 }

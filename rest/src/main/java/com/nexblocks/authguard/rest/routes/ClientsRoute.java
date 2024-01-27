@@ -10,6 +10,7 @@ import com.nexblocks.authguard.api.routes.ClientsApi;
 import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
+import com.nexblocks.authguard.rest.util.Domain;
 import com.nexblocks.authguard.rest.util.IdempotencyHeader;
 import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.ClientsService;
@@ -66,7 +67,7 @@ public class ClientsRoute extends ClientsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<ClientDTO> client = clientsService.getById(clientId.get())
+        CompletableFuture<ClientDTO> client = clientsService.getById(clientId.get(), Domain.fromContext(context))
                 .thenApply(opt -> opt.map(restMapper::toDTO)
                         .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST, "Client does not exist")));
 
@@ -80,7 +81,7 @@ public class ClientsRoute extends ClientsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<ClientDTO> client = clientsService.getById(clientId.get())
+        CompletableFuture<ClientDTO> client = clientsService.getById(clientId.get(), Domain.fromContext(context))
                 .thenApply(opt -> opt.map(restMapper::toDTO)
                         .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST, "Client does not exist")));
 
@@ -94,7 +95,7 @@ public class ClientsRoute extends ClientsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<ClientDTO> client = clientsService.delete(clientId.get())
+        CompletableFuture<ClientDTO> client = clientsService.delete(clientId.get(), Domain.fromContext(context))
                 .thenCompose(AsyncUtils::fromClientOptional)
                 .thenApply(restMapper::toDTO);
 
@@ -108,7 +109,7 @@ public class ClientsRoute extends ClientsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<ClientDTO> client = clientsService.activate(clientId.get())
+        CompletableFuture<ClientDTO> client = clientsService.activate(clientId.get(), Domain.fromContext(context))
                 .thenApply(restMapper::toDTO);
 
         context.json(client);
@@ -121,7 +122,7 @@ public class ClientsRoute extends ClientsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<ClientDTO> client = clientsService.deactivate(clientId.get())
+        CompletableFuture<ClientDTO> client = clientsService.deactivate(clientId.get(), Domain.fromContext(context))
                 .thenApply(restMapper::toDTO);
 
         context.json(client);
@@ -135,7 +136,7 @@ public class ClientsRoute extends ClientsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<List<ApiKeyDTO>> keys = apiKeysService.getByAppId(clientId.get())
+        CompletableFuture<List<ApiKeyDTO>> keys = apiKeysService.getByAppId(clientId.get(), Domain.fromContext(context))
                 .thenApply(list -> list
                         .stream()
                         .map(restMapper::toDTO)

@@ -10,6 +10,6 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = OtpRequestDTO.class)
 @JsonSerialize(as = OtpRequestDTO.class)
 public interface OtpRequest {
-    Long getPasswordId();
+    String getPasswordId();
     String getPassword();
 }

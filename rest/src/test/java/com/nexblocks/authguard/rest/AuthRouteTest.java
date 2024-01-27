@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AuthRouteTest extends AbstractRouteTest {
-    private static String ENDPOINT = "auth";
+    private static String ENDPOINT = "domains/main/auth";
 
     AuthRouteTest() {
         super(ENDPOINT);

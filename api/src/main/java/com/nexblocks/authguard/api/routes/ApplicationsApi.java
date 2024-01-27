@@ -9,7 +9,7 @@ public abstract class ApplicationsApi implements ApiRoute {
 
     @Override
     public String getPath() {
-        return "apps";
+        return "/domains/:domain/apps";
     }
 
     @Override
