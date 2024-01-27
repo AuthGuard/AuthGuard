@@ -15,6 +15,7 @@ public interface ApiKeyRequest {
     boolean isForClient();
     String getKeyType();
     String getAppId();
+    String getName();
     Instant getExpiresAt();
     DurationRequestDTO getValidFor();
 }

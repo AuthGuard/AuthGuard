@@ -117,7 +117,7 @@ class ApiKeysServiceImplTest {
                         .token(key)
                         .build());
 
-        ApiKeyBO actual = apiKeysService.generateApiKey(appId, "main", "test", Duration.ZERO).join();
+        ApiKeyBO actual = apiKeysService.generateApiKey(appId, "main", "test", "key-name", Duration.ZERO).join();
 
         assertThat(actual.getAppId()).isEqualTo(appId);
         assertThat(actual.getKey()).isEqualTo(key);
@@ -158,7 +158,7 @@ class ApiKeysServiceImplTest {
                         .token(key)
                         .build());
 
-        ApiKeyBO actual = apiKeysService.generateApiKey(appId, "main", "test", duration).join();
+        ApiKeyBO actual = apiKeysService.generateApiKey(appId, "main", "test", "key-name", duration).join();
 
         assertThat(actual.getAppId()).isEqualTo(appId);
         assertThat(actual.getKey()).isEqualTo(key);
@@ -188,7 +188,7 @@ class ApiKeysServiceImplTest {
         Mockito.when(applicationsService.getById(appId, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        assertThatThrownBy(() -> apiKeysService.generateApiKey(appId, "main", "test", Duration.ZERO).join())
+        assertThatThrownBy(() -> apiKeysService.generateApiKey(appId, "main", "test", "key-name", Duration.ZERO).join())
                 .hasCauseInstanceOf(ServiceNotFoundException.class);
     }
 
@@ -202,7 +202,7 @@ class ApiKeysServiceImplTest {
         Mockito.when(applicationsService.getById(appId, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
-        assertThatThrownBy(() -> apiKeysService.generateApiKey(appId, "main", "none", Duration.ZERO).join())
+        assertThatThrownBy(() -> apiKeysService.generateApiKey(appId, "main", "none", "key-name", Duration.ZERO).join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -262,7 +262,7 @@ class ApiKeysServiceImplTest {
                         .token(key)
                         .build());
 
-        ApiKeyBO actual = apiKeysService.generateClientApiKey(clientId, "main", "test", Duration.ZERO).join();
+        ApiKeyBO actual = apiKeysService.generateClientApiKey(clientId, "main", "test", "key-name", Duration.ZERO).join();
 
         assertThat(actual.getAppId()).isEqualTo(clientId);
         assertThat(actual.getKey()).isEqualTo(key);
@@ -303,7 +303,7 @@ class ApiKeysServiceImplTest {
                         .token(key)
                         .build());
 
-        ApiKeyBO actual = apiKeysService.generateClientApiKey(clientId, "main", "test", duration).join();
+        ApiKeyBO actual = apiKeysService.generateClientApiKey(clientId, "main", "test", "key-name", duration).join();
 
         assertThat(actual.getAppId()).isEqualTo(clientId);
         assertThat(actual.getKey()).isEqualTo(key);
@@ -333,7 +333,7 @@ class ApiKeysServiceImplTest {
         Mockito.when(clientsService.getById(clientId, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        assertThatThrownBy(() -> apiKeysService.generateClientApiKey(clientId, "main", "test", Duration.ZERO).join())
+        assertThatThrownBy(() -> apiKeysService.generateClientApiKey(clientId, "main", "test", "key-name", Duration.ZERO).join())
                 .hasCauseInstanceOf(ServiceNotFoundException.class);
     }
 
@@ -347,7 +347,7 @@ class ApiKeysServiceImplTest {
         Mockito.when(clientsService.getById(clientId, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
-        assertThatThrownBy(() -> apiKeysService.generateClientApiKey(clientId, "main", "none", Duration.ZERO).join())
+        assertThatThrownBy(() -> apiKeysService.generateClientApiKey(clientId, "main", "none", "key-name", Duration.ZERO).join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 

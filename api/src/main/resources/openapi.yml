@@ -2,20 +2,21 @@ openapi: 3.0.3
 
 info:
   title: AuthGuard API
-  version: 0.20.0
+  version: 0.22.0
 
 security:
   - apiKey: []
 
 paths:
   # ----------------- accounts -----------------
-  /accounts:
+  /domains/{domain}/accounts:
     post:
       operationId: createAccount
       description: Create an account
       tags:
         - Accounts
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref:  "#/components/parameters/IdempotentKeyHeader"
       requestBody:
         content:
@@ -33,13 +34,14 @@ paths:
           description: Conflict - if the idempotent key header was used to create an account before
           $ref: "#/components/responses/ErrorResponse"
 
-  /accounts/{id}:
+  /domains/{domain}/accounts/{id}:
     get:
       operationId: getAccountById
       description: Get an account by ID
       tags:
         - Accounts
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -55,6 +57,7 @@ paths:
       tags:
         - Accounts
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       requestBody:
         content:
@@ -78,6 +81,7 @@ paths:
       tags:
         - Accounts
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -87,13 +91,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /accounts/identifier/{id}:
+  /domains/{domain}/accounts/identifier/{id}:
     get:
       operationId: getAccountByCredentialsIdentifier
       description: Get an account by credentials identifier
       tags:
         - Accounts
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdentifierParameter"
       responses:
         200:
@@ -103,13 +108,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /accounts/externalId/{id}:
+  /domains/{domain}/accounts/externalId/{id}:
     get:
       operationId: getAccountByExternalId
       description: Get an account by external ID
       tags:
         - Accounts
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -119,13 +125,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /accounts/email/{email}:
+  /domains/{domain}/accounts/email/{email}:
     get:
       operationId: getAccountByEmail
       description: Get an account by email, regardless of whether it's the primary email or not
       tags:
         - Accounts
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/EmailParameter"
       responses:
         200:
@@ -135,13 +142,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /accounts/email/{email}/exists:
+  /domains/{domain}/accounts/email/{email}/exists:
     get:
       operationId: emailExists
       description: Checks whether an account with that email exists
       tags:
         - Accounts
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/EmailParameter"
       responses:
         200:
@@ -149,19 +157,20 @@ paths:
         404:
           description: Not found
 
-  /accounts/{id}/permissions:
+  /domains/{domain}/accounts/{id}/permissions:
     patch:
       operationId: updateAccountPermissions
       description: Update the permissions of an account
       tags:
         - Accounts
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PermissionsRequest" 
+              $ref: "#/components/schemas/PermissionsRequest"
       responses:
         200:
           description: Success
@@ -170,13 +179,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /accounts/{id}/roles:
+  /domains/{domain}/accounts/{id}/roles:
     patch:
       operationId: updateAccountRoles
       description: Update the roles of an account
       tags:
         - Accounts
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       requestBody:
         content:
@@ -191,13 +201,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /accounts/{id}/activate:
+  /domains/{domain}/accounts/{id}/activate:
     patch:
       operationId: activateAnAccount
       description: Activate an account if not already active
       tags:
         - Accounts
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -207,13 +218,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /accounts/{id}/deactivate:
+  /domains/{domain}/accounts/{id}/deactivate:
     patch:
       operationId: deactivateAnAccount
       description: Deactivate an account if it's active
       tags:
         - Accounts
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -223,13 +235,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /accounts/{id}/apps:
+  /domains/{domain}/accounts/{id}/apps:
     get:
       operationId: getApplicationsByAccountId
       description: Get a list of applications associated with an account
       tags:
         - Accounts
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -239,13 +252,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /accounts/{id}/locks:
+  /domains/{domain}/accounts/{id}/locks:
     get:
       operationId: getLocksByAccountId
       description: Get a list of active locks placed on an account
       tags:
         - Accounts
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -255,7 +269,7 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /accounts/domain/{domain}/identifier/{identifier}:
+  /domains/{domain}/accounts/identifier/{identifier}:
     get:
       operationId: getAccountByIdentifier
       description: Get account by identifier
@@ -272,7 +286,7 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /accounts/domain/{domain}/identifier/{identifier}/exists:
+  /domains/{domain}/accounts/identifier/{identifier}/exists:
     get:
       operationId: identifierExists
       description: Check whether an identifier exists or not
@@ -288,7 +302,7 @@ paths:
           description: Not found
 
   # ----------------- credentials -----------------
-  /credentials/{id}/password:
+  /domains/{domain}/credentials/{id}/password:
     patch:
       operationId: updatePassword
       description: Update the password in a credentials entity
@@ -300,6 +314,7 @@ paths:
             schema:
               $ref: "#/components/schemas/UpdateCredentialsPasswordRequest"
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -309,13 +324,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /credentials/{id}/identifiers:
+  /domains/{domain}/credentials/{id}/identifiers:
     patch:
       operationId: addIdentifier
       description: Add new identifiers to credentials
       tags:
         - Credentials
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       requestBody:
         content:
@@ -339,6 +355,7 @@ paths:
       tags:
         - Credentials
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       requestBody:
         content:
@@ -356,12 +373,14 @@ paths:
           description: Bad request
           $ref: "#/components/responses/ErrorResponse"
 
-  /credentials/reset_token:
+  /domains/{domain}/credentials/reset_token:
     post:
       operationId: generateResetToken
       description: Generates a new reset token which can be used by the user to set a new password
       tags:
         - Credentials
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
       requestBody:
         content:
           application/json:
@@ -378,12 +397,14 @@ paths:
           description: Bad request
           $ref: "#/components/responses/ErrorResponse"
 
-  /credentials/reset:
+  /domains/{domain}/credentials/reset:
     post:
       operationId: resetPassword
       description: Set a new password using a reset token or by using an identifier and its current password
       tags:
         - Credentials
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
       requestBody:
         content:
           application/json:
@@ -401,17 +422,19 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
 
   # ----------------- applications -----------------
-  /apps:
+  /domains/{domain}/apps:
     post:
       operationId: createApp
       description: Create an application
       tags:
         - Applications
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateApplicationRequest" 
+              $ref: "#/components/schemas/CreateApplicationRequest"
       responses:
         201:
           description: Success
@@ -420,13 +443,14 @@ paths:
           description: Bad request
           $ref: "#/components/responses/ErrorResponse"
 
-  /apps/{id}:
+  /domains/{domain}/apps/{id}:
     get:
       operationId: getAppById
       description: Get an application by ID
       tags:
         - Applications
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -438,10 +462,11 @@ paths:
 
     delete:
       operationId: deleteApp
-      description: Delet an application
+      description: Delete an application
       tags:
         - Applications
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -451,7 +476,7 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /apps/{id}/keys:
+  /domains/{domain}/apps/{id}/keys:
     get:
       operationId: getApiKeysByAppId
       description: Get all API keys associated with an application
@@ -459,6 +484,7 @@ paths:
         - Applications
         - API Keys
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -468,13 +494,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /apps/externalId/{id}:
+  /domains/{domain}/apps/externalId/{id}:
     get:
       operationId: getAppsByExternalId
       description: Get an application by an external ID
       tags:
         - Applications
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -484,13 +511,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /apps/{id}/activate:
+  /domains/{domain}/apps/{id}/activate:
     patch:
       operationId: activateAnApp
       description: Activate an application if not already active
       tags:
         - Applications
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -500,13 +528,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /apps/{id}/deactivate:
+  /domains/{domain}/apps/{id}/deactivate:
     patch:
       operationId: deactivateAnApp
       description: Deactivate an application if it's active
       tags:
         - Applications
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -517,17 +546,19 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
 
   # ----------------- clients -----------------
-  /clients:
+  /domains/{domain}/clients:
     post:
       operationId: createClient
       description: Create an AuthGuard client
       tags:
         - Clients
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateClientRequest" 
+              $ref: "#/components/schemas/CreateClientRequest"
       responses:
         201:
           description: Success
@@ -536,13 +567,14 @@ paths:
           description: Bad request
           $ref: "#/components/responses/ErrorResponse"
 
-  /clients/{id}:
+  /domains/{domain}/clients/{id}:
     get:
       operationId: getClientById
       description: Get an client by ID
       tags:
         - Clients
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -558,6 +590,7 @@ paths:
       tags:
         - Clients
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -567,7 +600,7 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /clients/{id}/keys:
+  /domains/{domain}/clients/{id}/keys:
     get:
       operationId: getApiKeysByClientId
       description: Get all API keys associated with a client
@@ -575,6 +608,7 @@ paths:
         - Clients
         - API Keys
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -584,13 +618,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /clients/externalId/{id}:
+  /domains/{domain}/clients/externalId/{id}:
     get:
       operationId: getClientsByExternalId
       description: Get an application by an external ID
       tags:
         - Clients
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -600,13 +635,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /clients/{id}/activate:
+  /domains/{domain}/clients/{id}/activate:
     patch:
       operationId: activateClient
       description: Activate a client if not already active
       tags:
         - Clients
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -616,13 +652,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /clients/{id}/deactivate:
+  /domains/{domain}/clients/{id}/deactivate:
     patch:
       operationId: deactivateClient
       description: Deactivate a client if it's active
       tags:
         - Clients
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -633,17 +670,19 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
 
   # ---------------- API keys ---------------
-  /keys:
+  /domains/{domain}/keys:
     post:
       operationId: generateApiKey
       description: Generate a new API key for an application
       tags:
         - API Keys
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ApiKeyRequest" 
+              $ref: "#/components/schemas/ApiKeyRequest"
       responses:
         200:
           description: Success
@@ -652,12 +691,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /keys/verify:
+  /domains/{domain}/keys/verify:
     post:
       operationId: verifyKey
       description: Verify an API key
       tags:
         - API Keys
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
       requestBody:
         content:
           application/json:
@@ -671,13 +712,14 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /keys/{id}:
+  /domains/{domain}/keys/{id}:
     get:
       operationId: getApiKeyById
       description: Get an API key by ID
       tags:
         - API Keys
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       requestBody:
         content:
@@ -697,6 +739,7 @@ paths:
       tags:
         - API Keys
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       requestBody:
         content:
@@ -712,17 +755,19 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
 
   # ----------------- roles -----------------
-  /roles:
+  /domains/{domain}/roles:
     post:
       operationId: createRole
       description: Create a role
       tags:
         - Roles
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateRoleRequest" 
+              $ref: "#/components/schemas/CreateRoleRequest"
       responses:
         201:
           description: Success
@@ -731,13 +776,14 @@ paths:
           description: Bad request
           $ref: "#/components/responses/ErrorResponse"
 
-  /roles/{id}:
+  /domains/{domain}/roles/{id}:
     get:
       operationId: getRoleById
       description: Get role by ID
       tags:
         - Roles
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -753,6 +799,7 @@ paths:
       tags:
         - Roles
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -762,7 +809,7 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
-  /roles/domain/{domain}/:
+  /domains/{domain}/roles/:
     get:
       operationId: getAllRoles
       description: Get all roles
@@ -773,12 +820,12 @@ paths:
       responses:
         201:
           description: Success
-          $ref: "#/components/responses/RolesArrayResponse"
+          $ref: "#/components/responses/domains/{domain}/rolesArrayResponse"
         400:
           description: Bad request
           $ref: "#/components/responses/ErrorResponse"
 
-  /roles/domain/{domain}/roles/name/{name}:
+  /domains/{domain}/roles/domain/name/{name}:
     get:
       operationId: getRoleByName
       description: Get a role by its name
@@ -796,17 +843,19 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
 
   # ----------------- permissions -----------------
-  /permissions:
+  /domains/{domain}/permissions:
     post:
       operationId: createPermission
       description: Create a permission
       tags:
         - Permissions
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreatePermissionRequest" 
+              $ref: "#/components/schemas/CreatePermissionRequest"
       responses:
         201:
           description: Success
@@ -815,13 +864,14 @@ paths:
           description: Bad request
           $ref: "#/components/responses/ErrorResponse"
 
-  /permissions/{id}:
+  /domains/{domain}/permissions/{id}:
     get:
       operationId: getPermissionById
       description: Get a permission by ID
       tags:
         - Permissions
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
       responses:
         200:
@@ -844,8 +894,8 @@ paths:
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
-  
-  /permissions/domain/{domain}/:
+
+  /domains/{domain}/permissions/:
     get:
       operationId: getAllPermissions
       description: Get all permissions
@@ -856,9 +906,9 @@ paths:
       responses:
         200:
           description: Success
-          $ref: "#/components/responses/PermissionsArrayResponse"
+          $ref: "#/components/responses/domains/{domain}/permissionsArrayResponse"
 
-  /permissions/domain/{domain}/group/{group}:
+  /domains/{domain}/permissions/group/{group}:
     get:
       operationId: getPermissionsByGroupName
       description: Get a permissions by group name
@@ -870,16 +920,17 @@ paths:
       responses:
         200:
           description: Success
-          $ref: "#/components/responses/PermissionsArrayResponse"
+          $ref: "#/components/responses/domains/{domain}/permissionsArrayResponse"
 
   # ----------------- auth -----------------
-  /auth/exchange:
+  /domains/{domain}/auth/exchange:
     post:
       operationId: exchange
       description: Perform an auth exchange
       tags:
         - Auth
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - name: from
           in: query
           required: true
@@ -903,13 +954,14 @@ paths:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
 
-  /auth/exchange/clear:
+  /domains/{domain}/auth/exchange/clear:
     post:
       operationId: clear
       description: Clear (delete) a token
       tags:
         - Auth
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - name: tokenType
           in: query
           required: true
@@ -928,12 +980,14 @@ paths:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
 
-  /auth/authenticate:
+  /domains/{domain}/auth/authenticate:
     post:
       operationId: authenticate
       description: Perform an auth exchange from 'basic' to what is specified in the configuration
       tags:
         - Auth
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
       requestBody:
         content:
           application/json:
@@ -947,12 +1001,14 @@ paths:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
 
-  /auth/refresh:
+  /domains/{domain}/auth/refresh:
     post:
       operationId: refresh
       description: Perform an auth exchange from 'refresh' to what is specified in the configuration
       tags:
         - Auth
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
       requestBody:
         content:
           application/json:
@@ -966,12 +1022,14 @@ paths:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
 
-  /auth/logout:
+  /domains/{domain}/auth/logout:
     post:
       operationId: logout
       description: Clear (delete) a token based on whatever is specified in the configuration
       tags:
         - Auth
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
       requestBody:
         content:
           application/json:
@@ -985,13 +1043,14 @@ paths:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
 
-  /auth/exchange/attempts:
+  /domains/{domain}/auth/exchange/attempts:
     get:
       operationId: getExchangeAttempts
       description: Get a list of attempts performed for an entity
       tags:
         - Auth
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - name: entityId
           in: query
           required: true
@@ -1014,11 +1073,13 @@ paths:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
 
-  /passwordless/verify:
+  /domains/{domain}/passwordless/verify:
     post:
       operationId: Verify a passwordless token
       tags:
         - Auth
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
       requestBody:
         content:
           application/json:
@@ -1032,11 +1093,13 @@ paths:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
 
-  /otp/verify:
+  /domains/{domain}/otp/verify:
     post:
       operationId: Verify a one-time password
       tags:
         - Auth
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
       requestBody:
         content:
           application/json:
@@ -1056,6 +1119,7 @@ paths:
       tags:
         - Verification
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - name: token
           in: query
           required: true
@@ -1068,12 +1132,13 @@ paths:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
 
-  /actions/otp:
+  /domains/{domain}/actions/otp:
     post:
       operationId: Generate a one-time password for an action
       tags:
         - Action tokens
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - name: accountId
           in: query
           required: true
@@ -1087,11 +1152,13 @@ paths:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
 
-  /actions/token:
+  /domains/{domain}/actions/token:
     post:
-      operationId: Generate an action token either from an OTP generated by /actions/otp or by a user identifier and password
+      operationId: Generate an action token either from an OTP generated by /actions/domains/{domain}/otp or by a user identifier and password
       tags:
         - Action tokens
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
       requestBody:
         content:
           application/json:
@@ -1105,12 +1172,13 @@ paths:
           description: Bad request
           $ref:  "#/components/responses/ErrorResponse"
 
-  /actions/verify:
+  /domains/{domain}/actions/verify:
     post:
       operationId: Verify that an action token is valid for the specified action
       tags:
         - Action tokens
       parameters:
+        - $ref: "#/components/parameters/DomainParameter"
         - name: token
           in: query
           required: true
@@ -1142,7 +1210,7 @@ components:
       in: path
       required: true
       schema:
-        type: number
+        type: string
 
     DomainParameter:
       name: domain
@@ -1487,10 +1555,20 @@ components:
           type: string
         key:
           type: string
+        type:
+          type: string
+        forClient:
+          type: boolean
+        createdAt:
+          type: date-time
+        expiresAt:
+          type: date-time
 
     ExchangeAttempt:
       type: object
       properties:
+        createdAt:
+          type: date-time
         entityId:
           type: string
         fromExchange:
@@ -1506,6 +1584,8 @@ components:
         clientId:
           type: string
         sourceIp:
+          type: string
+        userAgent:
           type: string
 
     AuthRequest:
@@ -1685,11 +1765,20 @@ components:
       required:
         - appId
         - keyType
+        - name
+        - forClient
       properties:
         appId:
           type: string
         keyType:
           type: string
+        name:
+          type: string
+        validFor:
+          type: object
+          $ref: "#/components/schemas/DurationRequest"
+        forClient:
+          type: boolean
 
     ApiKeyVerificationRequest:
       type: object
@@ -1876,6 +1965,16 @@ components:
           $ref: "#/components/schemas/AuthRequest"
         action:
           type: string
+
+    DurationRequest:
+      type: object
+      properties:
+        days:
+          type: number
+        hours:
+          type: number
+        minutes:
+          type: number
 
     Error:
       type: object

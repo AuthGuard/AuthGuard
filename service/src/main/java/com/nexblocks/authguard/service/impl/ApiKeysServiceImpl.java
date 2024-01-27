@@ -87,22 +87,23 @@ public class ApiKeysServiceImpl implements ApiKeysService {
 
     @Override
     public CompletableFuture<ApiKeyBO> generateApiKey(final long appId, final String domain, final String type,
-                                                      final Duration duration) {
+                                                      final String name, final Duration duration) {
         return applicationsService.getById(appId, domain)
                 .thenCompose(AsyncUtils::fromAppOptional)
-                .thenCompose(app -> generateApiKey(app, type, duration));
+                .thenCompose(app -> generateApiKey(app, type, name, duration));
     }
 
     @Override
     public CompletableFuture<ApiKeyBO> generateClientApiKey(final long clientId, final String domain, final String type,
-                                                            final Duration duration) {
+                                                            final String name, final Duration duration) {
         return clientsService.getById(clientId, domain)
                 .thenCompose(AsyncUtils::fromClientOptional)
-                .thenCompose(client -> generateClientApiKey(client, type, duration));
+                .thenCompose(client -> generateClientApiKey(client, type, name, duration));
     }
 
     @Override
-    public CompletableFuture<ApiKeyBO> generateApiKey(final AppBO app, final String type, final Duration duration) {
+    public CompletableFuture<ApiKeyBO> generateApiKey(final AppBO app, final String type,
+                                                      final String name, final Duration duration) {
         ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
 
         LOG.info("API key request. appId={}, domain={}, type={}, duration={}",
@@ -112,7 +113,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
         AuthResponseBO token = apiKeyExchange.generateKey(app, expirationInstant);
         String generatedKey = (String) token.getToken();
         String hashedKey = apiKeyHash.hash(generatedKey);
-        ApiKeyBO toCreate = mapApiKey(app.getId(), hashedKey, type, false, expirationInstant);
+        ApiKeyBO toCreate = mapApiKey(app.getId(), hashedKey, type, false, name, expirationInstant);
 
         return create(toCreate)
                 .thenApply(persisted -> {
@@ -124,7 +125,8 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     }
 
     @Override
-    public CompletableFuture<ApiKeyBO> generateClientApiKey(ClientBO client, String type, Duration duration) {
+    public CompletableFuture<ApiKeyBO> generateClientApiKey(final ClientBO client, final String type,
+                                                            final String name, final Duration duration) {
         ApiKeyExchange apiKeyExchange = getExchangeOrFail(type);
 
         LOG.info("API key request. clientId={}, domain={}, type={}, duration={}",
@@ -134,7 +136,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
         AuthResponseBO token = apiKeyExchange.generateKey(client, expirationInstant);
         String generatedKey = (String) token.getToken();
         String hashedKey = apiKeyHash.hash(generatedKey);
-        ApiKeyBO toCreate = mapApiKey(client.getId(), hashedKey, type, true, expirationInstant);
+        ApiKeyBO toCreate = mapApiKey(client.getId(), hashedKey, type, true, name, expirationInstant);
 
         return create(toCreate)
                 .thenApply(persisted -> {
@@ -184,11 +186,12 @@ public class ApiKeysServiceImpl implements ApiKeysService {
     }
 
     private ApiKeyBO mapApiKey(final long appId, final String key, final String type, boolean forClient,
-                               final Instant expiresAt) {
+                               final String name, final Instant expiresAt) {
         ApiKeyBO.Builder builder = ApiKeyBO.builder()
                 .appId(appId)
                 .key(key)
                 .type(type)
+                .name(name)
                 .forClient(forClient);
 
         if (expiresAt != null) {

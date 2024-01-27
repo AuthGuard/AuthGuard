@@ -41,6 +41,7 @@ public class ApiKeyDO extends AbstractDO {
     private String key;
     private long appId;
     private String type;
+    private String name;
     private boolean forClient;
     private Instant expiresAt;
 }

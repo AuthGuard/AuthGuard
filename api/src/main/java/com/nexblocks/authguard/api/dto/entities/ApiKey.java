@@ -18,6 +18,7 @@ public interface ApiKey {
     String getAppId();
     String getKey();
     String getType();
+    String getName();
     boolean isForClient();
     Instant getExpiresAt();
 }

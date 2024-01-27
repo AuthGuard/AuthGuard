@@ -49,8 +49,10 @@ public class ApiKeysRoute extends ApiKeysApi {
         String domain = Domain.fromContext(context);
 
         CompletableFuture<ApiKeyBO> key = request.isForClient() ?
-                apiKeysService.generateClientApiKey(IdParser.from(request.getAppId()), domain, request.getKeyType(), validFor) :
-                apiKeysService.generateApiKey(IdParser.from(request.getAppId()), domain, request.getKeyType(), validFor);
+                apiKeysService.generateClientApiKey(IdParser.from(request.getAppId()), domain, request.getKeyType(),
+                        request.getName(), validFor) :
+                apiKeysService.generateApiKey(IdParser.from(request.getAppId()), domain, request.getKeyType(),
+                        request.getName(), validFor);
 
         context.status(201).json(key.thenApply(restMapper::toDTO));
     }
