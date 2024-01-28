@@ -567,6 +567,18 @@ paths:
           description: Bad request
           $ref: "#/components/responses/ErrorResponse"
 
+    get:
+      operationId: getClientsByDomain
+      description: Get all clients for a domain
+      tags:
+        - Clients
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ClientsArrayResponse"
+
   /domains/{domain}/clients/{id}:
     get:
       operationId: getClientById
@@ -820,7 +832,7 @@ paths:
       responses:
         201:
           description: Success
-          $ref: "#/components/responses/domains/{domain}/rolesArrayResponse"
+          $ref: "#/components/responses/domains/{domain}/RolesArrayResponse"
         400:
           description: Bad request
           $ref: "#/components/responses/ErrorResponse"
@@ -1289,6 +1301,15 @@ components:
         application/json:
               schema:
                 $ref: "#/components/schemas/Client"
+
+    ClientsArrayResponse:
+      description: _
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/Client"
 
     ApiKeyResponse:
       description: _

@@ -154,4 +154,10 @@ public class ClientsServiceImpl implements ClientsService {
         return clientsRepository.getAllForAccount(accountId)
                 .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()));
     }
+
+    @Override
+    public CompletableFuture<List<ClientBO>> getByDomain(final String domain) {
+        return clientsRepository.getByDomain(domain)
+                .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()));
+    }
 }

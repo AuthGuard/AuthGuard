@@ -12,4 +12,5 @@ public interface ClientsService extends IdempotentCrudService<ClientBO> {
     CompletableFuture<ClientBO> activate(long id, String domain);
     CompletableFuture<ClientBO> deactivate(long id, String domain);
     CompletableFuture<List<ClientBO>> getByAccountId(long accountId, String domain);
+    CompletableFuture<List<ClientBO>> getByDomain(String domain);
 }
