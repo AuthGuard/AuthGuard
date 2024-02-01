@@ -78,8 +78,9 @@ public class PermissionsRoute extends PermissionsApi {
     public void getByGroup(final Context context) {
         String group = context.pathParam("group");
         String domain = context.pathParam("domain");
+        Long cursor = context.queryParam("cursor", Long.class).getOrNull();
 
-        CompletableFuture<List<PermissionDTO>> permissions = permissionsService.getAllForGroup(group, domain)
+        CompletableFuture<List<PermissionDTO>> permissions = permissionsService.getAllForGroup(group, domain, cursor)
                 .thenApply(list -> list.stream()
                         .map(restMapper::toDTO)
                         .collect(Collectors.toList()));
@@ -89,8 +90,9 @@ public class PermissionsRoute extends PermissionsApi {
 
     public void getAll(final Context context) {
         String domain = context.pathParam("domain");
+        Long cursor = context.queryParam("cursor", Long.class).getOrNull();
 
-        CompletableFuture<List<PermissionDTO>> permissions = permissionsService.getAll(domain)
+        CompletableFuture<List<PermissionDTO>> permissions = permissionsService.getAll(domain, cursor)
                 .thenApply(list -> list.stream()
                         .map(restMapper::toDTO)
                         .collect(Collectors.toList()));

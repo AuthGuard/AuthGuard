@@ -25,7 +25,9 @@ import javax.persistence.UniqueConstraint;
 )
 @NamedQuery(
         name = "roles.getAll",
-        query = "SELECT role FROM RoleDO role WHERE role.deleted = false AND role.domain = :domain"
+        query = "SELECT role FROM RoleDO role WHERE role.deleted = false " +
+                "AND role.domain = :domain AND role.id > :cursor " +
+                "ORDER BY role.id "
 )
 @NamedQuery(
         name = "roles.getByName",

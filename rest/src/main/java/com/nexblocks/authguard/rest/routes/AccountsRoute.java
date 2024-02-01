@@ -267,7 +267,9 @@ public class AccountsRoute extends AccountsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<List<AppDTO>> apps = applicationsService.getByAccountId(accountId.get(), Domain.fromContext(context))
+        Long cursor = context.queryParam("cursor", Long.class).getOrNull();
+
+        CompletableFuture<List<AppDTO>> apps = applicationsService.getByAccountId(accountId.get(), Domain.fromContext(context), cursor)
                 .thenApply(list -> list.stream()
                         .map(restMapper::toDTO)
                         .collect(Collectors.toList()));

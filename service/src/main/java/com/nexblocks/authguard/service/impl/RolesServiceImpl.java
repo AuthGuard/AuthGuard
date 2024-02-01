@@ -2,6 +2,7 @@ package com.nexblocks.authguard.service.impl;
 
 import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.model.RoleDO;
+import com.nexblocks.authguard.dal.persistence.Page;
 import com.nexblocks.authguard.dal.persistence.RolesRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.RolesService;
@@ -39,8 +40,8 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public CompletableFuture<List<RoleBO>> getAll(final String domain) {
-        return rolesRepository.getAll(domain)
+    public CompletableFuture<List<RoleBO>> getAll(final String domain, final Long cursor) {
+        return rolesRepository.getAll(domain, Page.of(cursor, 20))
                 .thenApply(list -> list.stream()
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList()));

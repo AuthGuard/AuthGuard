@@ -2,6 +2,7 @@ package com.nexblocks.authguard.service.impl;
 
 import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.model.PermissionDO;
+import com.nexblocks.authguard.dal.persistence.Page;
 import com.nexblocks.authguard.dal.persistence.PermissionsRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.PermissionsService;
@@ -71,16 +72,17 @@ public class PermissionsServiceImpl implements PermissionsService {
     }
 
     @Override
-    public CompletableFuture<List<PermissionBO>> getAll(final String domain) {
-        return permissionsRepository.getAll(domain)
+    public CompletableFuture<List<PermissionBO>> getAll(final String domain, final Long cursor) {
+        return permissionsRepository.getAll(domain, Page.of(cursor, 20))
                 .thenApply(list -> list.stream()
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList()));
     }
 
     @Override
-    public CompletableFuture<List<PermissionBO>> getAllForGroup(final String group, final String domain) {
-        return permissionsRepository.getAllForGroup(group, domain)
+    public CompletableFuture<List<PermissionBO>> getAllForGroup(final String group, final String domain,
+                                                                final Long cursor) {
+        return permissionsRepository.getAllForGroup(group, domain, Page.of(cursor, 20))
                 .thenApply(list -> list.stream()
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList()));

@@ -62,7 +62,9 @@ public class ClientsRoute extends ClientsApi {
 
     @Override
     public void getByDomain(Context context) {
-        CompletableFuture<List<ClientDTO>> clients = clientsService.getByDomain(Domain.fromContext(context))
+        Long cursor = context.queryParam("cursor", Long.class).getOrNull();
+
+        CompletableFuture<List<ClientDTO>> clients = clientsService.getByDomain(Domain.fromContext(context), cursor)
                 .thenApply(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()));
 
         context.json(clients);

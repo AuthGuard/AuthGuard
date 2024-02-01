@@ -574,6 +574,7 @@ paths:
         - Clients
       parameters:
         - $ref: "#/components/parameters/DomainParameter"
+        - $ref: "#/components/parameters/CursorQueryParameter"
       responses:
         200:
           description: Success
@@ -829,10 +830,11 @@ paths:
         - Roles
       parameters:
         - $ref: "#/components/parameters/DomainParameter"
+        - $ref: "#/components/parameters/CursorQueryParameter"
       responses:
         201:
           description: Success
-          $ref: "#/components/responses/domains/{domain}/RolesArrayResponse"
+          $ref: "#/components/responses/RolesArrayResponse"
         400:
           description: Bad request
           $ref: "#/components/responses/ErrorResponse"
@@ -915,10 +917,11 @@ paths:
         - Permissions
       parameters:
         - $ref: "#/components/parameters/DomainParameter"
+        - $ref: "#/components/parameters/CursorQueryParameter"
       responses:
         200:
           description: Success
-          $ref: "#/components/responses/domains/{domain}/permissionsArrayResponse"
+          $ref: "#/components/responses/PermissionsArrayResponse"
 
   /domains/{domain}/permissions/group/{group}:
     get:
@@ -929,10 +932,11 @@ paths:
       parameters:
         - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/GroupParameter"
+        - $ref: "#/components/parameters/CursorQueryParameter"
       responses:
         200:
           description: Success
-          $ref: "#/components/responses/domains/{domain}/permissionsArrayResponse"
+          $ref: "#/components/responses/PermissionsArrayResponse"
 
   # ----------------- auth -----------------
   /domains/{domain}/auth/exchange:
@@ -1266,6 +1270,13 @@ components:
       schema:
         type: string
 
+    CursorQueryParameter:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+
   responses:
     ErrorResponse:
       description: _
@@ -1581,15 +1592,18 @@ components:
         forClient:
           type: boolean
         createdAt:
-          type: date-time
+          type: string
+          format: date-time
         expiresAt:
-          type: date-time
+          type: string
+          format: date-time
 
     ExchangeAttempt:
       type: object
       properties:
         createdAt:
-          type: date-time
+          type: string
+          format: date-time
         entityId:
           type: string
         fromExchange:
