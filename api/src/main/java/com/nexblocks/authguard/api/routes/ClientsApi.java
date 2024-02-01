@@ -14,6 +14,7 @@ public abstract class ClientsApi implements ApiRoute {
     @Override
     public void addEndpoints() {
         post("/", this::create, ActorRoles.anyAdmin());
+        get("/", this::getByDomain, ActorRoles.adminClient());
 
         get("/:id", this::getById, ActorRoles.adminClient());
         get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
@@ -26,6 +27,7 @@ public abstract class ClientsApi implements ApiRoute {
     }
 
     public abstract void create(final Context context);
+    public abstract void getByDomain(final Context context);
 
     public abstract void getById(final Context context);
 

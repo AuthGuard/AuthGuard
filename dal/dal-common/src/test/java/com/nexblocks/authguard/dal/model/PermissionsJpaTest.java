@@ -68,7 +68,8 @@ public class PermissionsJpaTest {
     @Test
     void getAll() {
         final TypedQuery<PermissionDO> query = entityManager.createNamedQuery("permissions.getAll", PermissionDO.class)
-                .setParameter("domain", first.getDomain());
+                .setParameter("domain", first.getDomain())
+                .setParameter("cursor", 0L);
 
         final List<PermissionDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(first, second);
@@ -89,7 +90,8 @@ public class PermissionsJpaTest {
     void getByGroup() {
         final TypedQuery<PermissionDO> query = entityManager.createNamedQuery("permissions.getByGroup", PermissionDO.class)
                 .setParameter("group", first.getGroup())
-                .setParameter("domain", first.getDomain());
+                .setParameter("domain", first.getDomain())
+                .setParameter("cursor", 0L);
 
         final List<PermissionDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(first, second);

@@ -24,7 +24,9 @@ import javax.persistence.*;
 @NamedQuery(
         name = "permissions.getAll",
         query = "SELECT permission FROM PermissionDO permission " +
-                "WHERE permission.deleted = false AND permission.domain = :domain"
+                "WHERE permission.deleted = false " +
+                "AND permission.domain = :domain AND permission.id > :cursor " +
+                "ORDER BY permission.id"
 )
 @NamedQuery(
         name = "permissions.getByGroupAndName",
@@ -34,7 +36,9 @@ import javax.persistence.*;
 @NamedQuery(
         name = "permissions.getByGroup",
         query = "SELECT permission FROM PermissionDO permission " +
-                "WHERE permission.group = :group AND permission.domain = :domain AND  permission.deleted = false"
+                "WHERE permission.group = :group AND permission.domain = :domain " +
+                "AND permission.deleted = false AND permission.id > :cursor " +
+                "ORDER BY permission.id"
 )
 public class PermissionDO extends AbstractDO {
     @Column(name = "\"group\"")

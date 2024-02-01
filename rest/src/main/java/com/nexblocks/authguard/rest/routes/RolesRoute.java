@@ -89,8 +89,9 @@ public class RolesRoute extends RolesApi {
     @Override
     public void getAll(final Context context) {
         String domain = context.pathParam("domain");
+        Long cursor = context.queryParam("cursor", Long.class).getOrNull();
 
-        CompletableFuture<List<RoleDTO>> roles = rolesService.getAll(domain)
+        CompletableFuture<List<RoleDTO>> roles = rolesService.getAll(domain, cursor)
                 .thenApply(list -> list.stream()
                         .map(restMapper::toDTO)
                         .collect(Collectors.toList()));

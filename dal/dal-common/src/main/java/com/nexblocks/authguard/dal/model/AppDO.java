@@ -25,7 +25,9 @@ import java.util.Set;
 )
 @NamedQuery(
         name = "apps.getByAccountId",
-        query = "SELECT app FROM AppDO app WHERE app.parentAccountId = :parentAccountId AND app.deleted = false"
+        query = "SELECT app FROM AppDO app WHERE app.parentAccountId = :parentAccountId " +
+                "AND app.deleted = false AND app.id > :cursor " +
+                "ORDER BY app.id "
 )
 public class AppDO extends AbstractDO {
     private String externalId;

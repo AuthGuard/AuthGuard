@@ -68,7 +68,8 @@ public class AppJpaTest {
     @Test
     void getByParentAccountId() {
         final TypedQuery<AppDO> query = entityManager.createNamedQuery("apps.getByAccountId", AppDO.class)
-                .setParameter("parentAccountId", createdApp.getParentAccountId());
+                .setParameter("parentAccountId", createdApp.getParentAccountId())
+                .setParameter("cursor", 0L);
 
         final List<AppDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(createdApp);

@@ -7,6 +7,6 @@ import java.util.concurrent.CompletableFuture;
 
 public interface PermissionsService extends CrudService<PermissionBO> {
     List<PermissionBO> validate(List<PermissionBO> permissions, String domain);
-    CompletableFuture<List<PermissionBO>> getAll(String domain);
-    CompletableFuture<List<PermissionBO>> getAllForGroup(String group, String domain);
+    CompletableFuture<List<PermissionBO>> getAll(String domain, Long cursor);
+    CompletableFuture<List<PermissionBO>> getAllForGroup(String group, String domain, Long cursor);
 }

@@ -3,6 +3,7 @@ package com.nexblocks.authguard.service.impl;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.model.AppDO;
 import com.nexblocks.authguard.dal.persistence.ApplicationsRepository;
+import com.nexblocks.authguard.dal.persistence.Page;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.ApplicationsService;
@@ -146,8 +147,9 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public CompletableFuture<List<AppBO>> getByAccountId(final long accountId, final String domain) {
-        return applicationsRepository.getAllForAccount(accountId)
+    public CompletableFuture<List<AppBO>> getByAccountId(final long accountId, final String domain,
+                                                         final Long cursor) {
+        return applicationsRepository.getAllForAccount(accountId, Page.of(cursor, 20))
                 .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()));
     }
 }

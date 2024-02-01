@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture;
 
 public interface ClientsRepository extends Repository<ClientDO> {
     CompletableFuture<Optional<ClientDO>> getByExternalId(String externalId);
-    CompletableFuture<List<ClientDO>> getAllForAccount(long accountId);
-    CompletableFuture<List<ClientDO>> getByType(String externalId);
-    CompletableFuture<List<ClientDO>> getByDomain(String externalId);
+    CompletableFuture<List<ClientDO>> getAllForAccount(long accountId, Page page);
+    CompletableFuture<List<ClientDO>> getByType(String type, Page page);
+    CompletableFuture<List<ClientDO>> getByDomain(String domain, Page page);
 }

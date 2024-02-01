@@ -66,7 +66,8 @@ public class RolesJpaTest {
     @Test
     void getAll() {
         final TypedQuery<RoleDO> query = entityManager.createNamedQuery("roles.getAll", RoleDO.class)
-                .setParameter("domain", first.getDomain());
+                .setParameter("domain", first.getDomain())
+                .setParameter("cursor", 0L);
 
         final List<RoleDO> retrieved = query.getResultList();
         Assertions.assertThat(retrieved).containsExactly(first, second);

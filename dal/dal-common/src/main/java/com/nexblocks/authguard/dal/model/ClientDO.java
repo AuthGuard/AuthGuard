@@ -26,15 +26,21 @@ import javax.persistence.Table;
 )
 @NamedQuery(
         name = "clients.getByAccountId",
-        query = "SELECT client FROM ClientDO client WHERE client.accountId = :parentAccountId AND client.deleted = false"
+        query = "SELECT client FROM ClientDO client WHERE client.accountId = :parentAccountId " +
+                "AND client.deleted = false AND client.id > :cursor " +
+                "ORDER BY client.id "
 )
 @NamedQuery(
         name = "clients.getByClientType",
-        query = "SELECT client FROM ClientDO client WHERE client.clientType = :clientType AND client.deleted = false"
+        query = "SELECT client FROM ClientDO client WHERE client.clientType = :clientType " +
+                "AND client.deleted = false AND client.id > :cursor " +
+                "ORDER BY client.id "
 )
 @NamedQuery(
         name = "clients.getByDomain",
-        query = "SELECT client FROM ClientDO client WHERE client.domain = :domain AND client.deleted = false"
+        query = "SELECT client FROM ClientDO client WHERE client.domain = :domain " +
+                "AND client.deleted = false AND client.id > :cursor " +
+                "ORDER BY client.id "
 )
 public class ClientDO extends AbstractDO {
     private String externalId;
