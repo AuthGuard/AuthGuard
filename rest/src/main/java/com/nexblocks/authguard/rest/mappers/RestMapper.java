@@ -28,10 +28,12 @@ public interface RestMapper {
 
     PermissionBO toBO(PermissionDTO permissionDTO);
     PermissionBO toBO(CreatePermissionRequestDTO createPermissionRequestDTO);
+    PermissionBO toBO(UpdatePermissionRequestDTO updatePermissionRequestDTO);
     PermissionDTO toDTO(PermissionBO permissionBO);
 
     RoleBO toBO(RoleDTO roleDTO);
     RoleBO toBO(CreateRoleRequestDTO createRoleRequestDTO);
+    RoleBO toBO(UpdateRoleRequestDTO updateRoleRequestDTO);
     RoleDTO toDTO(RoleBO roleBO);
 
     AccountEmailBO toBO(AccountEmailDTO accountEmailDTO);

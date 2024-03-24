@@ -45,4 +45,6 @@ public class PermissionDO extends AbstractDO {
     private String group;
     private String name;
     private String domain;
+    private boolean forAccounts;
+    private boolean forApplications;
 }

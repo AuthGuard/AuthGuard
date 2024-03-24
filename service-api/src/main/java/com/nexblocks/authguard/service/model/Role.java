@@ -7,4 +7,6 @@ import org.immutables.value.Value;
 public interface Role extends Entity {
     String getName();
     String getDomain();
+    boolean isForAccounts();
+    boolean isForApplications();
 }

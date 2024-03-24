@@ -19,7 +19,10 @@ public abstract class RolesApi implements ApiRoute {
         delete("/:id", this::deleteById, ActorRoles.adminClient());;
         get("/name/:name", this::getByName, ActorRoles.adminClient());
         get("", this::getAll, ActorRoles.adminClient());
+        patch("/:id", this::update, ActorRoles.adminClient());
     }
+
+    public abstract void update(final Context context);
 
     public abstract void create(final Context context);
 

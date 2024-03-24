@@ -9,10 +9,13 @@ import com.nexblocks.authguard.service.PermissionsService;
 import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
+import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.PermissionBO;
+import com.nexblocks.authguard.service.model.RoleBO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -56,18 +59,38 @@ public class PermissionsServiceImpl implements PermissionsService {
     }
 
     @Override
-    public CompletableFuture<Optional<PermissionBO>> update(final PermissionBO entity, String domain) {
-        throw new UnsupportedOperationException("Permissions cannot be updated");
+    public CompletableFuture<Optional<PermissionBO>> update(final PermissionBO permission, final String domain) {
+        return getById(permission.getId(), domain)
+                .thenCompose(opt -> {
+                    if (opt.isEmpty()) {
+                        return CompletableFuture.completedFuture(opt);
+                    }
+
+                    PermissionBO newPermission = PermissionBO.builder()
+                            .from(opt.get())
+                            .forAccounts(permission.isForAccounts())
+                            .forApplications(permission.isForApplications())
+                            .build();
+
+                    return persistenceService.update(newPermission);
+                });
     }
 
     @Override
-    public List<PermissionBO> validate(final List<PermissionBO> permissions, final String domain) {
+    public List<PermissionBO> validate(final Collection<PermissionBO> permissions, final String domain, EntityType entityType) {
         return permissions.stream()
                 .map(permission -> permissionsRepository.search(permission.getGroup(), permission.getName(), domain)
                         .join()
                         .map(serviceMapper::toBO))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
+                .filter(permission -> {
+                    switch (entityType) {
+                        case ACCOUNT: return permission.isForAccounts();
+                        case APPLICATION: return permission.isForApplications();
+                        default: return false;
+                    }
+                })
                 .collect(Collectors.toList());
     }
 
@@ -86,6 +109,12 @@ public class PermissionsServiceImpl implements PermissionsService {
                 .thenApply(list -> list.stream()
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList()));
+    }
+
+    @Override
+    public CompletableFuture<Optional<PermissionBO>> get(final String domain, final String group, final String name) {
+        return permissionsRepository.search(group, name, domain)
+                .thenApply(opt -> opt.map(serviceMapper::toBO));
     }
 
     @Override

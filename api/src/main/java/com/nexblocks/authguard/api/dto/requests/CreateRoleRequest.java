@@ -12,4 +12,6 @@ import org.immutables.value.Value;
 @JsonSerialize(as = CreateRoleRequestDTO.class)
 public interface CreateRoleRequest extends DomainScoped {
     String getName();
+    Boolean isForAccounts();
+    Boolean isForApplications();
 }

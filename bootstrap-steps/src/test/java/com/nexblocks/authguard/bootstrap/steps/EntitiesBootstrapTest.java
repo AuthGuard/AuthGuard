@@ -5,6 +5,8 @@ import com.nexblocks.authguard.service.RolesService;
 import com.nexblocks.authguard.service.config.BootstrapEntitiesConfig;
 import com.nexblocks.authguard.service.config.DomainEntitiesConfig;
 import com.nexblocks.authguard.service.config.PermissionConfig;
+import com.nexblocks.authguard.service.config.RolesConfig;
+import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.PermissionBO;
 import com.nexblocks.authguard.service.model.RoleBO;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +31,15 @@ class EntitiesBootstrapTest {
 
          BootstrapEntitiesConfig entitiesConfig = BootstrapEntitiesConfig.builder()
                 .putDomains("test", DomainEntitiesConfig.builder()
-                        .addRoles("user", "admin", "existing")
+                        .addRoles(RolesConfig.builder()
+                                .name("user")
+                                .build())
+                        .addRoles(RolesConfig.builder()
+                                .name("admin")
+                                .build())
+                        .addRoles(RolesConfig.builder()
+                                .name("existing")
+                                .build())
                         .addPermissions(PermissionConfig.builder()
                                 .group("tests")
                                 .name("existing")
@@ -57,7 +67,19 @@ class EntitiesBootstrapTest {
         Mockito.when(rolesService.getRoleByName(Mockito.anyString(), Mockito.anyString()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        Mockito.when(permissionsService.validate(Mockito.anyList(), Mockito.anyString()))
+        Mockito.when(permissionsService.get("test", "tests", "existing"))
+                        .thenReturn(CompletableFuture.completedFuture(Optional.of(
+                                PermissionBO.builder()
+                                        .group("tests")
+                                        .name("existing")
+                                        .domain("test")
+                                        .build()
+                        )));
+
+        Mockito.when(permissionsService.get("test", "tests", "read"))
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+
+        Mockito.when(permissionsService.validate(Mockito.anyList(), Mockito.anyString(), Mockito.any()))
                 .thenReturn(Collections.singletonList(PermissionBO.builder()
                         .group("tests")
                         .name("existing")

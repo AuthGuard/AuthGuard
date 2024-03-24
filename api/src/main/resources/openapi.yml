@@ -806,6 +806,30 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
+    patch:
+      operationId: patchRole
+      description: Update role information
+      tags:
+        - Roles
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+        - $ref: "#/components/parameters/IdParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRoleRequest" 
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/RoleResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
     delete:
       operationId: deleteRole
       description: Delete a role
@@ -894,6 +918,31 @@ paths:
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
+
+    patch:
+      operationId: patchPermission
+      description: Update permission information
+      tags:
+        - Permissions
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+        - $ref: "#/components/parameters/IdParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePermissionRequest" 
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/PermissionResponse"
+        400:
+          description: Bad request
+          $ref: "#/components/responses/ErrorResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
     delete:
       operationId: deletePermission
       description: Delete a permission by ID
@@ -1414,6 +1463,10 @@ components:
   schemas:
     Account:
       type: object
+      required:
+        - id
+        - active
+        - domain
       properties:
         id:
           type: string
@@ -1429,19 +1482,19 @@ components:
           type: string
         fullName:
           type: string
+        identifiers:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserIdentifier"
         email:
-          type: object
           $ref: "#/components/schemas/Email"
         backupEmail:
-          type: object
           $ref: "#/components/schemas/Email"
         phoneNumber:
-          type: object
           $ref: "#/components/schemas/PhoneNumber"
         permissions:
           type: array
           items:
-            type: object
             $ref: "#/components/schemas/Permission"
         roles:
           type: array
@@ -1455,6 +1508,10 @@ components:
 
     UserIdentifier:
       type: object
+      required:
+        - type
+        - identifier
+        - active
       properties:
         type:
           type: string
@@ -1469,6 +1526,10 @@ components:
 
     Application:
       type: object
+      required:
+        - id
+        - active
+        - domain
       properties:
         id:
           type: string
@@ -1481,7 +1542,6 @@ components:
         permissions:
           type: array
           items:
-            type: object
             $ref: "#/components/schemas/Permission"
         roles:
           type: array
@@ -1492,6 +1552,11 @@ components:
 
     Client:
       type: object
+      required:
+        - id
+        - active
+        - domain
+        - clientType
       properties:
         id:
           type: string
@@ -1540,14 +1605,17 @@ components:
           type: string
         domain:
           type: string
+        forAccounts:
+          type: boolean
+        forApplications:
+          type: boolean
 
-    PermissionssArray:
+    PermissionsArray:
       type: object
       properties:
         items:
           type: array
           items:
-            type: object
             $ref: "#/components/schemas/Permission"
 
     Role:
@@ -1559,6 +1627,10 @@ components:
           type: string
         domain:
           type: string
+        forAccounts:
+          type: boolean
+        forApplications:
+          type: boolean
 
     RolesArray:
       type: object
@@ -1566,7 +1638,6 @@ components:
         items:
           type: array
           items:
-            type: object
             $ref: "#/components/schemas/Role"
 
     AccountLock:
@@ -1643,7 +1714,6 @@ components:
         userAgent:
           type: string
         restrictions:
-          type: object
           $ref: "#/components/schemas/TokenRestrictions"
 
     TokenRestrictions:
@@ -1696,18 +1766,14 @@ components:
         plainPassword:
           type: string
         email:
-          type: object
           $ref: "#/components/schemas/Email"
         backupEmail:
-          type: object
           $ref: "#/components/schemas/Email"
         phoneNumber:
-          type: object
           $ref: "#/components/schemas/PhoneNumber"
         permissions:
           type: array
           items:
-            type: object
             $ref: "#/components/schemas/Permission"
         roles:
           type: array
@@ -1731,13 +1797,10 @@ components:
         fullName:
           type: string
         email:
-          type: object
           $ref: "#/components/schemas/Email"
         backupEmail:
-          type: object
           $ref: "#/components/schemas/Email"
         phoneNumber:
-          type: object
           $ref: "#/components/schemas/PhoneNumber"
 
     CreateApplicationRequest:
@@ -1757,7 +1820,6 @@ components:
         permissions:
           type: array
           items:
-            type: object
             $ref: "#/components/schemas/Permission"
         roles:
           type: array
@@ -1810,7 +1872,6 @@ components:
         name:
           type: string
         validFor:
-          type: object
           $ref: "#/components/schemas/DurationRequest"
         forClient:
           type: boolean
@@ -1831,11 +1892,28 @@ components:
       required:
         - name
         - domain
+        - forAccounts
+        - forApplications
       properties:
         name:
           type: string
         domain:
           type: string
+        forAccounts:
+          type: boolean
+        forApplications:
+          type: boolean
+
+    UpdateRoleRequest:
+      type: object
+      required:
+        - forAccounts
+        - forApplications
+      properties:
+        forAccounts:
+          type: boolean
+        forApplications:
+          type: boolean
 
     CreatePermissionRequest:
       type: object
@@ -1843,6 +1921,8 @@ components:
         - group
         - name
         - domain
+        - forAccounts
+        - forApplications
       properties:
         group:
           type: string
@@ -1850,6 +1930,21 @@ components:
           type: string
         domain:
           type: string
+        forAccounts:
+          type: boolean
+        forApplications:
+          type: boolean
+
+    UpdatePermissionRequest:
+      type: object
+      required:
+        - forAccounts
+        - forApplications
+      properties:
+        forAccounts:
+          type: boolean
+        forApplications:
+          type: boolean
 
     AccountEmailRequest:
       type: object
@@ -1993,10 +2088,8 @@ components:
             - OTP
             - BASIC
         otp:
-          type: object
           $ref: "#/components/schemas/OtpRequest"
         basic:
-          type: object
           $ref: "#/components/schemas/AuthRequest"
         action:
           type: string

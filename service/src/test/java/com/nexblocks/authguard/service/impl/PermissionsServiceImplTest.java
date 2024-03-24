@@ -1,13 +1,16 @@
 package com.nexblocks.authguard.service.impl;
 
 import com.nexblocks.authguard.dal.model.PermissionDO;
+import com.nexblocks.authguard.dal.model.RoleDO;
 import com.nexblocks.authguard.dal.persistence.Page;
 import com.nexblocks.authguard.dal.persistence.PermissionsRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.PermissionsService;
 import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
+import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.PermissionBO;
+import com.nexblocks.authguard.service.model.RoleBO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -100,12 +103,6 @@ class PermissionsServiceImplTest {
     }
 
     @Test
-    void update() {
-        assertThatThrownBy(() -> permissionsService.update(PermissionBO.builder().build(), "main"))
-                .isInstanceOf(UnsupportedOperationException.class);
-    }
-
-    @Test
     void getAll() {
         List<PermissionDO> permissions = Arrays.asList(
                 PermissionDO.builder().group("test").name("read").build(),
@@ -168,29 +165,100 @@ class PermissionsServiceImplTest {
     }
 
     @Test
-    void verifyPermissions() {
-        List<PermissionDO> existing = Collections.singletonList(
-                PermissionDO.builder().group("test").name("read").build()
+    void verifyPermissionsForAccount() {
+        List<PermissionDO> existing = Arrays.asList(
+                PermissionDO.builder().group("test").name("read").forAccounts(true).build(),
+                PermissionDO.builder().group("test").name("write").forAccounts(false).build()
         );
 
         List<PermissionBO> request = Arrays.asList(
                 PermissionBO.builder().group("test").name("read").build(),
-                PermissionBO.builder().group("test").name("write").build()
+                PermissionBO.builder().group("test").name("write").build(),
+                PermissionBO.builder().group("test").name("delete").build()
         );
 
         Mockito.when(permissionsRepository.search("test", "read", "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(existing.get(0))));
 
         Mockito.when(permissionsRepository.search("test", "write", "main"))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(existing.get(1))));
+
+        Mockito.when(permissionsRepository.search("test", "delete", "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         List<PermissionBO> expected = Collections.singletonList(
-                PermissionBO.builder().group("test").name("read").build()
+                PermissionBO.builder().group("test").name("read").forAccounts(true).build()
         );
 
-        List<PermissionBO> actual = permissionsService.validate(request, "main");
+        List<PermissionBO> actual = permissionsService.validate(request, "main", EntityType.ACCOUNT);
 
         assertThat(actual).isEqualTo(expected);
     }
 
+    @Test
+    void verifyPermissionsForApplication() {
+        List<PermissionDO> existing = Arrays.asList(
+                PermissionDO.builder().group("test").name("read").forApplications(false).build(),
+                PermissionDO.builder().group("test").name("write").forApplications(true).build()
+        );
+
+        List<PermissionBO> request = Arrays.asList(
+                PermissionBO.builder().group("test").name("read").build(),
+                PermissionBO.builder().group("test").name("write").build(),
+                PermissionBO.builder().group("test").name("delete").build()
+        );
+
+        Mockito.when(permissionsRepository.search("test", "read", "main"))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(existing.get(0))));
+
+        Mockito.when(permissionsRepository.search("test", "write", "main"))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(existing.get(1))));
+
+        Mockito.when(permissionsRepository.search("test", "delete", "main"))
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+
+        List<PermissionBO> expected = Collections.singletonList(
+                PermissionBO.builder().group("test").name("write").forApplications(true).build()
+        );
+
+        List<PermissionBO> actual = permissionsService.validate(request, "main", EntityType.APPLICATION);
+
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void updatePermission() {
+        PermissionBO request = PermissionBO.builder()
+                .id(1)
+                .forAccounts(true)
+                .forApplications(false)
+                .build();
+
+        Mockito.when(permissionsRepository.getById(1))
+                .thenReturn(CompletableFuture.completedFuture(
+                        Optional.of(PermissionDO.builder()
+                                .id(1)
+                                .domain("main")
+                                .group("tests")
+                                .name("test")
+                                .forAccounts(false)
+                                .forApplications(true)
+                                .build())));
+
+        Mockito.when(permissionsRepository.update(Mockito.any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, PermissionDO.class))));
+
+        PermissionBO actual = permissionsService.update(request, "main").join().get();
+
+        assertThat(actual).usingRecursiveComparison()
+                .ignoringFields(SKIPPED_FIELDS)
+                .isEqualTo(PermissionBO.builder()
+                        .id(1)
+                        .domain("main")
+                        .group("tests")
+                        .name("test")
+                        .forAccounts(true)
+                        .forApplications(false)
+                        .build());
+    }
 }

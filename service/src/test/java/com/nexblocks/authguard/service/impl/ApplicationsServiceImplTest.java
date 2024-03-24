@@ -3,28 +3,24 @@ package com.nexblocks.authguard.service.impl;
 import com.nexblocks.authguard.dal.model.AppDO;
 import com.nexblocks.authguard.dal.persistence.ApplicationsRepository;
 import com.nexblocks.authguard.emb.MessageBus;
-import com.nexblocks.authguard.service.AccountsService;
-import com.nexblocks.authguard.service.ApplicationsService;
-import com.nexblocks.authguard.service.IdempotencyService;
+import com.nexblocks.authguard.service.*;
+import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AppBO;
-import com.nexblocks.authguard.service.model.PermissionBO;
-import com.nexblocks.authguard.service.model.RequestContextBO;
+import com.nexblocks.authguard.service.model.*;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
@@ -35,23 +31,35 @@ class ApplicationsServiceImplTest {
     private ApplicationsRepository applicationsRepository;
     private ApplicationsService applicationsService;
     private AccountsService accountsService;
+    private RolesService rolesService;
+    private PermissionsService permissionsService;
     private IdempotencyService idempotencyService;
     private MessageBus messageBus;
     private ServiceMapper serviceMapper;
 
     private static final String[] SKIPPED_FIELDS = new String[] { "id", "createdAt", "lastModified", "entityType" };
 
+    private AppDO createAppDO() {
+        AppDO app = random.nextObject(AppDO.class);
+
+        app.setDomain("main");
+
+        return app;
+    }
+    
     @BeforeEach
     void setup() {
         applicationsRepository = Mockito.mock(ApplicationsRepository.class);
         accountsService = Mockito.mock(AccountsService.class);
+        rolesService = Mockito.mock(RolesService.class);
+        permissionsService = Mockito.mock(PermissionsService.class);
         idempotencyService = Mockito.mock(IdempotencyService.class);
         messageBus = Mockito.mock(MessageBus.class);
 
         serviceMapper = new ServiceMapperImpl();
 
         applicationsService = new ApplicationsServiceImpl(applicationsRepository, accountsService,
-                idempotencyService, serviceMapper, messageBus);
+                idempotencyService, permissionsService, rolesService, serviceMapper, messageBus);
     }
 
     @Test
@@ -72,6 +80,12 @@ class ApplicationsServiceImplTest {
 
         Mockito.when(idempotencyService.performOperationAsync(Mockito.any(), Mockito.eq(idempotentKey), Mockito.eq(app.getEntityType())))
                 .thenAnswer(invocation -> invocation.getArgument(0, Supplier.class).get());
+
+        Mockito.when(rolesService.verifyRoles(app.getRoles(), "main", EntityType.APPLICATION))
+                .thenReturn(new ArrayList<>(app.getRoles()));
+
+        Mockito.when(permissionsService.validate(app.getPermissions(), "main", EntityType.APPLICATION))
+                .thenReturn(new ArrayList<>(app.getPermissions()));
 
         AppBO created = applicationsService.create(app, requestContext).join();
         List<PermissionBO> expectedPermissions = app.getPermissions().stream()
@@ -109,7 +123,7 @@ class ApplicationsServiceImplTest {
 
     @Test
     void delete() {
-        AppDO app = random.nextObject(AppDO.class);
+        AppDO app = createAppDO();
 
         app.setDeleted(false);
 
@@ -123,7 +137,7 @@ class ApplicationsServiceImplTest {
 
     @Test
     void activate() {
-        AppDO app = random.nextObject(AppDO.class);
+        AppDO app = createAppDO();
 
         app.setActive(false);
         app.setDomain("main");
@@ -141,7 +155,7 @@ class ApplicationsServiceImplTest {
 
     @Test
     void deactivate() {
-        AppDO app = random.nextObject(AppDO.class);
+        AppDO app = createAppDO();
 
         app.setActive(true);
         app.setDomain("main");
@@ -155,5 +169,176 @@ class ApplicationsServiceImplTest {
 
         assertThat(updated).isNotNull();
         assertThat(updated.isActive()).isFalse();
+    }
+
+    @Test
+    void grantPermissions() {
+        AppDO account = createAppDO();
+
+        Mockito.when(applicationsRepository.getById(account.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+        Mockito.when(permissionsService.validate(any(), eq("main"), eq(EntityType.APPLICATION)))
+                .thenAnswer(invocation -> invocation.getArgument(0, List.class));
+        Mockito.when(applicationsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
+
+        List<PermissionBO> permissions = Arrays.asList(
+                random.nextObject(PermissionBO.class).withEntityType(null),
+                random.nextObject(PermissionBO.class).withEntityType(null)
+        );
+
+        Optional<AppBO> updated = applicationsService.grantPermissions(account.getId(), permissions, "main").join();
+
+        assertThat(updated).isPresent();
+        assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(account);
+        assertThat(updated.get().getPermissions()).contains(permissions.toArray(new PermissionBO[0]));
+    }
+
+    @Test
+    void grantPermissionsInvalidPermission() {
+        AppDO account = createAppDO();
+
+        Mockito.when(applicationsRepository.getById(account.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+
+        List<PermissionBO> permissions = Arrays.asList(
+                random.nextObject(PermissionBO.class),
+                random.nextObject(PermissionBO.class)
+        );
+
+        assertThatThrownBy(() -> applicationsService.grantPermissions(account.getId(), permissions, "main").join())
+                .hasCauseInstanceOf(ServiceException.class);
+    }
+
+    @Test
+    void grantPermissionsFromDifferentDomain() {
+        AppDO account = createAppDO();
+
+        Mockito.when(applicationsRepository.getById(account.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+        Mockito.when(permissionsService.validate(any(), eq("other"), eq(EntityType.APPLICATION)))
+                .thenAnswer(invocation -> invocation.getArgument(0, List.class));
+
+        List<PermissionBO> permissions = Arrays.asList(
+                random.nextObject(PermissionBO.class),
+                random.nextObject(PermissionBO.class)
+        );
+
+        assertThatThrownBy(() -> applicationsService.grantPermissions(account.getId(), permissions, "main").join())
+                .hasCauseInstanceOf(ServiceException.class);
+    }
+
+    @Test
+    void revokePermissions() {
+        AppDO account = createAppDO();
+        List<PermissionBO> currentPermissions = account.getPermissions().stream()
+                .map(permissionDO -> PermissionBO.builder()
+                        .group(permissionDO.getGroup())
+                        .name(permissionDO.getName())
+                        .build()
+                ).collect(Collectors.toList());
+
+        Mockito.when(applicationsRepository.getById(account.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+        Mockito.when(applicationsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
+
+        List<PermissionBO> permissionsToRevoke = Arrays.asList(
+                currentPermissions.get(0),
+                currentPermissions.get(1)
+        );
+
+        Optional<AppBO> updated = applicationsService.revokePermissions(account.getId(), permissionsToRevoke, "main").join();
+
+        assertThat(updated).isPresent();
+        assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(account);
+        assertThat(updated.get().getPermissions()).doesNotContain(permissionsToRevoke.toArray(new PermissionBO[0]));
+    }
+
+    @Test
+    void grantRoles() {
+        AppDO app = createAppDO();
+
+        Mockito.when(applicationsRepository.getById(app.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
+        Mockito.when(applicationsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
+
+        List<String> roles = Arrays.asList(
+                random.nextObject(String.class),
+                random.nextObject(String.class)
+        );
+
+        Mockito.when(rolesService.verifyRoles(roles, "main", EntityType.APPLICATION)).thenReturn(roles);
+
+        Optional<AppBO> updated = applicationsService.grantRoles(app.getId(), roles, "main").join();
+
+        assertThat(updated).isPresent();
+        assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(app);
+        assertThat(updated.get().getRoles()).contains(roles.toArray(new String[0]));
+    }
+
+    @Test
+    void grantRolesInvalidRoles() {
+        AppDO app = createAppDO();
+
+        Mockito.when(applicationsRepository.getById(app.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
+        Mockito.when(applicationsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
+
+        List<String> roles = Arrays.asList(
+                random.nextObject(String.class),
+                random.nextObject(String.class)
+        );
+
+        List<String> validRoles = Collections.singletonList(roles.get(0));
+
+        Mockito.when(rolesService.verifyRoles(roles, "main", EntityType.APPLICATION)).thenReturn(validRoles);
+
+        assertThatThrownBy(() -> applicationsService.grantRoles(app.getId(), roles, "main").join())
+                .hasCauseInstanceOf(ServiceException.class);
+    }
+
+    @Test
+    void grantRolesFromDifferentDomain() {
+        AppDO app = createAppDO();
+
+        Mockito.when(applicationsRepository.getById(app.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
+        Mockito.when(applicationsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
+
+        List<String> roles = Arrays.asList(
+                random.nextObject(String.class),
+                random.nextObject(String.class)
+        );
+
+        Mockito.when(rolesService.verifyRoles(roles, "other", EntityType.APPLICATION)).thenReturn(roles);
+
+        assertThatThrownBy(() -> applicationsService.grantRoles(app.getId(), roles, "main").join())
+                .hasCauseInstanceOf(ServiceException.class);
+    }
+
+    @Test
+    void revokeRoles() {
+        AppDO app = createAppDO();
+        List<String> currentRoles = new ArrayList<>(app.getRoles());
+
+        Mockito.when(applicationsRepository.getById(app.getId()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
+        Mockito.when(applicationsRepository.update(any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
+
+        List<String> rolesToRevoke = Arrays.asList(
+                currentRoles.get(0),
+                currentRoles.get(1)
+        );
+
+        Optional<AppBO> updated = applicationsService.revokeRoles(app.getId(), rolesToRevoke, "main").join();
+
+        assertThat(updated).isPresent();
+        assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(app);
+        assertThat(updated.get().getRoles()).doesNotContain(rolesToRevoke.toArray(new String[0]));
     }
 }

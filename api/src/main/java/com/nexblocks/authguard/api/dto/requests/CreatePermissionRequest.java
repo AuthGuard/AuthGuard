@@ -13,4 +13,6 @@ import org.immutables.value.Value;
 public interface CreatePermissionRequest extends DomainScoped {
     String getGroup();
     String getName();
+    Boolean isForAccounts();
+    Boolean isForApplications();
 }

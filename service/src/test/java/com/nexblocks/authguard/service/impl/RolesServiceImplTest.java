@@ -7,6 +7,7 @@ import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.RolesService;
 import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
+import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.RoleBO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -116,18 +117,33 @@ class RolesServiceImplTest {
     }
 
     @Test
-    void verifyRoles() {
+    void verifyRolesForAccount() {
         List<String> request = Arrays.asList("role-1", "role-2");
 
         Mockito.when(rolesRepository.getMultiple(request, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Arrays.asList(
-                        RoleDO.builder().name("role-1").build(),
-                        RoleDO.builder().name("role-2").build()
+                        RoleDO.builder().name("role-1").forAccounts(true).build(),
+                        RoleDO.builder().name("role-2").forAccounts(false).build()
                 )));
 
-        List<String> actual = rolesService.verifyRoles(request, "main");
+        List<String> actual = rolesService.verifyRoles(request, "main", EntityType.ACCOUNT);
 
-        assertThat(actual).isEqualTo(request);
+        assertThat(actual).isEqualTo(Collections.singletonList("role-1"));
+    }
+
+    @Test
+    void verifyRolesForApplication() {
+        List<String> request = Arrays.asList("role-1", "role-2");
+
+        Mockito.when(rolesRepository.getMultiple(request, "main"))
+                .thenReturn(CompletableFuture.completedFuture(Arrays.asList(
+                        RoleDO.builder().name("role-1").forApplications(true).build(),
+                        RoleDO.builder().name("role-2").forApplications(false).build()
+                )));
+
+        List<String> actual = rolesService.verifyRoles(request, "main", EntityType.APPLICATION);
+
+        assertThat(actual).isEqualTo(Collections.singletonList("role-1"));
     }
 
     @Test
@@ -136,13 +152,47 @@ class RolesServiceImplTest {
 
         Mockito.when(rolesRepository.getMultiple(request, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Collections.singletonList(
-                        RoleDO.builder().name("role-1").build()
+                        RoleDO.builder().name("role-1").forAccounts(true).build()
                 )));
 
         List<String> expected = Collections.singletonList("role-1");
 
-        List<String> actual = rolesService.verifyRoles(request, "main");
+        List<String> actual = rolesService.verifyRoles(request, "main", EntityType.ACCOUNT);
 
         assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void updateRole() {
+        RoleBO request = RoleBO.builder()
+                .id(1)
+                .forAccounts(true)
+                .forApplications(false)
+                .build();
+
+        Mockito.when(rolesRepository.getById(1))
+                .thenReturn(CompletableFuture.completedFuture(
+                        Optional.of(RoleDO.builder()
+                                .id(1)
+                                .domain("main")
+                                .name("test")
+                                .forAccounts(false)
+                                .forApplications(true)
+                                .build())));
+
+        Mockito.when(rolesRepository.update(Mockito.any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, RoleDO.class))));
+
+        RoleBO actual = rolesService.update(request, "main").join().get();
+
+        assertThat(actual).usingRecursiveComparison()
+                .ignoringFields(SKIPPED_FIELDS)
+                .isEqualTo(RoleBO.builder()
+                        .id(1)
+                        .domain("main")
+                        .name("test")
+                        .forAccounts(true)
+                        .forApplications(false)
+                        .build());
     }
 }

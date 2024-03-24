@@ -10,5 +10,5 @@ import java.util.List;
 @JsonDeserialize(as = DomainEntitiesConfig.class)
 public interface DomainEntitiesConfigInterface {
     List<PermissionConfig> getPermissions();
-    List<String> getRoles();
+    List<RolesConfig> getRoles();
 }

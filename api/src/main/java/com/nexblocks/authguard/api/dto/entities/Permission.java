@@ -17,4 +17,6 @@ public interface Permission extends DomainScoped {
     Instant getLastModified();
     String getGroup();
     String getName();
+    boolean isForAccounts();
+    boolean isForApplications();
 }

@@ -139,8 +139,11 @@ class AccountsServiceImplTest {
                 .salt("salted")
                 .build());
 
-        Mockito.when(rolesService.verifyRoles(account.getRoles(), "main"))
+        Mockito.when(rolesService.verifyRoles(account.getRoles(), "main", EntityType.ACCOUNT))
                 .thenReturn(new ArrayList<>(account.getRoles()));
+
+        Mockito.when(permissionsService.validate(account.getPermissions(), "main", EntityType.ACCOUNT))
+                .thenReturn(new ArrayList<>(account.getPermissions()));
 
         AccountBO persisted = accountService.create(account, requestContext).join();
 
@@ -214,7 +217,8 @@ class AccountsServiceImplTest {
         Mockito.when(idempotencyService.performOperationAsync(Mockito.any(), Mockito.eq(idempotentKey), Mockito.eq(account.getEntityType())))
                 .thenAnswer(invocation -> invocation.getArgument(0, Supplier.class).get());
 
-        Mockito.when(rolesService.verifyRoles(new HashSet<>(defaultRoles), "unit")).thenReturn(defaultRoles);
+        Mockito.when(rolesService.verifyRoles(new HashSet<>(defaultRoles), "unit", EntityType.ACCOUNT))
+                .thenReturn(defaultRoles);
 
         AccountBO expectedAccount = AccountBO.builder()
                 .from(account)
@@ -301,7 +305,7 @@ class AccountsServiceImplTest {
 
         Mockito.when(accountsRepository.getById(account.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
-        Mockito.when(permissionsService.validate(any(), eq("main")))
+        Mockito.when(permissionsService.validate(any(), eq("main"), eq(EntityType.ACCOUNT)))
                 .thenAnswer(invocation -> invocation.getArgument(0, List.class));
         Mockito.when(accountsRepository.update(any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountDO.class))));
@@ -340,7 +344,7 @@ class AccountsServiceImplTest {
 
         Mockito.when(accountsRepository.getById(account.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
-        Mockito.when(permissionsService.validate(any(), eq("other")))
+        Mockito.when(permissionsService.validate(any(), eq("other"), eq(EntityType.ACCOUNT)))
                 .thenAnswer(invocation -> invocation.getArgument(0, List.class));
 
         List<PermissionBO> permissions = Arrays.asList(
@@ -393,7 +397,7 @@ class AccountsServiceImplTest {
                 RANDOM.nextObject(String.class)
         );
 
-        Mockito.when(rolesService.verifyRoles(roles, "main")).thenReturn(roles);
+        Mockito.when(rolesService.verifyRoles(roles, "main", EntityType.ACCOUNT)).thenReturn(roles);
 
         Optional<AccountBO> updated = accountService.grantRoles(account.getId(), roles, "main").join();
 
@@ -418,7 +422,7 @@ class AccountsServiceImplTest {
 
         List<String> validRoles = Collections.singletonList(roles.get(0));
 
-        Mockito.when(rolesService.verifyRoles(roles, "main")).thenReturn(validRoles);
+        Mockito.when(rolesService.verifyRoles(roles, "main", EntityType.ACCOUNT)).thenReturn(validRoles);
 
         assertThatThrownBy(() -> accountService.grantRoles(account.getId(), roles, "main").join())
                 .hasCauseInstanceOf(ServiceException.class);
@@ -438,7 +442,7 @@ class AccountsServiceImplTest {
                 RANDOM.nextObject(String.class)
         );
 
-        Mockito.when(rolesService.verifyRoles(roles, "other")).thenReturn(roles);
+        Mockito.when(rolesService.verifyRoles(roles, "other", EntityType.ACCOUNT)).thenReturn(roles);
 
         assertThatThrownBy(() -> accountService.grantRoles(account.getId(), roles, "main").join())
                 .hasCauseInstanceOf(ServiceException.class);

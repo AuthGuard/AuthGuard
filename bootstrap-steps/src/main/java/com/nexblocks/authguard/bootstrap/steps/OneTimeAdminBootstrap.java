@@ -45,7 +45,7 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
             if (rolesService.getRoleByName(OTA_ROLE, RESERVED_DOMAIN).join().isEmpty()) {
                 log.info("Default role {} wasn't found and will be created", OTA_ROLE);
 
-                final RoleBO created = createRole(OTA_ROLE);
+                final RoleBO created = createOtaRole();
                 log.info("Created default role {}", created);
             }
 
@@ -91,10 +91,11 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
                 .build();
     }
 
-    private RoleBO createRole(final String roleName) {
+    private RoleBO createOtaRole() {
         final RoleBO role = RoleBO.builder()
-                .name(roleName)
+                .name(OneTimeAdminBootstrap.OTA_ROLE)
                 .domain(RESERVED_DOMAIN)
+                .forAccounts(true)
                 .build();
 
         return rolesService.create(role).join();

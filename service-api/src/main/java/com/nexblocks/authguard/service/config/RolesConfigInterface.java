@@ -5,9 +5,8 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @ConfigStyle
-@JsonDeserialize(as = PermissionConfig.class)
-public interface PermissionConfigInterface {
-    String getGroup();
+@JsonDeserialize(as = RolesConfig.class)
+public interface RolesConfigInterface {
     String getName();
     boolean isForAccounts();
     boolean isForApplications();

@@ -14,6 +14,8 @@ public class CreatePermissionRequestValidator implements Validator<CreatePermiss
                 .validate("group", obj.getGroup(), Constraints.required, Constraints.reasonableLength)
                 .validate("name", obj.getName(), Constraints.required, Constraints.reasonableLength)
                 .validate("domain", obj.getDomain(), Constraints.required)
+                .validate("forAccounts", obj.isForAccounts(), Constraints.required)
+                .validate("forApplications", obj.isForApplications(), Constraints.required)
                 .getViolations();
     }
 }
