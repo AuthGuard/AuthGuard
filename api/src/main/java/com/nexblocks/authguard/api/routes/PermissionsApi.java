@@ -19,6 +19,7 @@ public abstract class PermissionsApi implements ApiRoute {
         delete("/:id", this::getById, ActorRoles.adminClient());
         get("/group/:group", this::getByGroup, ActorRoles.adminClient());
         get("", this::getAll, ActorRoles.adminClient());
+        patch("/:id", this::update, ActorRoles.adminClient());
     }
 
     public abstract void create(final Context context);
@@ -30,4 +31,5 @@ public abstract class PermissionsApi implements ApiRoute {
     public abstract void getByGroup(final Context context);
 
     public abstract void getAll(final Context context);
+    public abstract void update(final Context context);
 }

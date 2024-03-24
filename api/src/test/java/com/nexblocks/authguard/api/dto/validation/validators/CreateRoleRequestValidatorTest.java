@@ -17,6 +17,8 @@ class CreateRoleRequestValidatorTest {
         final CreateRoleRequestDTO request = CreateRoleRequestDTO.builder()
                 .name("test-role")
                 .domain("main")
+                .forAccounts(true)
+                .forApplications(false)
                 .build();
 
         final Validator<CreateRoleRequestDTO> validator = Validators.getForClass(CreateRoleRequestDTO.class);
@@ -27,9 +29,8 @@ class CreateRoleRequestValidatorTest {
     }
 
     @Test
-    void validateNoNameOrDomain() {
+    void validateNoValues() {
         final CreateRoleRequestDTO request = CreateRoleRequestDTO.builder()
-                .domain("main")
                 .build();
 
         final Validator<CreateRoleRequestDTO> validator = Validators.getForClass(CreateRoleRequestDTO.class);
@@ -37,7 +38,10 @@ class CreateRoleRequestValidatorTest {
         final List<Violation> violations = validator.validate(request);
 
         assertThat(violations).containsExactly(
-                new Violation("name", ViolationType.MISSING_REQUIRED_VALUE)
+                new Violation("name", ViolationType.MISSING_REQUIRED_VALUE),
+                new Violation("domain", ViolationType.MISSING_REQUIRED_VALUE),
+                new Violation("forAccounts", ViolationType.MISSING_REQUIRED_VALUE),
+                new Violation("forApplications", ViolationType.MISSING_REQUIRED_VALUE)
         );
     }
 }

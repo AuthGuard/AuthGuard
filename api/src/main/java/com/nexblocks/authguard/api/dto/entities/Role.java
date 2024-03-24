@@ -16,4 +16,6 @@ public interface Role extends DomainScoped {
     Instant getCreatedAt();
     Instant getLastModified();
     String getName();
+    boolean isForAccounts();
+    boolean isForApplications();
 }

@@ -23,6 +23,8 @@ public abstract class ApplicationsApi implements ApiRoute {
 
         patch("/:id/activate", this::activate, ActorRoles.adminClient());
         patch("/:id/deactivate", this::deactivate, ActorRoles.adminClient());
+        patch("/:id/permissions", this::updatePermissions, ActorRoles.adminClient());
+        patch("/:id/roles", this::updateRoles, ActorRoles.adminClient());
 
         get("/:id/keys", this::getApiKeys, ActorRoles.adminClient());
     }
@@ -40,6 +42,10 @@ public abstract class ApplicationsApi implements ApiRoute {
     public abstract void activate(final Context context);
 
     public abstract void deactivate(final Context context);
+
+    public abstract void updatePermissions(final Context context);
+
+    public abstract void updateRoles(final Context context);
 
     public abstract void getApiKeys(final Context context);
 }

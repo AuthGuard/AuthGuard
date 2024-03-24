@@ -40,4 +40,6 @@ import javax.persistence.UniqueConstraint;
 public class RoleDO extends AbstractDO {
     private String name;
     private String domain;
+    private boolean forAccounts;
+    private boolean forApplications;
 }

@@ -23,4 +23,6 @@ public interface Permission extends Entity {
     default String getFullName() {
         return getGroup() + ":" + getName();
     }
+    boolean isForAccounts();
+    boolean isForApplications();
 }

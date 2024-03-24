@@ -78,6 +78,7 @@ public class AccountsServiceImpl implements AccountsService {
         final AccountBO preProcessed = AccountPreProcessor.preProcess(withHashedPasswords, accountConfig);
 
         verifyRolesOrFail(preProcessed.getRoles(), preProcessed.getDomain());
+        verifyPermissionsOrFail(preProcessed.getPermissions(), preProcessed.getDomain());
 
         return persistenceService.create(preProcessed)
                 .thenApply(created -> {
@@ -300,20 +301,9 @@ public class AccountsServiceImpl implements AccountsService {
     public CompletableFuture<Optional<AccountBO>> grantPermissions(final long accountId, final List<PermissionBO> permissions, String domain) {
         return getByIdUnsafe(accountId, domain)
                 .thenCompose(account -> {
-                    List<PermissionBO> verifiedPermissions = permissionsService.validate(permissions, account.getDomain());
+                    verifyPermissionsOrFail(permissions, account.getDomain());
 
-                    LOG.info("Grant account permissions request. accountId={}, domain={}, permissions={}",
-                            account.getId(), account.getDomain(), verifiedPermissions);
-
-                    if (verifiedPermissions.size() != permissions.size()) {
-                        List<PermissionBO> difference = permissions.stream()
-                                .filter(permission -> !verifiedPermissions.contains(permission))
-                                .collect(Collectors.toList());
-
-                        throw new ServiceException(ErrorCode.PERMISSION_DOES_NOT_EXIST, "The following permissions are not valid" + difference);
-                    }
-
-                    List<PermissionBO> combinedPermissions = Stream.concat(account.getPermissions().stream(), verifiedPermissions.stream())
+                    List<PermissionBO> combinedPermissions = Stream.concat(account.getPermissions().stream(), permissions.stream())
                             .distinct()
                             .collect(Collectors.toList());
 
@@ -322,7 +312,7 @@ public class AccountsServiceImpl implements AccountsService {
                     return accountsRepository.update(serviceMapper.toDO(withNewPermissions))
                             .thenApply(updated -> updated.map(accountDO -> {
                                 LOG.info("Granted account permissions. accountId={}, domain={}, permissions={}",
-                                        account.getId(), account.getDomain(), verifiedPermissions);
+                                        account.getId(), account.getDomain(), permissions);
 
                                 return serviceMapper.toBO(accountDO);
                             }));
@@ -418,14 +408,32 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     private void verifyRolesOrFail(final Collection<String> roles, final String domain) {
-        final List<String> verifiedRoles = rolesService.verifyRoles(roles, domain);
+        List<String> verifiedRoles = rolesService.verifyRoles(roles, domain, EntityType.ACCOUNT);
 
         if (verifiedRoles.size() != roles.size()) {
-            final List<String> difference = roles.stream()
+            List<String> difference = roles.stream()
                     .filter(role -> !verifiedRoles.contains(role))
                     .collect(Collectors.toList());
 
-            throw new ServiceException(ErrorCode.ROLE_DOES_NOT_EXIST, "The following roles are not valid " + difference);
+            throw new ServiceException(ErrorCode.ROLE_DOES_NOT_EXIST,
+                    "The following roles are not valid " + difference);
+        }
+    }
+
+    private void verifyPermissionsOrFail(final Collection<PermissionBO> permissions, final String domain) {
+        List<PermissionBO> verifiedPermissions = permissionsService.validate(permissions, domain, EntityType.ACCOUNT);
+
+        if (verifiedPermissions.size() != permissions.size()) {
+            Set<String> verifiedPermissionNames = verifiedPermissions.stream()
+                    .map(Permission::getFullName)
+                    .collect(Collectors.toSet());
+            List<String> difference = permissions.stream()
+                    .map(Permission::getFullName)
+                    .filter(permission -> !verifiedPermissionNames.contains(permission))
+                    .collect(Collectors.toList());
+
+            throw new ServiceException(ErrorCode.PERMISSION_DOES_NOT_EXIST,
+                    "The following permissions are not valid " + difference);
         }
     }
 }

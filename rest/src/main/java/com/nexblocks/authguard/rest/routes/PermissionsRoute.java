@@ -2,7 +2,10 @@ package com.nexblocks.authguard.rest.routes;
 
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.dto.entities.PermissionDTO;
+import com.nexblocks.authguard.api.dto.entities.RoleDTO;
 import com.nexblocks.authguard.api.dto.requests.CreatePermissionRequestDTO;
+import com.nexblocks.authguard.api.dto.requests.UpdatePermissionRequestDTO;
+import com.nexblocks.authguard.api.dto.requests.UpdateRoleRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.PermissionsApi;
@@ -98,5 +101,23 @@ public class PermissionsRoute extends PermissionsApi {
                         .collect(Collectors.toList()));
 
         context.json(permissions);
+    }
+
+    @Override
+    public void update(Context context) {
+        Validator<Long> id = context.pathParam("id", Long.class);
+
+        if (!id.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        UpdatePermissionRequestDTO role = context.bodyAsClass(UpdatePermissionRequestDTO.class);
+
+        CompletableFuture<PermissionDTO> created = permissionsService.update(restMapper.toBO(role).withId(id.get()),
+                        Domain.fromContext(context))
+                .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.PERMISSION_DOES_NOT_EXIST, "Permission does not exist"))
+                .thenApply(restMapper::toDTO);
+
+        context.status(200).json(created);
     }
 }

@@ -57,6 +57,8 @@ public class DefaultRolesBootstrap implements BootstrapStep {
         final RoleBO role = RoleBO.builder()
                 .name(roleName)
                 .domain(domain)
+                .forAccounts(true)
+                .forApplications(false)
                 .build();
 
         return rolesService.create(role).join();

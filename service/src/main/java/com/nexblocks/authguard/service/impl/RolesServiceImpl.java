@@ -7,14 +7,17 @@ import com.nexblocks.authguard.dal.persistence.RolesRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.RolesService;
 import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
+import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
+import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.RoleBO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -65,13 +68,27 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public CompletableFuture<Optional<RoleBO>> getById(final long id, String domain) {
-        return persistenceService.getById(id);
+    public CompletableFuture<Optional<RoleBO>> getById(final long id, final String domain) {
+        return persistenceService.getById(id)
+                .thenApply(opt -> opt.filter(account -> Objects.equals(account.getDomain(), domain)));
     }
 
     @Override
-    public CompletableFuture<Optional<RoleBO>> update(final RoleBO entity, String domain) {
-        throw new UnsupportedOperationException("Roles cannot be updated");
+    public CompletableFuture<Optional<RoleBO>> update(final RoleBO role, final String domain) {
+        return getById(role.getId(), domain)
+                .thenCompose(opt -> {
+                    if (opt.isEmpty()) {
+                        return CompletableFuture.completedFuture(opt);
+                    }
+
+                    RoleBO newRole = RoleBO.builder()
+                            .from(opt.get())
+                            .forAccounts(role.isForAccounts())
+                            .forApplications(role.isForApplications())
+                            .build();
+
+                    return persistenceService.update(newRole);
+                });
     }
 
     @Override
@@ -88,9 +105,16 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public List<String> verifyRoles(final Collection<String> roles, final String domain) {
+    public List<String> verifyRoles(final Collection<String> roles, final String domain, EntityType entityType) {
         return rolesRepository.getMultiple(roles, domain)
                 .thenApply(found -> found.stream()
+                        .filter(role -> {
+                            switch (entityType) {
+                                case ACCOUNT: return role.isForAccounts();
+                                case APPLICATION: return role.isForApplications();
+                                default: return false;
+                            }
+                        })
                         .map(RoleDO::getName)
                         .collect(Collectors.toList())
                 ).join();

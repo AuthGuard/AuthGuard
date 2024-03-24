@@ -44,6 +44,7 @@ public class AdminRolesBootstrap implements BootstrapStep {
         final RoleBO role = RoleBO.builder()
                 .name(roleName)
                 .domain(RESERVED_DOMAIN)
+                .forAccounts(true)
                 .build();
 
         return rolesService.create(role).join();

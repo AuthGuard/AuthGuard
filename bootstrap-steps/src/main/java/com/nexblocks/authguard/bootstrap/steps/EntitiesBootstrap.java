@@ -8,12 +8,14 @@ import com.nexblocks.authguard.service.PermissionsService;
 import com.nexblocks.authguard.service.RolesService;
 import com.nexblocks.authguard.service.config.BootstrapEntitiesConfig;
 import com.nexblocks.authguard.service.config.PermissionConfig;
+import com.nexblocks.authguard.service.config.RolesConfig;
 import com.nexblocks.authguard.service.model.PermissionBO;
 import com.nexblocks.authguard.service.model.RoleBO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class EntitiesBootstrap implements BootstrapStep {
@@ -56,13 +58,18 @@ public class EntitiesBootstrap implements BootstrapStep {
         });
     }
 
-    private void createRoles(String domain, List<String> roles) {
+    private void createRoles(String domain, List<RolesConfig> roles) {
         if (roles == null) {
             return;
         }
 
         roles.stream()
-                .map(roleName -> RoleBO.builder().domain(domain).name(roleName).build())
+                .map(role -> RoleBO.builder()
+                        .domain(domain)
+                        .name(role.getName())
+                        .forAccounts(role.isForAccounts())
+                        .forApplications(role.isForApplications())
+                        .build())
                 .forEach(role -> {
                     if (rolesService.getRoleByName(role.getName(), domain).join().isPresent()) {
                         log.info("Role {} already exists in domain {}", role.getName(), domain);
@@ -85,15 +92,15 @@ public class EntitiesBootstrap implements BootstrapStep {
                 .map(permission -> PermissionBO.builder()
                         .group(permission.getGroup())
                         .name(permission.getName())
+                        .forAccounts(permission.isForAccounts())
+                        .forApplications(permission.isForApplications())
                         .build())
                 .collect(Collectors.toList());
 
-        List<PermissionBO> existing = permissionsService.validate(permissionBOS, domain)
-                .stream()
-                .map(permission -> PermissionBO.builder()
-                        .group(permission.getGroup())
-                        .name(permission.getName())
-                        .build())
+        List<PermissionBO> existing = permissionBOS.stream()
+                .map(permission -> permissionsService.get(domain, permission.getGroup(), permission.getName()).join())
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .collect(Collectors.toList());
 
         if (existing.size() == permissionBOS.size()) {

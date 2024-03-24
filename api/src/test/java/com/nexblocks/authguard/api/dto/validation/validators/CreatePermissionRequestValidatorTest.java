@@ -17,6 +17,8 @@ public class CreatePermissionRequestValidatorTest {
                 .group("group")
                 .name("test-Permission")
                 .domain("main")
+                .forAccounts(true)
+                .forApplications(false)
                 .build();
 
         final Validator<CreatePermissionRequestDTO> validator = Validators.getForClass(CreatePermissionRequestDTO.class);
@@ -38,7 +40,9 @@ public class CreatePermissionRequestValidatorTest {
         assertThat(violations).containsExactlyInAnyOrder(
                 new Violation("name", ViolationType.MISSING_REQUIRED_VALUE),
                 new Violation("group", ViolationType.MISSING_REQUIRED_VALUE),
-                new Violation("domain", ViolationType.MISSING_REQUIRED_VALUE)
+                new Violation("domain", ViolationType.MISSING_REQUIRED_VALUE),
+                new Violation("forAccounts", ViolationType.MISSING_REQUIRED_VALUE),
+                new Violation("forApplications", ViolationType.MISSING_REQUIRED_VALUE)
         );
     }
 }
