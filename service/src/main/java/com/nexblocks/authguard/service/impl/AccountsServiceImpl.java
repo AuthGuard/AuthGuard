@@ -96,7 +96,7 @@ public class AccountsServiceImpl implements AccountsService {
                         messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(VerificationRequestBO.builder()
                                 .account(created)
                                 .emails(toVerify)
-                                .build()));
+                                .build(), account.getDomain()));
                     }
 
                     if (accountConfig.verifyPhoneNumber()) {
@@ -106,7 +106,7 @@ public class AccountsServiceImpl implements AccountsService {
                          */
                         messageBus.publish(VERIFICATION_CHANNEL, Messages.phoneNumberVerification(VerificationRequestBO.builder()
                                 .account(created)
-                                .build()));
+                                .build(), account.getDomain()));
                     }
 
                     return credentialsManager.removeSensitiveInformation(created);
@@ -273,7 +273,7 @@ public class AccountsServiceImpl implements AccountsService {
                                                 VerificationRequestBO.builder()
                                                         .account(updatedAccount)
                                                         .emails(Collections.singletonList(accountUpdate.getEmail()))
-                                                        .build()));
+                                                        .build(), account.getDomain()));
                                     }
 
                                     if (backupEmailUpdated) {
@@ -281,14 +281,14 @@ public class AccountsServiceImpl implements AccountsService {
                                                 VerificationRequestBO.builder()
                                                         .account(updatedAccount)
                                                         .emails(Collections.singletonList(accountUpdate.getBackupEmail()))
-                                                        .build()));
+                                                        .build(), account.getDomain()));
                                     }
 
                                     if (phoneNumberUpdated) {
                                         messageBus.publish(VERIFICATION_CHANNEL, Messages.phoneNumberVerification(
                                                 VerificationRequestBO.builder()
                                                         .account(updatedAccount)
-                                                        .build()));
+                                                        .build(), account.getDomain()));
                                     }
                                 });
 

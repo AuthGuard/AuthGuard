@@ -15,7 +15,6 @@ public interface Account extends Entity {
     String getMiddleName();
     String getLastName();
     String getFullName();
-    String getDomain();
 
     boolean isSocial();
     String getIdentityProvider();

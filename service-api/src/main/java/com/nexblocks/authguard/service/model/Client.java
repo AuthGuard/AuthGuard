@@ -8,7 +8,6 @@ public interface Client extends Entity {
     String getExternalId();
     String getName();
     Long getAccountId();
-    String getDomain();
     String getBaseUrl();
     ClientType getClientType();
     boolean isActive();

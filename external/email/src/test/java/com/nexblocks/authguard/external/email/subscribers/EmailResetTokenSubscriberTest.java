@@ -33,10 +33,10 @@ class EmailResetTokenSubscriberTest {
 
     @Test
     void onValidMessage() {
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token("token")
                 .build();
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .email(AccountEmailBO.builder()
                         .email("user@test.net")
                         .build())
@@ -44,9 +44,9 @@ class EmailResetTokenSubscriberTest {
                 .lastName("second")
                 .build();
 
-        final ResetTokenMessage messageBody = new ResetTokenMessage(account, accountToken);
-        final Message message = Messages.resetTokenGenerated(messageBody);
-        final ImmutableEmail expectedEmail = ImmutableEmail.builder()
+        ResetTokenMessage messageBody = new ResetTokenMessage(account, accountToken);
+        Message message = Messages.resetTokenGenerated(messageBody, account.getDomain());
+        ImmutableEmail expectedEmail = ImmutableEmail.builder()
                 .template("passwordReset")
                 .to(account.getEmail().getEmail())
                 .parameters(ImmutableMap.of(
@@ -57,7 +57,7 @@ class EmailResetTokenSubscriberTest {
 
         emailResetTokenSubscriber.onMessage(message);
 
-        final ArgumentCaptor<ImmutableEmail> sentEmailCaptor = ArgumentCaptor.forClass(ImmutableEmail.class);
+        ArgumentCaptor<ImmutableEmail> sentEmailCaptor = ArgumentCaptor.forClass(ImmutableEmail.class);
 
         Mockito.verify(emailProvider).send(sentEmailCaptor.capture());
 
@@ -66,17 +66,17 @@ class EmailResetTokenSubscriberTest {
 
     @Test
     void onWrongMessageType() {
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token("token")
                 .build();
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .email(AccountEmailBO.builder()
                         .email("user@test.net")
                         .build())
                 .build();
 
-        final ResetTokenMessage messageBody = new ResetTokenMessage(account, accountToken);
-        final Message message = Messages.passwordlessGenerated(messageBody)
+        ResetTokenMessage messageBody = new ResetTokenMessage(account, accountToken);
+        Message message = Messages.passwordlessGenerated(messageBody, account.getDomain())
                 .withEventType(EventType.ADMIN);
 
         emailResetTokenSubscriber.onMessage(message);
@@ -86,14 +86,14 @@ class EmailResetTokenSubscriberTest {
 
     @Test
     void onValidMessageNoEmail() {
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token("token")
                 .build();
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .build();
 
-        final ResetTokenMessage messageBody = new ResetTokenMessage(account, accountToken);
-        final Message message = Messages.passwordlessGenerated(messageBody);
+        ResetTokenMessage messageBody = new ResetTokenMessage(account, accountToken);
+        Message message = Messages.passwordlessGenerated(messageBody, account.getDomain());
 
         emailResetTokenSubscriber.onMessage(message);
 

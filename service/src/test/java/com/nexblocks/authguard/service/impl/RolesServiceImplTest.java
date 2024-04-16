@@ -1,6 +1,7 @@
 package com.nexblocks.authguard.service.impl;
 
 import com.nexblocks.authguard.dal.model.RoleDO;
+import com.nexblocks.authguard.dal.persistence.LongPage;
 import com.nexblocks.authguard.dal.persistence.Page;
 import com.nexblocks.authguard.dal.persistence.RolesRepository;
 import com.nexblocks.authguard.emb.MessageBus;
@@ -44,7 +45,7 @@ class RolesServiceImplTest {
                 RoleDO.builder().name("role-2").build()
         );
 
-        Mockito.when(rolesRepository.getAll("main", Page.of(null, 20))).thenReturn(CompletableFuture.completedFuture(roles));
+        Mockito.when(rolesRepository.getAll("main", LongPage.of(null, 20))).thenReturn(CompletableFuture.completedFuture(roles));
 
         List<RoleBO> expected = Arrays.asList(
                 RoleBO.builder().name("role-1").build(),

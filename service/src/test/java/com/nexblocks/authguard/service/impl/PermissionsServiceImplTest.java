@@ -2,6 +2,7 @@ package com.nexblocks.authguard.service.impl;
 
 import com.nexblocks.authguard.dal.model.PermissionDO;
 import com.nexblocks.authguard.dal.model.RoleDO;
+import com.nexblocks.authguard.dal.persistence.LongPage;
 import com.nexblocks.authguard.dal.persistence.Page;
 import com.nexblocks.authguard.dal.persistence.PermissionsRepository;
 import com.nexblocks.authguard.emb.MessageBus;
@@ -109,7 +110,7 @@ class PermissionsServiceImplTest {
                 PermissionDO.builder().group("test").name("write").build()
         );
 
-        Mockito.when(permissionsRepository.getAll("main", Page.of(null, 20)))
+        Mockito.when(permissionsRepository.getAll("main", LongPage.of(null, 20)))
                 .thenReturn(CompletableFuture.completedFuture(permissions));
 
         List<PermissionBO> expected = Arrays.asList(
@@ -129,7 +130,7 @@ class PermissionsServiceImplTest {
                 PermissionDO.builder().group("test").name("write").build()
         );
 
-        Mockito.when(permissionsRepository.getAllForGroup("test", "main", Page.of(null, 20)))
+        Mockito.when(permissionsRepository.getAllForGroup("test", "main", LongPage.of(null, 20)))
                 .thenReturn(CompletableFuture.completedFuture(permissions));
 
         List<PermissionBO> expected = Arrays.asList(

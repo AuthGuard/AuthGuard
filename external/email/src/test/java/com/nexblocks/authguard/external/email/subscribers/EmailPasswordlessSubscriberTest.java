@@ -32,10 +32,10 @@ class EmailPasswordlessSubscriberTest {
 
     @Test
     void onValidMessageWithEmptyTokenOptions() {
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token("token")
                 .build();
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .email(AccountEmailBO.builder()
                         .email("user@test.net")
                         .build())
@@ -43,11 +43,11 @@ class EmailPasswordlessSubscriberTest {
                 .lastName("second")
                 .build();
 
-        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+        TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
 
-        final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, tokenOptions);
-        final Message message = Messages.passwordlessGenerated(messageBody);
-        final ImmutableEmail expectedEmail = ImmutableEmail.builder()
+        PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, tokenOptions);
+        Message message = Messages.passwordlessGenerated(messageBody, account.getDomain());
+        ImmutableEmail expectedEmail = ImmutableEmail.builder()
                 .template("passwordless")
                 .to(account.getEmail().getEmail())
                 .parameters(ImmutableMap.of(
@@ -58,7 +58,7 @@ class EmailPasswordlessSubscriberTest {
 
         emailPasswordlessSubscriber.onMessage(message);
 
-        final ArgumentCaptor<ImmutableEmail> sentEmailCaptor = ArgumentCaptor.forClass(ImmutableEmail.class);
+        ArgumentCaptor<ImmutableEmail> sentEmailCaptor = ArgumentCaptor.forClass(ImmutableEmail.class);
 
         Mockito.verify(emailProvider).send(sentEmailCaptor.capture());
 
@@ -67,10 +67,10 @@ class EmailPasswordlessSubscriberTest {
 
     @Test
     void onValidMessageWithTokenOptions() {
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token("token")
                 .build();
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .email(AccountEmailBO.builder()
                         .email("user@test.net")
                         .build())
@@ -78,14 +78,14 @@ class EmailPasswordlessSubscriberTest {
                 .lastName("second")
                 .build();
 
-        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder()
+        TokenOptionsBO tokenOptions = TokenOptionsBO.builder()
                 .sourceIp("127.0.0.1")
                 .userAgent("Firefox")
                 .build();
 
-        final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, tokenOptions);
-        final Message message = Messages.passwordlessGenerated(messageBody);
-        final ImmutableEmail expectedEmail = ImmutableEmail.builder()
+        PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, tokenOptions);
+        Message message = Messages.passwordlessGenerated(messageBody, account.getDomain());
+        ImmutableEmail expectedEmail = ImmutableEmail.builder()
                 .template("passwordless")
                 .to(account.getEmail().getEmail())
                 .parameters(ImmutableMap.of(
@@ -98,7 +98,7 @@ class EmailPasswordlessSubscriberTest {
 
         emailPasswordlessSubscriber.onMessage(message);
 
-        final ArgumentCaptor<ImmutableEmail> sentEmailCaptor = ArgumentCaptor.forClass(ImmutableEmail.class);
+        ArgumentCaptor<ImmutableEmail> sentEmailCaptor = ArgumentCaptor.forClass(ImmutableEmail.class);
 
         Mockito.verify(emailProvider).send(sentEmailCaptor.capture());
 
@@ -107,17 +107,17 @@ class EmailPasswordlessSubscriberTest {
 
     @Test
     void onWrongMessageType() {
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token("token")
                 .build();
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .email(AccountEmailBO.builder()
                         .email("user@test.net")
                         .build())
                 .build();
 
-        final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, null);
-        final Message message = Messages.passwordlessGenerated(messageBody)
+        PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, null);
+        Message message = Messages.passwordlessGenerated(messageBody, account.getDomain())
                 .withEventType(EventType.ADMIN);
 
         emailPasswordlessSubscriber.onMessage(message);
@@ -127,14 +127,14 @@ class EmailPasswordlessSubscriberTest {
 
     @Test
     void onValidMessageNoEmail() {
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token("token")
                 .build();
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .build();
 
-        final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, null);
-        final Message message = Messages.passwordlessGenerated(messageBody);
+        PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, null);
+        Message message = Messages.passwordlessGenerated(messageBody, account.getDomain());
 
         emailPasswordlessSubscriber.onMessage(message);
 

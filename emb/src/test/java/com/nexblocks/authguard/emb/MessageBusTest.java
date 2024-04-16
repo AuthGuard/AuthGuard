@@ -59,21 +59,25 @@ class MessageBusTest {
         Thread.sleep(1000);
 
         assertThat(receivedFromAccounts).containsExactly(Message.builder()
+                .channel("accounts")
                 .messageBody("Accounts Message")
                 .bodyType(String.class)
                 .build());
 
         assertThat(receivedFromAuth).containsExactly(Message.builder()
+                .channel("auth")
                 .messageBody("Auth Message")
                 .bodyType(String.class)
                 .build());
 
         assertThat(receivedFromAll).containsExactly(
                 Message.builder()
+                        .channel("accounts")
                         .messageBody("Accounts Message")
                         .bodyType(String.class)
                         .build(),
                 Message.builder()
+                        .channel("auth")
                         .messageBody("Auth Message")
                         .bodyType(String.class)
                         .build());

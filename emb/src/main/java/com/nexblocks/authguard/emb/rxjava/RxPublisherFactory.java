@@ -5,7 +5,7 @@ import com.nexblocks.authguard.emb.MessagePublisherFactory;
 
 public class RxPublisherFactory implements MessagePublisherFactory {
     @Override
-    public MessagePublisher create() {
-        return new RxPublisher();
+    public MessagePublisher create(final String channel) {
+        return new RxPublisher(channel);
     }
 }

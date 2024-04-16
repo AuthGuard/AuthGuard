@@ -31,10 +31,10 @@ public class MessageBus {
 
         if (channelsNames != null) {
             channelsNames
-                    .forEach(channel -> channelsMapBuilder.put(channel, factory.create()));
+                    .forEach(channel -> channelsMapBuilder.put(channel, factory.create(channel)));
 
             this.channels = channelsNames.stream()
-                    .collect(Collectors.toMap(Function.identity(), ignored -> factory.create()));
+                    .collect(Collectors.toMap(Function.identity(), factory::create));
 
            this.createIfMissing = false;
            this.factory = null; // won't be needed
@@ -77,9 +77,9 @@ public class MessageBus {
         final MessagePublisher publisher = channels.get(channel);
 
         if (publisher == null) {
-            final MessagePublisher createdPublisher = factory.create();
+            final MessagePublisher createdPublisher = factory.create(null);
 
-            channels.put(channel, factory.create());
+            channels.put(channel, factory.create(null));
 
             updateGlobalSubscribers(createdPublisher);
 

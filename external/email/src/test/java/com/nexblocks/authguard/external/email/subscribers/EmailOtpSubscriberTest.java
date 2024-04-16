@@ -32,11 +32,11 @@ public class EmailOtpSubscriberTest {
 
     @Test
     void onValidMessageWithTokenOptions() {
-        final OneTimePasswordBO otp = OneTimePasswordBO.builder()
+        OneTimePasswordBO otp = OneTimePasswordBO.builder()
                 .password("password")
                 .build();
 
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .email(AccountEmailBO.builder()
                         .email("user@test.net")
                         .build())
@@ -44,14 +44,14 @@ public class EmailOtpSubscriberTest {
                 .lastName("second")
                 .build();
 
-        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder()
+        TokenOptionsBO tokenOptions = TokenOptionsBO.builder()
                 .sourceIp("127.0.0.1")
                 .userAgent("Firefox")
                 .build();
 
-        final OtpMessageBody messageBody = new OtpMessageBody(otp, account,  tokenOptions,true, false);
-        final Message message = Messages.otpGenerated(messageBody);
-        final ImmutableEmail expectedEmail = ImmutableEmail.builder()
+        OtpMessageBody messageBody = new OtpMessageBody(otp, account,  tokenOptions,true, false);
+        Message message = Messages.otpGenerated(messageBody, account.getDomain());
+        ImmutableEmail expectedEmail = ImmutableEmail.builder()
                 .template("otp")
                 .to(account.getEmail().getEmail())
                 .parameters(ImmutableMap.of(
@@ -64,7 +64,7 @@ public class EmailOtpSubscriberTest {
 
         otpSubscriber.onMessage(message);
 
-        final ArgumentCaptor<ImmutableEmail> sentEmailCaptor = ArgumentCaptor.forClass(ImmutableEmail.class);
+        ArgumentCaptor<ImmutableEmail> sentEmailCaptor = ArgumentCaptor.forClass(ImmutableEmail.class);
 
         Mockito.verify(emailProvider).send(sentEmailCaptor.capture());
 
@@ -73,11 +73,11 @@ public class EmailOtpSubscriberTest {
 
     @Test
     void onValidMessageWithEmptyTokenOptions() {
-        final OneTimePasswordBO otp = OneTimePasswordBO.builder()
+        OneTimePasswordBO otp = OneTimePasswordBO.builder()
                 .password("password")
                 .build();
 
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .email(AccountEmailBO.builder()
                         .email("user@test.net")
                         .build())
@@ -85,11 +85,11 @@ public class EmailOtpSubscriberTest {
                 .lastName("second")
                 .build();
 
-        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+        TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
 
-        final OtpMessageBody messageBody = new OtpMessageBody(otp, account,  tokenOptions,true, false);
-        final Message message = Messages.otpGenerated(messageBody);
-        final ImmutableEmail expectedEmail = ImmutableEmail.builder()
+        OtpMessageBody messageBody = new OtpMessageBody(otp, account,  tokenOptions,true, false);
+        Message message = Messages.otpGenerated(messageBody, account.getDomain());
+        ImmutableEmail expectedEmail = ImmutableEmail.builder()
                 .template("otp")
                 .to(account.getEmail().getEmail())
                 .parameters(ImmutableMap.of(
@@ -100,7 +100,7 @@ public class EmailOtpSubscriberTest {
 
         otpSubscriber.onMessage(message);
 
-        final ArgumentCaptor<ImmutableEmail> sentEmailCaptor = ArgumentCaptor.forClass(ImmutableEmail.class);
+        ArgumentCaptor<ImmutableEmail> sentEmailCaptor = ArgumentCaptor.forClass(ImmutableEmail.class);
 
         Mockito.verify(emailProvider).send(sentEmailCaptor.capture());
 
@@ -109,18 +109,18 @@ public class EmailOtpSubscriberTest {
 
     @Test
     void onWrongMessageType() {
-        final OneTimePasswordBO otp = OneTimePasswordBO.builder()
+        OneTimePasswordBO otp = OneTimePasswordBO.builder()
                 .password("password")
                 .build();
 
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .email(AccountEmailBO.builder()
                         .email("user@test.net")
                         .build())
                 .build();
 
-        final OtpMessageBody messageBody = new OtpMessageBody(otp, account, null,true, false);
-        final Message message = Messages.otpGenerated(messageBody)
+        OtpMessageBody messageBody = new OtpMessageBody(otp, account, null,true, false);
+        Message message = Messages.otpGenerated(messageBody, account.getDomain())
                 .withEventType(EventType.ADMIN);
 
         otpSubscriber.onMessage(message);
@@ -130,15 +130,15 @@ public class EmailOtpSubscriberTest {
 
     @Test
     void onValidMessageNoEmail() {
-        final OneTimePasswordBO otp = OneTimePasswordBO.builder()
+        OneTimePasswordBO otp = OneTimePasswordBO.builder()
                 .password("password")
                 .build();
 
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .build();
 
-        final OtpMessageBody messageBody = new OtpMessageBody(otp, account, null,true, false);
-        final Message message = Messages.otpGenerated(messageBody);
+        OtpMessageBody messageBody = new OtpMessageBody(otp, account, null,true, false);
+        Message message = Messages.otpGenerated(messageBody, account.getDomain());
 
         otpSubscriber.onMessage(message);
 

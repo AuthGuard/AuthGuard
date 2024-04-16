@@ -2,20 +2,20 @@ package com.nexblocks.authguard.dal.persistence;
 
 import java.util.Objects;
 
-public class Page {
-    private final long cursor;
+public class Page<T> {
+    private final T cursor;
     private final int count;
 
-    private Page(long cursor, int count) {
+    private Page(T cursor, int count) {
         this.cursor = cursor;
         this.count = count;
     }
 
-    public static Page of(Long cursor, int count) {
-        return new Page(cursor != null ? cursor : 0, count);
+    public static <T> Page<T> of(T cursor, int count, T defaultCursor) {
+        return new Page<T>(cursor != null ? cursor : defaultCursor, count);
     }
 
-    public long getCursor() {
+    public T getCursor() {
         return cursor;
     }
 
@@ -27,7 +27,7 @@ public class Page {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Page page = (Page) o;
+        Page<?> page = (Page<?>) o;
         return cursor == page.cursor && count == page.count;
     }
 

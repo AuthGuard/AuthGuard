@@ -6,7 +6,6 @@ import com.nexblocks.authguard.emb.model.Message;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +40,7 @@ class RxPublisherTest {
 
     @Test
     void publish() throws InterruptedException {
-        final RxPublisher publisher = new RxPublisher();
+        final RxPublisher publisher = new RxPublisher("tests");
         final Subscriber normalSubscriber = new Subscriber();
         final Subscriber errorSubscriber = new Subscriber();
 
@@ -67,7 +66,7 @@ class RxPublisherTest {
 
     @Test
     void publishException() throws InterruptedException {
-        final RxPublisher publisher = new RxPublisher();
+        final RxPublisher publisher = new RxPublisher("tests");
         final ExceptionSubscriber errorSubscriber = new ExceptionSubscriber();
 
         publisher.acceptSubscriber(errorSubscriber);
