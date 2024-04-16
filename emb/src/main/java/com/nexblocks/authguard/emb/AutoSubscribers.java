@@ -30,7 +30,7 @@ public class AutoSubscribers {
 
     private Set<MessageSubscriber> subscribersWithChannels(final Set<MessageSubscriber> subscribers) {
         return subscribers.stream()
-                .filter(subscriber -> subscriber.getClass().getAnnotation(Channel.class) != null)
+                .filter(subscriber -> subscriber.getClass().getAnnotationsByType(Channel.class).length != 0)
                 .collect(Collectors.toSet());
     }
 
@@ -48,16 +48,18 @@ public class AutoSubscribers {
                 continue;
             }
 
-            final Channel channel = subscriber.getClass().getAnnotation(Channel.class);
+            final Channel[] channels = subscriber.getClass().getAnnotationsByType(Channel.class);
 
-            try {
-                messageBus.subscribe(channel.value(), subscriber);
+            for (Channel channel : channels) {
+                try {
+                    messageBus.subscribe(channel.value(), subscriber);
 
-                log.info("Auto-subscribed {} to channel {}",
-                        subscriber.getClass().getSimpleName(), channel.value());
-            } catch (final Exception e) {
-                log.warn("Failed to subscribe {} to channel {}. Reason: {}",
-                        subscriber.getClass().getSimpleName(), channel.value(), e.getMessage());
+                    log.info("Auto-subscribed {} to channel {}",
+                            subscriber.getClass().getSimpleName(), channel.value());
+                } catch (final Exception e) {
+                    log.warn("Failed to subscribe {} to channel {}. Reason: {}",
+                            subscriber.getClass().getSimpleName(), channel.value(), e.getMessage());
+                }
             }
         }
     }

@@ -44,7 +44,9 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
                 .thenApply(persisted -> {
                     final BO persistedBo = doToBo.apply(persisted);
 
-                    messageBus.publish(channel, Messages.created(persistedBo));
+                    if (channel != null) {
+                        messageBus.publish(channel, Messages.created(persistedBo, entity.getDomain()));
+                    }
 
                     return persistedBo;
                 });
@@ -65,7 +67,9 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
                 .thenApply(opt -> {
                     final Optional<BO> boOpt = opt.map(doToBo);
 
-                    boOpt.ifPresent(bo -> messageBus.publish(channel, Messages.updated(bo)));
+                    if (channel != null) {
+                        boOpt.ifPresent(bo -> messageBus.publish(channel, Messages.updated(bo, entity.getDomain())));
+                    }
 
                     return boOpt;
                 });
@@ -76,7 +80,9 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
                 .thenApply(opt -> {
                     final Optional<BO> boOpt = opt.map(doToBo);
 
-                    boOpt.ifPresent(bo -> messageBus.publish(channel, Messages.deleted(bo)));
+                    if (channel != null) {
+                        boOpt.ifPresent(bo -> messageBus.publish(channel, Messages.deleted(bo, bo.getDomain())));
+                    }
 
                     return boOpt;
                 });

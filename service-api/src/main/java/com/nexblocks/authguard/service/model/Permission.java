@@ -7,7 +7,6 @@ import org.immutables.value.Value;
 public interface Permission extends Entity {
     String getGroup();
     String getName();
-    String getDomain();
 
     /**
      * Checks whether a permission is a wild card or not.

@@ -32,10 +32,10 @@ class SmsPasswordlessSubscriberTest {
 
     @Test
     void onValidMessageWithEmptyTokenOptions() {
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token("token")
                 .build();
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .phoneNumber(PhoneNumberBO.builder()
                         .number("+178945632")
                         .build())
@@ -43,11 +43,11 @@ class SmsPasswordlessSubscriberTest {
                 .lastName("second")
                 .build();
 
-        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+        TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
 
-        final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, tokenOptions);
-        final Message message = Messages.passwordlessGenerated(messageBody);
-        final ImmutableTextMessage expectedSms = ImmutableTextMessage.builder()
+        PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, tokenOptions);
+        Message message = Messages.passwordlessGenerated(messageBody, account.getDomain());
+        ImmutableTextMessage expectedSms = ImmutableTextMessage.builder()
                 .to(account.getPhoneNumber().getNumber())
                 .template("passwordless")
                 .parameters(ImmutableMap.of(
@@ -58,7 +58,7 @@ class SmsPasswordlessSubscriberTest {
 
         smsPasswordlessSubscriber.onMessage(message);
 
-        final ArgumentCaptor<ImmutableTextMessage> sentSmsCaptor = ArgumentCaptor.forClass(ImmutableTextMessage.class);
+        ArgumentCaptor<ImmutableTextMessage> sentSmsCaptor = ArgumentCaptor.forClass(ImmutableTextMessage.class);
 
         Mockito.verify(smsProvider).send(sentSmsCaptor.capture());
 
@@ -67,10 +67,10 @@ class SmsPasswordlessSubscriberTest {
 
     @Test
     void onValidMessageWithTokenOptions() {
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token("token")
                 .build();
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .phoneNumber(PhoneNumberBO.builder()
                         .number("+178945632")
                         .build())
@@ -78,14 +78,14 @@ class SmsPasswordlessSubscriberTest {
                 .lastName("second")
                 .build();
 
-        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder()
+        TokenOptionsBO tokenOptions = TokenOptionsBO.builder()
                 .sourceIp("127.0.0.1")
                 .userAgent("Firefox")
                 .build();
 
-        final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, tokenOptions);
-        final Message message = Messages.passwordlessGenerated(messageBody);
-        final ImmutableTextMessage expectedSms = ImmutableTextMessage.builder()
+        PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, tokenOptions);
+        Message message = Messages.passwordlessGenerated(messageBody, account.getDomain());
+        ImmutableTextMessage expectedSms = ImmutableTextMessage.builder()
                 .to(account.getPhoneNumber().getNumber())
                 .template("passwordless")
                 .parameters(ImmutableMap.of(
@@ -98,7 +98,7 @@ class SmsPasswordlessSubscriberTest {
 
         smsPasswordlessSubscriber.onMessage(message);
 
-        final ArgumentCaptor<ImmutableTextMessage> sentSmsCaptor = ArgumentCaptor.forClass(ImmutableTextMessage.class);
+        ArgumentCaptor<ImmutableTextMessage> sentSmsCaptor = ArgumentCaptor.forClass(ImmutableTextMessage.class);
 
         Mockito.verify(smsProvider).send(sentSmsCaptor.capture());
 
@@ -107,17 +107,17 @@ class SmsPasswordlessSubscriberTest {
 
     @Test
     void onWrongMessageType() {
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token("token")
                 .build();
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .phoneNumber(PhoneNumberBO.builder()
                         .number("+178945632")
                         .build())
                 .build();
 
-        final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, null);
-        final Message message = Messages.passwordlessGenerated(messageBody)
+        PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, null);
+        Message message = Messages.passwordlessGenerated(messageBody, account.getDomain())
                 .withEventType(EventType.ADMIN);
 
         smsPasswordlessSubscriber.onMessage(message);
@@ -127,14 +127,14 @@ class SmsPasswordlessSubscriberTest {
 
     @Test
     void onValidMessageNoPhoneNumber() {
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO accountToken = AccountTokenDO.builder()
                 .token("token")
                 .build();
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .build();
 
-        final PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, null);
-        final Message message = Messages.passwordlessGenerated(messageBody);
+        PasswordlessMessageBody messageBody = new PasswordlessMessageBody(accountToken, account, null);
+        Message message = Messages.passwordlessGenerated(messageBody, account.getDomain());
 
         smsPasswordlessSubscriber.onMessage(message);
 

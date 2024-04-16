@@ -55,7 +55,7 @@ public class SessionsServiceImpl implements SessionsService {
 
         return sessionsRepository.save(sessionDO)
                 .thenApply(created -> {
-                    emb.publish(CHANNEL, Messages.created(created));
+                    emb.publish(CHANNEL, Messages.created(created, null));
                     return serviceMapper.toBO(created);
                 });
     }

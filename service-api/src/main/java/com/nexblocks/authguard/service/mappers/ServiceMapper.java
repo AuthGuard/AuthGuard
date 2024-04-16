@@ -53,4 +53,7 @@ public interface ServiceMapper {
 
     ExchangeAttemptDO toDO(ExchangeAttemptBO exchangeAttemptBO);
     ExchangeAttemptBO toBO(ExchangeAttemptDO exchangeAttemptDO);
+
+    EventDO toDO(EventBO eventBO);
+    EventBO toBO(EventDO eventDO);
 }

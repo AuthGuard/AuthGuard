@@ -12,7 +12,12 @@ import org.slf4j.LoggerFactory;
 public class RxPublisher implements MessagePublisher {
     private static final Logger LOG = LoggerFactory.getLogger(RxPublisher.class);
 
-    private PublishSubject<Message> subject = PublishSubject.create();
+    private final String channel;
+    private final PublishSubject<Message> subject = PublishSubject.create();
+
+    public RxPublisher(final String channel) {
+        this.channel = channel;
+    }
 
     @Override
     public void publish(final Message message) {
@@ -25,10 +30,10 @@ public class RxPublisher implements MessagePublisher {
                 .subscribe(safeConsumer(subscriber));
     }
 
-    private Consumer<Message> safeConsumer(MessageSubscriber subscriber) {
+    private Consumer<Message> safeConsumer(final MessageSubscriber subscriber) {
         return message -> {
             try {
-                subscriber.onMessage(message);
+                subscriber.onMessage(message.withChannel(channel));
             } catch (Throwable e) {
                 LOG.warn("Subscriber {} threw an exception. This violates the message subscriber specifications and " +
                         "needs to be fixed", subscriber.getClass(), e);

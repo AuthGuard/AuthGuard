@@ -29,11 +29,11 @@ class SmsOtpSubscriberTest {
 
     @Test
     void onValidMessageWithTokenOptions() {
-        final OneTimePasswordBO otp = OneTimePasswordBO.builder()
+        OneTimePasswordBO otp = OneTimePasswordBO.builder()
                 .password("password")
                 .build();
 
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .phoneNumber(PhoneNumberBO.builder()
                         .number("+178945632")
                         .build())
@@ -41,15 +41,15 @@ class SmsOtpSubscriberTest {
                 .lastName("second")
                 .build();
 
-        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder()
+        TokenOptionsBO tokenOptions = TokenOptionsBO.builder()
                 .sourceIp("127.0.0.1")
                 .userAgent("Firefox")
                 .build();
 
-        final OtpMessageBody messageBody = new OtpMessageBody(otp, account, tokenOptions,
+        OtpMessageBody messageBody = new OtpMessageBody(otp, account, tokenOptions,
                 false, true);
-        final Message message = Messages.otpGenerated(messageBody);
-        final ImmutableTextMessage expectedEmail = ImmutableTextMessage.builder()
+        Message message = Messages.otpGenerated(messageBody, account.getDomain());
+        ImmutableTextMessage expectedEmail = ImmutableTextMessage.builder()
                 .to(account.getPhoneNumber().getNumber())
                 .template("otp")
                 .parameters(ImmutableMap.of(
@@ -62,7 +62,7 @@ class SmsOtpSubscriberTest {
 
         otpSubscriber.onMessage(message);
 
-        final ArgumentCaptor<ImmutableTextMessage> sentSmsCaptor = ArgumentCaptor.forClass(ImmutableTextMessage.class);
+        ArgumentCaptor<ImmutableTextMessage> sentSmsCaptor = ArgumentCaptor.forClass(ImmutableTextMessage.class);
 
         Mockito.verify(smsProvider).send(sentSmsCaptor.capture());
 
@@ -71,11 +71,11 @@ class SmsOtpSubscriberTest {
 
     @Test
     void onValidMessageWithEmptyTokenOptions() {
-        final OneTimePasswordBO otp = OneTimePasswordBO.builder()
+        OneTimePasswordBO otp = OneTimePasswordBO.builder()
                 .password("password")
                 .build();
 
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .phoneNumber(PhoneNumberBO.builder()
                         .number("+178945632")
                         .build())
@@ -83,12 +83,12 @@ class SmsOtpSubscriberTest {
                 .lastName("second")
                 .build();
 
-        final TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
+        TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
 
-        final OtpMessageBody messageBody = new OtpMessageBody(otp, account, tokenOptions,
+        OtpMessageBody messageBody = new OtpMessageBody(otp, account, tokenOptions,
                 false, true);
-        final Message message = Messages.otpGenerated(messageBody);
-        final ImmutableTextMessage expectedEmail = ImmutableTextMessage.builder()
+        Message message = Messages.otpGenerated(messageBody, account.getDomain());
+        ImmutableTextMessage expectedEmail = ImmutableTextMessage.builder()
                 .to(account.getPhoneNumber().getNumber())
                 .template("otp")
                 .parameters(ImmutableMap.of(
@@ -99,7 +99,7 @@ class SmsOtpSubscriberTest {
 
         otpSubscriber.onMessage(message);
 
-        final ArgumentCaptor<ImmutableTextMessage> sentSmsCaptor = ArgumentCaptor.forClass(ImmutableTextMessage.class);
+        ArgumentCaptor<ImmutableTextMessage> sentSmsCaptor = ArgumentCaptor.forClass(ImmutableTextMessage.class);
 
         Mockito.verify(smsProvider).send(sentSmsCaptor.capture());
 
@@ -108,18 +108,18 @@ class SmsOtpSubscriberTest {
 
     @Test
     void onWrongMessageType() {
-        final OneTimePasswordBO otp = OneTimePasswordBO.builder()
+        OneTimePasswordBO otp = OneTimePasswordBO.builder()
                 .password("password")
                 .build();
 
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .phoneNumber(PhoneNumberBO.builder()
                         .number("+178945632")
                         .build())
                 .build();
 
-        final OtpMessageBody messageBody = new OtpMessageBody(otp, account, null, true, false);
-        final Message message = Messages.otpGenerated(messageBody)
+        OtpMessageBody messageBody = new OtpMessageBody(otp, account, null, true, false);
+        Message message = Messages.otpGenerated(messageBody, account.getDomain())
                 .withEventType(EventType.ADMIN);
 
         otpSubscriber.onMessage(message);
@@ -129,15 +129,15 @@ class SmsOtpSubscriberTest {
 
     @Test
     void onValidMessageNoPhoneNumber() {
-        final OneTimePasswordBO otp = OneTimePasswordBO.builder()
+        OneTimePasswordBO otp = OneTimePasswordBO.builder()
                 .password("password")
                 .build();
 
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .build();
 
-        final OtpMessageBody messageBody = new OtpMessageBody(otp, account, null,true, false);
-        final Message message = Messages.otpGenerated(messageBody);
+        OtpMessageBody messageBody = new OtpMessageBody(otp, account, null,true, false);
+        Message message = Messages.otpGenerated(messageBody, account.getDomain());
 
         otpSubscriber.onMessage(message);
 

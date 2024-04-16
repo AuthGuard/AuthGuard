@@ -12,7 +12,6 @@ public interface App extends Entity {
     Long getParentAccountId();
     Set<PermissionBO> getPermissions();
     Set<String> getRoles();
-    String getDomain();
     String getBaseUrl();
     boolean isActive();
     boolean isDeleted();

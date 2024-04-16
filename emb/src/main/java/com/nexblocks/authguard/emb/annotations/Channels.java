@@ -1,9 +1,12 @@
 package com.nexblocks.authguard.emb.annotations;
 
-public class Channels {
-    private Channels() {}
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-    public Channel channel(final String channelName) {
-        return new RequiredChannel(channelName);
-    }
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface Channels {
+    Channel[] value();
 }

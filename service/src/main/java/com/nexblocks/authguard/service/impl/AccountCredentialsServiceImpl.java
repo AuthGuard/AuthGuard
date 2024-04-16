@@ -219,7 +219,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                                         account.getId(), account.getDomain(), accountToken.getId(), accountToken.getExpiresAt());
 
                                 messageBus.publish(CREDENTIALS_CHANNEL,
-                                        Messages.resetTokenGenerated(new ResetTokenMessage(account, persistedToken)));
+                                        Messages.resetTokenGenerated(new ResetTokenMessage(account, persistedToken), domain));
 
                                 return PasswordResetTokenBO.builder()
                                         .token(returnToken ? persistedToken.getToken() : null)
@@ -282,7 +282,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
 
         return accountsService.update(updated, domain)
                 .thenApply(persisted -> persisted.map(c -> {
-                            messageBus.publish(CREDENTIALS_CHANNEL, Messages.updated(c));
+                            messageBus.publish(CREDENTIALS_CHANNEL, Messages.updated(c, domain));
 
                             return c;
                         })

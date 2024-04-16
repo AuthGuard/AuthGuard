@@ -12,8 +12,10 @@ import java.time.OffsetDateTime;
 @JsonSerialize(as = Message.class)
 @JsonDeserialize(as = Message.class)
 public interface MessageInterface<T> {
+    String getDomain();
     Instant getTimestamp();
     EventType getEventType();
     Class<?> getBodyType();
     T getMessageBody();
+    String getChannel();
 }

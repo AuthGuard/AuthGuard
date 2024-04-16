@@ -40,6 +40,11 @@ class IdempotencyServiceImplTest {
         }
 
         @Override
+        public String getDomain() {
+            return "main";
+        }
+
+        @Override
         public Instant getCreatedAt() {
             return now;
         }

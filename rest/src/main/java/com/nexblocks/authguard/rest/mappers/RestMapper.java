@@ -65,4 +65,6 @@ public interface RestMapper {
     PasswordResetTokenDTO toDTO(PasswordResetTokenBO passwordResetTokenBO);
 
     ActionTokenDTO toDTO(ActionTokenBO actionTokenBO);
+
+    EventDTO toDTO(EventBO eventBO);
 }

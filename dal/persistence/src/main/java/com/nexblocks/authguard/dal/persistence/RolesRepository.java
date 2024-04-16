@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public interface RolesRepository extends ImmutableRecordRepository<RoleDO> {
-    CompletableFuture<Collection<RoleDO>> getAll(String domain, Page page);
+    CompletableFuture<Collection<RoleDO>> getAll(String domain, Page<Long> page);
     CompletableFuture<Optional<RoleDO>> getByName(String name, String domain);
     CompletableFuture<Collection<RoleDO>> getMultiple(Collection<String> rolesNames, String domain);
 }

@@ -102,7 +102,7 @@ public class ExchangeServiceImpl implements ExchangeService {
 
         exchangeAttemptsService.create(attempt);
 
-        emb.publish(CHANNEL, Messages.auth(authMessage));
+        emb.publish(CHANNEL, Messages.auth(authMessage, authRequest.getDomain()));
     }
 
     private void exchangeFailure(final AuthRequestBO authRequest, final RequestContextBO requestContext,
@@ -125,11 +125,11 @@ public class ExchangeServiceImpl implements ExchangeService {
                 exchangeAttemptsService.create(attempt);
             }
 
-            emb.publish(CHANNEL, Messages.auth(authMessage));
+            emb.publish(CHANNEL, Messages.auth(authMessage, authRequest.getDomain()));
         } else {
             final AuthMessage authMessage = AuthMessage.failure(fromTokenType, toTokenType, e);
 
-            emb.publish(CHANNEL, Messages.auth(authMessage));
+            emb.publish(CHANNEL, Messages.auth(authMessage, authRequest.getDomain()));
         }
     }
 

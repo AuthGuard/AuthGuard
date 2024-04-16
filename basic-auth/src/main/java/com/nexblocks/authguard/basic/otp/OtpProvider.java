@@ -74,7 +74,7 @@ public class OtpProvider implements AuthProvider {
 
                     AuthResponseBO token = createToken(persistedOtp.getId(), account.getId());
 
-                    messageBus.publish(OTP_CHANNEL, Messages.otpGenerated(messageBody));
+                    messageBus.publish(OTP_CHANNEL, Messages.otpGenerated(messageBody, account.getDomain()));
 
                     return token;
                 });

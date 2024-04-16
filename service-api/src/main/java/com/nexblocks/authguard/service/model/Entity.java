@@ -4,6 +4,7 @@ import java.time.Instant;
 
 public interface Entity {
     long getId();
+    String getDomain();
     Instant getCreatedAt();
     Instant getLastModified();
     String getEntityType();
