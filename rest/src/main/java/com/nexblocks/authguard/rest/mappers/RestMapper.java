@@ -67,4 +67,7 @@ public interface RestMapper {
     ActionTokenDTO toDTO(ActionTokenBO actionTokenBO);
 
     EventDTO toDTO(EventBO eventBO);
+
+    CryptoKeyDTO toDTO(EphemeralKeyBO ephemeralKeyBO);
+    CryptoKeyDTO toDTO(PersistedKeyBO persistedKeyBO);
 }

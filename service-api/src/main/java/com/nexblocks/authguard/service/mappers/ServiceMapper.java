@@ -5,6 +5,8 @@ import com.nexblocks.authguard.dal.model.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.Base64;
+
 @Mapper
 public interface ServiceMapper {
     CredentialsDO toDO(CredentialsBO credentialsBO);
@@ -56,4 +58,15 @@ public interface ServiceMapper {
 
     EventDO toDO(EventBO eventBO);
     EventBO toBO(EventDO eventDO);
+
+    CryptoKeyDO toDO(PersistedKeyBO cryptoKeyDO);
+    PersistedKeyBO toBO(CryptoKeyDO cryptoKeyDO);
+
+    default byte[] toBlob(final String base64) {
+        return base64 == null ? null : Base64.getDecoder().decode(base64);
+    }
+
+    default String toBase64(final byte[] blob) {
+        return blob == null ? null : Base64.getEncoder().encodeToString(blob);
+    }
 }

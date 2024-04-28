@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.jwt.crypto;
+package com.nexblocks.authguard.crypto;
 
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
@@ -9,7 +9,7 @@ import java.util.Base64;
 /**
  * A class of helper functions to convert asymmetric keys from base64
  * into a {@link KeyPair} instance containing both the public and
- * private keys. To load the actual keys from PEM files, use {@link KeyLoader}.
+ * private keys.
  */
 public class AsymmetricKeys {
     public static KeyPair rsaFromBase64Keys(final String base64Public, final String base64Private) throws NoSuchAlgorithmException, InvalidKeySpecException {

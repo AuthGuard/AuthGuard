@@ -4,7 +4,6 @@ import com.google.inject.AbstractModule;
 import com.nexblocks.authguard.basic.BasicAuthProvider;
 import com.nexblocks.authguard.emb.AutoSubscribers;
 import com.nexblocks.authguard.service.*;
-import com.nexblocks.authguard.service.impl.PersistenceService;
 import org.mockito.Mockito;
 
 public class MocksBinder extends AbstractModule {
@@ -29,5 +28,6 @@ public class MocksBinder extends AbstractModule {
         bind(AccountLocksService.class).toInstance(Mockito.mock(AccountLocksService.class));
         bind(ActionTokenService.class).toInstance(Mockito.mock(ActionTokenService.class));
         bind(EventsService.class).toInstance(Mockito.mock(EventsService.class));
+        bind(KeyManagementService.class).toInstance(Mockito.mock(KeyManagementService.class));
     }
 }
