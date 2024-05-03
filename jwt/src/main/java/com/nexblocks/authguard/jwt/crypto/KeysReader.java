@@ -1,6 +1,7 @@
 package com.nexblocks.authguard.jwt.crypto;
 
 import com.nexblocks.authguard.crypto.AsymmetricKeys;
+import com.nexblocks.authguard.crypto.KeyLoader;
 import com.nexblocks.authguard.crypto.SymmetricKeys;
 import com.nexblocks.authguard.service.exceptions.ConfigurationException;
 

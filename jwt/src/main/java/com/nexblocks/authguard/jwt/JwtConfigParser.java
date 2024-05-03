@@ -2,7 +2,7 @@ package com.nexblocks.authguard.jwt;
 
 import com.auth0.jwt.algorithms.Algorithm;
 import com.nexblocks.authguard.crypto.AsymmetricKeys;
-import com.nexblocks.authguard.jwt.crypto.KeyLoader;
+import com.nexblocks.authguard.crypto.KeyLoader;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 

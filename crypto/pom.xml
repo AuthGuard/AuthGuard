@@ -32,6 +32,13 @@
             <artifactId>bcprov-jdk15on</artifactId>
             <version>${bouncy-castle.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.nexblocks.authguard</groupId>
+            <artifactId>config</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
 </project>

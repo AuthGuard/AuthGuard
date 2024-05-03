@@ -10,6 +10,8 @@ public interface PersistedKey extends Entity {
     Long getAppId();
     String getAlgorithm();
     int getSize();
+    int getVersion();
+    byte[] getNonce();
     String getPrivateKey();
     String getPublicKey();
 }

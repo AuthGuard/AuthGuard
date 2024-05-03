@@ -25,7 +25,10 @@ public class CryptoKeyDO extends AbstractDO {
     private String appId;
     private String algorithm;
     private int size;
+    private int version;
 
+    @Lob
+    private byte[] nonce;
     @Lob
     private byte[] privateKey;
     @Lob
