@@ -42,7 +42,7 @@ class JwtConfigParserTest {
 
     @Test
     void parseRsa512NoFile() {
-        final String publicKeyPath = "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAo4+hlvEGVdSHRV4M61HD" +
+        final String publicKey = "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAo4+hlvEGVdSHRV4M61HD" +
                 "58oF4h6sZ5vbFc32PuS46Fr1mSf41ywnuXdMYhjy6G0FUtDItZAXJwEU/Dw79azC" +
                 "YD4+xB7dHzazxH7mRQuQg4XG/4sF0RxSMqMbTRbK8a8b5Sh4vLt4vyRKES6+gNRc" +
                 "K50CQIxTdyGNHUJUqa9SMk6eQno7eK5RKAGhRYCIT9jHF6U9UQVquer6wmXk0mxq" +
@@ -54,7 +54,7 @@ class JwtConfigParserTest {
                 "gLfyrexdDb1Y8RFU+MEwFsGGAPZPh/DOCDNr3ewvwqkx+m6wwZvJMH6s0cU3pG0N" +
                 "qEDugZRhffpQ6MpG4F9DkpQnvEFi1yNoWSbP0RWlUraUi97Mgwmiyq5u2Avai6AA" +
                 "A7rpbu2cXQ1GbQwTEAkw+SUCAwEAAQ==";
-        final String privateKeyPath = "MIIJQgIBADANBgkqhkiG9w0BAQEFAASCCSwwggkoAgEAAoICAQCjj6GW8QZV1IdF" +
+        final String privateKey = "MIIJQgIBADANBgkqhkiG9w0BAQEFAASCCSwwggkoAgEAAoICAQCjj6GW8QZV1IdF" +
                 "XgzrUcPnygXiHqxnm9sVzfY+5LjoWvWZJ/jXLCe5d0xiGPLobQVS0Mi1kBcnART8" +
                 "PDv1rMJgPj7EHt0fNrPEfuZFC5CDhcb/iwXRHFIyoxtNFsrxrxvlKHi8u3i/JEoR" +
                 "Lr6A1FwrnQJAjFN3IY0dQlSpr1IyTp5Cejt4rlEoAaFFgIhP2McXpT1RBWq56vrC" +
@@ -105,7 +105,7 @@ class JwtConfigParserTest {
                 "ydZKkhTEJk5/ns7lXWWcwbSw8tYNAJNdVylshFeEQa3UhcA4r2HklmMJS51nw/Lg" +
                 "zz0xHBD6hjp0F987aZSDZIPjZjEa0A==";
 
-        final Algorithm algorithm = JwtConfigParser.parseAlgorithm("RSA512", publicKeyPath, privateKeyPath);
+        final Algorithm algorithm = JwtConfigParser.parseAlgorithm("RSA512", publicKey, privateKey);
 
         final String jwt = JWT.create().withClaim("claim", "value").sign(algorithm);
 

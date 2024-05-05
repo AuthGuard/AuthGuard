@@ -21,6 +21,8 @@ import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 
 import java.util.Collections;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class KeyManagementSystemRoute extends KeyManagementSystemApi {
@@ -58,6 +60,8 @@ public class KeyManagementSystemRoute extends KeyManagementSystemApi {
                 .size(key.getSize())
                 .privateKey(key.getPrivateKey())
                 .publicKey(key.getPublicKey())
+                .passcodeProtected(request.isPasscodeProtected())
+                .passcode(request.getPasscode())
                 .build();
 
         CompletableFuture<CryptoKeyDTO> persisted = keyManagementService.create(toPersist)
@@ -74,7 +78,14 @@ public class KeyManagementSystemRoute extends KeyManagementSystemApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        CompletableFuture<CryptoKeyDTO> key = keyManagementService.getById(keyId.get(), Domain.fromContext(context))
+        String decrypt = context.queryParam("decrypt");
+        String passcode = context.queryParam("passcode");
+
+        CompletableFuture<Optional<PersistedKeyBO>> retrieveFuture = Objects.equals(decrypt, "1") ?
+                keyManagementService.getDecrypted(keyId.get(), Domain.fromContext(context), passcode) :
+                keyManagementService.getById(keyId.get(), Domain.fromContext(context));
+
+        CompletableFuture<CryptoKeyDTO> key = retrieveFuture
                 .thenApply(opt -> opt.map(restMapper::toDTO)
                         .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.CRYPTO_KEY_DOES_NOT_EXIST, "Key does not exist")));
 

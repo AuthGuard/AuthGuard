@@ -13,6 +13,8 @@ public interface CryptoKeyRequest {
     Algorithm getAlgorithm();
     Integer getSize();
     boolean isPersist();
+    boolean isPasscodeProtected();
+    String getPasscode();
 
     enum Algorithm {
         RSA,

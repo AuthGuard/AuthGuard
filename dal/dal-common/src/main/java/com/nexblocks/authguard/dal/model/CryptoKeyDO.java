@@ -27,6 +27,10 @@ public class CryptoKeyDO extends AbstractDO {
     private int size;
     private int version;
 
+    private boolean passcodeProtected;
+    private String passcodeCheckPlain;
+    private String passcodeCheckEncrypted;
+
     @Lob
     private byte[] nonce;
     @Lob

@@ -3,7 +3,6 @@ package com.nexblocks.authguard.service.impl;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
-import com.nexblocks.authguard.config.KeyConfigValue;
 import com.nexblocks.authguard.crypto.*;
 import com.nexblocks.authguard.crypto.generators.AesParameters;
 import com.nexblocks.authguard.crypto.generators.EcSecp256k1Parameters;
@@ -13,6 +12,7 @@ import com.nexblocks.authguard.dal.model.CryptoKeyDO;
 import com.nexblocks.authguard.dal.persistence.CryptoKeysRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.AccountsService;
+import com.nexblocks.authguard.service.ApplicationsService;
 import com.nexblocks.authguard.service.KeyManagementService;
 import com.nexblocks.authguard.service.config.CryptoKeyConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
@@ -22,9 +22,12 @@ import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.EphemeralKeyBO;
 import com.nexblocks.authguard.service.model.PersistedKeyBO;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
@@ -35,7 +38,7 @@ public class KeyManagementServiceImpl implements KeyManagementService {
     private static final String CRYPTO_KEYS_CHANNEL = "crypto_keys";
 
     private final AccountsService accountsService;
-    private final ServiceMapper serviceMapper;
+    private final ApplicationsService applicationsService;
     private final CryptographicRandom cryptographicRandom;
     private final PersistenceService<PersistedKeyBO, CryptoKeyDO, CryptoKeysRepository> persistenceService;
     private final CryptoKeyConfig config;
@@ -43,12 +46,13 @@ public class KeyManagementServiceImpl implements KeyManagementService {
 
     @Inject
     public KeyManagementServiceImpl(final AccountsService accountsService,
+                                    final ApplicationsService applicationsService,
                                     final ServiceMapper serviceMapper,
                                     final CryptoKeysRepository cryptoKeysRepository,
                                     final MessageBus messageBus,
                                     final @Named("cryptographic_keys") ConfigContext cryptoKeysConfigContext) {
         this.accountsService = accountsService;
-        this.serviceMapper = serviceMapper;
+        this.applicationsService = applicationsService;
 
         this.config = cryptoKeysConfigContext.asConfigBean(CryptoKeyConfig.class);
         this.encryptionKey = Base64.getDecoder().decode(KeyLoader.readTexFileOrValue(this.config.getEncryptionKey()));
@@ -72,6 +76,16 @@ public class KeyManagementServiceImpl implements KeyManagementService {
 
                         return persistenceService.create(encrypt(key));
                     });
+        } else if (key.getAppId() != null) {
+            createFuture = applicationsService.getById(key.getAppId(), key.getDomain())
+                    .thenCompose(opt -> {
+                        if (opt.isEmpty()) {
+                            throw new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST,
+                                    "No application with ID " + key.getAccountId() + " exists");
+                        }
+
+                        return persistenceService.create(encrypt(key));
+                    });
         } else {
             createFuture = persistenceService.create(encrypt(key));
         }
@@ -85,18 +99,7 @@ public class KeyManagementServiceImpl implements KeyManagementService {
 
     @Override
     public CompletableFuture<Optional<PersistedKeyBO>> getById(final long id, final String domain) {
-        return persistenceService.getById(id)
-                .thenApply(opt -> opt.map(key -> {
-                    byte[] nonce = key.getNonce();
-                    byte[] encryptedPrivateKey = Base64.getDecoder().decode(key.getPrivateKey());
-                    byte[] decryptedPrivateKey = ChaCha20Encryptor.decrypt(encryptedPrivateKey, encryptionKey, nonce);
-
-                    return PersistedKeyBO.builder()
-                            .from(key)
-                            .privateKey(Base64.getEncoder().encodeToString(decryptedPrivateKey))
-                            .nonce()
-                            .build();
-                }));
+        return persistenceService.getById(id, domain);
     }
 
     @Override
@@ -127,6 +130,41 @@ public class KeyManagementServiceImpl implements KeyManagementService {
 
         throw new ServiceException(ErrorCode.CRYPTO_INVALID_ALGO, "Algorithm " + algorithm +
                 " is not supported");
+    }
+
+    @Override
+    public CompletableFuture<Optional<PersistedKeyBO>> getDecrypted(final long id, final String domain, final String passcode) {
+        return getById(id, domain)
+                .thenApply(opt -> opt.map(key -> {
+                    byte[] nonce;
+
+                    if (key.isPasscodeProtected()) {
+                        if (passcode == null) {
+                            throw new ServiceException(ErrorCode.CRYPTO_MISSING_PASSCODE,
+                                    "Passcode protection was enabled for the key but no passcode was given");
+                        }
+
+                        nonce = remixNonce(key.getNonce(), passcode);
+                        byte[] passcodeCheck = ChaCha20Encryptor.decrypt(Base64.getDecoder().decode(key.getPasscodeCheckEncrypted()),
+                                encryptionKey, nonce);
+
+                        if (!Arrays.equals(passcodeCheck, key.getPasscodeCheckPlain().getBytes(StandardCharsets.UTF_8))) {
+                            throw new ServiceException(ErrorCode.CRYPTO_INVALID_PASSCODE,
+                                    "Passcode check failed");
+                        }
+                    } else {
+                        nonce = key.getNonce();
+                    }
+
+                    byte[] encryptedPrivateKey = Base64.getDecoder().decode(key.getPrivateKey());
+                    byte[] decryptedPrivateKey = ChaCha20Encryptor.decrypt(encryptedPrivateKey, encryptionKey, nonce);
+
+                    return PersistedKeyBO.builder()
+                            .from(key)
+                            .privateKey(Base64.getEncoder().encodeToString(decryptedPrivateKey))
+                            .nonce()
+                            .build();
+                }));
     }
 
     private void verifySize(final AlgorithmDetails<?> algorithmDetails, final int size) {
@@ -161,14 +199,55 @@ public class KeyManagementServiceImpl implements KeyManagementService {
 
     private PersistedKeyBO encrypt(final PersistedKeyBO key) {
         byte[] nonce = cryptographicRandom.bytes(12);
-        byte[] privateKeyRaw = Base64.getDecoder().decode(key.getPrivateKey());
-        byte[] encryptedPrivateKey = ChaCha20Encryptor.encrypt(privateKeyRaw, encryptionKey, nonce);
 
-        return PersistedKeyBO.builder()
+        PersistedKeyBO.Builder persistedKeyBuilder = PersistedKeyBO.builder()
                 .from(key)
-                .privateKey(Base64.getEncoder().encodeToString(encryptedPrivateKey))
                 .nonce(nonce)
-                .version(config.getVersion())
-                .build();
+                .version(config.getVersion());
+
+        if (key.isPasscodeProtected()) {
+            if (key.getPasscode() == null) {
+                throw new ServiceException(ErrorCode.CRYPTO_INVALID_PARAMS,
+                        "Passcode protection was enabled for the key but no passcode was given");
+            }
+
+            encryptWithPasscode(persistedKeyBuilder, key, nonce);
+        } else {
+            byte[] privateKeyRaw = Base64.getDecoder().decode(key.getPrivateKey());
+            byte[] encryptedPrivateKey = ChaCha20Encryptor.encrypt(privateKeyRaw, encryptionKey, nonce);
+
+            persistedKeyBuilder.privateKey(Base64.getEncoder().encodeToString(encryptedPrivateKey));
+        }
+
+        return persistedKeyBuilder.build();
+    }
+
+    private void encryptWithPasscode(final PersistedKeyBO.Builder encryptedKeyBuilder,
+                                     final PersistedKeyBO plainKey,
+                                     final byte[] nonce) {
+        byte[] remixedNonce = remixNonce(nonce, plainKey.getPasscode());
+
+        String passcodeCheckPlain = RandomStringUtils.random(5);
+        byte[] passcodeCheckPlainBytes = passcodeCheckPlain.getBytes(StandardCharsets.UTF_8);
+        byte[] passcodeCheckEncryptedBytes = ChaCha20Encryptor.encrypt(passcodeCheckPlainBytes, encryptionKey, remixedNonce);
+
+        byte[] privateKeyRaw = Base64.getDecoder().decode(plainKey.getPrivateKey());
+        byte[] encryptedPrivateKey = ChaCha20Encryptor.encrypt(privateKeyRaw, encryptionKey, remixedNonce);
+
+        encryptedKeyBuilder.privateKey(Base64.getEncoder().encodeToString(encryptedPrivateKey))
+                .passcodeCheckPlain(passcodeCheckPlain)
+                .passcodeCheckEncrypted(Base64.getEncoder().encodeToString(passcodeCheckEncryptedBytes));
+    }
+
+    private byte[] remixNonce(final byte[] nonce, final String passcode) {
+        byte[] passcodeBytes = passcode.getBytes(StandardCharsets.UTF_8);
+        byte[] remixed = Arrays.copyOf(nonce, nonce.length);
+
+        for (int i = 0; i < passcodeBytes.length; i++) {
+            int nonceIndex = i % nonce.length;
+            remixed[nonceIndex] ^= passcodeBytes[i];
+        }
+
+        return remixed;
     }
 }

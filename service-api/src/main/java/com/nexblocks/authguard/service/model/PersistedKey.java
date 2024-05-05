@@ -11,6 +11,10 @@ public interface PersistedKey extends Entity {
     String getAlgorithm();
     int getSize();
     int getVersion();
+    String getPasscode();
+    boolean isPasscodeProtected();
+    String getPasscodeCheckPlain();
+    String getPasscodeCheckEncrypted();
     byte[] getNonce();
     String getPrivateKey();
     String getPublicKey();
