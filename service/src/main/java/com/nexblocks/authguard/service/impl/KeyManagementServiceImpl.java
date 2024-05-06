@@ -10,6 +10,7 @@ import com.nexblocks.authguard.crypto.generators.GeneratorParameters;
 import com.nexblocks.authguard.crypto.generators.RsaParameters;
 import com.nexblocks.authguard.dal.model.CryptoKeyDO;
 import com.nexblocks.authguard.dal.persistence.CryptoKeysRepository;
+import com.nexblocks.authguard.dal.persistence.Page;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.ApplicationsService;
@@ -27,19 +28,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Objects;
-import java.util.Optional;
+import java.time.Instant;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class KeyManagementServiceImpl implements KeyManagementService {
+    private static final int PAGE_SIZE = 100;
+    private static final Instant DEFAULT_CURSOR = Instant.MAX;
     private static final Logger LOG = LoggerFactory.getLogger(ClientsServiceImpl.class);
     private static final String CRYPTO_KEYS_CHANNEL = "crypto_keys";
 
+    private final CryptoKeysRepository repository;
     private final AccountsService accountsService;
     private final ApplicationsService applicationsService;
     private final CryptographicRandom cryptographicRandom;
+    private final ServiceMapper serviceMapper;
     private final PersistenceService<PersistedKeyBO, CryptoKeyDO, CryptoKeysRepository> persistenceService;
     private final CryptoKeyConfig config;
     private final byte[] encryptionKey;
@@ -51,8 +55,10 @@ public class KeyManagementServiceImpl implements KeyManagementService {
                                     final CryptoKeysRepository cryptoKeysRepository,
                                     final MessageBus messageBus,
                                     final @Named("cryptographic_keys") ConfigContext cryptoKeysConfigContext) {
+        this.repository = cryptoKeysRepository;
         this.accountsService = accountsService;
         this.applicationsService = applicationsService;
+        this.serviceMapper = serviceMapper;
 
         this.config = cryptoKeysConfigContext.asConfigBean(CryptoKeyConfig.class);
         this.encryptionKey = Base64.getDecoder().decode(KeyLoader.readTexFileOrValue(this.config.getEncryptionKey()));
@@ -165,6 +171,23 @@ public class KeyManagementServiceImpl implements KeyManagementService {
                             .nonce()
                             .build();
                 }));
+    }
+
+    @Override
+    public CompletableFuture<List<PersistedKeyBO>> getByAccountId(final long accountId, final Instant cursor) {
+        return repository.findByAccountId(accountId, Page.of(cursor, PAGE_SIZE, DEFAULT_CURSOR))
+                .thenApply(list -> list.stream()
+                        .map(serviceMapper::toBO)
+                        .collect(Collectors.toList()));
+    }
+
+    @Override
+    public CompletableFuture<List<PersistedKeyBO>> getByAppId(final long appId, final Instant cursor) {
+        return repository.findByAppId(appId, Page.of(cursor, PAGE_SIZE, DEFAULT_CURSOR))
+                .thenApply(list -> list.stream()
+                        .map(serviceMapper::toBO)
+                        .collect(Collectors.toList()));
+
     }
 
     private void verifySize(final AlgorithmDetails<?> algorithmDetails, final int size) {

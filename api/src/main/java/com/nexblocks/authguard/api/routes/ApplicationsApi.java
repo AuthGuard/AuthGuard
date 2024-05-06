@@ -27,6 +27,7 @@ public abstract class ApplicationsApi implements ApiRoute {
         patch("/:id/roles", this::updateRoles, ActorRoles.adminClient());
 
         get("/:id/keys", this::getApiKeys, ActorRoles.adminClient());
+        get("/:id/crypto_keys", this::getCryptoKeys, ActorRoles.adminClient());
     }
 
     public abstract void create(final Context context);
@@ -48,4 +49,5 @@ public abstract class ApplicationsApi implements ApiRoute {
     public abstract void updateRoles(final Context context);
 
     public abstract void getApiKeys(final Context context);
+    public abstract void getCryptoKeys(final Context context);
 }

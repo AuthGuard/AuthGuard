@@ -14,7 +14,7 @@ public abstract class KeyManagementSystemApi implements ApiRoute {
 
     @Override
     public void addEndpoints() {
-        post("/", this::generate, ActorRoles.anyAdmin());
+        post("/", this::generate, ActorRoles.adminClient());
         get("/:id", this::getById, ActorRoles.adminClient());
         delete("/:id", this::deleteById, ActorRoles.adminClient());
     }

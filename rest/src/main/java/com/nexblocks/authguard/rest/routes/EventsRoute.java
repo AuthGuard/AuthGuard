@@ -4,18 +4,15 @@ import com.google.inject.Inject;
 import com.nexblocks.authguard.api.dto.entities.CollectionResponse;
 import com.nexblocks.authguard.api.dto.entities.CollectionResponseDTO;
 import com.nexblocks.authguard.api.dto.entities.EventDTO;
-import com.nexblocks.authguard.api.dto.validation.violations.Violation;
-import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.EventsApi;
-import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
+import com.nexblocks.authguard.rest.util.Cursors;
 import com.nexblocks.authguard.rest.util.Domain;
 import com.nexblocks.authguard.service.EventsService;
 import com.nexblocks.authguard.service.model.EventBO;
 import io.javalin.http.Context;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -35,7 +32,7 @@ public class EventsRoute extends EventsApi {
         String domain = Domain.fromContext(context);
         String channel = context.queryParam("channel");
         Long cursor = context.queryParam("cursor", Long.class).getOrNull();
-        Instant instantCursor = parseInstantCursor(cursor);
+        Instant instantCursor = Cursors.parseInstantCursor(cursor);
 
         CompletableFuture<List<EventBO>> eventsFuture;
 
@@ -50,20 +47,6 @@ public class EventsRoute extends EventsApi {
                 .thenApply(this::collectionResponse);
 
         context.json(result);
-    }
-
-    private Instant parseInstantCursor(final Long cursor) {
-        if (cursor == null) {
-            return null;
-        }
-
-        try {
-            return Instant.ofEpochMilli(cursor);
-        } catch (Exception e) {
-            throw new RequestValidationException(Collections.singletonList(
-                    new Violation("cursor", ViolationType.INVALID_VALUE)
-            ));
-        }
     }
 
     private CollectionResponseDTO<EventDTO> collectionResponse(List<EventDTO> list) {
