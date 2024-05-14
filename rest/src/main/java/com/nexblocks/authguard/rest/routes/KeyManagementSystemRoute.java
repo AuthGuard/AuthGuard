@@ -1,7 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
 import com.google.inject.Inject;
-import com.nexblocks.authguard.api.dto.entities.ClientDTO;
 import com.nexblocks.authguard.api.dto.entities.CryptoKeyDTO;
 import com.nexblocks.authguard.api.dto.requests.CryptoKeyRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
@@ -10,6 +9,7 @@ import com.nexblocks.authguard.api.routes.KeyManagementSystemApi;
 import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
+import com.nexblocks.authguard.rest.util.Cursors;
 import com.nexblocks.authguard.rest.util.Domain;
 import com.nexblocks.authguard.service.KeyManagementService;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
@@ -20,10 +20,13 @@ import com.nexblocks.authguard.service.util.AsyncUtils;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 
+import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class KeyManagementSystemRoute extends KeyManagementSystemApi {
 
@@ -57,6 +60,7 @@ public class KeyManagementSystemRoute extends KeyManagementSystemApi {
         PersistedKeyBO toPersist = PersistedKeyBO.builder()
                 .domain(domain)
                 .algorithm(key.getAlgorithm())
+                .name(request.getName())
                 .size(key.getSize())
                 .privateKey(key.getPrivateKey())
                 .publicKey(key.getPublicKey())
@@ -67,7 +71,21 @@ public class KeyManagementSystemRoute extends KeyManagementSystemApi {
         CompletableFuture<CryptoKeyDTO> persisted = keyManagementService.create(toPersist)
                 .thenApply(restMapper::toDTO);
 
-        context.status(200).json(persisted);
+        context.status(201).json(persisted);
+    }
+
+    @Override
+    public void getByDomain(final Context context) {
+        String domain = Domain.fromContext(context);
+        Long cursor = context.queryParam("cursor", Long.class).getOrNull();
+        Instant instantCursor = Cursors.parseInstantCursor(cursor);
+
+        CompletableFuture<List<CryptoKeyDTO>> keys = keyManagementService.getByDomain(domain, instantCursor)
+                .thenApply(list -> list.stream()
+                        .map(restMapper::toDTO)
+                        .collect(Collectors.toList()));
+
+        context.json(keys);
     }
 
     @Override

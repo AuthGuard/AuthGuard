@@ -19,10 +19,35 @@ import java.util.Map;
         name = "crypto_keys.getById",
         query = "SELECT key FROM CryptoKeyDO key WHERE key.id = :id AND key.deleted = false"
 )
+@NamedQuery(
+        name = "crypto_keys.getByDomain",
+        query = "SELECT key FROM CryptoKeyDO key WHERE key.domain = :domain " +
+                "AND key.accountId = :id " +
+                "AND key.deleted = false " +
+                "AND key.createdAt < :cursor " +
+                "ORDER BY key.createdAt desc"
+)
+@NamedQuery(
+        name = "crypto_keys.getByAccountId",
+        query = "SELECT key FROM CryptoKeyDO key WHERE key.domain = :domain " +
+                "AND key.accountId = :id " +
+                "AND key.deleted = false " +
+                "AND key.createdAt < :cursor " +
+                "ORDER BY key.createdAt desc"
+)
+@NamedQuery(
+        name = "crypto_keys.getByAppId",
+        query = "SELECT key FROM CryptoKeyDO key WHERE key.domain = :domain " +
+                "AND key.appId = :id " +
+                "AND key.deleted = false " +
+                "AND key.createdAt < :cursor " +
+                "ORDER BY key.createdAt desc"
+)
 public class CryptoKeyDO extends AbstractDO {
     private String domain;
-    private String accountId;
-    private String appId;
+    private Long accountId;
+    private Long appId;
+    private String name;
     private String algorithm;
     private int size;
     private int version;

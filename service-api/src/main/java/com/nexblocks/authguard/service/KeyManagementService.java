@@ -11,6 +11,7 @@ import java.util.concurrent.CompletableFuture;
 public interface KeyManagementService extends CrudService<PersistedKeyBO> {
     EphemeralKeyBO generate(String algorithm, int size);
     CompletableFuture<Optional<PersistedKeyBO>> getDecrypted(long id, String domain, String passcode);
-    CompletableFuture<List<PersistedKeyBO>> getByAccountId(long accountId, Instant cursor);
-    CompletableFuture<List<PersistedKeyBO>> getByAppId(long appId, Instant cursor);
+    CompletableFuture<List<PersistedKeyBO>> getByDomain(String domain, Instant cursor);
+    CompletableFuture<List<PersistedKeyBO>> getByAccountId(String domain, long accountId, Instant cursor);
+    CompletableFuture<List<PersistedKeyBO>> getByAppId(String domain, long appId, Instant cursor);
 }

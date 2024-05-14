@@ -17,6 +17,7 @@ public interface CryptoKey {
     Long getAccountId();
     Long getAppId();
     Instant getCreatedAt();
+    String getName();
     String getAlgorithm();
     int getSize();
     String getPrivateKey();

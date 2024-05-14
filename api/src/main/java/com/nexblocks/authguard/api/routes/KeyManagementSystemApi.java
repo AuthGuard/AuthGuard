@@ -14,12 +14,14 @@ public abstract class KeyManagementSystemApi implements ApiRoute {
 
     @Override
     public void addEndpoints() {
-        post("/", this::generate, ActorRoles.adminClient());
-        get("/:id", this::getById, ActorRoles.adminClient());
-        delete("/:id", this::deleteById, ActorRoles.adminClient());
+        post("/generator", this::generate, ActorRoles.adminClient());
+        get("/keys", this::getByDomain, ActorRoles.adminClient());
+        get("/keys/:id", this::getById, ActorRoles.adminClient());
+        delete("/keys/:id", this::deleteById, ActorRoles.adminClient());
     }
 
     public abstract void generate(final Context context);
+    public abstract void getByDomain(final Context context);
 
     public abstract void getById(final Context context);
 

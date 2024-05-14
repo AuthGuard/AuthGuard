@@ -13,6 +13,7 @@ public class CryptoKeyRequestValidator implements Validator<CryptoKeyRequestDTO>
         return FluentValidator.begin()
                 .validate("algorithm", obj.getAlgorithm(), Constraints.required)
                 .validate("size", obj.getSize(), Constraints.required)
+                .validate("name", obj.getName(), Constraints.reasonableLength)
                 .getViolations();
     }
 }

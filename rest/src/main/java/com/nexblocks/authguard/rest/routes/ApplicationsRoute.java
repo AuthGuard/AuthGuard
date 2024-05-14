@@ -227,10 +227,11 @@ public class ApplicationsRoute extends ApplicationsApi {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
+        String domain = Domain.fromContext(context);
         Long cursor = context.queryParam("cursor", Long.class).getOrNull();
         Instant instantCursor = Cursors.parseInstantCursor(cursor);
 
-        CompletableFuture<List<CryptoKeyDTO>> keys = keyManagementService.getByAccountId(appId.get(), instantCursor)
+        CompletableFuture<List<CryptoKeyDTO>> keys = keyManagementService.getByAccountId(domain, appId.get(), instantCursor)
                 .thenApply(list -> list.stream()
                         .map(restMapper::toDTO)
                         .collect(Collectors.toList()));

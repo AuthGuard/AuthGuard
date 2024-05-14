@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public interface CryptoKeysRepository extends Repository<CryptoKeyDO> {
-    CompletableFuture<List<CryptoKeyDO>> findByAccountId(long accountId, Page<Instant> page);
-    CompletableFuture<List<CryptoKeyDO>> findByAppId(long appId, Page<Instant> page);
+    CompletableFuture<List<CryptoKeyDO>> findByDomain(String domain, Page<Instant> page);
+    CompletableFuture<List<CryptoKeyDO>> findByAccountId(String domain, long accountId, Page<Instant> page);
+    CompletableFuture<List<CryptoKeyDO>> findByAppId(String domain, long appId, Page<Instant> page);
 }

@@ -12,6 +12,7 @@ import org.immutables.value.Value;
 public interface CryptoKeyRequest {
     Algorithm getAlgorithm();
     Integer getSize();
+    String getName();
     boolean isPersist();
     boolean isPasscodeProtected();
     String getPasscode();

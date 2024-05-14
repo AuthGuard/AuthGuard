@@ -174,16 +174,25 @@ public class KeyManagementServiceImpl implements KeyManagementService {
     }
 
     @Override
-    public CompletableFuture<List<PersistedKeyBO>> getByAccountId(final long accountId, final Instant cursor) {
-        return repository.findByAccountId(accountId, Page.of(cursor, PAGE_SIZE, DEFAULT_CURSOR))
+    public CompletableFuture<List<PersistedKeyBO>> getByDomain(final String domain, final Instant cursor) {
+        return repository.findByDomain(domain, Page.of(cursor, PAGE_SIZE, DEFAULT_CURSOR))
                 .thenApply(list -> list.stream()
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList()));
     }
 
     @Override
-    public CompletableFuture<List<PersistedKeyBO>> getByAppId(final long appId, final Instant cursor) {
-        return repository.findByAppId(appId, Page.of(cursor, PAGE_SIZE, DEFAULT_CURSOR))
+    public CompletableFuture<List<PersistedKeyBO>> getByAccountId(final String domain, final long accountId,
+                                                                  final Instant cursor) {
+        return repository.findByAccountId(domain, accountId, Page.of(cursor, PAGE_SIZE, DEFAULT_CURSOR))
+                .thenApply(list -> list.stream()
+                        .map(serviceMapper::toBO)
+                        .collect(Collectors.toList()));
+    }
+
+    @Override
+    public CompletableFuture<List<PersistedKeyBO>> getByAppId(final String domain, final long appId, final Instant cursor) {
+        return repository.findByAppId(domain, appId, Page.of(cursor, PAGE_SIZE, DEFAULT_CURSOR))
                 .thenApply(list -> list.stream()
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList()));

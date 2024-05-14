@@ -8,6 +8,7 @@ public interface PersistedKey extends Entity {
     String getDomain();
     Long getAccountId();
     Long getAppId();
+    String getName();
     String getAlgorithm();
     int getSize();
     int getVersion();
