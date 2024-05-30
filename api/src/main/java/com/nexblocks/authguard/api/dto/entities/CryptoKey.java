@@ -22,4 +22,5 @@ public interface CryptoKey {
     int getSize();
     String getPrivateKey();
     String getPublicKey();
+    Boolean isPasscodeProtected();
 }

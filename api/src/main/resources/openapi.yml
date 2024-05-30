@@ -174,7 +174,7 @@ paths:
       responses:
         200:
           description: Success
-          $ref: "#/components/responses/ApplicationResponse"
+          $ref: "#/components/responses/AccountResponse"
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
@@ -196,7 +196,7 @@ paths:
       responses:
         200:
           description: Success
-          $ref: "#/components/responses/ApplicationResponse"
+          $ref: "#/components/responses/AccountResponse"
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
@@ -275,10 +275,11 @@ paths:
       description: Get a list of cryptographic keys associated with an account
       tags:
         - Accounts
-        - Cryptographic Keys
+        - Key Management System
       parameters:
         - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
+        - $ref: "#/components/parameters/CursorQueryParameter"
       responses:
         200:
           description: Success
@@ -494,6 +495,50 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
+  /domains/{domain}/apps/{id}/permissions:
+    patch:
+      operationId: updateAppPermissions
+      description: Update the permissions of an app
+      tags:
+        - Applications
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+        - $ref: "#/components/parameters/IdParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PermissionsRequest"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApplicationResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /domains/{domain}/apps/{id}/roles:
+    patch:
+      operationId: updateAppRoles
+      description: Update the roles of an app
+      tags:
+        - Applications
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+        - $ref: "#/components/parameters/IdParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RolesRequest"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApplicationResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
   /domains/{domain}/apps/{id}/keys:
     get:
       operationId: getApiKeysByAppId
@@ -518,10 +563,11 @@ paths:
       description: Get a list of cryptographic keys associated with an application
       tags:
         - Applications
-        - Cryptographic Keys
+        - Key Management System
       parameters:
         - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
+        - $ref: "#/components/parameters/CursorQueryParameter"
       responses:
         200:
           description: Success
@@ -857,7 +903,7 @@ paths:
       operationId: deleteCryptoKey
       description: Delete an crypto key by ID
       tags:
-        - Cryptographic Keys
+        - Key Management System
       parameters:
         - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
