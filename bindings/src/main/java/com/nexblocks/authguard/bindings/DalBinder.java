@@ -37,6 +37,7 @@ public class DalBinder extends AbstractModule {
         bindAndRegister(ExchangeAttemptsRepository.class);
         bindAndRegister(AccountLocksRepository.class);
         bindAndRegister(EventsRepository.class);
+        bindAndRegister(CryptoKeysRepository.class);
 
         // optional bindings
         if (configContext.get("otp") != null) {

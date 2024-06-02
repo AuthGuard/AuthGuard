@@ -1,5 +1,7 @@
-package com.nexblocks.authguard.jwt.crypto;
+package com.nexblocks.authguard.crypto;
 
+
+import com.nexblocks.authguard.config.KeyConfigValue;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 
@@ -7,6 +9,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.Base64;
 
@@ -28,7 +31,7 @@ public class KeyLoader {
             return KeyLoader.readTextKeyFile(keyValue.value);
         }
 
-        return Base64.getDecoder().decode(keyValue.value);
+        return keyValue.value.getBytes(Charset.defaultCharset());
     }
 
     private static byte[] readTextKeyFile(final String filePath) {

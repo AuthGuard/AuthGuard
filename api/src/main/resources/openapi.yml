@@ -174,7 +174,7 @@ paths:
       responses:
         200:
           description: Success
-          $ref: "#/components/responses/ApplicationResponse"
+          $ref: "#/components/responses/AccountResponse"
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
@@ -196,7 +196,7 @@ paths:
       responses:
         200:
           description: Success
-          $ref: "#/components/responses/ApplicationResponse"
+          $ref: "#/components/responses/AccountResponse"
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
@@ -265,6 +265,25 @@ paths:
         200:
           description: Success
           $ref: "#/components/responses/AccountLocksArrayResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /domains/{domain}/accounts/{id}/crypto_keys:
+    get:
+      operationId: getCryptoKeysByAccountId
+      description: Get a list of cryptographic keys associated with an account
+      tags:
+        - Accounts
+        - Key Management System
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+        - $ref: "#/components/parameters/IdParameter"
+        - $ref: "#/components/parameters/CursorQueryParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/CryptoKeysArrayResponse"
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
@@ -476,6 +495,50 @@ paths:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
 
+  /domains/{domain}/apps/{id}/permissions:
+    patch:
+      operationId: updateAppPermissions
+      description: Update the permissions of an app
+      tags:
+        - Applications
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+        - $ref: "#/components/parameters/IdParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PermissionsRequest"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApplicationResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /domains/{domain}/apps/{id}/roles:
+    patch:
+      operationId: updateAppRoles
+      description: Update the roles of an app
+      tags:
+        - Applications
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+        - $ref: "#/components/parameters/IdParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RolesRequest"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/ApplicationResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
   /domains/{domain}/apps/{id}/keys:
     get:
       operationId: getApiKeysByAppId
@@ -490,6 +553,25 @@ paths:
         200:
           description: Success
           $ref: "#/components/responses/ApiKeysArrayResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /domains/{domain}/apps/{id}/crypto_keys:
+    get:
+      operationId: getCryptoKeysByAppId
+      description: Get a list of cryptographic keys associated with an application
+      tags:
+        - Applications
+        - Key Management System
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+        - $ref: "#/components/parameters/IdParameter"
+        - $ref: "#/components/parameters/CursorQueryParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/CryptoKeysArrayResponse"
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
@@ -734,11 +816,6 @@ paths:
       parameters:
         - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ApiKeyRequest"
       responses:
         200:
           description: Success
@@ -754,15 +831,86 @@ paths:
       parameters:
         - $ref: "#/components/parameters/DomainParameter"
         - $ref: "#/components/parameters/IdParameter"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ApiKeyRequest"
       responses:
         200:
           description: Success
           $ref: "#/components/responses/ApiKeyResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  # ---------------- Key management ---------------
+  /domains/{domain}/kms/generator:
+    post:
+      operationId: generateCryptoKey
+      description: Generate a new crypto key
+      tags:
+        - Key Management System
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CryptoKeyRequest"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/CryptoKeyResponse"
+        201:
+          description: Success
+          $ref: "#/components/responses/CryptoKeyResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /domains/{domain}/kms/keys/:
+    get:
+      operationId: getCryptoKeysByDomain
+      description: Get crypto keys by domain
+      tags:
+        - Key Management System
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+        - $ref: "#/components/parameters/CursorQueryParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/CryptoKeysArrayResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+
+  /domains/{domain}/kms/keys/{id}:
+    get:
+      operationId: getCryptoKeyById
+      description: Get a crypto key by ID
+      tags:
+        - Key Management System
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+        - $ref: "#/components/parameters/IdParameter"
+        - $ref: "#/components/parameters/DecryptQueryParameter"
+        - $ref: "#/components/parameters/PasscodeQueryParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/CryptoKeyResponse"
+        404:
+          description: Not found
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      operationId: deleteCryptoKey
+      description: Delete an crypto key by ID
+      tags:
+        - Key Management System
+      parameters:
+        - $ref: "#/components/parameters/DomainParameter"
+        - $ref: "#/components/parameters/IdParameter"
+      responses:
+        200:
+          description: Success
+          $ref: "#/components/responses/CryptoKeyResponse"
         404:
           description: Not found
           $ref: "#/components/responses/ErrorResponse"
@@ -1326,6 +1474,20 @@ components:
       schema:
         type: string
 
+    DecryptQueryParameter:
+      name: decrypt
+      in: query
+      required: false
+      schema:
+        type: string
+
+    PasscodeQueryParameter:
+      name: passcode
+      in: query
+      required: false
+      schema:
+        type: string
+
   responses:
     ErrorResponse:
       description: _
@@ -1375,15 +1537,22 @@ components:
       description: _
       content:
         application/json:
-              schema:
-                $ref: "#/components/schemas/ApiKey"
+          schema:
+            $ref: "#/components/schemas/ApiKey"
+
+    CryptoKeyResponse:
+      description: _
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CryptoKey"
 
     RoleResponse:
       description: _
       content:
         application/json:
-              schema:
-                $ref: "#/components/schemas/Role"
+          schema:
+            $ref: "#/components/schemas/Role"
 
     RolesArrayResponse:
       description: _
@@ -1445,6 +1614,15 @@ components:
             type: array
             items:
               $ref: "#/components/schemas/ApiKey"
+
+    CryptoKeysArrayResponse:
+      description: _
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/CryptoKey"
 
     PasswordResetTokenResponse:
       description: _
@@ -1669,6 +1847,33 @@ components:
           type: string
           format: date-time
 
+    CryptoKey:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        domain:
+          type: string
+        algorithm:
+          type: string
+        size:
+          type: number
+        accountId:
+          type: string
+        appId:
+          type: string
+        privateKey:
+          type: string
+        publicKey:
+          type: string
+        passcodeProtected:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
     ExchangeAttempt:
       type: object
       properties:
@@ -1885,6 +2090,35 @@ components:
         key:
           type: string
         keyType:
+          type: string
+
+    CryptoKeyRequest:
+      type: object
+      required:
+        - algorithm
+        - size
+      properties:
+        algorithm:
+          type: string
+          enum:
+            - AES
+            - RSA
+            - EC_SECP128K1
+        size:
+          type: number
+        accountId:
+          type: string
+        appId:
+          type: string
+        keyType:
+          type: string
+        name:
+          type: string
+        persist:
+          type: boolean
+        passcodeProtected:
+          type: boolean
+        passcode:
           type: string
 
     CreateRoleRequest:

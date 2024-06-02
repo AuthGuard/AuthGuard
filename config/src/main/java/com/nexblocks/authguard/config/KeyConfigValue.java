@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.jwt.crypto;
+package com.nexblocks.authguard.config;
 
 public class KeyConfigValue {
     public boolean isFile;

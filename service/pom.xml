@@ -62,6 +62,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.nexblocks.authguard</groupId>
+            <artifactId>crypto</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>${apache-commons.version}</version>

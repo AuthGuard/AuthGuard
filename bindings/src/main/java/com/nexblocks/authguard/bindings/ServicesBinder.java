@@ -29,6 +29,7 @@ public class ServicesBinder extends AbstractModule {
         bind(ExchangeAttemptsService.class).to(ExchangeAttemptsServiceImpl.class);
         bind(AccountLocksService.class).to(AccountLocksServiceImpl.class);
         bind(EventsService.class).to(EventsServiceImpl.class);
+        bind(KeyManagementService.class).to(KeyManagementServiceImpl.class);
 
         // optional bindings
         if (configContext.get("verification") != null) {

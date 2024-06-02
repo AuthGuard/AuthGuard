@@ -1,10 +1,8 @@
 package com.nexblocks.authguard.jwt;
 
 import com.auth0.jwt.algorithms.Algorithm;
-import com.nexblocks.authguard.jwt.crypto.AsymmetricKeys;
-import com.nexblocks.authguard.jwt.crypto.KeyConfigValue;
-import com.nexblocks.authguard.jwt.crypto.KeyLoader;
-import com.nexblocks.authguard.jwt.crypto.KeysReader;
+import com.nexblocks.authguard.crypto.AsymmetricKeys;
+import com.nexblocks.authguard.crypto.KeyLoader;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 
@@ -16,7 +14,6 @@ import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Base64;
 
 public class JwtConfigParser {
     public static Algorithm parseAlgorithm(final String algorithmName, final String publicKey,

@@ -12,17 +12,20 @@ import com.nexblocks.authguard.rest.access.ActorDomainVerifier;
 import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
+import com.nexblocks.authguard.rest.util.Cursors;
 import com.nexblocks.authguard.rest.util.Domain;
 import com.nexblocks.authguard.rest.util.IdempotencyHeader;
 import com.nexblocks.authguard.service.AccountLocksService;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.ApplicationsService;
+import com.nexblocks.authguard.service.KeyManagementService;
 import com.nexblocks.authguard.service.model.Client;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.AsyncUtils;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -34,6 +37,7 @@ public class AccountsRoute extends AccountsApi {
     private final AccountsService accountsService;
     private final ApplicationsService applicationsService;
     private final AccountLocksService accountLocksService;
+    private final KeyManagementService keyManagementService;
     private final RestMapper restMapper;
 
     private final BodyHandler<CreateAccountRequestDTO> accountRequestBodyHandler;
@@ -45,10 +49,12 @@ public class AccountsRoute extends AccountsApi {
     AccountsRoute(final AccountsService accountsService,
                   final ApplicationsService applicationsService,
                   final AccountLocksService accountLocksService,
+                  final KeyManagementService keyManagementService,
                   final RestMapper restMapper) {
         this.accountsService = accountsService;
         this.applicationsService = applicationsService;
         this.accountLocksService = accountLocksService;
+        this.keyManagementService = keyManagementService;
         this.restMapper = restMapper;
 
         this.accountRequestBodyHandler = new BodyHandler.Builder<>(CreateAccountRequestDTO.class)
@@ -275,6 +281,26 @@ public class AccountsRoute extends AccountsApi {
                         .collect(Collectors.toList()));
 
         context.json(apps);
+    }
+
+    @Override
+    public void getCryptoKeys(final Context context) {
+        Validator<Long> accountId = context.pathParam("id", Long.class);
+
+        if (!accountId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        String domain = Domain.fromContext(context);
+        Long cursor = context.queryParam("cursor", Long.class).getOrNull();
+        Instant instantCursor = Cursors.parseInstantCursor(cursor);
+
+        CompletableFuture<List<CryptoKeyDTO>> keys = keyManagementService.getByAccountId(domain, accountId.get(), instantCursor)
+                .thenApply(list -> list.stream()
+                        .map(restMapper::toDTO)
+                        .collect(Collectors.toList()));
+
+        context.json(keys);
     }
 
     @Override

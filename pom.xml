@@ -37,6 +37,7 @@
         <module>plugins</module>
         <module>bom</module>
         <module>benchmarks</module>
+        <module>crypto</module>
     </modules>
 
     <properties>

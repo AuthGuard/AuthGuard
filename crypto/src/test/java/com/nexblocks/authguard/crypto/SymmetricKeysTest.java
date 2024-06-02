@@ -1,5 +1,6 @@
-package com.nexblocks.authguard.jwt.crypto;
+package com.nexblocks.authguard.crypto;
 
+import com.nexblocks.authguard.crypto.SymmetricKeys;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.KeyGenerator;

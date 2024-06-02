@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.jwt.crypto;
+package com.nexblocks.authguard.crypto;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;

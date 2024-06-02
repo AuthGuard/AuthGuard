@@ -8,6 +8,7 @@ import com.nexblocks.authguard.service.model.Entity;
 import com.nexblocks.authguard.service.util.ID;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -55,6 +56,12 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
     public CompletableFuture<Optional<BO>> getById(final long id) {
         return repository.getById(id)
                 .thenApply(opt -> opt.map(doToBo));
+    }
+
+    public CompletableFuture<Optional<BO>> getById(final long id, final String domain) {
+        return repository.getById(id)
+                .thenApply(opt -> opt.map(doToBo)
+                        .filter(bo -> Objects.equals(bo.getDomain(), domain)));
     }
 
     public CompletableFuture<Optional<BO>> update(final BO entity) {

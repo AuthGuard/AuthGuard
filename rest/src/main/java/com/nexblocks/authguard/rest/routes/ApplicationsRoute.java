@@ -3,6 +3,7 @@ package com.nexblocks.authguard.rest.routes;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.dto.entities.ApiKeyDTO;
 import com.nexblocks.authguard.api.dto.entities.AppDTO;
+import com.nexblocks.authguard.api.dto.entities.CryptoKeyDTO;
 import com.nexblocks.authguard.api.dto.requests.*;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
@@ -12,11 +13,12 @@ import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestJsonMapper;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.rest.util.BodyHandler;
+import com.nexblocks.authguard.rest.util.Cursors;
 import com.nexblocks.authguard.rest.util.Domain;
 import com.nexblocks.authguard.rest.util.IdempotencyHeader;
 import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.ApplicationsService;
-import com.nexblocks.authguard.service.model.AccountBO;
+import com.nexblocks.authguard.service.KeyManagementService;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.PermissionBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
@@ -24,6 +26,7 @@ import com.nexblocks.authguard.service.util.AsyncUtils;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +36,7 @@ import java.util.stream.Collectors;
 public class ApplicationsRoute extends ApplicationsApi {
     private final ApplicationsService applicationsService;
     private final ApiKeysService apiKeysService;
+    private final KeyManagementService keyManagementService;
     private final RestMapper restMapper;
 
     private final BodyHandler<CreateAppRequestDTO> appRequestRequestBodyHandler;
@@ -42,9 +46,11 @@ public class ApplicationsRoute extends ApplicationsApi {
     @Inject
     public ApplicationsRoute(final ApplicationsService applicationsService,
                              final ApiKeysService apiKeysService,
+                             final KeyManagementService keyManagementService,
                              final RestMapper restMapper) {
         this.applicationsService = applicationsService;
         this.apiKeysService = apiKeysService;
+        this.keyManagementService = keyManagementService;
         this.restMapper = restMapper;
 
         this.appRequestRequestBodyHandler = new BodyHandler.Builder<>(CreateAppRequestDTO.class)
@@ -207,6 +213,26 @@ public class ApplicationsRoute extends ApplicationsApi {
         CompletableFuture<List<ApiKeyDTO>> keys = apiKeysService.getByAppId(applicationId.get(), Domain.fromContext(context))
                 .thenApply(list -> list
                         .stream()
+                        .map(restMapper::toDTO)
+                        .collect(Collectors.toList()));
+
+        context.json(keys);
+    }
+
+    @Override
+    public void getCryptoKeys(final Context context) {
+        Validator<Long> appId = context.pathParam("id", Long.class);
+
+        if (!appId.isValid()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        String domain = Domain.fromContext(context);
+        Long cursor = context.queryParam("cursor", Long.class).getOrNull();
+        Instant instantCursor = Cursors.parseInstantCursor(cursor);
+
+        CompletableFuture<List<CryptoKeyDTO>> keys = keyManagementService.getByAccountId(domain, appId.get(), instantCursor)
+                .thenApply(list -> list.stream()
                         .map(restMapper::toDTO)
                         .collect(Collectors.toList()));
 
