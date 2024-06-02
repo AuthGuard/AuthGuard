@@ -3,7 +3,7 @@ package com.nexblocks.authguard.crypto;
 import com.nexblocks.authguard.crypto.generators.Generator;
 import com.nexblocks.authguard.crypto.generators.GeneratorParameters;
 
-import java.util.HashSet;
+import java.util.Set;
 
 public class AlgorithmDetails<T extends GeneratorParameters> {
 
@@ -14,10 +14,10 @@ public class AlgorithmDetails<T extends GeneratorParameters> {
 
     private final String name;
     private final Type type;
-    private final HashSet<Integer> allowedSizes;
+    private final Set<Integer> allowedSizes;
     private final Generator<T> generator;
 
-    public AlgorithmDetails(final String name, final Type type, final HashSet<Integer> allowedSizes,
+    public AlgorithmDetails(final String name, final Type type, final Set<Integer> allowedSizes,
                             final Generator<T> generator) {
         this.name = name;
         this.type = type;
@@ -29,7 +29,7 @@ public class AlgorithmDetails<T extends GeneratorParameters> {
         return name;
     }
 
-    public HashSet<Integer> getAllowedSizes() {
+    public Set<Integer> getAllowedSizes() {
         return allowedSizes;
     }
 

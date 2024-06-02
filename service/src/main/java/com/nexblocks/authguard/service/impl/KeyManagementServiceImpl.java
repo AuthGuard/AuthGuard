@@ -4,10 +4,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.crypto.*;
-import com.nexblocks.authguard.crypto.generators.AesParameters;
-import com.nexblocks.authguard.crypto.generators.EcSecp256k1Parameters;
-import com.nexblocks.authguard.crypto.generators.GeneratorParameters;
-import com.nexblocks.authguard.crypto.generators.RsaParameters;
+import com.nexblocks.authguard.crypto.generators.*;
 import com.nexblocks.authguard.dal.model.CryptoKeyDO;
 import com.nexblocks.authguard.dal.persistence.CryptoKeysRepository;
 import com.nexblocks.authguard.dal.persistence.Page;
@@ -122,16 +119,22 @@ public class KeyManagementServiceImpl implements KeyManagementService {
 
     @Override
     public EphemeralKeyBO generate(final String algorithm, final int size) {
-        if (Objects.equals(algorithm, "AES")) {
+        String algorithmUpper = algorithm.toUpperCase();
+
+        if (Objects.equals(algorithmUpper, "AES")) {
             return generate(Algorithms.aes, new AesParameters(size));
         }
 
-        if (Objects.equals(algorithm, "RSA")) {
+        if (Objects.equals(algorithmUpper, "RSA")) {
             return generate(Algorithms.rsa, new RsaParameters(size));
         }
 
-        if (Objects.equals(algorithm, "EC_SECP128K1")) {
+        if (Objects.equals(algorithmUpper, "EC_SECP128K1")) {
             return generate(Algorithms.ecSecp256k1, new EcSecp256k1Parameters(size));
+        }
+
+        if (Objects.equals(algorithmUpper, "CHACHA20")) {
+            return generate(Algorithms.chaCha20, new ChaCha20Parameters());
         }
 
         throw new ServiceException(ErrorCode.CRYPTO_INVALID_ALGO, "Algorithm " + algorithm +
