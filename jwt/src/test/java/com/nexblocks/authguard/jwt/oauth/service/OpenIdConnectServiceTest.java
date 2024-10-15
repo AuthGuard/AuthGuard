@@ -1,12 +1,16 @@
 package com.nexblocks.authguard.jwt.oauth.service;
 
+import com.google.common.collect.ImmutableMap;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
+import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.jwt.exchange.PkceParameters;
 import com.nexblocks.authguard.jwt.oauth.route.ImmutableOpenIdConnectRequest;
 import com.nexblocks.authguard.jwt.oauth.route.OpenIdConnectRequest;
 import com.nexblocks.authguard.service.ClientsService;
 import com.nexblocks.authguard.service.ExchangeService;
+import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
+import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
 import org.assertj.core.api.AbstractThrowableAssert;
@@ -54,6 +58,87 @@ class OpenIdConnectServiceTest {
     }
 
     @Test
+    void getRequestFromToken() {
+        OpenIdConnectRequest fullRequest = request
+                .withState("state")
+                .withScope("scope-1")
+                .withCodeChallenge("random-code-challenge")
+                .withCodeChallengeMethod("S256")
+                .withIdentifier(null)
+                .withPassword(null);
+
+        AccountTokenDO token = AccountTokenDO.builder()
+                .domain("main")
+                .token("test-token")
+                .userAgent("test-client")
+                .clientId("1")
+                .additionalInformation(ImmutableMap.<String, String>builder()
+                        .put(OAuthConst.Params.ResponseType, fullRequest.getResponseType())
+                        .put(OAuthConst.Params.RedirectUri, fullRequest.getRedirectUri())
+                        .put(OAuthConst.Params.State, fullRequest.getState())
+                        .put(OAuthConst.Params.Scope, String.join(",", fullRequest.getScope()))
+                        .put(OAuthConst.Params.CodeChallengeMethod, fullRequest.getCodeChallengeMethod())
+                        .put(OAuthConst.Params.CodeChallenge, fullRequest.getCodeChallenge())
+                        .build())
+                .build();
+        
+        RequestContextBO requestContext = RequestContextBO.builder()
+                .userAgent("test-client")
+                .build();
+        
+        Mockito.when(accountTokensRepository.getByToken(token.getToken()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(token)));
+
+        OpenIdConnectRequest retrievedRequest =
+                openIdConnectService.getRequestFromToken(token.getToken(), requestContext, "main").join();
+        
+        assertThat(retrievedRequest).isEqualTo(fullRequest);
+    }
+
+    @Test
+    void getRequestFromTokenDifferentDomain() {
+        AccountTokenDO token = AccountTokenDO.builder()
+                .domain("main")
+                .token("test-token")
+                .userAgent("test-client")
+                .build();
+
+        RequestContextBO requestContext = RequestContextBO.builder()
+                .userAgent("other-client")
+                .build();
+
+        Mockito.when(accountTokensRepository.getByToken(token.getToken()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(token)));
+
+        assertThatThrownBy(() -> openIdConnectService.getRequestFromToken(token.getToken(), requestContext, "main").join())
+                .hasCauseInstanceOf(ServiceAuthorizationException.class)
+                .cause()
+                .extracting(e -> ((ServiceException) e).getErrorCode())
+                .isEqualTo(ErrorCode.GENERIC_AUTH_FAILURE.getCode());
+    }
+
+    @Test
+    void getRequestFromTokenDifferentUserAgent() {
+        AccountTokenDO token = AccountTokenDO.builder()
+                .domain("main")
+                .token("test-token")
+                .build();
+
+        RequestContextBO requestContext = RequestContextBO.builder()
+                .userAgent("test-client")
+                .build();
+
+        Mockito.when(accountTokensRepository.getByToken(token.getToken()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(token)));
+
+        assertThatThrownBy(() -> openIdConnectService.getRequestFromToken(token.getToken(), requestContext, "other").join())
+                .hasCauseInstanceOf(ServiceNotFoundException.class)
+                .cause()
+                .extracting(e -> ((ServiceException) e).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_TOKEN.getCode());
+    }
+
+    @Test
     void processAuth() {
         OpenIdConnectRequest request = ImmutableOpenIdConnectRequest.builder()
                 .responseType("code")
@@ -77,13 +162,13 @@ class OpenIdConnectServiceTest {
                 .token("auth code")
                 .build();
 
-        Mockito.when(clientsService.getById(1))
+        Mockito.when(clientsService.getById(1, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
         Mockito.when(exchangeService.exchange(expectedRequest, "basic", "authorizationCode", context))
                 .thenReturn(CompletableFuture.completedFuture(expectedResponse));
 
-        assertThat(openIdConnectService.processAuth(request, context).join())
+        assertThat(openIdConnectService.processAuth(request, context, "main").join())
                 .isEqualTo(expectedResponse);
     }
 
@@ -99,10 +184,10 @@ class OpenIdConnectServiceTest {
 
         RequestContextBO context = RequestContextBO.builder().build();
 
-        Mockito.when(clientsService.getById(1))
+        Mockito.when(clientsService.getById(1, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        assertThatThrownBy(() -> openIdConnectService.processAuth(request, context).join())
+        assertThatThrownBy(() -> openIdConnectService.processAuth(request, context, "main").join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause()
                 .extracting(e -> ((ServiceException) e).getErrorCode())
@@ -126,10 +211,10 @@ class OpenIdConnectServiceTest {
 
         RequestContextBO context = RequestContextBO.builder().build();
 
-        Mockito.when(clientsService.getById(1))
+        Mockito.when(clientsService.getById(1, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
-        assertThatThrownBy(() -> openIdConnectService.processAuth(request, context).join())
+        assertThatThrownBy(() -> openIdConnectService.processAuth(request, context, "main").join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause()
                 .extracting(e -> ((ServiceException) e).getErrorCode())
@@ -153,10 +238,10 @@ class OpenIdConnectServiceTest {
 
         RequestContextBO context = RequestContextBO.builder().build();
 
-        Mockito.when(clientsService.getById(1))
+        Mockito.when(clientsService.getById(1, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
-        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(request, context).join())
+        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(request, context, "main").join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause();
 
@@ -185,10 +270,10 @@ class OpenIdConnectServiceTest {
 
         RequestContextBO context = RequestContextBO.builder().build();
 
-        Mockito.when(clientsService.getById(1))
+        Mockito.when(clientsService.getById(1, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
-        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(request, context).join())
+        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(request, context, "main").join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause();
 
@@ -217,12 +302,12 @@ class OpenIdConnectServiceTest {
 
         RequestContextBO context = RequestContextBO.builder().build();
 
-        Mockito.when(clientsService.getById(1))
+        Mockito.when(clientsService.getById(1, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
-        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(request, context).join())
-                .hasCauseInstanceOf(ServiceException.class)
-                .cause();
+        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(
+                () -> openIdConnectService.processAuth(request, context, "main").join()
+        ).hasCauseInstanceOf(ServiceException.class).cause();
 
         cause.extracting(e -> ((ServiceException) e).getErrorCode())
                 .isEqualTo(ErrorCode.GENERIC_AUTH_FAILURE.getCode());
@@ -278,13 +363,13 @@ class OpenIdConnectServiceTest {
                 .token("auth code")
                 .build();
 
-        Mockito.when(clientsService.getById(1))
+        Mockito.when(clientsService.getById(1, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
         Mockito.when(exchangeService.exchange(expectedRequest, "basic", "authorizationCode", context.withClientId("1")))
                 .thenReturn(CompletableFuture.completedFuture(expectedResponse));
 
-        assertThat(openIdConnectService.processAuth(pkceRequest, context).join())
+        assertThat(openIdConnectService.processAuth(pkceRequest, context, "main").join())
                 .isEqualTo(expectedResponse);
     }
     @Test
@@ -292,12 +377,12 @@ class OpenIdConnectServiceTest {
         OpenIdConnectRequest invalidRequest = request
                 .withCodeChallengeMethod("S256");
 
-        Mockito.when(clientsService.getById(1))
+        Mockito.when(clientsService.getById(1, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
-        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(invalidRequest, context).join())
-                .hasCauseInstanceOf(ServiceException.class)
-                .cause();
+        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(
+                () -> openIdConnectService.processAuth(invalidRequest, context, "main").join()
+        ).hasCauseInstanceOf(ServiceException.class).cause();
 
         cause.extracting(e -> ((ServiceException) e).getErrorCode())
                 .isEqualTo(ErrorCode.GENERIC_AUTH_FAILURE.getCode());
@@ -311,12 +396,12 @@ class OpenIdConnectServiceTest {
         OpenIdConnectRequest invalidRequest = request
                 .withCodeChallenge("random-code-challenge");
 
-        Mockito.when(clientsService.getById(1))
+        Mockito.when(clientsService.getById(1, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
-        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(invalidRequest, context).join())
-                .hasCauseInstanceOf(ServiceException.class)
-                .cause();
+        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(
+                () -> openIdConnectService.processAuth(invalidRequest, context, "main").join()
+        ).hasCauseInstanceOf(ServiceException.class).cause();
 
         cause.extracting(e -> ((ServiceException) e).getErrorCode())
                 .isEqualTo(ErrorCode.GENERIC_AUTH_FAILURE.getCode());
@@ -331,12 +416,12 @@ class OpenIdConnectServiceTest {
                 .withCodeChallenge("random-code-challenge")
                 .withCodeChallengeMethod("invalid");
 
-        Mockito.when(clientsService.getById(1))
+        Mockito.when(clientsService.getById(1, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
-        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(invalidRequest, context).join())
-                .hasCauseInstanceOf(ServiceException.class)
-                .cause();
+        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(
+                () -> openIdConnectService.processAuth(invalidRequest, context, "main").join()
+        ).hasCauseInstanceOf(ServiceException.class).cause();
 
         cause.extracting(e -> ((ServiceException) e).getErrorCode())
                 .isEqualTo(ErrorCode.GENERIC_AUTH_FAILURE.getCode());

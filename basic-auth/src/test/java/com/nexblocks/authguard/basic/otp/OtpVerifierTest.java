@@ -12,6 +12,7 @@ import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -46,7 +47,11 @@ class OtpVerifierTest {
 
         setup(otpConfig);
 
-        OneTimePasswordDO otp = random.nextObject(OneTimePasswordDO.class);
+        OneTimePasswordDO otp = OneTimePasswordDO.builder()
+                .id(123)
+                .password("abcde")
+                .expiresAt(Instant.now().plusSeconds(1))
+                .build();
 
         Mockito.when(mockOtpRepository.getById(otp.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(otp)));

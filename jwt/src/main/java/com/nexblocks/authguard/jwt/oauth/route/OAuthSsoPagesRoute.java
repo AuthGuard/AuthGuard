@@ -3,6 +3,7 @@ package com.nexblocks.authguard.jwt.oauth.route;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
+import com.nexblocks.authguard.api.common.Domain;
 import com.nexblocks.authguard.api.common.RequestContextExtractor;
 import com.nexblocks.authguard.api.common.RestJsonMapper;
 import com.nexblocks.authguard.api.dto.entities.RequestValidationError;
@@ -73,14 +74,21 @@ public class OAuthSsoPagesRoute implements ApiRoute {
 
     @Override
     public void addEndpoints() {
-        get("/auth", this::authFlowPage);
-        get("/login", this::loginPage);
-        post("/auth", this::authFlowAuthApi);
-        post("/token", this::authFlowTokenApi);
-        get("/otp", this::otpPage);
+        get("/:domain/auth", this::authFlowPage);
+        get("/:domain/login", this::loginPage);
+        post("/:domain/auth", this::authFlowAuthApi);
+        post("/:domain/token", this::authFlowTokenApi);
+        get("/:domain/otp", this::otpPage);
     }
 
     private void authFlowPage(Context context) {
+        String domain = Domain.fromContext(context);
+
+        if (!configuration.getDomains().contains(domain)) {
+            context.status(404);
+            return;
+        }
+
         Either<RequestValidationError, ImmutableOpenIdConnectRequest> request
                 = OpenIdConnectRequestParser.authRequestFromQueryParams(context, "code");
 
@@ -91,9 +99,9 @@ public class OAuthSsoPagesRoute implements ApiRoute {
 
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        CompletableFuture<String> requestToken = openIdConnectService.createRequestToken(requestContext, request.get())
+        CompletableFuture<String> requestToken = openIdConnectService.createRequestToken(requestContext, request.get(), domain)
                 .thenApply(token -> {
-                    context.redirect("/oidc/login?redirect_uri=" + request.get().getRedirectUri() + "&token=" + token.getToken());
+                    context.redirect("/oidc/" + domain + "/login?redirect_uri=" + request.get().getRedirectUri() + "&token=" + token.getToken());
 
                     return "";
                 })
@@ -107,6 +115,13 @@ public class OAuthSsoPagesRoute implements ApiRoute {
     }
 
     private void loginPage(Context context) {
+        String domain = Domain.fromContext(context);
+
+        if (!configuration.getDomains().contains(domain)) {
+            context.status(404);
+            return;
+        }
+
         Either<RequestValidationError, ImmutableOpenIdConnectRequest> request = OpenIdConnectRequestParser.loginPageRequestFromQueryParams(context);
 
         if (request.isLeft()) {
@@ -117,10 +132,11 @@ public class OAuthSsoPagesRoute implements ApiRoute {
     }
 
     private void authFlowAuthApi(Context context) {
+        String domain = Domain.fromContext(context);
         OpenIdConnectRequest request = RestJsonMapper.asClass(context.body(), ImmutableOpenIdConnectRequest.class);
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        CompletableFuture<String> redirectUrl = openIdConnectService.getRequestFromToken(request.getRequestToken(), requestContext)
+        CompletableFuture<String> redirectUrl = openIdConnectService.getRequestFromToken(request.getRequestToken(), requestContext, domain)
                 .thenCompose(originalRequest -> {
                     OpenIdConnectRequest realRequest = ImmutableOpenIdConnectRequest.builder()
                             .from(originalRequest)
@@ -128,7 +144,7 @@ public class OAuthSsoPagesRoute implements ApiRoute {
                             .password(request.getPassword())
                             .build();
 
-                    return openIdConnectService.processAuth(realRequest, requestContext)
+                    return openIdConnectService.processAuth(realRequest, requestContext, domain)
                             .thenApply(response -> {
                                 String location = realRequest.getRedirectUri() + "?code=" + response.getToken()
                                         + "&state=" + request.getState();
@@ -167,6 +183,13 @@ public class OAuthSsoPagesRoute implements ApiRoute {
     }
 
     private void authFlowTokenApi(Context context) {
+        String domain = Domain.fromContext(context);
+
+        if (!configuration.getDomains().contains(domain)) {
+            context.status(404);
+            return;
+        }
+
         String grantType = context.formParam(OAuthConst.Params.GrantType);
         String clientId = context.formParam(OAuthConst.Params.ClientId);
         String clientSecret = context.formParam(OAuthConst.Params.ClientSecret);
@@ -182,9 +205,9 @@ public class OAuthSsoPagesRoute implements ApiRoute {
         CompletableFuture<ClientBO> verifiedClient;
 
         if (clientSecret != null && codeVerifier == null) {
-            verifiedClient = verifyNonPkceTokenFlow(context, clientId, clientSecret);
+            verifiedClient = verifyNonPkceTokenFlow(clientId, clientSecret, domain);
         } else if (codeVerifier != null && clientSecret == null) {
-            verifiedClient = verifyPkceTokenFlow(context, clientId);
+            verifiedClient = verifyPkceTokenFlow(clientId, domain);
         } else {
             context.status(400)
                     .json(new OpenIdConnectError(OAuthConst.ErrorsMessages.InvalidRequest,
@@ -225,12 +248,14 @@ public class OAuthSsoPagesRoute implements ApiRoute {
         context.json(result);
     }
 
-    private CompletableFuture<ClientBO> verifyNonPkceTokenFlow(Context context, String clientId, String clientSecret) {
+    private CompletableFuture<ClientBO> verifyNonPkceTokenFlow(final String clientId, final String clientSecret,
+                                                               final String domain) {
         return apiKeysService.validateClientApiKey(clientSecret, "default")
                 .thenCompose(client -> {
                     if (client == null
                             || !Objects.equals(Optional.of(client.getId()).map(Objects::toString).orElse(""), clientId)
-                            || client.getClientType() != Client.ClientType.SSO) {
+                            || client.getClientType() != Client.ClientType.SSO
+                            || !Objects.equals(client.getDomain(), domain)) {
 
                         return CompletableFuture.failedFuture(new ServiceAuthorizationException("invalid_request", "Invalid secret or unauthorized client"));
                     }
@@ -239,8 +264,8 @@ public class OAuthSsoPagesRoute implements ApiRoute {
                 });
     }
 
-    private CompletableFuture<ClientBO> verifyPkceTokenFlow(Context context, String clientId) {
-        return clientsService.getById(Long.parseLong(clientId))
+    private CompletableFuture<ClientBO> verifyPkceTokenFlow(String clientId, String domain) {
+        return clientsService.getById(Long.parseLong(clientId), domain)
                 .thenCompose(opt -> {
                     if (opt.isEmpty()) {
                         return CompletableFuture.failedFuture(new ServiceAuthorizationException("invalid_request", "Invalid client ID or unauthorized client"));
@@ -300,6 +325,13 @@ public class OAuthSsoPagesRoute implements ApiRoute {
     }
 
     private void otpPage(Context context) {
+        String domain = Domain.fromContext(context);
+
+        if (!configuration.getDomains().contains(domain)) {
+            context.status(404);
+            return;
+        }
+
         context.status(200).html(otpPage);
     }
 

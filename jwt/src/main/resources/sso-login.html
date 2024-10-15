@@ -176,6 +176,8 @@
         }
 
         async function login(identifier, password) {
+            let path = window.location.pathname.split('/');
+            let domain = path[path.indexOf("oidc") + 1];
             let searchParams = new URLSearchParams(window.location.search);
             let clientId = searchParams.get("client_id");
             let redirectUri = searchParams.get("redirect_uri");
@@ -189,7 +191,7 @@
                 requestToken: token
             };
 
-            return await post("/oidc/auth", requestBody);
+            return await post("/oidc/" + domain + "/auth", requestBody);
         }
 
         function onSubmit(e) {

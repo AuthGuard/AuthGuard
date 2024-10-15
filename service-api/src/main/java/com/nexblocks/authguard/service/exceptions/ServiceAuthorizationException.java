@@ -26,6 +26,7 @@ public class ServiceAuthorizationException extends ServiceException {
         super(errorCode, message);
         this.entityType = null;
         this.entityId = null;
+        this.isForbidden = false;
     }
 
     public ServiceAuthorizationException(final ErrorCode errorCode, final String message,

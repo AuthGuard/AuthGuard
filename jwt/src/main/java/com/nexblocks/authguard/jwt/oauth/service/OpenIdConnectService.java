@@ -50,7 +50,8 @@ public class OpenIdConnectService {
     }
 
     public CompletableFuture<AccountTokenDO> createRequestToken(final RequestContextBO requestContext,
-                                                                final OpenIdConnectRequest request) {
+                                                                final OpenIdConnectRequest request,
+                                                                final String domain) {
         String token = cryptographicRandom.base64Url(REQUEST_TOKEN_SIZE);
         Map<String, String> parameters = new TreeMap<>();
 
@@ -63,6 +64,7 @@ public class OpenIdConnectService {
 
         AccountTokenDO accountToken = AccountTokenDO.builder()
                 .id(ID.generate())
+                .domain(domain)
                 .token(token)
                 .userAgent(requestContext.getUserAgent())
                 .sourceIp(requestContext.getSource())
@@ -75,7 +77,8 @@ public class OpenIdConnectService {
     }
 
     public CompletableFuture<OpenIdConnectRequest> getRequestFromToken(final String token,
-                                                                       final RequestContextBO requestContext) {
+                                                                       final RequestContextBO requestContext,
+                                                                       final String domain) {
         return accountTokensRepository.getByToken(token)
                 .thenCompose(opt -> {
                     if (opt.isEmpty()) {
@@ -84,6 +87,17 @@ public class OpenIdConnectService {
                     }
 
                     AccountTokenDO accountToken = opt.get();
+
+                    if (!Objects.equals(accountToken.getDomain(), domain)) {
+                        return CompletableFuture.failedFuture(new ServiceNotFoundException(ErrorCode.INVALID_TOKEN,
+                                "invalid_token"));
+                    }
+
+                    if (!Objects.equals(accountToken.getUserAgent(), requestContext.getUserAgent())) {
+                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
+                                "invalid_user_agent"));
+                    }
+
                     Map<String, String> parameters = accountToken.getAdditionalInformation();
 
                     ImmutableOpenIdConnectRequest request = ImmutableOpenIdConnectRequest.builder()
@@ -96,18 +110,15 @@ public class OpenIdConnectService {
                             .codeChallenge(parameters.get(OAuthConst.Params.CodeChallenge))
                             .build();
 
-                    if (!Objects.equals(accountToken.getUserAgent(), requestContext.getUserAgent())) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
-                                "invalid_user_agent"));
-                    }
-
                     // TODO what else should we check?
 
                     return CompletableFuture.completedFuture(request);
                 });
     }
 
-    public CompletableFuture<AuthResponseBO> processAuth(OpenIdConnectRequest request, RequestContextBO requestContext) {
+    public CompletableFuture<AuthResponseBO> processAuth(final OpenIdConnectRequest request,
+                                                         final RequestContextBO requestContext,
+                                                         final String domain) {
         if (!Objects.equals(request.getResponseType(), OAuthConst.ResponseTypes.Code)) {
             return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
                     "Invalid response type"));
@@ -122,7 +133,7 @@ public class OpenIdConnectService {
                     "Invalid client ID"));
         }
 
-        return clientsService.getById(parsedId)
+        return clientsService.getById(parsedId, domain)
                 .thenCompose(opt -> opt
                         .map(CompletableFuture::completedFuture)
                         .orElseGet(() -> CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.APP_DOES_NOT_EXIST, "Client does not exist"))))
