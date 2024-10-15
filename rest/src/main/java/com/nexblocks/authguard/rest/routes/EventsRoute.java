@@ -1,13 +1,13 @@
 package com.nexblocks.authguard.rest.routes;
 
 import com.google.inject.Inject;
+import com.nexblocks.authguard.api.common.Cursors;
+import com.nexblocks.authguard.api.common.Domain;
 import com.nexblocks.authguard.api.dto.entities.CollectionResponse;
 import com.nexblocks.authguard.api.dto.entities.CollectionResponseDTO;
 import com.nexblocks.authguard.api.dto.entities.EventDTO;
 import com.nexblocks.authguard.api.routes.EventsApi;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
-import com.nexblocks.authguard.rest.util.Cursors;
-import com.nexblocks.authguard.rest.util.Domain;
 import com.nexblocks.authguard.service.EventsService;
 import com.nexblocks.authguard.service.model.EventBO;
 import io.javalin.http.Context;

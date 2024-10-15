@@ -7,10 +7,7 @@ import com.nexblocks.authguard.jwt.oauth.AuthorizationCodeVerifier;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.service.model.AuthResponseBO;
-import com.nexblocks.authguard.service.model.TokenRestrictionsBO;
+import com.nexblocks.authguard.service.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -54,6 +51,12 @@ class AuthorizationCodeToOidcTest {
 
         AccountTokenDO accountToken = AccountTokenDO.builder()
                 .associatedAccountId(101)
+                .sourceAuthType("authorizationCode")
+                .clientId("client")
+                .deviceId("device")
+                .userAgent("test")
+                .sourceIp("127.0.0.1")
+                .externalSessionId("session")
                 .build();
 
         AccountBO account = AccountBO.builder()
@@ -64,13 +67,22 @@ class AuthorizationCodeToOidcTest {
                 .token("OIDC")
                 .build();
 
+        TokenOptionsBO options = TokenOptionsBO.builder()
+                .source("authorizationCode")
+                .clientId(accountToken.getClientId())
+                .deviceId(accountToken.getDeviceId())
+                .userAgent(accountToken.getUserAgent())
+                .externalSessionId(accountToken.getExternalSessionId())
+                .sourceIp(accountToken.getSourceIp())
+                .build();
+
         Mockito.when(authorizationCodeVerifier.verifyAndGetAccountTokenAsync(authRequest.getToken()))
                 .thenReturn(CompletableFuture.completedFuture(accountToken));
 
         Mockito.when(accountsService.getByIdUnchecked(accountToken.getAssociatedAccountId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
-        Mockito.when(openIdConnectTokenProvider.generateToken(account, (TokenRestrictionsBO) null))
+        Mockito.when(openIdConnectTokenProvider.generateToken(account, null, options))
                 .thenReturn(CompletableFuture.completedFuture(authResponse));
 
         AuthResponseBO actual = authorizationCodeToOidc.exchange(authRequest).join();
@@ -86,10 +98,16 @@ class AuthorizationCodeToOidcTest {
 
         AccountTokenDO accountToken = AccountTokenDO.builder()
                 .associatedAccountId(101)
+                .sourceAuthType("authorizationCode")
                 .tokenRestrictions(TokenRestrictionsDO.builder()
                         .scopes(Collections.emptySet())
                         .permissions(new HashSet<>(Arrays.asList("perm-1", "perm-2")))
                         .build())
+                .clientId("client")
+                .deviceId("device")
+                .userAgent("test")
+                .sourceIp("127.0.0.1")
+                .externalSessionId("session")
                 .build();
 
         AccountBO account = AccountBO.builder()
@@ -100,13 +118,24 @@ class AuthorizationCodeToOidcTest {
                 .token("OIDC")
                 .build();
 
+        final TokenRestrictionsBO restrictions = serviceMapper.toBO(accountToken.getTokenRestrictions());
+
+        TokenOptionsBO options = TokenOptionsBO.builder()
+                .source("authorizationCode")
+                .clientId(accountToken.getClientId())
+                .deviceId(accountToken.getDeviceId())
+                .userAgent(accountToken.getUserAgent())
+                .externalSessionId(accountToken.getExternalSessionId())
+                .sourceIp(accountToken.getSourceIp())
+                .build();
+
         Mockito.when(authorizationCodeVerifier.verifyAndGetAccountTokenAsync(authRequest.getToken()))
                 .thenReturn(CompletableFuture.completedFuture(accountToken));
 
         Mockito.when(accountsService.getByIdUnchecked(accountToken.getAssociatedAccountId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
-        Mockito.when(openIdConnectTokenProvider.generateToken(account, serviceMapper.toBO(accountToken.getTokenRestrictions())))
+        Mockito.when(openIdConnectTokenProvider.generateToken(account, serviceMapper.toBO(accountToken.getTokenRestrictions()), options))
                 .thenReturn(CompletableFuture.completedFuture(authResponse));
 
         AuthResponseBO actual = authorizationCodeToOidc.exchange(authRequest).join();

@@ -1,10 +1,12 @@
 package com.nexblocks.authguard.jwt.oauth;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
+import com.nexblocks.authguard.jwt.exchange.PkceParameters;
 import com.nexblocks.authguard.service.auth.AuthProvider;
 import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.AuthorizationCodeConfig;
@@ -43,18 +45,36 @@ public class AuthorizationCodeProvider implements AuthProvider {
     @Override
     public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
                                                            final TokenOptionsBO options) {
-        final String code = random.base64(config.getRandomSize());
+        String code = random.base64(config.getRandomSize());
 
-        final AccountTokenDO accountToken = AccountTokenDO.builder()
+        AccountTokenDO.AccountTokenDOBuilder<?, ?> accountToken = AccountTokenDO.builder()
                 .token(TOKEN_TYPE)
                 .id(ID.generate())
                 .token(code)
                 .associatedAccountId(account.getId())
                 .expiresAt(Instant.now().plus(tokenTtl))
-                .tokenRestrictions(serviceMapper.toDO(restrictions))
-                .build();
+                .tokenRestrictions(serviceMapper.toDO(restrictions));
 
-        return accountTokensRepository.save(accountToken)
+        if (options != null) {
+            accountToken
+                    .sourceAuthType(options.getSource())
+                    .userAgent(options.getUserAgent())
+                    .externalSessionId(options.getExternalSessionId())
+                    .deviceId(options.getDeviceId())
+                    .clientId(options.getClientId())
+                    .sourceIp(options.getSourceIp());
+
+            if (options.getExtraParameters() != null
+                    && PkceParameters.class.isAssignableFrom(options.getExtraParameters().getClass())) {
+                PkceParameters pkceParameters = (PkceParameters) options.getExtraParameters();
+                accountToken.additionalInformation(
+                        ImmutableMap.of("codeChallenge", pkceParameters.getCodeChallenge(),
+                                "codeChallengeMethod", pkceParameters.getCodeChallengeMethod())
+                );
+            }
+        }
+
+        return accountTokensRepository.save(accountToken.build())
                 .thenApply(ignored -> AuthResponseBO.builder()
                         .type("authorizationCode")
                         .token(code)

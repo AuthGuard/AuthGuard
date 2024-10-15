@@ -11,6 +11,7 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import com.nexblocks.authguard.service.model.TokenRestrictionsBO;
+import io.vavr.control.Try;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -35,15 +36,25 @@ public class AuthorizationCodeToAccessToken implements Exchange {
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
         return authorizationCodeVerifier.verifyAndGetAccountTokenAsync(request.getToken())
-                .thenCompose(this::generateToken);
+                .thenCompose(accountToken -> generateToken(accountToken, request));
     }
 
-    private CompletableFuture<AuthResponseBO> generateToken(final AccountTokenDO accountToken) {
-        final TokenOptionsBO options = TokenOptionsBO.builder()
-                .source("auth_code")
+    private CompletableFuture<AuthResponseBO> generateToken(AccountTokenDO accountToken, AuthRequestBO request) {
+        TokenOptionsBO options = TokenOptionsBO.builder()
+                .source(accountToken.getSourceAuthType())
+                .clientId(accountToken.getClientId())
+                .deviceId(accountToken.getDeviceId())
+                .userAgent(accountToken.getUserAgent())
+                .externalSessionId(accountToken.getExternalSessionId())
+                .sourceIp(accountToken.getSourceIp())
                 .build();
 
-        final TokenRestrictionsBO restrictions = getRestrictions(accountToken);
+        TokenRestrictionsBO restrictions = getRestrictions(accountToken);
+        Try<Boolean> verificationResult = PkceVerifier.verifyIfPkce(accountToken, request);
+
+        if (verificationResult.isFailure()) {
+            return CompletableFuture.failedFuture(verificationResult.getCause());
+        }
 
         return accountsServiceAdapter.getAccount(accountToken.getAssociatedAccountId())
                 .thenCompose(account ->  accessTokenProvider.generateToken(account, restrictions, options));

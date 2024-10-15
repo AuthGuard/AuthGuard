@@ -1,11 +1,11 @@
 package com.nexblocks.authguard.rest.routes;
 
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
+import com.nexblocks.authguard.api.common.Domain;
 import com.nexblocks.authguard.api.dto.entities.RequestValidationError;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.VerificationApi;
-import com.nexblocks.authguard.rest.util.Domain;
 import com.nexblocks.authguard.service.VerificationService;
 import com.google.inject.Inject;
 import io.javalin.http.Context;

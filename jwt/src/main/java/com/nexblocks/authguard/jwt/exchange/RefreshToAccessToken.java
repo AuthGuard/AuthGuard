@@ -68,7 +68,7 @@ public class RefreshToAccessToken implements Exchange {
     }
 
     private CompletableFuture<AuthResponseBO> generateAndClear(final AccountTokenDO accountToken,
-                                                                                  final AuthRequest request) {
+                                                               final AuthRequest request) {
         return generate(accountToken, request)
                 .whenComplete((result, e) -> {
                     if (e == null) {
@@ -78,7 +78,7 @@ public class RefreshToAccessToken implements Exchange {
     }
 
     private CompletableFuture<AuthResponseBO> generate(final AccountTokenDO accountToken,
-                                                                          final AuthRequest authRequest) {
+                                                       final AuthRequest authRequest) {
         if (!validateExpirationDateTime(accountToken)) {
             ServiceAuthorizationException error =
                     new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Refresh token has expired",
@@ -106,7 +106,7 @@ public class RefreshToAccessToken implements Exchange {
         long accountId = accountToken.getAssociatedAccountId();
         TokenRestrictionsBO tokenRestrictions = serviceMapper.toBO(accountToken.getTokenRestrictions());
 
-        final TokenOptionsBO options = TokenOptionsBO.builder()
+        TokenOptionsBO options = TokenOptionsBO.builder()
                 .source(accountToken.getSourceAuthType())
                 .userAgent(accountToken.getUserAgent())
                 .sourceIp(accountToken.getSourceIp())
@@ -123,6 +123,8 @@ public class RefreshToAccessToken implements Exchange {
         return accountsService.getByIdUnchecked(accountId)
                 .thenCompose(opt -> {
                     if (opt.isEmpty()) {
+                        deleteRefreshToken(accountToken);
+
                         return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                                 "Could not find account " + accountId));
                     }

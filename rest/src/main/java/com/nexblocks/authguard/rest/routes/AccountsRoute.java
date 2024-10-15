@@ -1,6 +1,10 @@
 package com.nexblocks.authguard.rest.routes;
 
 import com.google.inject.Inject;
+import com.nexblocks.authguard.api.common.*;
+import com.nexblocks.authguard.api.common.BodyHandler;
+import com.nexblocks.authguard.api.common.IdempotencyHeader;
+import com.nexblocks.authguard.api.common.RequestValidationException;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.UserIdentifier;
 import com.nexblocks.authguard.api.dto.entities.*;
@@ -9,12 +13,7 @@ import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.AccountsApi;
 import com.nexblocks.authguard.rest.access.ActorDomainVerifier;
-import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
-import com.nexblocks.authguard.rest.util.BodyHandler;
-import com.nexblocks.authguard.rest.util.Cursors;
-import com.nexblocks.authguard.rest.util.Domain;
-import com.nexblocks.authguard.rest.util.IdempotencyHeader;
 import com.nexblocks.authguard.service.AccountLocksService;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.ApplicationsService;

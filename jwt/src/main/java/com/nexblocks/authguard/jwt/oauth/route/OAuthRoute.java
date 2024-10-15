@@ -41,7 +41,7 @@ public class OAuthRoute implements ApiRoute {
 
     void openIdConnectAuthFlows(final Context context) {
         Either<RequestValidationError, ImmutableOpenIdConnectRequest> request
-                = OpenIdConnectRequestParser.fromContext(context, "code");
+                = OpenIdConnectRequestParser.authRequestFromQueryParams(context, "code");
 
         if (request.isLeft()) {
             context.status(400).json(request.getLeft());

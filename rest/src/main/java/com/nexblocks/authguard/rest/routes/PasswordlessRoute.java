@@ -2,12 +2,12 @@ package com.nexblocks.authguard.rest.routes;
 
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
+import com.nexblocks.authguard.api.common.BodyHandler;
+import com.nexblocks.authguard.api.common.RequestContextExtractor;
 import com.nexblocks.authguard.api.dto.entities.AuthResponseDTO;
 import com.nexblocks.authguard.api.dto.requests.PasswordlessRequestDTO;
 import com.nexblocks.authguard.api.routes.PasswordlessApi;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
-import com.nexblocks.authguard.rest.util.BodyHandler;
-import com.nexblocks.authguard.rest.util.RequestContextExtractor;
 import com.nexblocks.authguard.service.PasswordlessService;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 import io.javalin.http.Context;

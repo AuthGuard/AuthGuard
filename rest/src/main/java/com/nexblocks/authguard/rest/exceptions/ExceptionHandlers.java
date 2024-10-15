@@ -1,5 +1,7 @@
 package com.nexblocks.authguard.rest.exceptions;
 
+import com.nexblocks.authguard.api.common.RequestValidationException;
+import com.nexblocks.authguard.api.common.RuntimeJsonException;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.RequestValidationError;
 import com.nexblocks.authguard.service.exceptions.*;

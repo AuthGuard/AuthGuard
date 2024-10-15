@@ -11,4 +11,5 @@ public interface TokenOptions {
     String getExternalSessionId();
     String getUserAgent();
     String getSourceIp();
+    Object getExtraParameters();
 }

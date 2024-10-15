@@ -25,6 +25,7 @@ public interface CreateClientRequest extends DomainScoped {
 
     enum ClientType {
         AUTH,
-        ADMIN
+        ADMIN,
+        SSO
     }
 }

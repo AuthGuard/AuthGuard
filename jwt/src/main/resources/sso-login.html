@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Login</title>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css?family=Poppins');
+
+        html {
+            background-color: #efefef;
+        }
+
+        body {
+            font-family: "Poppins", sans-serif;
+            height: 100vh;
+        }
+
+        a {
+            color: #92badd;
+            display: inline-block;
+            text-decoration: none;
+            font-weight: 400;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 16px;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-block;
+            margin: 40px 8px 10px 8px;
+            color: #cccccc;
+        }
+
+        .wrapper {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            justify-content: center;
+            width: 100%;
+            min-height: 100%;
+            padding: 20px;
+        }
+
+        .formInputs {
+            margin-bottom: 10px;
+        }
+
+        #formContent {
+            -webkit-border-radius: 10px 10px 10px 10px;
+            border-radius: 10px 10px 10px 10px;
+            background: #fff;
+            padding: 30px;
+            width: 90%;
+            max-width: 450px;
+            position: relative;
+            padding: 0px;
+            -webkit-box-shadow: 0 30px 60px 0 rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 40px 0 rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        #formFooter {
+            background-color: #f6f6f6;
+            border-top: 1px solid #dce8f1;
+            padding: 25px;
+            text-align: center;
+            -webkit-border-radius: 0 0 10px 10px;
+            border-radius: 0 0 10px 10px;
+        }
+
+        h2 {
+            color: #0d0d0d;
+        }
+
+        input[type=button],
+        input[type=submit],
+        input[type=reset] {
+            background-color: #666666;
+            border: none;
+            color: white;
+            padding: 15px 80px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            text-transform: uppercase;
+            font-size: 13px;
+            -webkit-border-radius: 5px 5px 5px 5px;
+            border-radius: 5px 5px 5px 5px;
+            margin: 5px 20px 40px 20px;
+        }
+
+        input[type=button]:hover,
+        input[type=submit]:hover,
+        input[type=reset]:hover {
+            background-color: #1e1e1e;
+        }
+
+        input[type=button]:active,
+        input[type=submit]:active,
+
+        input[type=text],
+        input[type=password] {
+            background-color: #f6f6f6;
+            border: none;
+            color: #0d0d0d;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 5px;
+            margin-bottom: 15px;
+            width: 85%;
+            border: 2px solid #f6f6f6;
+            -webkit-border-radius: 5px 5px 5px 5px;
+            border-radius: 5px 5px 5px 5px;
+        }
+
+        input[type=text]:focus,
+        input[type=password]:focus {
+            background-color: #fff;
+            border-bottom: 2px solid #1e1e1e;
+        }
+
+        input[type=text]:placeholder,
+        input[type=password]:placeholder {
+            color: #cccccc;
+        }
+
+        *:focus {
+            outline: none;
+        }
+
+        #icon {
+            width: 60%;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+
+    <script>
+        function mapAuthGuardErrorCode(errorCode) {
+            if (!errorCode) {
+                return "Unknown error occurred"
+            }
+
+            switch (errorCode) {
+                case "AC.033": return "Account deactivated";
+                case "AT.032": return "Account is locked";
+                case "PW.021":
+                case "CD.011":
+                    return "Either the email or password is incorrect";
+                default: return `Unknown error occurred: ${errorCode}`
+            }
+        }
+
+        async function post(url, data) {
+            const response = await fetch(url, {
+                method: "POST",
+                cache: "no-cache",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                redirect: "follow",
+                body: JSON.stringify(data),
+            });
+
+            return response.json();
+        }
+
+        async function login(identifier, password) {
+            let path = window.location.pathname.split('/');
+            let domain = path[path.indexOf("oidc") + 1];
+            let searchParams = new URLSearchParams(window.location.search);
+            let clientId = searchParams.get("client_id");
+            let redirectUri = searchParams.get("redirect_uri");
+            let token = searchParams.get("token");
+
+            let requestBody = {
+                identifier: identifier,
+                password: password,
+                clientId: clientId,
+                redirectUri: redirectUri,
+                requestToken: token
+            };
+
+            return await post("/oidc/" + domain + "/auth", requestBody);
+        }
+
+        function onSubmit(e) {
+            e.preventDefault();
+
+            let username = e.target.elements.loginInput.value;
+            let password = e.target.elements.passwordInput.value;
+
+            login(username, password);
+            return false;
+        }
+
+        window.onload = () => {
+            let element = document.querySelector('form');
+            console.log(element);
+            element.onsubmit = onSubmit;
+        }
+    </script>
+
+    <div class="wrapper">
+        <div id="formContent">
+            <h2>Login</h2>
+
+            <form>
+                <div class="formInputs">
+                    <input type="text" id="loginInput" name="login" placeholder="${identifierPlaceholder}">
+                    <input type="password" id="passwordInput" name="password" placeholder="Password">
+                </div>
+
+                <input type="submit" value="Log In">
+            </form>
+
+            <div id="formFooter">
+                <span>Powered by AuthGuard</span>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

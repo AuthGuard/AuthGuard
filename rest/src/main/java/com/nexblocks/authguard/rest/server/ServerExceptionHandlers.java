@@ -1,9 +1,9 @@
 package com.nexblocks.authguard.rest.server;
 
+import com.nexblocks.authguard.api.common.RequestValidationException;
+import com.nexblocks.authguard.api.common.RuntimeJsonException;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.rest.exceptions.ExceptionHandlers;
-import com.nexblocks.authguard.rest.exceptions.RequestValidationException;
-import com.nexblocks.authguard.rest.exceptions.RuntimeJsonException;
 import com.nexblocks.authguard.service.exceptions.*;
 import io.javalin.Javalin;
 import org.slf4j.Logger;

@@ -5,7 +5,6 @@ import com.nexblocks.authguard.service.model.Client;
 import com.nexblocks.authguard.service.model.ClientBO;
 import io.javalin.http.Context;
 
-// TODO move to Requester
 public class ActorDomainVerifier {
     public static boolean verifyActorDomain(final Context context, final String domain) {
         if (context.attribute("actor") instanceof ClientBO) {
