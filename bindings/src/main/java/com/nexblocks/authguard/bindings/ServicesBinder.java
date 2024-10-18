@@ -41,6 +41,10 @@ public class ServicesBinder extends AbstractModule {
             bind(ActionTokenService.class).to(ActionTokenServiceImpl.class);
         }
 
+        if (configContext.get("totpAuthenticators") != null) {
+            bind(TotpKeysService.class).to(TotpKeysServiceImpl.class);
+        }
+
         if (configContext.get("passwordless") != null) {
             bind(PasswordlessService.class).to(PasswordlessServiceImpl.class);
         }

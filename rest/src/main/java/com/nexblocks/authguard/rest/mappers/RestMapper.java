@@ -3,6 +3,7 @@ package com.nexblocks.authguard.rest.mappers;
 import com.nexblocks.authguard.api.dto.entities.*;
 import com.nexblocks.authguard.api.dto.requests.*;
 import com.nexblocks.authguard.service.model.*;
+import org.apache.commons.codec.binary.Base32;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -70,4 +71,18 @@ public interface RestMapper {
 
     CryptoKeyDTO toDTO(EphemeralKeyBO ephemeralKeyBO);
     CryptoKeyDTO toDTO(PersistedKeyBO persistedKeyBO);
+
+    TotpKeyDTO toDTO(TotpKeyBO totpKeyBO);
+
+    default String toBase32(final byte[] blob) {
+        return blob == null ? null : InternalBase32.encode(blob);
+    }
+
+    class InternalBase32 {
+        private static final Base32 base32 = new Base32();
+
+        public static String encode(final byte[] bytes) {
+            return base32.encodeToString(bytes);
+        }
+    }
 }
