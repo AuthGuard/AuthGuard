@@ -44,6 +44,10 @@ public class DalBinder extends AbstractModule {
             bindAndRegister(OtpRepository.class);
         }
 
+        if (configContext.get("totpAuthenticators") != null) {
+            bindAndRegister(TotpKeysRepository.class);
+        }
+
         if (configContext.get("sessions") != null) {
             bindAndRegister(SessionsRepository.class);
         }

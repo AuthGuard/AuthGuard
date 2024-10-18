@@ -62,6 +62,11 @@ public interface ServiceMapper {
     CryptoKeyDO toDO(PersistedKeyBO cryptoKeyDO);
     PersistedKeyBO toBO(CryptoKeyDO cryptoKeyDO);
 
+    @Mapping(source = "key", target = "encryptedKey")
+    TotpKeyDO toDO(TotpKeyBO totpKeyBO);
+    @Mapping(source = "encryptedKey", target = "key")
+    TotpKeyBO toBO(TotpKeyDO totpKeyDO);
+
     default byte[] toBlob(final String base64) {
         return base64 == null ? null : Base64.getDecoder().decode(base64);
     }

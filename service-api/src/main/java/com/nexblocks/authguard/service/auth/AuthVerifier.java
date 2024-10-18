@@ -6,11 +6,6 @@ import io.vavr.control.Either;
 import java.util.concurrent.CompletableFuture;
 
 public interface AuthVerifier {
-    /**
-     * Verify a given token.
-     *
-     * @return The associated account ID or empty if the token was invalid.
-     */
     Long verifyAccountToken(final String token);
 
     default CompletableFuture<Long> verifyAccountTokenAsync(final String token) {

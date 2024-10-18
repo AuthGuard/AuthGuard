@@ -40,6 +40,7 @@ public class Validators {
         classValidators.put(PasswordResetRequestDTO.class, new PasswordResetRequestValidator());
 
         classValidators.put(CryptoKeyRequestDTO.class, new CryptoKeyRequestValidator());
+        classValidators.put(TotpKeyRequestDTO.class, new TotpKeyRequestValidator());
     }
 
     @SuppressWarnings("unchecked")

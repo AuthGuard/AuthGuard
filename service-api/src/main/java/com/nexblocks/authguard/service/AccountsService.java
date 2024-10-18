@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * AccountDO service interface.
- */
 public interface AccountsService extends IdempotentCrudService<AccountBO> {
     CompletableFuture<AccountBO> getByIdUnsafe(long id, String domain);
 
