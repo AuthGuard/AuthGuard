@@ -13,6 +13,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
+/**
+ * May not be needed. Adds a lot of complexity and the trusted
+ * certificates should be defined at system level anyway.
+ */
+@Deprecated
 public class JettyServerProvider {
     private static final Logger LOG = LoggerFactory.getLogger(JettyServerProvider.class);
 
@@ -52,7 +57,7 @@ public class JettyServerProvider {
                 .orElse(443);
 
         final SslContextFactory sslContextFactory = createContextFactory();
-        final ServerConnector sslConnector = new ServerConnector(server, sslContextFactory);
+        final ServerConnector sslConnector = new ServerConnector(server);
 
         sslConnector.setPort(port);
 

@@ -9,17 +9,17 @@ public abstract class RolesApi implements ApiRoute {
 
     @Override
     public String getPath() {
-        return "/domains/:domain/roles";
+        return "/domains/{domain}/roles";
     }
 
     @Override
     public void addEndpoints() {
         post("/", this::create, ActorRoles.adminClient());
-        get("/:id", this::getById, ActorRoles.adminClient());;
-        delete("/:id", this::deleteById, ActorRoles.adminClient());;
-        get("/name/:name", this::getByName, ActorRoles.adminClient());
+        get("/{id}", this::getById, ActorRoles.adminClient());;
+        delete("/{id}", this::deleteById, ActorRoles.adminClient());;
+        get("/name/{name}", this::getByName, ActorRoles.adminClient());
         get("", this::getAll, ActorRoles.adminClient());
-        patch("/:id", this::update, ActorRoles.adminClient());
+        patch("/{id}", this::update, ActorRoles.adminClient());
     }
 
     public abstract void update(final Context context);

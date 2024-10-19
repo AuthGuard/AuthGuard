@@ -35,6 +35,6 @@ public class PasswordlessRoute extends PasswordlessApi {
         CompletableFuture<AuthResponseDTO> generatedTokens = passwordlessService.authenticate(request.getToken(), requestContext)
                 .thenApply(restMapper::toDTO);
 
-        context.json(generatedTokens);
+        context.future(() -> generatedTokens.thenAccept(context::json));
     }
 }

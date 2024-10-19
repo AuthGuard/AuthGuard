@@ -9,15 +9,15 @@ public abstract class ApiKeysApi implements ApiRoute {
 
     @Override
     public String getPath() {
-        return "/domains/:domain/keys";
+        return "/domains/{domain}/keys";
     }
 
     @Override
     public void addEndpoints() {
         post("/", this::generate, ActorRoles.anyAdmin());
-        get("/:id", this::getById, ActorRoles.adminClient());
+        get("/{id}", this::getById, ActorRoles.adminClient());
         post("/verify", this::verify, ActorRoles.adminClient());
-        delete("/:id", this::deleteById, ActorRoles.adminClient());
+        delete("/{id}", this::deleteById, ActorRoles.adminClient());
     }
 
     public abstract void generate(final Context context);

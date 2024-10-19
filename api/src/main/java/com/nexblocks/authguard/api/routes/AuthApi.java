@@ -10,7 +10,7 @@ public abstract class AuthApi implements ApiRoute {
 
     @Override
     public String getPath() {
-        return "/domains/:domain/auth";
+        return "/domains/{domain}/auth";
     }
 
     @Override

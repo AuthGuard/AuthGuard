@@ -1,15 +1,22 @@
 package com.nexblocks.authguard.rest;
 
+import com.google.inject.Binding;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.TypeLiteral;
+import com.nexblocks.authguard.api.routes.ApiRoute;
 import com.nexblocks.authguard.bindings.ApiRoutesBinder;
 import com.nexblocks.authguard.bindings.ConfigBinder;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.rest.bindings.MappersBinder;
+import com.nexblocks.authguard.rest.config.ImmutableServerConfig;
 import com.nexblocks.authguard.rest.server.AuthGuardServer;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 import io.javalin.Javalin;
 
 import java.util.Collections;
+import java.util.List;
+
+import static io.javalin.apibuilder.ApiBuilder.path;
 
 class TestServer {
     private int port;
@@ -28,17 +35,32 @@ class TestServer {
                 new MappersBinder(),
                 new ConfigBinder(configContext),
                 new ApiRoutesBinder(Collections.singleton("com.nexblocks.authguard"), configContext));
-        app = Javalin.create(javalinConfig -> {
-            javalinConfig.accessManager(new TestAccessManager());
+
+        List<Binding<ApiRoute>> routeBindings =
+                injector.findBindingsByType(TypeLiteral.get(ApiRoute.class));
+
+        app = Javalin.create(config -> {
+            config.router.apiBuilder(() -> {
+                routeBindings.forEach(binding -> {
+                    final ApiRoute route = binding.getProvider().get();
+
+                    System.out.printf("Binding path /%s to route %s%n", route.getPath(), route);
+
+                    path("/" + route.getPath(), route);
+                });
+            });
         });
+
+        app.beforeMatched(new TestAccessManager());
+
+        port = 7000;
     }
 
     void start() {
-        authGuardServer = new AuthGuardServer(injector);
+        authGuardServer = new AuthGuardServer(injector, ImmutableServerConfig.builder()
+                .build());
 
-        this.port = app.port();
-
-        authGuardServer.start(app, app.port());
+        authGuardServer.start(app, port);
     }
 
     void stop() {

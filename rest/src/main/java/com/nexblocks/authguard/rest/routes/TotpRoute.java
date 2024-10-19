@@ -13,7 +13,7 @@ import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.TotpApi;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.service.TotpKeysService;
-import io.javalin.core.validation.Validator;
+import io.javalin.validation.Validator;
 import io.javalin.http.Context;
 
 import java.util.Collections;
@@ -45,38 +45,40 @@ public class TotpRoute extends TotpApi {
                 totpKeysService.generate(request.getAccountId(), domain, request.getAuthenticator())
                         .thenApply(restMapper::toDTO);
 
-        context.status(201).json(persisted);
+        context.future(() -> persisted.thenAccept(r -> context.status(201).json(r)));
     }
 
     @Override
     public void getByAccountId(final Context context) {
-        Validator<Long> accountId = context.pathParam("accountId", Long.class);
+        Validator<Long> accountId = context.pathParamAsClass("accountId", Long.class);
 
-        if (!accountId.isValid()) {
+        if (!accountId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("accountId", ViolationType.INVALID_VALUE)));
         }
 
         String domain = Domain.fromContext(context);
 
-        context.json(totpKeysService.getByAccountId(accountId.get(), domain)
+        context.future(() -> totpKeysService.getByAccountId(accountId.get(), domain)
                 .thenApply(list -> CollectionResponseDTO.builder()
                         .items(list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
-                        .build()));
+                        .build())
+                .thenAccept(context::json));
     }
 
     @Override
     public void deleteById(final Context context) {
-        Validator<Long> id = context.pathParam("id", Long.class);
+        Validator<Long> id = context.pathParamAsClass("id", Long.class);
 
-        if (!id.isValid()) {
+        if (!id.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
         String domain = Domain.fromContext(context);
 
-        context.json(totpKeysService.delete(id.get(), domain)
+        context.future(() -> totpKeysService.delete(id.get(), domain)
                 .thenApply(list -> CollectionResponseDTO.builder()
                         .items(list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
-                        .build()));
+                        .build())
+                .thenAccept(context::json));
     }
 }

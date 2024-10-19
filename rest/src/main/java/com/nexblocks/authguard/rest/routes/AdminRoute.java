@@ -15,13 +15,11 @@ public class AdminRoute extends AdminApi {
     }
 
     public void getConfig(final Context context) {
-        context.status(200)
-                .json(this.configContext.asMap());
+        context.json(this.configContext.asMap());
     }
 
     @Override
     public void getBindings(final Context context) {
-        context.status(200)
-                .json(PluginsRegistry.getBindingsGroupedByPackage());
+        context.json(PluginsRegistry.getBindingsGroupedByPackage());
     }
 }

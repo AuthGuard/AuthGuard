@@ -17,7 +17,7 @@ import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.ApiKeyBO;
 import com.nexblocks.authguard.service.util.AsyncUtils;
-import io.javalin.core.validation.Validator;
+import io.javalin.validation.Validator;
 import io.javalin.http.Context;
 
 import java.time.Duration;
@@ -54,14 +54,14 @@ public class ApiKeysRoute extends ApiKeysApi {
                 apiKeysService.generateApiKey(IdParser.from(request.getAppId()), domain, request.getKeyType(),
                         request.getName(), validFor);
 
-        context.status(201).json(key.thenApply(restMapper::toDTO));
+        context.future(() -> key.thenApply(restMapper::toDTO).thenAccept(r -> context.status(201).json(r)));
     }
 
     @Override
     public void getById(final Context context) {
-        Validator<Long> apiKeyId = context.pathParam("id", Long.class);
+        Validator<Long> apiKeyId = context.pathParamAsClass("id", Long.class);
 
-        if (!apiKeyId.isValid()) {
+        if (!apiKeyId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -69,7 +69,7 @@ public class ApiKeysRoute extends ApiKeysApi {
                 .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.API_KEY_DOES_NOT_EXIST, "API key does not exist"))
                 .thenApply(restMapper::toDTO);
 
-        context.json(apiKey);
+        context.future(() -> apiKey.thenAccept(context::json));
     }
 
     @Override
@@ -79,14 +79,14 @@ public class ApiKeysRoute extends ApiKeysApi {
         CompletableFuture<AppDTO> app = apiKeysService.validateApiKey(verificationRequest.getKey(), Domain.fromContext(context),
                         verificationRequest.getKeyType()).thenApply(restMapper::toDTO);
 
-        context.json(app);
+        context.future(() -> app.thenAccept(context::json));
     }
 
     @Override
     public void deleteById(final Context context) {
-        Validator<Long> apiKeyId = context.pathParam("id", Long.class);
+        Validator<Long> apiKeyId = context.pathParamAsClass("id", Long.class);
 
-        if (!apiKeyId.isValid()) {
+        if (!apiKeyId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -94,6 +94,6 @@ public class ApiKeysRoute extends ApiKeysApi {
                 .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.API_KEY_DOES_NOT_EXIST, "API key does not exist"))
                 .thenApply(restMapper::toDTO);
 
-        context.json(apiKey);
+        context.future(() -> apiKey.thenAccept(context::json));
     }
 }

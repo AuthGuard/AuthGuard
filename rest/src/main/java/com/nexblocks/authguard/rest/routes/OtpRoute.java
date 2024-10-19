@@ -36,6 +36,6 @@ public class OtpRoute extends OtpApi {
         CompletableFuture<AuthResponseDTO> tokens = otpService.authenticate(IdParser.from(body.getPasswordId()), body.getPassword(), requestContext)
                 .thenApply(restMapper::toDTO);
 
-        context.json(tokens);
+        context.future(() -> tokens.thenAccept(context::json));
     }
 }

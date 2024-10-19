@@ -17,7 +17,7 @@ import com.nexblocks.authguard.api.common.BodyHandler;
 import com.nexblocks.authguard.service.ActionTokenService;
 import com.nexblocks.authguard.service.model.ActionTokenBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
-import io.javalin.core.validation.Validator;
+import io.javalin.validation.Validator;
 import io.javalin.http.Context;
 
 import java.util.Collections;
@@ -41,9 +41,9 @@ public class ActionTokensRoute extends ActionTokensApi {
 
     @Override
     public void createOtp(final Context context) {
-        Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParamAsClass("id", Long.class);
 
-        if (!accountId.isValid()) {
+        if (!accountId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -56,7 +56,7 @@ public class ActionTokensRoute extends ActionTokensApi {
         CompletableFuture<AuthResponseDTO> result = actionTokenService.generateOtp(accountId.get(), Domain.fromContext(context))
                 .thenApply(restMapper::toDTO);
 
-        context.status(201).json(result);
+        context.future(() -> result.thenAccept(r -> context.status(201).json(r)));
     }
 
     @Override
@@ -73,7 +73,7 @@ public class ActionTokensRoute extends ActionTokensApi {
             result = actionTokenService.generateFromBasicAuth(authRequest, request.getAction());
         }
 
-        context.status(201).json(result.thenApply(restMapper::toDTO));
+        context.future(() -> result.thenApply(restMapper::toDTO).thenAccept(r -> context.status(201).json(r)));
     }
 
     @Override
@@ -97,6 +97,6 @@ public class ActionTokensRoute extends ActionTokensApi {
                 .thenApply(restMapper::toDTO);
 
 
-        context.status(200).json(result);
+        context.future(() -> result.thenAccept(r -> context.status(200).json(r)));
     }
 }

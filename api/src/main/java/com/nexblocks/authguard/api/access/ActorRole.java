@@ -1,10 +1,10 @@
 package com.nexblocks.authguard.api.access;
 
-import io.javalin.core.security.Role;
+import io.javalin.security.RouteRole;
 
 import java.util.Objects;
 
-public class ActorRole implements Role {
+public class ActorRole implements RouteRole {
     private final String role;
 
     private ActorRole(final String role) {

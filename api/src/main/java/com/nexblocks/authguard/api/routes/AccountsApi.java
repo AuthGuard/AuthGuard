@@ -9,31 +9,31 @@ public abstract class AccountsApi implements ApiRoute {
 
     @Override
     public String getPath() {
-        return "/domains/:domain/accounts";
+        return "/domains/{domain}/accounts";
     }
 
     public void addEndpoints() {
         post("/", this::create, ActorRoles.of("authguard_admin_client", "one_time_admin", "authguard_auth_client"));
 
-        get("/:id", this::getById, ActorRoles.adminClient());
-        delete("/:id", this::deleteAccount, ActorRoles.adminClient());
-        patch("/:id", this::patchAccount, ActorRoles.adminClient());
-        get("/identifier/:identifier", this::getByIdentifier, ActorRoles.adminClient());
-        get("/identifier/:identifier/exists", this::identifierExists, ActorRoles.adminOrAuthClient());
+        get("/{id}", this::getById, ActorRoles.adminClient());
+        delete("/{id}", this::deleteAccount, ActorRoles.adminClient());
+        patch("/{id}", this::patchAccount, ActorRoles.adminClient());
+        get("/identifier/{identifier}", this::getByIdentifier, ActorRoles.adminClient());
+        get("/identifier/{identifier}/exists", this::identifierExists, ActorRoles.adminOrAuthClient());
 
-        get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
-        get("/email/:email", this::getByEmail, ActorRoles.adminClient());
-        get("/email/:email/exists", this::emailExists, ActorRoles.adminOrAuthClient());
+        get("/externalId/{id}", this::getByExternalId, ActorRoles.adminClient());
+        get("/email/{email}", this::getByEmail, ActorRoles.adminClient());
+        get("/email/{email}/exists", this::emailExists, ActorRoles.adminOrAuthClient());
 
-        patch("/:id/permissions", this::updatePermissions, ActorRoles.adminClient());
-        patch("/:id/roles", this::updateRoles, ActorRoles.adminClient());
-        get("/:id/apps", this::getApps, ActorRoles.adminClient());
-        get("/:id/crypto_keys", this::getCryptoKeys, ActorRoles.adminClient());
+        patch("/{id}/permissions", this::updatePermissions, ActorRoles.adminClient());
+        patch("/{id}/roles", this::updateRoles, ActorRoles.adminClient());
+        get("/{id}/apps", this::getApps, ActorRoles.adminClient());
+        get("/{id}/crypto_keys", this::getCryptoKeys, ActorRoles.adminClient());
 
-        patch("/:id/activate", this::activate, ActorRoles.adminClient());
-        patch("/:id/deactivate", this::deactivate, ActorRoles.adminClient());
+        patch("/{id}/activate", this::activate, ActorRoles.adminClient());
+        patch("/{id}/deactivate", this::deactivate, ActorRoles.adminClient());
 
-        get("/:id/locks", this::getActiveLocks, ActorRoles.adminClient());
+        get("/{id}/locks", this::getActiveLocks, ActorRoles.adminClient());
     }
 
     public abstract void create(final Context context);

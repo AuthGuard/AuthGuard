@@ -31,7 +31,7 @@ public class EventsRoute extends EventsApi {
     public void getByDomain(final Context context) {
         String domain = Domain.fromContext(context);
         String channel = context.queryParam("channel");
-        Long cursor = context.queryParam("cursor", Long.class).getOrNull();
+        Long cursor = context.queryParamAsClass("cursor", Long.class).getOrDefault(null);
         Instant instantCursor = Cursors.parseInstantCursor(cursor);
 
         CompletableFuture<List<EventBO>> eventsFuture;
@@ -46,7 +46,7 @@ public class EventsRoute extends EventsApi {
                 .thenApply(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
                 .thenApply(this::collectionResponse);
 
-        context.json(result);
+        context.future(() -> result.thenAccept(context::json));
     }
 
     private CollectionResponseDTO<EventDTO> collectionResponse(List<EventDTO> list) {

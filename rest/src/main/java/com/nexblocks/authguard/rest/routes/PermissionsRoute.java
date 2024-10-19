@@ -14,7 +14,7 @@ import com.nexblocks.authguard.api.common.BodyHandler;
 import com.nexblocks.authguard.service.PermissionsService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.util.AsyncUtils;
-import io.javalin.core.validation.Validator;
+import io.javalin.validation.Validator;
 import io.javalin.http.Context;
 
 import java.util.Collections;
@@ -42,14 +42,14 @@ public class PermissionsRoute extends PermissionsApi {
         CompletableFuture<PermissionDTO> created = permissionsService.create(restMapper.toBO(permission))
                 .thenApply(restMapper::toDTO);
 
-        context.status(201).json(created);
+        context.future(() -> created.thenAccept(r -> context.status(201).json(r)));
     }
 
     @Override
     public void getById(final Context context) {
-        Validator<Long> id = context.pathParam("id", Long.class);
+        Validator<Long> id = context.pathParamAsClass("id", Long.class);
 
-        if (!id.isValid()) {
+        if (!id.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -57,14 +57,14 @@ public class PermissionsRoute extends PermissionsApi {
                 .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.PERMISSION_DOES_NOT_EXIST, "Permission does not exist"))
                 .thenApply(restMapper::toDTO);
 
-        context.json(permission);
+        context.future(() -> permission.thenAccept(context::json));
     }
 
     @Override
     public void deleteById(final Context context) {
-        Validator<Long> id = context.pathParam("id", Long.class);
+        Validator<Long> id = context.pathParamAsClass("id", Long.class);
 
-        if (!id.isValid()) {
+        if (!id.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -72,40 +72,40 @@ public class PermissionsRoute extends PermissionsApi {
                 .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.PERMISSION_DOES_NOT_EXIST, "Permission does not exist"))
                 .thenApply(restMapper::toDTO);
 
-        context.json(permission);
+        context.future(() -> permission.thenAccept(context::json));
     }
 
     @Override
     public void getByGroup(final Context context) {
         String group = context.pathParam("group");
         String domain = context.pathParam("domain");
-        Long cursor = context.queryParam("cursor", Long.class).getOrNull();
+        Long cursor = context.queryParamAsClass("cursor", Long.class).getOrDefault(null);
 
         CompletableFuture<List<PermissionDTO>> permissions = permissionsService.getAllForGroup(group, domain, cursor)
                 .thenApply(list -> list.stream()
                         .map(restMapper::toDTO)
                         .collect(Collectors.toList()));
 
-        context.json(permissions);
+        context.future(() -> permissions.thenAccept(context::json));
     }
 
     public void getAll(final Context context) {
         String domain = context.pathParam("domain");
-        Long cursor = context.queryParam("cursor", Long.class).getOrNull();
+        Long cursor = context.queryParamAsClass("cursor", Long.class).getOrDefault(null);
 
         CompletableFuture<List<PermissionDTO>> permissions = permissionsService.getAll(domain, cursor)
                 .thenApply(list -> list.stream()
                         .map(restMapper::toDTO)
                         .collect(Collectors.toList()));
 
-        context.json(permissions);
+        context.future(() -> permissions.thenAccept(context::json));
     }
 
     @Override
     public void update(Context context) {
-        Validator<Long> id = context.pathParam("id", Long.class);
+        Validator<Long> id = context.pathParamAsClass("id", Long.class);
 
-        if (!id.isValid()) {
+        if (!id.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -116,6 +116,6 @@ public class PermissionsRoute extends PermissionsApi {
                 .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.PERMISSION_DOES_NOT_EXIST, "Permission does not exist"))
                 .thenApply(restMapper::toDTO);
 
-        context.status(200).json(created);
+        context.future(() -> created.thenAccept(context::json));
     }
 }

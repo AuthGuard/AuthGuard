@@ -9,25 +9,25 @@ public abstract class ApplicationsApi implements ApiRoute {
 
     @Override
     public String getPath() {
-        return "/domains/:domain/apps";
+        return "/domains/{domain}/apps";
     }
 
     @Override
     public void addEndpoints() {
         post("/", this::create, ActorRoles.anyAdmin());
 
-        get("/:id", this::getById, ActorRoles.adminClient());
-        get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
-        put("/:id", this::update, ActorRoles.adminClient());
-        delete("/:id", this::deleteById, ActorRoles.adminClient());
+        get("/{id}", this::getById, ActorRoles.adminClient());
+        get("/externalId/{id}", this::getByExternalId, ActorRoles.adminClient());
+        put("/{id}", this::update, ActorRoles.adminClient());
+        delete("/{id}", this::deleteById, ActorRoles.adminClient());
 
-        patch("/:id/activate", this::activate, ActorRoles.adminClient());
-        patch("/:id/deactivate", this::deactivate, ActorRoles.adminClient());
-        patch("/:id/permissions", this::updatePermissions, ActorRoles.adminClient());
-        patch("/:id/roles", this::updateRoles, ActorRoles.adminClient());
+        patch("/{id}/activate", this::activate, ActorRoles.adminClient());
+        patch("/{id}/deactivate", this::deactivate, ActorRoles.adminClient());
+        patch("/{id}/permissions", this::updatePermissions, ActorRoles.adminClient());
+        patch("/{id}/roles", this::updateRoles, ActorRoles.adminClient());
 
-        get("/:id/keys", this::getApiKeys, ActorRoles.adminClient());
-        get("/:id/crypto_keys", this::getCryptoKeys, ActorRoles.adminClient());
+        get("/{id}/keys", this::getApiKeys, ActorRoles.adminClient());
+        get("/{id}/crypto_keys", this::getCryptoKeys, ActorRoles.adminClient());
     }
 
     public abstract void create(final Context context);

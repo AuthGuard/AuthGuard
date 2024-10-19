@@ -21,7 +21,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.vavr.control.Either;
 import org.apache.commons.lang3.StringUtils;
@@ -74,11 +74,11 @@ public class OAuthSsoPagesRoute implements ApiRoute {
 
     @Override
     public void addEndpoints() {
-        get("/:domain/auth", this::authFlowPage);
-        get("/:domain/login", this::loginPage);
-        post("/:domain/auth", this::authFlowAuthApi);
-        post("/:domain/token", this::authFlowTokenApi);
-        get("/:domain/otp", this::otpPage);
+        get("/{domain}/auth", this::authFlowPage);
+        get("/{domain}/login", this::loginPage);
+        post("/{domain}/auth", this::authFlowAuthApi);
+        post("/{domain}/token", this::authFlowTokenApi);
+        get("/{domain}/otp", this::otpPage);
     }
 
     private void authFlowPage(Context context) {
@@ -111,7 +111,7 @@ public class OAuthSsoPagesRoute implements ApiRoute {
                     return "";
                 });
 
-        context.result(requestToken);
+        context.future(() -> requestToken);
     }
 
     private void loginPage(Context context) {
@@ -179,7 +179,7 @@ public class OAuthSsoPagesRoute implements ApiRoute {
                     return "";
                 });
 
-        context.result(redirectUrl);
+        context.future(() -> redirectUrl);
     }
 
     private void authFlowTokenApi(Context context) {
@@ -245,7 +245,7 @@ public class OAuthSsoPagesRoute implements ApiRoute {
                     return new OpenIdConnectError(ErrorCode.GENERIC_AUTH_FAILURE.getCode(), "Unknown error");
                 });
 
-        context.json(result);
+        context.future(() -> result.thenAccept(context::json));
     }
 
     private CompletableFuture<ClientBO> verifyNonPkceTokenFlow(final String clientId, final String clientSecret,
