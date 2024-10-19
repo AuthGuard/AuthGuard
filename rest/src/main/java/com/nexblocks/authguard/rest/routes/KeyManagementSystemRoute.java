@@ -17,7 +17,7 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.EphemeralKeyBO;
 import com.nexblocks.authguard.service.model.PersistedKeyBO;
 import com.nexblocks.authguard.service.util.AsyncUtils;
-import io.javalin.core.validation.Validator;
+import io.javalin.validation.Validator;
 import io.javalin.http.Context;
 
 import java.time.Instant;
@@ -52,8 +52,7 @@ public class KeyManagementSystemRoute extends KeyManagementSystemApi {
         EphemeralKeyBO key = keyManagementService.generate(request.getAlgorithm().name(), request.getSize());
 
         if (!request.isPersist()) {
-            context.status(200)
-                    .json(restMapper.toDTO(key));
+            context.json(restMapper.toDTO(key));
             return;
         }
 
@@ -71,13 +70,13 @@ public class KeyManagementSystemRoute extends KeyManagementSystemApi {
         CompletableFuture<CryptoKeyDTO> persisted = keyManagementService.create(toPersist)
                 .thenApply(restMapper::toDTO);
 
-        context.status(201).json(persisted);
+        context.future(() -> persisted.thenAccept(r -> context.status(201).json(r)));
     }
 
     @Override
     public void getByDomain(final Context context) {
         String domain = Domain.fromContext(context);
-        Long cursor = context.queryParam("cursor", Long.class).getOrNull();
+        Long cursor = context.queryParamAsClass("cursor", Long.class).getOrDefault(null);
         Instant instantCursor = Cursors.parseInstantCursor(cursor);
 
         CompletableFuture<List<CryptoKeyDTO>> keys = keyManagementService.getByDomain(domain, instantCursor)
@@ -85,14 +84,14 @@ public class KeyManagementSystemRoute extends KeyManagementSystemApi {
                         .map(restMapper::toDTO)
                         .collect(Collectors.toList()));
 
-        context.json(keys);
+        context.future(() -> keys.thenAccept(context::json));
     }
 
     @Override
     public void getById(final Context context) {
-        Validator<Long> keyId = context.pathParam("id", Long.class);
+        Validator<Long> keyId = context.pathParamAsClass("id", Long.class);
 
-        if (!keyId.isValid()) {
+        if (!keyId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -107,14 +106,14 @@ public class KeyManagementSystemRoute extends KeyManagementSystemApi {
                 .thenApply(opt -> opt.map(restMapper::toDTO)
                         .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.CRYPTO_KEY_DOES_NOT_EXIST, "Key does not exist")));
 
-        context.json(key);
+        context.future(() -> key.thenAccept(context::json));
     }
 
     @Override
     public void deleteById(final Context context) {
-        Validator<Long> keyId = context.pathParam("id", Long.class);
+        Validator<Long> keyId = context.pathParamAsClass("id", Long.class);
 
-        if (!keyId.isValid()) {
+        if (!keyId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -122,6 +121,6 @@ public class KeyManagementSystemRoute extends KeyManagementSystemApi {
                 .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.CRYPTO_KEY_DOES_NOT_EXIST, "Key does not exist"))
                 .thenApply(restMapper::toDTO);
 
-        context.json(key);
+        context.future(() -> key.thenAccept(context::json));
     }
 }

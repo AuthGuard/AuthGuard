@@ -21,7 +21,7 @@ import com.nexblocks.authguard.service.KeyManagementService;
 import com.nexblocks.authguard.service.model.Client;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.AsyncUtils;
-import io.javalin.core.validation.Validator;
+import io.javalin.validation.Validator;
 import io.javalin.http.Context;
 
 import java.time.Instant;
@@ -94,14 +94,14 @@ public class AccountsRoute extends AccountsApi {
         CompletableFuture<AccountDTO> result = accountsService.create(withIdentifiers, requestContext)
                 .thenApply(restMapper::toDTO);
 
-        context.status(201).json(result);
+        context.future(() -> result.thenAccept(r -> context.status(201).json(r)));
     }
 
     @Override
     public void getById(final Context context) {
-        Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParamAsClass("id", Long.class);
 
-        if (!accountId.isValid()) {
+        if (!accountId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -109,7 +109,7 @@ public class AccountsRoute extends AccountsApi {
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenApply(restMapper::toDTO);
 
-        context.json(account);
+        context.future(() -> account.thenAccept(context::json));
     }
 
     @Override
@@ -125,7 +125,7 @@ public class AccountsRoute extends AccountsApi {
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenApply(restMapper::toDTO);
 
-        context.json(account);
+        context.future(() -> account.thenAccept(context::json));
     }
 
     @Override
@@ -142,14 +142,14 @@ public class AccountsRoute extends AccountsApi {
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenApply(ignored -> ExistsResponseDTO.builder().success(true).build());
 
-        context.json(exists);
+        context.future(() -> exists.thenAccept(context::json));
     }
 
     @Override
     public void deleteAccount(final Context context) {
-        Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParamAsClass("id", Long.class);
 
-        if (!accountId.isValid()) {
+        if (!accountId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -157,14 +157,14 @@ public class AccountsRoute extends AccountsApi {
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenApply(restMapper::toDTO);
 
-        context.json(account);
+        context.future(() -> account.thenAccept(context::json));
     }
 
     @Override
     public void patchAccount(final Context context) {
-        Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParamAsClass("id", Long.class);
 
-        if (!accountId.isValid()) {
+        if (!accountId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
         
@@ -174,7 +174,7 @@ public class AccountsRoute extends AccountsApi {
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenApply(restMapper::toDTO);
 
-        context.json(account);
+        context.future(() -> account.thenAccept(context::json));
     }
 
     @Override
@@ -185,7 +185,7 @@ public class AccountsRoute extends AccountsApi {
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenApply(restMapper::toDTO);
 
-        context.json(account);
+        context.future(() -> account.thenAccept(context::json));
     }
 
     @Override
@@ -197,7 +197,7 @@ public class AccountsRoute extends AccountsApi {
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenApply(restMapper::toDTO);
 
-        context.json(account);
+        context.future(() -> account.thenAccept(context::json));
     }
 
     @Override
@@ -215,14 +215,14 @@ public class AccountsRoute extends AccountsApi {
                         .success(true)
                         .build());
 
-        context.json(exists);
+        context.future(() -> exists.thenAccept(context::json));
     }
 
     @Override
     public void updatePermissions(final Context context) {
-        Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParamAsClass("id", Long.class);
 
-        if (!accountId.isValid()) {
+        if (!accountId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
         
@@ -240,14 +240,14 @@ public class AccountsRoute extends AccountsApi {
             updatedAccount = accountsService.revokePermissions(accountId.get(), permissions, Domain.fromContext(context));
         }
 
-        context.json(updatedAccount.thenCompose(AsyncUtils::fromAccountOptional).thenApply(restMapper::toDTO));
+        context.future(() -> updatedAccount.thenCompose(AsyncUtils::fromAccountOptional).thenApply(restMapper::toDTO).thenAccept(context::json));
     }
 
     @Override
     public void updateRoles(final Context context) {
-        Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParamAsClass("id", Long.class);
 
-        if (!accountId.isValid()) {
+        if (!accountId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
         
@@ -261,37 +261,37 @@ public class AccountsRoute extends AccountsApi {
             updatedAccount = accountsService.revokeRoles(accountId.get(), request.getRoles(), Domain.fromContext(context));
         }
 
-        context.json(updatedAccount.thenCompose(AsyncUtils::fromAccountOptional).thenApply(restMapper::toDTO));
+        context.future(() -> updatedAccount.thenCompose(AsyncUtils::fromAccountOptional).thenApply(restMapper::toDTO).thenAccept(context::json));
     }
 
     @Override
     public void getApps(final Context context) {
-        Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParamAsClass("id", Long.class);
 
-        if (!accountId.isValid()) {
+        if (!accountId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
-        Long cursor = context.queryParam("cursor", Long.class).getOrNull();
+        Long cursor = context.queryParamAsClass("cursor", Long.class).getOrDefault(null);
 
         CompletableFuture<List<AppDTO>> apps = applicationsService.getByAccountId(accountId.get(), Domain.fromContext(context), cursor)
                 .thenApply(list -> list.stream()
                         .map(restMapper::toDTO)
                         .collect(Collectors.toList()));
 
-        context.json(apps);
+        context.future(() -> apps.thenAccept(context::json));
     }
 
     @Override
     public void getCryptoKeys(final Context context) {
-        Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParamAsClass("id", Long.class);
 
-        if (!accountId.isValid()) {
+        if (!accountId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
         String domain = Domain.fromContext(context);
-        Long cursor = context.queryParam("cursor", Long.class).getOrNull();
+        Long cursor = context.queryParamAsClass("cursor", Long.class).getOrDefault(null);
         Instant instantCursor = Cursors.parseInstantCursor(cursor);
 
         CompletableFuture<List<CryptoKeyDTO>> keys = keyManagementService.getByAccountId(domain, accountId.get(), instantCursor)
@@ -299,14 +299,14 @@ public class AccountsRoute extends AccountsApi {
                         .map(restMapper::toDTO)
                         .collect(Collectors.toList()));
 
-        context.json(keys);
+        context.future(() -> keys.thenAccept(context::json));
     }
 
     @Override
     public void activate(final Context context) {
-        Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParamAsClass("id", Long.class);
 
-        if (!accountId.isValid()) {
+        if (!accountId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -314,14 +314,14 @@ public class AccountsRoute extends AccountsApi {
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenApply(restMapper::toDTO);
 
-        context.json(account);
+        context.future(() -> account.thenAccept(context::json));
     }
 
     @Override
     public void deactivate(final Context context) {
-        Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParamAsClass("id", Long.class);
 
-        if (!accountId.isValid()) {
+        if (!accountId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -329,14 +329,14 @@ public class AccountsRoute extends AccountsApi {
                 .thenCompose(AsyncUtils::fromAccountOptional)
                 .thenApply(restMapper::toDTO);
 
-        context.json(account);
+        context.future(() -> account.thenAccept(context::json));
     }
 
     @Override
     public void getActiveLocks(final Context context) {
-        Validator<Long> accountId = context.pathParam("id", Long.class);
+        Validator<Long> accountId = context.pathParamAsClass("id", Long.class);
 
-        if (!accountId.isValid()) {
+        if (!accountId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -345,7 +345,7 @@ public class AccountsRoute extends AccountsApi {
                         .map(restMapper::toDTO)
                         .collect(Collectors.toList()));
 
-        context.json(locks);
+        context.future(() -> locks.thenAccept(context::json));
     }
 
     private boolean canPerform(final Context context, CreateAccountRequestDTO request) {

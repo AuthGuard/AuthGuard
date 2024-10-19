@@ -18,7 +18,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 import com.nexblocks.authguard.service.util.AsyncUtils;
-import io.javalin.core.validation.Validator;
+import io.javalin.validation.Validator;
 import io.javalin.http.Context;
 
 import java.util.Collections;
@@ -57,23 +57,23 @@ public class ClientsRoute extends ClientsApi {
         CompletableFuture<ClientDTO> created = clientsService.create(restMapper.toBO(request), requestContext)
                 .thenApply(restMapper::toDTO);
 
-        context.status(201).json(created);
+        context.future(() -> created.thenAccept(r -> context.status(201).json(r)));
     }
 
     @Override
     public void getByDomain(Context context) {
-        Long cursor = context.queryParam("cursor", Long.class).getOrNull();
+        Long cursor = context.queryParamAsClass("cursor", Long.class).getOrDefault(null);
 
         CompletableFuture<List<ClientDTO>> clients = clientsService.getByDomain(Domain.fromContext(context), cursor)
                 .thenApply(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()));
 
-        context.json(clients);
+        context.future(() -> clients.thenAccept(context::json));
     }
 
     public void getById(final Context context) {
-        Validator<Long> clientId = context.pathParam("id", Long.class);
+        Validator<Long> clientId = context.pathParamAsClass("id", Long.class);
 
-        if (!clientId.isValid()) {
+        if (!clientId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -81,13 +81,13 @@ public class ClientsRoute extends ClientsApi {
                 .thenApply(opt -> opt.map(restMapper::toDTO)
                         .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST, "Client does not exist")));
 
-        context.json(client);
+        context.future(() -> client.thenAccept(context::json));
     }
 
     public void getByExternalId(final Context context) {
-        Validator<Long> clientId = context.pathParam("id", Long.class);
+        Validator<Long> clientId = context.pathParamAsClass("id", Long.class);
 
-        if (!clientId.isValid()) {
+        if (!clientId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -95,13 +95,13 @@ public class ClientsRoute extends ClientsApi {
                 .thenApply(opt -> opt.map(restMapper::toDTO)
                         .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST, "Client does not exist")));
 
-        context.json(client);
+        context.future(() -> client.thenAccept(context::json));
     }
 
     public void deleteById(final Context context) {
-        Validator<Long> clientId = context.pathParam("id", Long.class);
+        Validator<Long> clientId = context.pathParamAsClass("id", Long.class);
 
-        if (!clientId.isValid()) {
+        if (!clientId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -109,40 +109,40 @@ public class ClientsRoute extends ClientsApi {
                 .thenCompose(AsyncUtils::fromClientOptional)
                 .thenApply(restMapper::toDTO);
 
-        context.json(client);
+        context.future(() -> client.thenAccept(context::json));
     }
 
     public void activate(final Context context) {
-        Validator<Long> clientId = context.pathParam("id", Long.class);
+        Validator<Long> clientId = context.pathParamAsClass("id", Long.class);
 
-        if (!clientId.isValid()) {
+        if (!clientId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
         CompletableFuture<ClientDTO> client = clientsService.activate(clientId.get(), Domain.fromContext(context))
                 .thenApply(restMapper::toDTO);
 
-        context.json(client);
+        context.future(() -> client.thenAccept(context::json));
     }
 
     public void deactivate(final Context context) {
-        Validator<Long> clientId = context.pathParam("id", Long.class);
+        Validator<Long> clientId = context.pathParamAsClass("id", Long.class);
 
-        if (!clientId.isValid()) {
+        if (!clientId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
         CompletableFuture<ClientDTO> client = clientsService.deactivate(clientId.get(), Domain.fromContext(context))
                 .thenApply(restMapper::toDTO);
 
-        context.json(client);
+        context.future(() -> client.thenAccept(context::json));
     }
 
     @Override
     public void getApiKeys(final Context context) {
-        Validator<Long> clientId = context.pathParam("id", Long.class);
+        Validator<Long> clientId = context.pathParamAsClass("id", Long.class);
 
-        if (!clientId.isValid()) {
+        if (!clientId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -152,6 +152,6 @@ public class ClientsRoute extends ClientsApi {
                         .map(restMapper::toDTO)
                         .collect(Collectors.toList()));
 
-        context.json(keys);
+        context.future(() -> keys.thenAccept(context::json));
     }
 }

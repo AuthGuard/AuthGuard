@@ -21,7 +21,7 @@ public class ServerMiddlewareHandlers implements JavalinAppConfigurer {
         app.before(context -> context.attribute("time", System.currentTimeMillis()));
         app.before(injector.getInstance(AuthorizationHandler.class));
 
-        app.before("/domain/:domain", new DomainAuthorizationHandler());
+        app.before("/domain/{domain}", new DomainAuthorizationHandler());
 
         app.after(context -> {
             final Long now = System.currentTimeMillis();

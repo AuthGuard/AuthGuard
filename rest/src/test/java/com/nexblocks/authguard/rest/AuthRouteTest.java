@@ -91,7 +91,7 @@ class AuthRouteTest extends AbstractRouteTest {
                 .body(requestDTO)
                 .post(url("authenticate"))
                 .then()
-//                .statusCode(200)
+                .statusCode(200)
                 .contentType(ContentType.JSON);
 
         AuthResponseDTO responseBody = httpResponse.extract()

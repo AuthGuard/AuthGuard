@@ -1,11 +1,13 @@
 package com.nexblocks.authguard.rest.server;
 
-import com.nexblocks.authguard.emb.AutoSubscribers;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.inject.Injector;
+import com.nexblocks.authguard.emb.AutoSubscribers;
+import com.nexblocks.authguard.rest.access.RolesAccessManager;
+import com.nexblocks.authguard.rest.config.ServerConfig;
 import io.javalin.Javalin;
-import io.javalin.plugin.json.JavalinJackson;
+import io.javalin.json.JavalinJackson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,9 +15,11 @@ public class AuthGuardServer {
     private final static Logger LOG = LoggerFactory.getLogger(AuthGuardServer.class);
 
     private final Injector injector;
+    private final ServerConfig serverConfig;
 
-    public AuthGuardServer(final Injector injector) {
+    public AuthGuardServer(final Injector injector, final ServerConfig serverConfig) {
         this.injector = injector;
+        this.serverConfig = serverConfig;
     }
 
     public void start(final Javalin app) {
@@ -33,17 +37,16 @@ public class AuthGuardServer {
     private void configure(final Javalin app) {
         LOG.info("Configuring server");
 
+        app.beforeMatched(new RolesAccessManager(serverConfig.getUnprotectedPaths()));
+
         final ServerMiddlewareHandlers middleware = new ServerMiddlewareHandlers(injector);
         final ServerExceptionHandlers exceptions = new ServerExceptionHandlers();
-        final ServerRoutesHandlers routes = new ServerRoutesHandlers(injector);
 
         middleware.configure(app);
 
         exceptions.configure(app);
 
-        routes.configure(app);
-
-        JavalinJackson.getObjectMapper().registerModule(new JavaTimeModule())
+        JavalinJackson.defaultMapper().registerModule(new JavaTimeModule())
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         // initialize subscribers

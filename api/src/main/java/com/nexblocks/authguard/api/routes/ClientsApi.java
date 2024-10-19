@@ -8,7 +8,7 @@ import static io.javalin.apibuilder.ApiBuilder.*;
 public abstract class ClientsApi implements ApiRoute {
     @Override
     public String getPath() {
-        return "/domains/:domain/clients";
+        return "/domains/{domain}/clients";
     }
 
     @Override
@@ -16,14 +16,14 @@ public abstract class ClientsApi implements ApiRoute {
         post("/", this::create, ActorRoles.anyAdmin());
         get("/", this::getByDomain, ActorRoles.adminClient());
 
-        get("/:id", this::getById, ActorRoles.adminClient());
-        get("/externalId/:id", this::getByExternalId, ActorRoles.adminClient());
-        delete("/:id", this::deleteById, ActorRoles.adminClient());
+        get("/{id}", this::getById, ActorRoles.adminClient());
+        get("/externalId/{id}", this::getByExternalId, ActorRoles.adminClient());
+        delete("/{id}", this::deleteById, ActorRoles.adminClient());
 
-        patch("/:id/activate", this::activate, ActorRoles.adminClient());
-        patch("/:id/deactivate", this::deactivate, ActorRoles.adminClient());
+        patch("/{id}/activate", this::activate, ActorRoles.adminClient());
+        patch("/{id}/deactivate", this::deactivate, ActorRoles.adminClient());
 
-        get("/:id/keys", this::getApiKeys, ActorRoles.adminClient());
+        get("/{id}/keys", this::getApiKeys, ActorRoles.adminClient());
     }
 
     public abstract void create(final Context context);

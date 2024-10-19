@@ -22,7 +22,7 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.Client;
 import com.nexblocks.authguard.service.model.ClientBO;
 import com.nexblocks.authguard.service.model.UserIdentifierBO;
-import io.javalin.core.validation.Validator;
+import io.javalin.validation.Validator;
 import io.javalin.http.Context;
 
 import java.util.Collections;
@@ -53,9 +53,9 @@ public class CredentialsRoute extends CredentialsApi {
 
     public void updatePassword(final Context context) {
         CredentialsDTO credentials = RestJsonMapper.asClass(context.body(), CredentialsDTO.class);
-        Validator<Long> credentialsId = context.pathParam("id", Long.class);
+        Validator<Long> credentialsId = context.pathParamAsClass("id", Long.class);
 
-        if (!credentialsId.isValid()) {
+        if (!credentialsId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -63,13 +63,13 @@ public class CredentialsRoute extends CredentialsApi {
                         credentials.getPlainPassword(), Domain.fromContext(context))
                 .thenApply(restMapper::toDTO);
 
-        context.json(result);
+        context.future(() -> result.thenAccept(context::json));
     }
 
     public void addIdentifiers(final Context context) {
-        Validator<Long> credentialsId = context.pathParam("id", Long.class);
+        Validator<Long> credentialsId = context.pathParamAsClass("id", Long.class);
 
-        if (!credentialsId.isValid()) {
+        if (!credentialsId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -94,13 +94,13 @@ public class CredentialsRoute extends CredentialsApi {
             result = credentialsService.addIdentifiers(credentialsId.get(), identifiers, Domain.fromContext(context));
         }
 
-        context.json(result.thenApply(restMapper::toDTO));
+        context.future(() -> result.thenApply(restMapper::toDTO).thenAccept(context::json));
     }
 
     public void removeIdentifiers(final Context context) {
-        Validator<Long> credentialsId = context.pathParam("id", Long.class);
+        Validator<Long> credentialsId = context.pathParamAsClass("id", Long.class);
 
-        if (!credentialsId.isValid()) {
+        if (!credentialsId.hasValue()) {
             throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
         }
 
@@ -113,7 +113,7 @@ public class CredentialsRoute extends CredentialsApi {
                         Domain.fromContext(context))
                 .thenApply(restMapper::toDTO);
 
-        context.json(result);
+        context.future(() -> result.thenAccept(context::json));
     }
 
     @Override
@@ -131,7 +131,7 @@ public class CredentialsRoute extends CredentialsApi {
                 .generateResetToken(request.getIdentifier(), !isAuthClient, request.getDomain())
                 .thenApply(restMapper::toDTO); // prevent an auth client from seeing the reset token
 
-        context.json(result);
+        context.future(() -> result.thenAccept(context::json));
     }
 
     @Override
@@ -153,6 +153,6 @@ public class CredentialsRoute extends CredentialsApi {
                     request.getNewPassword(), request.getDomain());
         }
 
-        context.json(result.thenApply(restMapper::toDTO));
+        context.future(() -> result.thenApply(restMapper::toDTO).thenAccept(context::json));
     }
 }

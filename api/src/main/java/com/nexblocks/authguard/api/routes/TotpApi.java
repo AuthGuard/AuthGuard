@@ -9,14 +9,14 @@ public abstract class TotpApi implements ApiRoute {
 
     @Override
     public String getPath() {
-        return "/domains/:domain/totp";
+        return "/domains/{domain}/totp";
     }
 
     @Override
     public void addEndpoints() {
         post("/generate", this::generate, ActorRoles.adminClient());
-        get("/:accountId/keys", this::getByAccountId, ActorRoles.adminClient());
-        delete("/keys/:id", this::deleteById, ActorRoles.adminClient());
+        get("/{accountId}/keys", this::getByAccountId, ActorRoles.adminClient());
+        delete("/keys/{id}", this::deleteById, ActorRoles.adminClient());
     }
 
     public abstract void generate(final Context context);

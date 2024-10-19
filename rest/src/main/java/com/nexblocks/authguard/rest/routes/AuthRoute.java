@@ -1,6 +1,9 @@
 package com.nexblocks.authguard.rest.routes;
 
 import com.google.inject.Inject;
+import com.nexblocks.authguard.api.common.BodyHandler;
+import com.nexblocks.authguard.api.common.RequestContextExtractor;
+import com.nexblocks.authguard.api.common.RequestValidationException;
 import com.nexblocks.authguard.api.dto.entities.AuthResponseDTO;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.ExchangeAttemptDTO;
@@ -10,17 +13,14 @@ import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.AuthApi;
 import com.nexblocks.authguard.rest.access.ActorDomainVerifier;
 import com.nexblocks.authguard.rest.access.Requester;
-import com.nexblocks.authguard.api.common.RequestValidationException;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
-import com.nexblocks.authguard.api.common.BodyHandler;
-import com.nexblocks.authguard.api.common.RequestContextExtractor;
 import com.nexblocks.authguard.service.AuthenticationService;
 import com.nexblocks.authguard.service.ExchangeAttemptsService;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
-import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
+import io.javalin.validation.Validator;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -65,7 +65,7 @@ public class AuthRoute extends AuthApi {
                 .authenticate(bo, requestContext)
                 .thenApply(restMapper::toDTO);
 
-        context.json(tokens);
+        context.future(() -> tokens.thenAccept(context::json));
     }
 
     @Override
@@ -76,7 +76,7 @@ public class AuthRoute extends AuthApi {
         CompletableFuture<AuthResponseBO> result = authenticationService.logout(
                 restMapper.toBO(authenticationRequest), requestContext);
 
-        context.json(result);
+        context.future(() -> result.thenAccept(context::json));
     }
 
     @Override
@@ -92,7 +92,7 @@ public class AuthRoute extends AuthApi {
         CompletableFuture<AuthResponseDTO> tokens = authenticationService.refresh(restMapper.toBO(authRequest.get()), requestContext)
                 .thenApply(restMapper::toDTO);
 
-        context.json(tokens);
+        context.future(() -> tokens.thenAccept(context::json));
     }
 
     @Override
@@ -111,7 +111,7 @@ public class AuthRoute extends AuthApi {
         CompletableFuture<AuthResponseDTO> tokens = exchangeService.exchange(restMapper.toBO(authRequest.get()), from, to, requestContext)
                 .thenApply(restMapper::toDTO);
 
-        context.json(tokens);
+        context.future(() -> tokens.thenAccept(context::json));
     }
 
     @Override
@@ -126,18 +126,18 @@ public class AuthRoute extends AuthApi {
             CompletableFuture<AuthResponseDTO> tokens = exchangeService.delete(restMapper.toBO(authenticationRequest), tokenType)
                     .thenApply(restMapper::toDTO);
 
-            context.json(tokens);
+            context.future(() -> tokens.thenAccept(context::json));
         }
     }
 
     @Override
     public void getExchangeAttempts(final Context context) {
-        Validator<Long> entityId = context.queryParam("entityId", Long.class);
+        Validator<Long> entityId = context.queryParamAsClass("entityId", Long.class);
         Instant fromTimestamp = parseOffsetDateTime(context.queryParam("fromTimestamp"));
         String fromExchange = context.queryParam("fromExchange");
 
         // take care of checking the parameters
-        if (entityId.getOrNull() == null) {
+        if (entityId.getOrDefault(null) == null) {
             context.status(400)
                     .json(new Error(ErrorCode.MISSING_REQUEST_QUERY.getCode(),
                             "Query parameter entityId is required"));

@@ -9,7 +9,7 @@ public abstract class OtpApi implements ApiRoute {
 
     @Override
     public String getPath() {
-        return "/domains/:domain/otp";
+        return "/domains/{domain}/otp";
     }
 
     @Override

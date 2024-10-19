@@ -14,10 +14,16 @@ public interface ServerConfig {
     boolean enableSsl();
     boolean enforceSsl();
     boolean enableClientAuthentication();
+
+    @Deprecated
     String getKeystorePath();
+    @Deprecated
     String getKeystorePassword();
+    @Deprecated
     String getTruststorePath();
+    @Deprecated
     String getTruststorePassword();
+
     Integer getPort();
     Integer getSecurePort();
     Set<String> getUnprotectedPaths();

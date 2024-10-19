@@ -8,7 +8,7 @@ import static io.javalin.apibuilder.ApiBuilder.get;
 public abstract class EventsApi implements ApiRoute {
     @Override
     public String getPath() {
-        return "/domains/:domain/events";
+        return "/domains/{domain}/events";
     }
 
     @Override

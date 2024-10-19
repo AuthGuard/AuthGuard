@@ -8,7 +8,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 public abstract class ActionTokensApi implements ApiRoute {
     @Override
     public String getPath() {
-        return "/domains/:domain/actions";
+        return "/domains/{domain}/actions";
     }
 
     @Override
