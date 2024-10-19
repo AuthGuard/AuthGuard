@@ -41,8 +41,8 @@
     </modules>
 
     <properties>
-        <maven.compiler.source>1.11</maven.compiler.source>
-        <maven.compiler.target>1.11</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
         <maven-source-plugin.version>3.2.0</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
@@ -63,7 +63,7 @@
         <guice.version>5.1.0</guice.version>
         <rxjava.version>3.1.5</rxjava.version>
         <okhttp.version>4.12.0</okhttp.version>
-        <vertx.version>3.9.13</vertx.version>
+        <vertx.version>4.5.3</vertx.version>
         <unbounded-ldap.version>5.1.4</unbounded-ldap.version>
         <javax-persistence.version>2.2</javax-persistence.version>
         <vavr.version>0.10.4</vavr.version>
@@ -211,6 +211,7 @@
                 <configuration>
                     <source>11</source>
                     <target>11</target>
+                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
 
                     <annotationProcessorPaths>
                         <dependency>
