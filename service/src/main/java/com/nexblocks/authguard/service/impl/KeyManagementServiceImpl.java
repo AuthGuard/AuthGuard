@@ -31,9 +31,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class KeyManagementServiceImpl implements KeyManagementService {
+    private static final Logger LOG = LoggerFactory.getLogger(KeyManagementServiceImpl.class);
+
     private static final int PAGE_SIZE = 100;
     private static final Instant DEFAULT_CURSOR = Instant.MAX;
-    private static final Logger LOG = LoggerFactory.getLogger(ClientsServiceImpl.class);
     private static final String CRYPTO_KEYS_CHANNEL = "crypto_keys";
 
     private final CryptoKeysRepository repository;

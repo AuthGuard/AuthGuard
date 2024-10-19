@@ -13,6 +13,8 @@ public interface CryptoKeyRequest {
     Algorithm getAlgorithm();
     Integer getSize();
     String getName();
+    Long getAccountId();
+    Long getAppId();
     boolean isPersist();
     boolean isPasscodeProtected();
     String getPasscode();

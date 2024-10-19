@@ -60,6 +60,8 @@ public class KeyManagementSystemRoute extends KeyManagementSystemApi {
                 .domain(domain)
                 .algorithm(key.getAlgorithm())
                 .name(request.getName())
+                .accountId(request.getAccountId())
+                .appId(request.getAppId())
                 .size(key.getSize())
                 .privateKey(key.getPrivateKey())
                 .publicKey(key.getPublicKey())
