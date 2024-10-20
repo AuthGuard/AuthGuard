@@ -31,7 +31,7 @@ public class OtpToAccessToken implements Exchange {
 
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
-        return otpVerifier.verifyAccountTokenAsync(request.getToken())
+        return otpVerifier.verifyAccountTokenAsync(request)
                 .thenCompose(id -> accountsService.getById(id, request.getDomain()))
                 .thenCompose(opt -> {
                     if (opt.isEmpty()) {

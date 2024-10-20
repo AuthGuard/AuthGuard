@@ -76,7 +76,7 @@ class AuthorizationCodeToOidcTest {
                 .sourceIp(accountToken.getSourceIp())
                 .build();
 
-        Mockito.when(authorizationCodeVerifier.verifyAndGetAccountTokenAsync(authRequest.getToken()))
+        Mockito.when(authorizationCodeVerifier.verifyAndGetAccountTokenAsync(authRequest))
                 .thenReturn(CompletableFuture.completedFuture(accountToken));
 
         Mockito.when(accountsService.getByIdUnchecked(accountToken.getAssociatedAccountId()))
@@ -129,7 +129,7 @@ class AuthorizationCodeToOidcTest {
                 .sourceIp(accountToken.getSourceIp())
                 .build();
 
-        Mockito.when(authorizationCodeVerifier.verifyAndGetAccountTokenAsync(authRequest.getToken()))
+        Mockito.when(authorizationCodeVerifier.verifyAndGetAccountTokenAsync(authRequest))
                 .thenReturn(CompletableFuture.completedFuture(accountToken));
 
         Mockito.when(accountsService.getByIdUnchecked(accountToken.getAssociatedAccountId()))

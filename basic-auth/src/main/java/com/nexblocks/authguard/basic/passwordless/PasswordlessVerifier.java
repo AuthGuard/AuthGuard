@@ -5,6 +5,7 @@ import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.service.auth.AuthVerifier;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
+import com.nexblocks.authguard.service.model.AuthRequest;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.service.util.AsyncUtils;
@@ -27,8 +28,8 @@ public class PasswordlessVerifier implements AuthVerifier {
     }
 
     @Override
-    public CompletableFuture<Long> verifyAccountTokenAsync(final String token) {
-        return accountTokensRepository.getByToken(token)
+    public CompletableFuture<Long> verifyAccountTokenAsync(final AuthRequest request) {
+        return accountTokensRepository.getByToken(request.getToken())
                 .thenCompose(opt -> {
                     if (opt.isEmpty()) {
                         return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN,

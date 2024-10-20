@@ -35,7 +35,7 @@ public class PasswordlessToSession implements Exchange {
                 .source("passwordless")
                 .build();
 
-        return passwordlessVerifier.verifyAccountTokenAsync(request.getToken())
+        return passwordlessVerifier.verifyAccountTokenAsync(request)
                 .thenCompose(id -> accountsService.getById(id, request.getDomain()))
                 .thenCompose(opt -> {
                     if (opt.isEmpty()) {

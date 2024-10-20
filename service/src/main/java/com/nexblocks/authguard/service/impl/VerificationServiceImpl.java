@@ -12,9 +12,7 @@ import com.nexblocks.authguard.service.VerificationService;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AuthResponseBO;
-import com.nexblocks.authguard.service.model.PhoneNumberBO;
+import com.nexblocks.authguard.service.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -111,7 +109,10 @@ public class VerificationServiceImpl implements VerificationService {
     @Override
     public void verifyPhoneNumber(final long passwordId, final String domain, final String otp, final String phoneNumber) {
         String token = passwordId + ":" + otp;
-        Long accountId = otpVerifier.verifyAccountTokenAsync(token).join();
+        AuthRequest request = AuthRequestBO.builder()
+                .token(token)
+                .build();
+        Long accountId = otpVerifier.verifyAccountTokenAsync(request).join();
 
         Optional<AccountBO> account = accountsService.getById(accountId, domain).join();
 

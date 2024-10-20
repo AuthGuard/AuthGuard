@@ -32,7 +32,7 @@ public class PasswordlessToOidc implements Exchange {
 
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
-        return passwordlessVerifier.verifyAccountTokenAsync(request.getToken())
+        return passwordlessVerifier.verifyAccountTokenAsync(request)
                 .thenCompose(id -> accountsService.getById(id, request.getDomain()))
                 .thenCompose(opt -> {
                     if (opt.isEmpty()) {

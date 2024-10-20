@@ -32,7 +32,7 @@ public class TotpToAccessToken implements Exchange {
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
         // TODO ensure the options match
-        return totpVerifier.verifyAndGetAccountTokenAsync(request.getToken())
+        return totpVerifier.verifyAndGetAccountTokenAsync(request)
                 .thenCompose(accountToken ->
                         accountsService.getById(accountToken.getAssociatedAccountId(), request.getDomain()))
                 .thenCompose(opt -> {

@@ -20,6 +20,7 @@ import com.nexblocks.authguard.service.config.AuthenticatorConfig;
 import com.nexblocks.authguard.service.config.TotpAuthenticatorsConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
+import com.nexblocks.authguard.service.model.AuthRequest;
 import com.nexblocks.authguard.service.util.AsyncUtils;
 import io.vavr.control.Try;
 import org.slf4j.Logger;
@@ -64,17 +65,13 @@ public class TotpVerifier implements AuthVerifier {
     }
 
     @Override
-    public Long verifyAccountToken(final String passwordlessToken) {
+    public Long verifyAccountToken(final String token) {
         throw new UnsupportedOperationException("Use verifyAndGetAccountTokenAsync instead");
     }
 
     @Override
-    public CompletableFuture<Long> verifyAccountTokenAsync(final String token) {
-        throw new UnsupportedOperationException("Use verifyAndGetAccountTokenAsync instead");
-    }
-
-    @Override
-    public CompletableFuture<AccountTokenDO> verifyAndGetAccountTokenAsync(final String token) {
+    public CompletableFuture<AccountTokenDO> verifyAndGetAccountTokenAsync(final AuthRequest request) {
+        String token = request.getToken();
         String[] parts = token.split(":");
 
         if (parts.length != 2) {

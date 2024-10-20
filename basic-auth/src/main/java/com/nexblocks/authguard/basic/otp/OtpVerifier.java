@@ -6,6 +6,7 @@ import com.nexblocks.authguard.service.auth.AuthVerifier;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
+import com.nexblocks.authguard.service.model.AuthRequest;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.OneTimePasswordBO;
 import com.nexblocks.authguard.service.util.AsyncUtils;
@@ -31,9 +32,9 @@ public class OtpVerifier implements AuthVerifier {
     }
 
     @Override
-    public CompletableFuture<Long> verifyAccountTokenAsync(final String token) {
+    public CompletableFuture<Long> verifyAccountTokenAsync(final AuthRequest request) {
         // TODO: no need to have a special format for the token, just receive the two parts in the request
-        String[] parts = token.split(":");
+        String[] parts = request.getToken().split(":");
 
         if (parts.length != 2) {
             return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.INVALID_AUTHORIZATION_FORMAT,

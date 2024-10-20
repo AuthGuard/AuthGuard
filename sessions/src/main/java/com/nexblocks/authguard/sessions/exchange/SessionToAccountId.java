@@ -22,7 +22,7 @@ public class SessionToAccountId implements Exchange {
 
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
-        return sessionVerifier.verifyAccountTokenAsync(request.getToken())
+        return sessionVerifier.verifyAccountTokenAsync(request)
                 .thenApply(token -> AuthResponseBO.builder()
                         .type(TOKEN_TYPE)
                         .token(token)

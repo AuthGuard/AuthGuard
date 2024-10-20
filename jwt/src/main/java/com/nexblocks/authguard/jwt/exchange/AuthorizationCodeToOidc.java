@@ -35,7 +35,7 @@ public class AuthorizationCodeToOidc implements Exchange {
 
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
-        return authorizationCodeVerifier.verifyAndGetAccountTokenAsync(request.getToken())
+        return authorizationCodeVerifier.verifyAndGetAccountTokenAsync(request)
                 .thenCompose(accountToken -> generateToken(accountToken, request));
     }
 
