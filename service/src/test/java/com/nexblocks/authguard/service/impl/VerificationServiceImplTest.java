@@ -9,10 +9,7 @@ import com.nexblocks.authguard.external.sms.SmsProvider;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.VerificationService;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AccountEmailBO;
-import com.nexblocks.authguard.service.model.AuthResponseBO;
-import com.nexblocks.authguard.service.model.PhoneNumberBO;
+import com.nexblocks.authguard.service.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -217,7 +214,7 @@ class VerificationServiceImplTest {
 
     @Test
     void verifyPhoneNumber() {
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .id(101)
                 .phoneNumber(PhoneNumberBO.builder()
                         .number("33334444")
@@ -225,10 +222,14 @@ class VerificationServiceImplTest {
                         .build())
                 .build();
 
+        AuthRequest request = AuthRequestBO.builder()
+                .token("1:123456")
+                .build();
+
         Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
-        Mockito.when(otpVerifier.verifyAccountTokenAsync("1:123456"))
+        Mockito.when(otpVerifier.verifyAccountTokenAsync(request))
                 .thenReturn(CompletableFuture.completedFuture(101L));;
 
         // TODO account argument captor
@@ -237,7 +238,7 @@ class VerificationServiceImplTest {
 
     @Test
     void verifyPhoneNumberWrongNumber() {
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .id(101)
                 .phoneNumber(PhoneNumberBO.builder()
                         .number("33334444")
@@ -245,10 +246,14 @@ class VerificationServiceImplTest {
                         .build())
                 .build();
 
+        AuthRequest request = AuthRequestBO.builder()
+                .token("1:123456")
+                .build();
+
         Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
-        Mockito.when(otpVerifier.verifyAccountTokenAsync("1:123456"))
+        Mockito.when(otpVerifier.verifyAccountTokenAsync(request))
                 .thenReturn(CompletableFuture.completedFuture(101L));;
 
         assertThatThrownBy(() -> verificationService.verifyPhoneNumber(1, "main", "123456", "9999999"))
@@ -257,14 +262,18 @@ class VerificationServiceImplTest {
 
     @Test
     void verifyPhoneNumberNullNumber() {
-        final AccountBO account = AccountBO.builder()
+        AccountBO account = AccountBO.builder()
                 .id(101)
+                .build();
+
+        AuthRequest request = AuthRequestBO.builder()
+                .token("1:123456")
                 .build();
 
         Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
-        Mockito.when(otpVerifier.verifyAccountTokenAsync("1:123456"))
+        Mockito.when(otpVerifier.verifyAccountTokenAsync(request))
                 .thenReturn(CompletableFuture.completedFuture(101L));
 
         assertThatThrownBy(() -> verificationService.verifyPhoneNumber(1, "main", "123456", "9999999"))
@@ -273,10 +282,14 @@ class VerificationServiceImplTest {
 
     @Test
     void verifyPhoneNumberNonExistingAccount() {
+        AuthRequest request = AuthRequestBO.builder()
+                .token("1:123456")
+                .build();
+
         Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        Mockito.when(otpVerifier.verifyAccountTokenAsync("1:123456"))
+        Mockito.when(otpVerifier.verifyAccountTokenAsync(request))
                 .thenReturn(CompletableFuture.completedFuture(101L));;
 
         assertThatThrownBy(() -> verificationService.verifyPhoneNumber(1, "main", "123456", "9999999"))

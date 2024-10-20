@@ -10,10 +10,7 @@ import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.ActionTokenService;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.ActionTokenBO;
-import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.service.model.AuthResponseBO;
+import com.nexblocks.authguard.service.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -100,9 +97,11 @@ class ActionTokenServiceImplTest {
                 .id(101)
                 .build();
 
-        String otpToken = "1:otp";
+        AuthRequest request = AuthRequestBO.builder()
+                .token("1:otp")
+                .build();
 
-        Mockito.when(otpVerifier.verifyAccountTokenAsync(otpToken)).thenReturn(CompletableFuture.completedFuture(account.getId()));
+        Mockito.when(otpVerifier.verifyAccountTokenAsync(request)).thenReturn(CompletableFuture.completedFuture(account.getId()));
         Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
         Mockito.when(accountTokensRepository.save(Mockito.any()))

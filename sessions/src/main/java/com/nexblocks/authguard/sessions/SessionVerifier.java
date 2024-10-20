@@ -5,6 +5,7 @@ import com.nexblocks.authguard.service.SessionsService;
 import com.nexblocks.authguard.service.auth.AuthVerifier;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
+import com.nexblocks.authguard.service.model.AuthRequest;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.SessionBO;
 
@@ -25,8 +26,8 @@ public class SessionVerifier implements AuthVerifier {
     }
 
     @Override
-    public CompletableFuture<Long> verifyAccountTokenAsync(final String sessionToken) {
-        return sessionsService.getByToken(sessionToken)
+    public CompletableFuture<Long> verifyAccountTokenAsync(final AuthRequest request) {
+        return sessionsService.getByToken(request.getToken())
                 .thenCompose(opt -> {
                     if (opt.isEmpty()) {
                         return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid session token"));

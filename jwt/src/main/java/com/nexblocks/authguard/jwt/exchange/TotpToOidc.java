@@ -33,7 +33,7 @@ public class TotpToOidc implements Exchange {
 
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
-        return totpVerifier.verifyAndGetAccountTokenAsync(request.getToken())
+        return totpVerifier.verifyAndGetAccountTokenAsync(request)
                 .thenCompose(accountToken -> accountsService.getById(accountToken.getAssociatedAccountId(), request.getDomain())
                         .thenCompose(opt -> {
                             if (opt.isEmpty()) {

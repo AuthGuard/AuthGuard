@@ -34,7 +34,7 @@ public class OtpToSession implements Exchange {
                 .source("otp")
                 .build();
 
-        return otpVerifier.verifyAccountTokenAsync(request.getToken())
+        return otpVerifier.verifyAccountTokenAsync(request)
                 .thenCompose(id -> accountsService.getById(id, request.getDomain()))
                 .thenCompose(opt -> {
                     if (opt.isEmpty()) {

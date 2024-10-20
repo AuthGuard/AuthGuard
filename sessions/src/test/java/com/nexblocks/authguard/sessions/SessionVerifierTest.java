@@ -2,6 +2,8 @@ package com.nexblocks.authguard.sessions;
 
 import com.nexblocks.authguard.service.SessionsService;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
+import com.nexblocks.authguard.service.model.AuthRequest;
+import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.SessionBO;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -29,10 +31,14 @@ class SessionVerifierTest {
                 .expiresAt(Instant.now().plus(Duration.ofMinutes(20)))
                 .build();
 
+        AuthRequest request = AuthRequestBO.builder()
+                .token(session.getSessionToken())
+                .build();
+
         Mockito.when(sessionsService.getByToken(session.getSessionToken()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(session)));
 
-        Long accountId = sessionVerifier.verifyAccountTokenAsync(session.getSessionToken()).join();
+        Long accountId = sessionVerifier.verifyAccountTokenAsync(request).join();
 
         assertThat(accountId).isEqualTo(session.getAccountId());
     }
@@ -42,10 +48,14 @@ class SessionVerifierTest {
         SessionsService sessionsService = Mockito.mock(SessionsService.class);
         SessionVerifier sessionVerifier = new SessionVerifier(sessionsService);
 
+        AuthRequest request = AuthRequestBO.builder()
+                .token("invalid")
+                .build();
+
         Mockito.when(sessionsService.getByToken(any()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        assertThatThrownBy(() -> sessionVerifier.verifyAccountTokenAsync("invalid").join())
+        assertThatThrownBy(() -> sessionVerifier.verifyAccountTokenAsync(request).join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
@@ -61,10 +71,14 @@ class SessionVerifierTest {
                 .expiresAt(Instant.now().minus(Duration.ofMinutes(20)))
                 .build();
 
+        AuthRequest request = AuthRequestBO.builder()
+                .token(session.getSessionToken())
+                .build();
+
         Mockito.when(sessionsService.getByToken(session.getSessionToken()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(session)));
 
-        assertThatThrownBy(() -> sessionVerifier.verifyAccountTokenAsync(session.getSessionToken()).join())
+        assertThatThrownBy(() -> sessionVerifier.verifyAccountTokenAsync(request).join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 }

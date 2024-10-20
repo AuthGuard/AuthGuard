@@ -11,10 +11,7 @@ import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.ActionTokenService;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.ActionTokenBO;
-import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.service.model.AuthResponseBO;
+import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.AsyncUtils;
 import com.nexblocks.authguard.service.util.ID;
@@ -83,8 +80,11 @@ public class ActionTokenServiceImpl implements ActionTokenService {
     @Override
     public CompletableFuture<ActionTokenBO> generateFromOtp(final long passwordId, String domain, final String otp, final String action) {
         String otpToken = passwordId + ":" + otp;
+        AuthRequest request = AuthRequestBO.builder()
+                .token(otpToken)
+                .build();
 
-        return otpVerifier.verifyAccountTokenAsync(otpToken)
+        return otpVerifier.verifyAccountTokenAsync(request)
                 .thenCompose(id -> accountsService.getById(id, domain))
                 .thenCompose(result -> {
                     if (result.isEmpty()) {

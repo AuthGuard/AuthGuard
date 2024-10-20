@@ -1,12 +1,14 @@
 package com.nexblocks.authguard.basic.otp;
 
 import com.nexblocks.authguard.basic.config.OtpConfig;
+import com.nexblocks.authguard.basic.config.OtpMode;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.OtpRepository;
 import com.nexblocks.authguard.dal.model.OneTimePasswordDO;
-import com.nexblocks.authguard.basic.config.OtpMode;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
+import com.nexblocks.authguard.service.model.AuthRequest;
+import com.nexblocks.authguard.service.model.AuthRequestBO;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
@@ -53,10 +55,14 @@ class OtpVerifierTest {
                 .expiresAt(Instant.now().plusSeconds(1))
                 .build();
 
+        AuthRequest request = AuthRequestBO.builder()
+                .token(otp.getId() + ":" + otp.getPassword())
+                .build();
+
         Mockito.when(mockOtpRepository.getById(otp.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(otp)));
 
-        Long generated = otpVerifier.verifyAccountTokenAsync(otp.getId() + ":" + otp.getPassword()).join();
+        Long generated = otpVerifier.verifyAccountTokenAsync(request).join();
 
         assertThat(generated).isEqualTo(otp.getAccountId());
     }
@@ -73,10 +79,14 @@ class OtpVerifierTest {
 
         OneTimePasswordDO otp = random.nextObject(OneTimePasswordDO.class);
 
+        AuthRequest request = AuthRequestBO.builder()
+                .token(otp.getId() + ":wrong")
+                .build();
+
         Mockito.when(mockOtpRepository.getById(otp.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(otp)));
 
-        assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync(otp.getId() + ":" + "wrong").join())
+        assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync(request).join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
@@ -90,7 +100,11 @@ class OtpVerifierTest {
 
         setup(otpConfig);
 
-        assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync("not a valid OTP").join())
+        AuthRequest request = AuthRequestBO.builder()
+                .token("not valid")
+                .build();
+
+        assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync(request).join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
@@ -106,10 +120,14 @@ class OtpVerifierTest {
 
         OneTimePasswordDO otp = random.nextObject(OneTimePasswordDO.class);
 
+        AuthRequest request = AuthRequestBO.builder()
+                .token("invalid")
+                .build();
+
         Mockito.when(mockOtpRepository.getById(otp.getId()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync("not a valid OTP").join())
+        assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync(request).join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 }

@@ -7,6 +7,8 @@ import com.nexblocks.authguard.service.auth.AuthVerifier;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
+import com.nexblocks.authguard.service.model.AuthRequest;
+import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.util.AsyncUtils;
 import io.vavr.control.Either;
@@ -25,28 +27,28 @@ public class AuthorizationCodeVerifier implements AuthVerifier {
 
     @Override
     public Long verifyAccountToken(final String token) {
-        return verifyAndGetAccountToken(token)
+        return verifyAndGetAccountToken(AuthRequestBO.builder().token(token).build())
                 .map(AccountTokenDO::getAssociatedAccountId)
                 .getOrElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid authorization code"));
     }
 
     @Override
-    public Either<Exception, AccountTokenDO> verifyAndGetAccountToken(final String token) {
-        return accountTokensRepository.getByToken(token)
+    public Either<Exception, AccountTokenDO> verifyAndGetAccountToken(final AuthRequest request) {
+        return accountTokensRepository.getByToken(request.getToken())
                 .join()
                 .map(this::verifyToken)
                 .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid authorization code")));
     }
 
     @Override
-    public CompletableFuture<Long> verifyAccountTokenAsync(String token) {
-        return verifyAndGetAccountTokenAsync(token)
+    public CompletableFuture<Long> verifyAccountTokenAsync(final AuthRequest request) {
+        return verifyAndGetAccountTokenAsync(request)
                 .thenApply(AccountTokenDO::getAssociatedAccountId);
     }
 
     @Override
-    public CompletableFuture<AccountTokenDO> verifyAndGetAccountTokenAsync(String token) {
-        return accountTokensRepository.getByToken(token)
+    public CompletableFuture<AccountTokenDO> verifyAndGetAccountTokenAsync(final AuthRequest request) {
+        return accountTokensRepository.getByToken(request.getToken())
                 .thenCompose(opt -> {
                     if (opt.isPresent()) {
                         return AsyncUtils.fromTry(tryVerifyToken(opt.get()));
