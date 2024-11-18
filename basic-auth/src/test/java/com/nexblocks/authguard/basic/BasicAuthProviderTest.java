@@ -5,12 +5,10 @@ import com.google.common.collect.ImmutableMap;
 import com.nexblocks.authguard.basic.passwords.SecurePassword;
 import com.nexblocks.authguard.basic.passwords.SecurePasswordProvider;
 import com.nexblocks.authguard.service.AccountsService;
+import com.nexblocks.authguard.service.TrackingSessionsService;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.HashedPasswordBO;
-import com.nexblocks.authguard.service.model.UserIdentifier;
-import com.nexblocks.authguard.service.model.UserIdentifierBO;
+import com.nexblocks.authguard.service.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -31,6 +29,7 @@ class BasicAuthProviderTest {
     private SecurePasswordProvider securePasswordProvider;
     private SecurePassword securePassword;
     private SecurePassword previousSecurePassword;
+    private TrackingSessionsService trackingSessionsService;
 
     private BasicAuthProvider basicAuth;
 
@@ -41,14 +40,20 @@ class BasicAuthProviderTest {
         previousSecurePassword = Mockito.mock(SecurePassword.class);
 
         securePasswordProvider = Mockito.mock(SecurePasswordProvider.class);
+        trackingSessionsService = Mockito.mock(TrackingSessionsService.class);
 
         Mockito.when(securePasswordProvider.get()).thenReturn(securePassword);
         Mockito.when(securePasswordProvider.getPreviousVersions())
                 .thenReturn(ImmutableMap.of(0, previousSecurePassword));
         Mockito.when(securePasswordProvider.getCurrentVersion())
                 .thenReturn(1);
+        Mockito.when(trackingSessionsService.startSession(Mockito.any()))
+                .thenReturn(CompletableFuture.completedFuture(SessionBO.builder()
+                        .id(1)
+                        .sessionToken("tracking-token")
+                        .build()));
 
-        basicAuth = new BasicAuthProvider(accountsService, securePasswordProvider);
+        basicAuth = new BasicAuthProvider(accountsService, securePasswordProvider, trackingSessionsService);
     }
 
     private AccountBO createCredentials(String username) {

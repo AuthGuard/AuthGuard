@@ -25,11 +25,14 @@ public class BasicToTotp implements Exchange {
 
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
-        return basicAuth.authenticateAndGetAccount(request)
-                .thenCompose(account -> {
-                    TokenOptionsBO tokenOptions = TokenOptionsMapper.fromAuthRequest(request);
+        return basicAuth.authenticateAndGetAccountSession(request)
+                .thenCompose(accountSession -> {
+                    TokenOptionsBO tokenOptions = TokenOptionsMapper.fromAuthRequest(request)
+                            .source("basic")
+                            .trackingSession(accountSession.getSession().getSessionToken())
+                            .build();
 
-                    return otpProvider.generateToken(account, tokenOptions);
+                    return otpProvider.generateToken(accountSession.getAccount(), tokenOptions);
                 });
     }
 }

@@ -30,6 +30,7 @@ public class ServicesBinder extends AbstractModule {
         bind(AccountLocksService.class).to(AccountLocksServiceImpl.class);
         bind(EventsService.class).to(EventsServiceImpl.class);
         bind(KeyManagementService.class).to(KeyManagementServiceImpl.class);
+        bind(TrackingSessionsService.class).to(TrackingSessionsServiceImpl.class);
 
         // optional bindings
         if (configContext.get("verification") != null) {

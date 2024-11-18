@@ -23,15 +23,17 @@ public class BasicToOIdC implements Exchange {
 
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
-        return basicAuth.authenticateAndGetAccount(request)
-                .thenCompose(account -> generateTokens(account, request.getRestrictions()));
+        return basicAuth.authenticateAndGetAccountSession(request)
+                .thenCompose(accountSession -> generateTokens(accountSession, request.getRestrictions()));
     }
 
-    private CompletableFuture<AuthResponseBO> generateTokens(final AccountBO account, final TokenRestrictionsBO restrictions) {
-        final TokenOptionsBO options = TokenOptionsBO.builder()
+    private CompletableFuture<AuthResponseBO> generateTokens(final AccountSession accountSession,
+                                                             final TokenRestrictionsBO restrictions) {
+        TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("basic")
+                .trackingSession(accountSession.getSession().getSessionToken())
                 .build();
 
-        return openIdConnectTokenProvider.generateToken(account, restrictions, options);
+        return openIdConnectTokenProvider.generateToken(accountSession.getAccount(), restrictions, options);
     }
 }

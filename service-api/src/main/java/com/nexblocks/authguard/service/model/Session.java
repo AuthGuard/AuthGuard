@@ -8,9 +8,12 @@ import java.util.Map;
 @Value.Immutable
 @BOStyle
 public interface Session {
+    String getDomain();
     long getId();
     String getSessionToken();
     long getAccountId();
     Instant getExpiresAt();
+    boolean isForTracking();
+    boolean isActive();
     Map<String, String> getData();
 }

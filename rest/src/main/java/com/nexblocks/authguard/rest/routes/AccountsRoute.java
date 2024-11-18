@@ -14,10 +14,7 @@ import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.api.routes.AccountsApi;
 import com.nexblocks.authguard.rest.access.ActorDomainVerifier;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
-import com.nexblocks.authguard.service.AccountLocksService;
-import com.nexblocks.authguard.service.AccountsService;
-import com.nexblocks.authguard.service.ApplicationsService;
-import com.nexblocks.authguard.service.KeyManagementService;
+import com.nexblocks.authguard.service.*;
 import com.nexblocks.authguard.service.model.Client;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.AsyncUtils;
@@ -25,10 +22,7 @@ import io.javalin.validation.Validator;
 import io.javalin.http.Context;
 
 import java.time.Instant;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -37,6 +31,7 @@ public class AccountsRoute extends AccountsApi {
     private final ApplicationsService applicationsService;
     private final AccountLocksService accountLocksService;
     private final KeyManagementService keyManagementService;
+    private final TrackingSessionsService trackingSessionsService;
     private final RestMapper restMapper;
 
     private final BodyHandler<CreateAccountRequestDTO> accountRequestBodyHandler;
@@ -49,11 +44,13 @@ public class AccountsRoute extends AccountsApi {
                   final ApplicationsService applicationsService,
                   final AccountLocksService accountLocksService,
                   final KeyManagementService keyManagementService,
+                  final TrackingSessionsService trackingSessionsService,
                   final RestMapper restMapper) {
         this.accountsService = accountsService;
         this.applicationsService = applicationsService;
         this.accountLocksService = accountLocksService;
         this.keyManagementService = keyManagementService;
+        this.trackingSessionsService = trackingSessionsService;
         this.restMapper = restMapper;
 
         this.accountRequestBodyHandler = new BodyHandler.Builder<>(CreateAccountRequestDTO.class)
@@ -300,6 +297,24 @@ public class AccountsRoute extends AccountsApi {
                         .collect(Collectors.toList()));
 
         context.future(() -> keys.thenAccept(context::json));
+    }
+
+    @Override
+    public void getSessions(final Context context) {
+        Validator<Long> accountId = context.pathParamAsClass("id", Long.class);
+
+        if (!accountId.hasValue()) {
+            throw new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE)));
+        }
+
+        CompletableFuture<CollectionResponseDTO<SessionDTO>> sessions = trackingSessionsService.getByAccountId(accountId.get(), Domain.fromContext(context))
+                .thenApply(list -> CollectionResponseDTO.<SessionDTO>builder()
+                        .items(list.stream()
+                                .map(restMapper::toDTO)
+                                .collect(Collectors.toList()))
+                        .build());
+
+        context.future(() -> sessions.thenAccept(context::json));
     }
 
     @Override

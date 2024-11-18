@@ -3,6 +3,7 @@ package com.nexblocks.authguard.rest.mappers;
 import com.nexblocks.authguard.api.dto.entities.*;
 import com.nexblocks.authguard.api.dto.requests.*;
 import com.nexblocks.authguard.service.model.*;
+import com.nexblocks.authguard.service.model.Session;
 import org.apache.commons.codec.binary.Base32;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
@@ -71,6 +72,8 @@ public interface RestMapper {
 
     CryptoKeyDTO toDTO(EphemeralKeyBO ephemeralKeyBO);
     CryptoKeyDTO toDTO(PersistedKeyBO persistedKeyBO);
+
+    SessionDTO toDTO(Session sessionBO);
 
     TotpKeyDTO toDTO(TotpKeyBO totpKeyBO);
 

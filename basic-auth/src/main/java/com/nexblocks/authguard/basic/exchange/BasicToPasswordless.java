@@ -25,11 +25,14 @@ public class BasicToPasswordless implements Exchange {
 
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
-        return basicAuth.getAccountAsync(request)
-                .thenCompose(account -> {
-                    TokenOptionsBO tokenOptions = TokenOptionsMapper.fromAuthRequest(request);
+        return basicAuth.getAccountSessionAsync(request)
+                .thenCompose(accountSession -> {
+                    TokenOptionsBO tokenOptions = TokenOptionsMapper.fromAuthRequest(request)
+                            .source("basic")
+                            .trackingSession(accountSession.getSession().getSessionToken())
+                            .build();
 
-                    return passwordlessProvider.generateToken(account, tokenOptions);
+                    return passwordlessProvider.generateToken(accountSession.getAccount(), tokenOptions);
                 });
     }
 }

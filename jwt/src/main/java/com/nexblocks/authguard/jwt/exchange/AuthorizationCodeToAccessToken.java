@@ -7,6 +7,7 @@ import com.nexblocks.authguard.jwt.oauth.AuthorizationCodeVerifier;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
+import com.nexblocks.authguard.service.mappers.TokenOptionsMapper;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
@@ -47,6 +48,7 @@ public class AuthorizationCodeToAccessToken implements Exchange {
                 .userAgent(accountToken.getUserAgent())
                 .externalSessionId(accountToken.getExternalSessionId())
                 .sourceIp(accountToken.getSourceIp())
+                .trackingSession(accountToken.getTrackingSession())
                 .build();
 
         TokenRestrictionsBO restrictions = getRestrictions(accountToken);

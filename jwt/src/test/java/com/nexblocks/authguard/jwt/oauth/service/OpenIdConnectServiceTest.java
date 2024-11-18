@@ -8,6 +8,7 @@ import com.nexblocks.authguard.jwt.oauth.route.ImmutableOpenIdConnectRequest;
 import com.nexblocks.authguard.jwt.oauth.route.OpenIdConnectRequest;
 import com.nexblocks.authguard.service.ClientsService;
 import com.nexblocks.authguard.service.ExchangeService;
+import com.nexblocks.authguard.service.TrackingSessionsService;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
@@ -45,6 +46,7 @@ class OpenIdConnectServiceTest {
 
     private ExchangeService exchangeService;
     private ClientsService clientsService;
+    private TrackingSessionsService trackingSessionsService;
     private AccountTokensRepository accountTokensRepository;
     private OpenIdConnectService openIdConnectService;
 
@@ -52,9 +54,16 @@ class OpenIdConnectServiceTest {
     void setup() {
         exchangeService = Mockito.mock(ExchangeService.class);
         clientsService = Mockito.mock(ClientsService.class);
+        trackingSessionsService = Mockito.mock(TrackingSessionsService.class);
         accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
 
-        openIdConnectService = new OpenIdConnectService(clientsService, exchangeService, accountTokensRepository);
+        Mockito.when(trackingSessionsService.startSession(Mockito.any()))
+                .thenReturn(CompletableFuture.completedFuture(SessionBO.builder()
+                        .sessionToken("tracking-session")
+                        .build()));
+
+        openIdConnectService = new OpenIdConnectService(clientsService, exchangeService,
+                trackingSessionsService, accountTokensRepository);
     }
 
     @Test

@@ -112,6 +112,7 @@ public class RefreshToAccessToken implements Exchange {
                 .sourceIp(accountToken.getSourceIp())
                 .clientId(accountToken.getClientId())
                 .externalSessionId(accountToken.getExternalSessionId())
+                .trackingSession(accountToken.getTrackingSession())
                 .deviceId(accountToken.getDeviceId())
                 .build();
 

@@ -51,10 +51,16 @@ class BasicToOIdCTest {
 
         TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("basic")
+                .trackingSession("tracking-token")
                 .build();
 
-        Mockito.when(basicAuth.authenticateAndGetAccount(authRequest))
-                .thenReturn(CompletableFuture.completedFuture(account));
+        Mockito.when(basicAuth.authenticateAndGetAccountSession(authRequest))
+                .thenReturn(CompletableFuture.completedFuture(AccountSessionBO.builder()
+                        .account(account)
+                        .session(SessionBO.builder()
+                                .sessionToken("tracking-token")
+                                .build())
+                        .build()));
 
         Mockito.when(accessTokenProvider.generateToken(account, authRequest.getRestrictions(), options))
                 .thenReturn(CompletableFuture.completedFuture(accessTokenResponse));
@@ -73,6 +79,7 @@ class BasicToOIdCTest {
                         .idToken((String) idTokenResponse.getToken())
                         .refreshToken((String) accessTokenResponse.getRefreshToken())
                         .build())
+                .trackingSession("tracking-token")
                 .build();
 
         assertThat(actual).isEqualTo(expected);

@@ -29,6 +29,7 @@ public abstract class AccountsApi implements ApiRoute {
         patch("/{id}/roles", this::updateRoles, ActorRoles.adminClient());
         get("/{id}/apps", this::getApps, ActorRoles.adminClient());
         get("/{id}/crypto_keys", this::getCryptoKeys, ActorRoles.adminClient());
+        get("/{id}/sessions", this::getCryptoKeys, ActorRoles.adminClient());
 
         patch("/{id}/activate", this::activate, ActorRoles.adminClient());
         patch("/{id}/deactivate", this::deactivate, ActorRoles.adminClient());
@@ -61,6 +62,7 @@ public abstract class AccountsApi implements ApiRoute {
 
     public abstract void getApps(final Context context);
     public abstract void getCryptoKeys(final Context context);
+    public abstract void getSessions(final Context context);
 
     public abstract void activate(final Context context);
 
