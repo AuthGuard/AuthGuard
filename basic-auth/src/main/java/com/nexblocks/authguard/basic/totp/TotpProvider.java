@@ -70,6 +70,7 @@ public class TotpProvider implements AuthProvider {
                 .clientId(options.getClientId())
                 .deviceId(options.getDeviceId())
                 .externalSessionId(options.getExternalSessionId())
+                .trackingSession(options.getTrackingSession())
                 .sourceIp(options.getSourceIp())
                 .userAgent(options.getUserAgent())
                 .tokenRestrictions(serviceMapper.toDO(restrictions))
@@ -87,6 +88,7 @@ public class TotpProvider implements AuthProvider {
                             .token(token)
                             .entityType(EntityType.ACCOUNT)
                             .entityId(account.getId())
+                            .trackingSession(options.getTrackingSession())
                             .build();
                 });
     }

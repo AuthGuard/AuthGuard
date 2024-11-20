@@ -7,6 +7,7 @@ import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
+import com.nexblocks.authguard.service.model.Session;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
 
 import java.util.concurrent.CompletableFuture;
@@ -24,22 +25,30 @@ public class BasicToAccessToken implements Exchange {
 
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
-        final TokenOptionsBO options = TokenOptionsBO.builder()
+        return basicAuth.authenticateAndGetAccountSession(request)
+                .thenCompose(accountSession -> {
+                    TokenOptionsBO options = getOptions(request, accountSession.getSession());
+
+                    if (request.getRestrictions() == null) {
+                        return accessTokenProvider.generateToken(accountSession.getAccount(), options);
+                    } else {
+                        return accessTokenProvider.generateToken(accountSession.getAccount(),
+                                request.getRestrictions(), options);
+                    }
+                });
+    }
+
+    private TokenOptionsBO getOptions(final AuthRequestBO request,
+                                      final Session session) {
+        return TokenOptionsBO.builder()
                 .source("basic")
                 .userAgent(request.getUserAgent())
                 .sourceIp(request.getSourceIp())
                 .clientId(request.getClientId())
+                .trackingSession(session.getSessionToken())
                 .externalSessionId(request.getExternalSessionId())
                 .deviceId(request.getDeviceId())
                 .build();
 
-        return basicAuth.authenticateAndGetAccount(request)
-                .thenCompose(account -> {
-                    if (request.getRestrictions() == null) {
-                        return accessTokenProvider.generateToken(account, options);
-                    } else {
-                        return accessTokenProvider.generateToken(account, request.getRestrictions(), options);
-                    }
-                });
     }
 }

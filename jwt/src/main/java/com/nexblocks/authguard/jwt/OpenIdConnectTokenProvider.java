@@ -39,6 +39,7 @@ public class OpenIdConnectTokenProvider implements AuthProvider {
                                         .refreshToken((String) accessToken.getRefreshToken())
                                         .build())
                                 .validFor(accessToken.getValidFor())
+                                .trackingSession(options.getTrackingSession())
                                 .build()));
     }
 

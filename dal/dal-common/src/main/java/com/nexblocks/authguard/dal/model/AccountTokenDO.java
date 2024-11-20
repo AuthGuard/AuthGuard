@@ -31,6 +31,7 @@ public class AccountTokenDO extends AbstractDO {
     private String deviceId;
     private String clientId;
     private String externalSessionId;
+    private String trackingSession;
     private String userAgent;
     private String sourceIp;
     private String domain;

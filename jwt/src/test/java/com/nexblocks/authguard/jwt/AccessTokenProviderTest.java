@@ -6,10 +6,12 @@ import com.auth0.jwt.interfaces.Verification;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.jwt.crypto.TokenEncryptorAdapter;
+import com.nexblocks.authguard.service.TrackingSessionsService;
 import com.nexblocks.authguard.service.config.EncryptionConfig;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
+import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.*;
 import io.vavr.control.Either;
@@ -36,6 +38,7 @@ class AccessTokenProviderTest {
     private static final String[] SKIPPED_FIELDS = new String[] { "id", "createdAt", "lastModifiedAt",
             "token", "expiresAt" };
 
+    private TrackingSessionsService trackingSessionsService;
     private AccountTokensRepository accountTokensRepository;
     private JtiProvider jtiProvider;
     private TokenEncryptorAdapter tokenEncryptor;
@@ -85,15 +88,22 @@ class AccessTokenProviderTest {
                                                     StrategyConfig strategyConfig) {
         jtiProvider = Mockito.mock(JtiProvider.class);
         accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
+        trackingSessionsService = Mockito.mock(TrackingSessionsService.class);
         tokenEncryptor = Mockito.mock(TokenEncryptorAdapter.class);
+
+        Mockito.when(trackingSessionsService.isSessionActive(Mockito.eq("tracking-session"), Mockito.any()))
+                .thenReturn(CompletableFuture.completedFuture(true));
+
+        Mockito.when(trackingSessionsService.isSessionActive(Mockito.eq("terminated"), Mockito.any()))
+                .thenReturn(CompletableFuture.completedFuture(false));
 
         Mockito.when(accountTokensRepository.save(Mockito.any())).thenAnswer(invocation -> {
             AccountTokenDO arg = invocation.getArgument(0);
             return CompletableFuture.completedFuture(arg);
         });
 
-        return new AccessTokenProvider(accountTokensRepository, jwtConfig, strategyConfig, jtiProvider,
-                tokenEncryptor, new ServiceMapperImpl());
+        return new AccessTokenProvider(trackingSessionsService, accountTokensRepository, jwtConfig,
+                strategyConfig, jtiProvider, tokenEncryptor, new ServiceMapperImpl());
     }
 
     @Test
@@ -101,7 +111,11 @@ class AccessTokenProviderTest {
         AccessTokenProvider accessTokenProvider = newProviderInstance(jwtConfig(), strategyConfig());
 
         AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(true);
-        AuthResponseBO tokens = accessTokenProvider.generateToken(account).join();
+        TokenOptionsBO options = TokenOptionsBO.builder()
+                .trackingSession("tracking-session")
+                .build();
+
+        AuthResponseBO tokens = accessTokenProvider.generateToken(account, options).join();
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
@@ -118,6 +132,19 @@ class AccessTokenProviderTest {
                 .isAfter(Instant.now());
 
         verifyToken(tokens.getToken().toString(), account.getId(), null, null);
+    }
+
+    @Test
+    void generateWithTerminatedSession() {
+        AccessTokenProvider accessTokenProvider = newProviderInstance(jwtConfig(), strategyConfig());
+        TokenOptionsBO options = TokenOptionsBO.builder()
+                .trackingSession("terminated")
+                .build();
+
+        AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(true);
+
+        assertThatThrownBy(() -> accessTokenProvider.generateToken(account, options).join())
+                .hasCauseInstanceOf(ServiceException.class);
     }
 
     @Test
@@ -139,7 +166,11 @@ class AccessTokenProviderTest {
                 .thenAnswer(invocation -> Either.right("encrypted"));
 
         AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(true);
-        AuthResponseBO tokens = accessTokenProvider.generateToken(account).join();
+        TokenOptionsBO options = TokenOptionsBO.builder()
+                .trackingSession("tracking-session")
+                .build();
+
+        AuthResponseBO tokens = accessTokenProvider.generateToken(account, options).join();
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isEqualTo("encrypted");
@@ -173,7 +204,11 @@ class AccessTokenProviderTest {
                 .addPermissions("super:permission-1")
                 .build();
 
-        AuthResponseBO tokens = accessTokenProvider.generateToken(account, restrictions).join();
+        TokenOptionsBO options = TokenOptionsBO.builder()
+                .trackingSession("tracking-session")
+                .build();
+
+        AuthResponseBO tokens = accessTokenProvider.generateToken(account, restrictions, options).join();
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
@@ -213,6 +248,7 @@ class AccessTokenProviderTest {
                 .sourceIp("127.0.0.1")
                 .externalSessionId("session-1")
                 .userAgent("test")
+                .trackingSession("tracking-session")
                 .build();
 
         AuthResponseBO tokens = accessTokenProvider.generateToken(account, tokenOptions).join();
@@ -231,6 +267,7 @@ class AccessTokenProviderTest {
                 .sourceIp("127.0.0.1")
                 .externalSessionId("session-1")
                 .userAgent("test")
+                .trackingSession("tracking-session")
                 .build();
 
         Mockito.verify(accountTokensRepository).save(accountTokenCaptor.capture());
@@ -254,7 +291,10 @@ class AccessTokenProviderTest {
         Mockito.when(jtiProvider.next()).thenReturn(jti);
 
         AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(true);
-        AuthResponseBO tokens = accessTokenProvider.generateToken(account).join();
+        TokenOptionsBO options = TokenOptionsBO.builder()
+                .trackingSession("tracking-session")
+                .build();
+        AuthResponseBO tokens = accessTokenProvider.generateToken(account, options).join();
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();

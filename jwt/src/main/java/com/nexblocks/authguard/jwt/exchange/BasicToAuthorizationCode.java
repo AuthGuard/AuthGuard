@@ -5,6 +5,7 @@ import com.nexblocks.authguard.basic.BasicAuthProvider;
 import com.nexblocks.authguard.jwt.oauth.AuthorizationCodeProvider;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
+import com.nexblocks.authguard.service.mappers.TokenOptionsMapper;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
@@ -24,16 +25,16 @@ public class BasicToAuthorizationCode implements Exchange {
 
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
-        TokenOptionsBO options = TokenOptionsBO.builder()
-                .source("basic")
-                .userAgent(request.getUserAgent())
-                .sourceIp(request.getSourceIp())
-                .clientId(request.getClientId())
-                .externalSessionId(request.getExternalSessionId())
-                .deviceId(request.getDeviceId())
-                .extraParameters(request.getExtraParameters())
-                .build();
-        return basicAuth.authenticateAndGetAccount(request)
-                .thenCompose(account -> authorizationCodeProvider.generateToken(account, request.getRestrictions(), options));
+        return basicAuth.authenticateAndGetAccountSession(request)
+                .thenCompose(accountSession -> {
+                    TokenOptionsBO options = TokenOptionsMapper.fromAuthRequest(request)
+                            .source("basic")
+                            .trackingSession(accountSession.getSession().getSessionToken())
+                            .extraParameters(request.getExtraParameters())
+                            .build();
+
+                    return authorizationCodeProvider.generateToken(accountSession.getAccount(),
+                            request.getRestrictions(), options);
+                });
     }
 }

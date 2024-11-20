@@ -37,13 +37,17 @@ class OpenIdConnectTokenProviderTest {
                 .token("id token")
                 .build();
 
-        Mockito.when(accessTokenProvider.generateToken(account, null, null))
+        TokenOptionsBO options = TokenOptionsBO.builder()
+                .trackingSession("tracking-session")
+                .build();
+
+        Mockito.when(accessTokenProvider.generateToken(account, null, options))
                 .thenReturn(CompletableFuture.completedFuture(accessTokenResponse));
 
         Mockito.when(idTokenProvider.generateToken(account))
                 .thenReturn(CompletableFuture.completedFuture(idTokenResponse));
 
-        AuthResponseBO actual = openIdConnectTokenProvider.generateToken(account).join();
+        AuthResponseBO actual = openIdConnectTokenProvider.generateToken(account, options).join();
 
         AuthResponseBO expected = AuthResponseBO.builder()
                 .entityType(EntityType.ACCOUNT)
@@ -54,6 +58,7 @@ class OpenIdConnectTokenProviderTest {
                         .idToken((String) idTokenResponse.getToken())
                         .refreshToken((String) accessTokenResponse.getRefreshToken())
                         .build())
+                .trackingSession("tracking-session")
                 .build();
 
         assertThat(actual).isEqualTo(expected);

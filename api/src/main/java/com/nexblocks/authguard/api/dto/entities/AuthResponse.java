@@ -14,4 +14,5 @@ public interface AuthResponse {
     Object getToken();
     Object getRefreshToken();
     Long getValidFor();
+    String getTrackingSession();
 }

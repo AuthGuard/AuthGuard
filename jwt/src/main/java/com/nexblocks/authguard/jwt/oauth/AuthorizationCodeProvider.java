@@ -62,7 +62,8 @@ public class AuthorizationCodeProvider implements AuthProvider {
                     .externalSessionId(options.getExternalSessionId())
                     .deviceId(options.getDeviceId())
                     .clientId(options.getClientId())
-                    .sourceIp(options.getSourceIp());
+                    .sourceIp(options.getSourceIp())
+                    .trackingSession(options.getTrackingSession());
 
             if (options.getExtraParameters() != null
                     && PkceParameters.class.isAssignableFrom(options.getExtraParameters().getClass())) {

@@ -72,7 +72,8 @@ public class OtpProvider implements AuthProvider {
                             otpConfig.getMethod() == OtpConfigInterface.Method.EMAIL,
                             otpConfig.getMethod() == OtpConfigInterface.Method.SMS);
 
-                    AuthResponseBO token = createToken(persistedOtp.getId(), account.getId());
+                    AuthResponseBO token = createToken(persistedOtp.getId(), account.getId(),
+                            options.getTrackingSession());
 
                     messageBus.publish(OTP_CHANNEL, Messages.otpGenerated(messageBody, account.getDomain()));
 
@@ -90,12 +91,14 @@ public class OtpProvider implements AuthProvider {
         throw new UnsupportedOperationException("OTPs cannot be generated for applications");
     }
 
-    private AuthResponseBO createToken(final long passwordId, final long accountId) {
+    private AuthResponseBO createToken(final long passwordId, final long accountId,
+                                       final String trackingSession) {
         return AuthResponseBO.builder()
                 .type(TOKEN_TYPE)
                 .token(passwordId)
                 .entityType(EntityType.ACCOUNT)
                 .entityId(accountId)
+                .trackingSession(trackingSession)
                 .build();
     }
 

@@ -4,13 +4,11 @@ import com.google.inject.Inject;
 import com.nexblocks.authguard.basic.passwords.SecurePassword;
 import com.nexblocks.authguard.basic.passwords.SecurePasswordProvider;
 import com.nexblocks.authguard.service.AccountsService;
+import com.nexblocks.authguard.service.TrackingSessionsService;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.service.model.EntityType;
-import com.nexblocks.authguard.service.model.UserIdentifierBO;
+import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.AsyncUtils;
 import io.vavr.control.Try;
 import org.slf4j.Logger;
@@ -29,19 +27,29 @@ public class BasicAuthProvider {
     private final AccountsService accountsService;
     private final SecurePassword securePassword;
     private final SecurePasswordProvider securePasswordProvider;
+    private final TrackingSessionsService trackingSessionsService;
 
     @Inject
     public BasicAuthProvider(final AccountsService accountsService,
-                             final SecurePasswordProvider securePasswordProvider) {
+                             final SecurePasswordProvider securePasswordProvider,
+                             final TrackingSessionsService trackingSessionsService) {
         this.securePassword = securePasswordProvider.get();
         this.accountsService = accountsService;
         this.securePasswordProvider = securePasswordProvider;
+        this.trackingSessionsService = trackingSessionsService;
 
         LOG.debug("Initialized with password implementation {}", this.securePassword.getClass());
     }
 
+    public CompletableFuture<AccountSession> authenticateAndGetAccountSession(final AuthRequestBO authRequest) {
+        return verifyCredentialsAndGetAccount(authRequest.getIdentifier(), authRequest.getPassword(),
+                authRequest.getDomain())
+                .thenCompose(this::createTrackingSession);
+    }
+
     public CompletableFuture<AccountBO> authenticateAndGetAccount(final AuthRequestBO authRequest) {
-        return verifyCredentialsAndGetAccount(authRequest.getIdentifier(), authRequest.getPassword(), authRequest.getDomain());
+        return verifyCredentialsAndGetAccount(authRequest.getIdentifier(), authRequest.getPassword(),
+                authRequest.getDomain());
     }
 
     /**
@@ -58,8 +66,17 @@ public class BasicAuthProvider {
         return verifyCredentialsAndGetAccount(request.getIdentifier(), request.getDomain());
     }
 
-    public CompletableFuture<AccountBO> getAccountAsync(final AuthRequestBO request) {
-        return verifyCredentialsAndGetAccount(request.getIdentifier(), request.getDomain());
+    public CompletableFuture<AccountSession> getAccountSessionAsync(final AuthRequestBO request) {
+        return verifyCredentialsAndGetAccount(request.getIdentifier(), request.getDomain())
+                .thenCompose(this::createTrackingSession);
+    }
+
+    private CompletableFuture<AccountSession> createTrackingSession(AccountBO account) {
+        return trackingSessionsService.startSession(account)
+                .thenApply(session -> AccountSessionBO.builder()
+                        .account(account)
+                        .session(session)
+                        .build());
     }
 
     private CompletableFuture<AccountBO> handleBasicAuthentication(final String base64Credentials) {

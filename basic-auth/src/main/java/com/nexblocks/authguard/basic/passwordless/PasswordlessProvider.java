@@ -58,6 +58,7 @@ public class PasswordlessProvider implements AuthProvider {
                 .associatedAccountId(account.getId())
                 .token(token)
                 .expiresAt(Instant.now().plus(tokenTtl))
+                .trackingSession(tokenOptions.getTrackingSession())
                 .build();
 
         return accountTokensRepository.save(accountToken)
@@ -72,6 +73,7 @@ public class PasswordlessProvider implements AuthProvider {
                             .token(persistedToken.getId())
                             .entityType(EntityType.ACCOUNT)
                             .entityId(account.getId())
+                            .trackingSession(tokenOptions.getTrackingSession())
                             .build();
                 });
     }

@@ -35,6 +35,11 @@ public class SessionVerifier implements AuthVerifier {
 
                     SessionBO session = opt.get();
 
+                    // tracking sessions cannot be used for auth
+                    if (session.isForTracking()) {
+                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid session token"));
+                    }
+
                     if (session.getExpiresAt().isBefore(Instant.now())) {
                         return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Session has expired",
                                 EntityType.ACCOUNT, session.getAccountId()));

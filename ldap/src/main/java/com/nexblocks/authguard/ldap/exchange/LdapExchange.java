@@ -23,7 +23,9 @@ public abstract class LdapExchange implements Exchange {
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
         AccountBO account = ldapService.authenticate(request.getIdentifier(), request.getPassword());
-        TokenOptionsBO tokenOptions = TokenOptionsMapper.fromAuthRequest(request);
+        TokenOptionsBO tokenOptions = TokenOptionsMapper.fromAuthRequest(request)
+                .source("ldap")
+                .build();
 
         return authProvider.generateToken(account, tokenOptions);
     }

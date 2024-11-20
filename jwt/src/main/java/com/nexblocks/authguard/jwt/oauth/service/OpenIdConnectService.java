@@ -8,6 +8,7 @@ import com.nexblocks.authguard.jwt.oauth.route.ImmutableOpenIdConnectRequest;
 import com.nexblocks.authguard.jwt.oauth.route.OpenIdConnectRequest;
 import com.nexblocks.authguard.service.ClientsService;
 import com.nexblocks.authguard.service.ExchangeService;
+import com.nexblocks.authguard.service.TrackingSessionsService;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
@@ -37,14 +38,17 @@ public class OpenIdConnectService {
 
     private final ClientsService clientsService;
     private final ExchangeService exchangeService;
+    private final TrackingSessionsService trackingSessionsService;
     private final AccountTokensRepository accountTokensRepository;
     private final CryptographicRandom cryptographicRandom;
 
     @Inject
     public OpenIdConnectService(ClientsService clientsService, ExchangeService exchangeService,
+                                TrackingSessionsService trackingSessionsService,
                                 AccountTokensRepository accountTokensRepository) {
         this.clientsService = clientsService;
         this.exchangeService = exchangeService;
+        this.trackingSessionsService = trackingSessionsService;
         this.accountTokensRepository = accountTokensRepository;
         this.cryptographicRandom = new CryptographicRandom();
     }
@@ -62,18 +66,22 @@ public class OpenIdConnectService {
         parameters.put(OAuthConst.Params.CodeChallengeMethod, request.getCodeChallengeMethod());
         parameters.put(OAuthConst.Params.CodeChallenge, request.getCodeChallenge());
 
-        AccountTokenDO accountToken = AccountTokenDO.builder()
-                .id(ID.generate())
-                .domain(domain)
-                .token(token)
-                .userAgent(requestContext.getUserAgent())
-                .sourceIp(requestContext.getSource())
-                .clientId(request.getClientId())
-                .expiresAt(Instant.now().plus(TOKEN_TTL))
-                .additionalInformation(parameters)
-                .build();
+        return trackingSessionsService.startAnonymous(domain)
+                .thenCompose(session -> {
+                    AccountTokenDO accountToken = AccountTokenDO.builder()
+                            .id(ID.generate())
+                            .domain(domain)
+                            .token(token)
+                            .userAgent(requestContext.getUserAgent())
+                            .sourceIp(requestContext.getSource())
+                            .clientId(request.getClientId())
+                            .expiresAt(Instant.now().plus(TOKEN_TTL))
+                            .additionalInformation(parameters)
+                            .trackingSession(session.getSessionToken())
+                            .build();
 
-        return accountTokensRepository.save(accountToken);
+                    return accountTokensRepository.save(accountToken);
+                });
     }
 
     public CompletableFuture<OpenIdConnectRequest> getRequestFromToken(final String token,

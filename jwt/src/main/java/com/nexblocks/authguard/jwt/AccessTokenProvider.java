@@ -8,12 +8,14 @@ import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.jwt.crypto.TokenEncryptorAdapter;
+import com.nexblocks.authguard.service.TrackingSessionsService;
 import com.nexblocks.authguard.service.auth.AuthProvider;
 import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.ConfigParser;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
+import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
@@ -32,6 +34,7 @@ public class AccessTokenProvider implements AuthProvider {
 
     private static final String TOKEN_TYPE = "accessToken";
 
+    private final TrackingSessionsService trackingSessionsService;
     private final AccountTokensRepository accountTokensRepository;
     private final JtiProvider jti;
     private final ServiceMapper serviceMapper;
@@ -50,19 +53,21 @@ public class AccessTokenProvider implements AuthProvider {
                                final @Named("accessToken") ConfigContext accessTokenConfigContext,
                                final JtiProvider jti,
                                final TokenEncryptorAdapter tokenEncryptor,
-                               final ServiceMapper serviceMapper) {
-        this(accountTokensRepository,
+                               final ServiceMapper serviceMapper, final TrackingSessionsService trackingSessionsService) {
+        this(trackingSessionsService, accountTokensRepository,
                 jwtConfigContext.asConfigBean(JwtConfig.class),
                 accessTokenConfigContext.asConfigBean(StrategyConfig.class),
                 jti, tokenEncryptor, serviceMapper);
     }
 
-    public AccessTokenProvider(final AccountTokensRepository accountTokensRepository,
+    public AccessTokenProvider(final TrackingSessionsService trackingSessionsService,
+                               final AccountTokensRepository accountTokensRepository,
                                final JwtConfig jwtConfig,
                                final StrategyConfig accessTokenConfig,
                                final JtiProvider jti,
                                final TokenEncryptorAdapter tokenEncryptor,
                                final ServiceMapper serviceMapper) {
+        this.trackingSessionsService = trackingSessionsService;
         this.accountTokensRepository = accountTokensRepository;
         this.jti = jti;
         this.tokenEncryptor = tokenEncryptor;
@@ -98,7 +103,15 @@ public class AccessTokenProvider implements AuthProvider {
         String finalToken = encryptIfNeeded(signedToken);
         String refreshToken = jwtGenerator.generateRandomRefreshToken();
 
-        return storeRefreshToken(account.getId(), refreshToken, restrictions, options)
+        return trackingSessionsService.isSessionActive(options.getTrackingSession(), account.getDomain())
+                .thenCompose(isActive -> {
+                    if (!isActive) {
+                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.SESSION_TERMINATED,
+                                "Session is no longer active"));
+                    }
+
+                    return storeRefreshToken(account.getId(), refreshToken, restrictions, options);
+                })
                 .thenApply(persisted -> {
                     LOG.info("Generated refresh token. accountId={}, domain={}, tokenId={}, expiresAt={}",
                             account.getId(), account.getDomain(), persisted.getId(), persisted.getExpiresAt());
@@ -111,6 +124,7 @@ public class AccessTokenProvider implements AuthProvider {
                             .entityType(EntityType.ACCOUNT)
                             .entityId(account.getId())
                             .validFor(tokenTtl.getSeconds())
+                            .trackingSession(options.getTrackingSession())
                             .build();
                 });
     }
@@ -136,7 +150,7 @@ public class AccessTokenProvider implements AuthProvider {
     private CompletableFuture<AccountTokenDO> storeRefreshToken(final long accountId, final String refreshToken,
                                                                 final TokenRestrictionsBO tokenRestrictions,
                                                                 final TokenOptions tokenOptions) {
-        final AccountTokenDO.AccountTokenDOBuilder<?, ?> accountToken = AccountTokenDO.builder()
+        AccountTokenDO.AccountTokenDOBuilder<?, ?> accountToken = AccountTokenDO.builder()
                 .id(ID.generate())
                 .createdAt(Instant.now())
                 .token(refreshToken)
@@ -146,10 +160,12 @@ public class AccessTokenProvider implements AuthProvider {
 
         if (tokenOptions != null) {
             accountToken.sourceIp(tokenOptions.getSourceIp())
+                    .trackingSession(tokenOptions.getTrackingSession())
                     .clientId(tokenOptions.getClientId())
                     .deviceId(tokenOptions.getDeviceId())
                     .sourceAuthType(tokenOptions.getSource())
                     .externalSessionId(tokenOptions.getExternalSessionId())
+                    .trackingSession(tokenOptions.getTrackingSession())
                     .userAgent(tokenOptions.getUserAgent());
         }
 
@@ -193,7 +209,8 @@ public class AccessTokenProvider implements AuthProvider {
             }
         }
 
-        if (options != null && options.getSource() != null) {
+        if (options != null) {
+            jwtBuilder.withClaim("sid", options.getTrackingSession());
             jwtBuilder.withClaim("source", options.getSource());
         }
 

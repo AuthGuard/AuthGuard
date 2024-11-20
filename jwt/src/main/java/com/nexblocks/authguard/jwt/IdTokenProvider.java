@@ -57,12 +57,12 @@ public class IdTokenProvider implements AuthProvider {
             throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
         }
 
-        final JwtTokenBuilder tokenBuilder = generateIdToke(account);
+        JwtTokenBuilder tokenBuilder = generateIdToke(account, options);
 
-        final String signedToken = tokenBuilder.getBuilder().sign(algorithm);
-        final String finalToken = encryptIfNeeded(signedToken);
+        String signedToken = tokenBuilder.getBuilder().sign(algorithm);
+        String finalToken = encryptIfNeeded(signedToken);
 
-        final String refreshToken = jwtGenerator.generateRandomRefreshToken();
+        String refreshToken = jwtGenerator.generateRandomRefreshToken();
 
         return CompletableFuture.completedFuture(AuthResponseBO.builder()
                 .type(TOKEN_TYPE)
@@ -79,11 +79,17 @@ public class IdTokenProvider implements AuthProvider {
         throw new UnsupportedOperationException("ID tokens cannot be generated for an application");
     }
 
-    private JwtTokenBuilder generateIdToke(final AccountBO account) {
-        final JWTCreator.Builder jwtBuilder = jwtGenerator.generateUnsignedToken(account, tokenTtl);
+    private JwtTokenBuilder generateIdToke(final AccountBO account,
+                                           final TokenOptionsBO options) {
+        JWTCreator.Builder jwtBuilder = jwtGenerator.generateUnsignedToken(account, tokenTtl);
 
         if (account.getExternalId() != null) {
             jwtBuilder.withClaim("eid", account.getExternalId());
+        }
+
+        if (options != null) {
+            jwtBuilder.withClaim("sid", options.getTrackingSession());
+            jwtBuilder.withClaim("source", options.getSource());
         }
 
         return JwtTokenBuilder.builder()

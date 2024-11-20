@@ -44,6 +44,30 @@ class SessionVerifierTest {
     }
 
     @Test
+    void verifyTrackingSession() {
+        SessionsService sessionsService = Mockito.mock(SessionsService.class);
+        SessionVerifier sessionVerifier = new SessionVerifier(sessionsService);
+
+        SessionBO session = SessionBO.builder()
+                .id(1)
+                .sessionToken("token")
+                .accountId(101)
+                .expiresAt(Instant.now().plus(Duration.ofMinutes(20)))
+                .forTracking(true)
+                .build();
+
+        AuthRequest request = AuthRequestBO.builder()
+                .token(session.getSessionToken())
+                .build();
+
+        Mockito.when(sessionsService.getByToken(session.getSessionToken()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(session)));
+
+        assertThatThrownBy(() -> sessionVerifier.verifyAccountTokenAsync(request).join())
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
+    }
+
+    @Test
     void verifyNonExistingSession() {
         SessionsService sessionsService = Mockito.mock(SessionsService.class);
         SessionVerifier sessionVerifier = new SessionVerifier(sessionsService);

@@ -48,6 +48,7 @@ public class AuthorizationCodeToOidc implements Exchange {
                 .userAgent(accountToken.getUserAgent())
                 .externalSessionId(accountToken.getExternalSessionId())
                 .sourceIp(accountToken.getSourceIp())
+                .trackingSession(accountToken.getTrackingSession())
                 .build();
 
         Try<Boolean> verificationResult = PkceVerifier.verifyIfPkce(accountToken, request);

@@ -22,10 +22,19 @@ import java.util.Map;
         name = "sessions.getByToken",
         query = "SELECT session FROM SessionDO session WHERE session.sessionToken = :token AND session.deleted = false"
 )
+@NamedQuery(
+        name = "sessions.getByAccountId",
+        query = "SELECT session FROM SessionDO session " +
+                "WHERE session.domain = :domain AND session.accountId = :accountId " +
+                "AND session.deleted = false"
+)
 public class SessionDO extends AbstractDO {
+    private String domain;
     private String sessionToken;
     private long accountId;
     private Instant expiresAt;
+    private boolean forTracking;
+    private boolean active;
 
     @ElementCollection(fetch = FetchType.EAGER)
     private Map<String, String> data;

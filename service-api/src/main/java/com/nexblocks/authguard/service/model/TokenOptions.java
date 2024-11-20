@@ -9,6 +9,7 @@ public interface TokenOptions {
     String getDeviceId();
     String getClientId();
     String getExternalSessionId();
+    String getTrackingSession();
     String getUserAgent();
     String getSourceIp();
     Object getExtraParameters();
