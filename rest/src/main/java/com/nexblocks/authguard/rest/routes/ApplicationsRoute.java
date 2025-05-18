@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.nexblocks.authguard.api.access.ActorRoles;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.common.*;
 import com.nexblocks.authguard.api.dto.entities.ApiKeyDTO;
@@ -29,6 +30,9 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static io.javalin.apibuilder.ApiBuilder.*;
+import static io.javalin.apibuilder.ApiBuilder.get;
+
 public class ApplicationsRoute extends ApplicationsApi {
     private final ApplicationsService applicationsService;
     private final ApiKeysService apiKeysService;
@@ -55,6 +59,29 @@ public class ApplicationsRoute extends ApplicationsApi {
                 .build();
         this.rolesRequestBodyHandler = new BodyHandler.Builder<>(RolesRequestDTO.class)
                 .build();
+    }
+
+    @Override
+    public String getPath() {
+        return "/domains/{domain}/apps";
+    }
+
+    @Override
+    public void addEndpoints() {
+        post("/", this::create, ActorRoles.anyAdmin());
+
+        get("/{id}", this::getById, ActorRoles.adminClient());
+        get("/externalId/{id}", this::getByExternalId, ActorRoles.adminClient());
+        put("/{id}", this::update, ActorRoles.adminClient());
+        delete("/{id}", this::deleteById, ActorRoles.adminClient());
+
+        patch("/{id}/activate", this::activate, ActorRoles.adminClient());
+        patch("/{id}/deactivate", this::deactivate, ActorRoles.adminClient());
+        patch("/{id}/permissions", this::updatePermissions, ActorRoles.adminClient());
+        patch("/{id}/roles", this::updateRoles, ActorRoles.adminClient());
+
+        get("/{id}/keys", this::getApiKeys, ActorRoles.adminClient());
+        get("/{id}/crypto_keys", this::getCryptoKeys, ActorRoles.adminClient());
     }
 
     public void create(final Context context) {

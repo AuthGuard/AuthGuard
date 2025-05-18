@@ -14,6 +14,7 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.TotpKeyBO;
 import com.nexblocks.authguard.service.model.UserIdentifier;
 import com.nexblocks.authguard.service.model.UserIdentifierBO;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -66,7 +67,7 @@ class TotpKeysServiceImplTest {
                         .build());
 
         Mockito.when(totpKeysRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, TotpKeyDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, TotpKeyDO.class)));
 
         Mockito.when(accountsService.getById(account.getId(), account.getDomain()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));

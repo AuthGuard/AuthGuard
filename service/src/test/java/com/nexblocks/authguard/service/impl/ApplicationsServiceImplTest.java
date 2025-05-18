@@ -8,6 +8,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.*;
+import io.smallrye.mutiny.Uni;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,16 +77,16 @@ class ApplicationsServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(random.nextObject(AccountBO.class))));
 
         Mockito.when(applicationsRepository.save(any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AppDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AppDO.class)));
 
         Mockito.when(idempotencyService.performOperationAsync(Mockito.any(), Mockito.eq(idempotentKey), Mockito.eq(app.getEntityType())))
                 .thenAnswer(invocation -> invocation.getArgument(0, Supplier.class).get());
 
         Mockito.when(rolesService.verifyRoles(app.getRoles(), "main", EntityType.APPLICATION))
-                .thenReturn(new ArrayList<>(app.getRoles()));
+                .thenReturn(Uni.createFrom().item(new ArrayList<>(app.getRoles())));
 
         Mockito.when(permissionsService.validate(app.getPermissions(), "main", EntityType.APPLICATION))
-                .thenReturn(new ArrayList<>(app.getPermissions()));
+                .thenReturn(Uni.createFrom().item(new ArrayList<>(app.getPermissions())));
 
         AppBO created = applicationsService.create(app, requestContext).join();
         List<PermissionBO> expectedPermissions = app.getPermissions().stream()
@@ -108,7 +109,7 @@ class ApplicationsServiceImplTest {
                 .withDeleted(false);
 
         Mockito.when(applicationsRepository.getById(Mockito.anyLong()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(serviceMapper.toDO(app))));
+                .thenReturn(Uni.createFrom().item(Optional.of(serviceMapper.toDO(app))));
 
         Optional<AppBO> retrieved = applicationsService.getById(1, "main").join();
         List<PermissionBO> expectedPermissions = app.getPermissions().stream()
@@ -128,7 +129,7 @@ class ApplicationsServiceImplTest {
         app.setDeleted(false);
 
         Mockito.when(applicationsRepository.delete(app.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
+                .thenReturn(Uni.createFrom().item(Optional.of(app)));
 
         applicationsService.delete(app.getId(), "main");
 
@@ -143,9 +144,9 @@ class ApplicationsServiceImplTest {
         app.setDomain("main");
 
         Mockito.when(applicationsRepository.getById(app.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
+                .thenReturn(Uni.createFrom().item(Optional.of(app)));
         Mockito.when(applicationsRepository.update(any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
+                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AppDO.class))));
 
         AppBO updated = applicationsService.activate(app.getId(), "main").join();
 
@@ -161,9 +162,9 @@ class ApplicationsServiceImplTest {
         app.setDomain("main");
 
         Mockito.when(applicationsRepository.getById(app.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
+                .thenReturn(Uni.createFrom().item(Optional.of(app)));
         Mockito.when(applicationsRepository.update(any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
+                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AppDO.class))));
 
         AppBO updated = applicationsService.deactivate(app.getId(), "main").join();
 
@@ -176,11 +177,11 @@ class ApplicationsServiceImplTest {
         AppDO account = createAppDO();
 
         Mockito.when(applicationsRepository.getById(account.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+                .thenReturn(Uni.createFrom().item(Optional.of(account)));
         Mockito.when(permissionsService.validate(any(), eq("main"), eq(EntityType.APPLICATION)))
-                .thenAnswer(invocation -> invocation.getArgument(0, List.class));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, List.class)));
         Mockito.when(applicationsRepository.update(any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
+                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AppDO.class))));
 
         List<PermissionBO> permissions = Arrays.asList(
                 random.nextObject(PermissionBO.class).withEntityType(null),
@@ -199,7 +200,13 @@ class ApplicationsServiceImplTest {
         AppDO account = createAppDO();
 
         Mockito.when(applicationsRepository.getById(account.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+                .thenReturn(Uni.createFrom().item(Optional.of(account)));
+
+        Mockito.when(rolesService.verifyRoles(Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(Uni.createFrom().item(Collections.emptyList()));
+
+        Mockito.when(permissionsService.validate(Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenAnswer(invocation -> Uni.createFrom().item(Collections.emptyList()));
 
         List<PermissionBO> permissions = Arrays.asList(
                 random.nextObject(PermissionBO.class),
@@ -215,9 +222,11 @@ class ApplicationsServiceImplTest {
         AppDO account = createAppDO();
 
         Mockito.when(applicationsRepository.getById(account.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+                .thenReturn(Uni.createFrom().item(Optional.of(account)));
         Mockito.when(permissionsService.validate(any(), eq("other"), eq(EntityType.APPLICATION)))
-                .thenAnswer(invocation -> invocation.getArgument(0, List.class));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, List.class)));
+        Mockito.when(permissionsService.validate(any(), eq("main"), eq(EntityType.APPLICATION)))
+                .thenAnswer(invocation -> Uni.createFrom().item(Collections.emptyList()));
 
         List<PermissionBO> permissions = Arrays.asList(
                 random.nextObject(PermissionBO.class),
@@ -233,15 +242,15 @@ class ApplicationsServiceImplTest {
         AppDO account = createAppDO();
         List<PermissionBO> currentPermissions = account.getPermissions().stream()
                 .map(permissionDO -> PermissionBO.builder()
-                        .group(permissionDO.getGroup())
+                        .group(permissionDO.getPermissionGroup())
                         .name(permissionDO.getName())
                         .build()
-                ).collect(Collectors.toList());
+                ).toList();
 
         Mockito.when(applicationsRepository.getById(account.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+                .thenReturn(Uni.createFrom().item(Optional.of(account)));
         Mockito.when(applicationsRepository.update(any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
+                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AppDO.class))));
 
         List<PermissionBO> permissionsToRevoke = Arrays.asList(
                 currentPermissions.get(0),
@@ -260,16 +269,17 @@ class ApplicationsServiceImplTest {
         AppDO app = createAppDO();
 
         Mockito.when(applicationsRepository.getById(app.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
+                .thenReturn(Uni.createFrom().item(Optional.of(app)));
         Mockito.when(applicationsRepository.update(any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
+                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AppDO.class))));
 
         List<String> roles = Arrays.asList(
                 random.nextObject(String.class),
                 random.nextObject(String.class)
         );
 
-        Mockito.when(rolesService.verifyRoles(roles, "main", EntityType.APPLICATION)).thenReturn(roles);
+        Mockito.when(rolesService.verifyRoles(roles, "main", EntityType.APPLICATION))
+                .thenReturn(Uni.createFrom().item(roles));
 
         Optional<AppBO> updated = applicationsService.grantRoles(app.getId(), roles, "main").join();
 
@@ -283,9 +293,9 @@ class ApplicationsServiceImplTest {
         AppDO app = createAppDO();
 
         Mockito.when(applicationsRepository.getById(app.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
+                .thenReturn(Uni.createFrom().item(Optional.of(app)));
         Mockito.when(applicationsRepository.update(any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
+                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AppDO.class))));
 
         List<String> roles = Arrays.asList(
                 random.nextObject(String.class),
@@ -294,7 +304,8 @@ class ApplicationsServiceImplTest {
 
         List<String> validRoles = Collections.singletonList(roles.get(0));
 
-        Mockito.when(rolesService.verifyRoles(roles, "main", EntityType.APPLICATION)).thenReturn(validRoles);
+        Mockito.when(rolesService.verifyRoles(roles, "main", EntityType.APPLICATION))
+                .thenReturn(Uni.createFrom().item(validRoles));
 
         assertThatThrownBy(() -> applicationsService.grantRoles(app.getId(), roles, "main").join())
                 .hasCauseInstanceOf(ServiceException.class);
@@ -305,16 +316,23 @@ class ApplicationsServiceImplTest {
         AppDO app = createAppDO();
 
         Mockito.when(applicationsRepository.getById(app.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
+                .thenReturn(Uni.createFrom().item(Optional.of(app)));
         Mockito.when(applicationsRepository.update(any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
+                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AppDO.class))));
 
         List<String> roles = Arrays.asList(
                 random.nextObject(String.class),
                 random.nextObject(String.class)
         );
 
-        Mockito.when(rolesService.verifyRoles(roles, "other", EntityType.APPLICATION)).thenReturn(roles);
+        Mockito.when(rolesService.verifyRoles(roles, "other", EntityType.APPLICATION))
+                .thenReturn(Uni.createFrom().item(roles));
+
+        Mockito.when(rolesService.verifyRoles(roles, "main", EntityType.APPLICATION))
+                .thenReturn(Uni.createFrom().item(Collections.emptyList()));
+
+        Mockito.when(permissionsService.validate(Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(Uni.createFrom().item(Collections.emptyList()));
 
         assertThatThrownBy(() -> applicationsService.grantRoles(app.getId(), roles, "main").join())
                 .hasCauseInstanceOf(ServiceException.class);
@@ -326,9 +344,9 @@ class ApplicationsServiceImplTest {
         List<String> currentRoles = new ArrayList<>(app.getRoles());
 
         Mockito.when(applicationsRepository.getById(app.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
+                .thenReturn(Uni.createFrom().item(Optional.of(app)));
         Mockito.when(applicationsRepository.update(any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AppDO.class))));
+                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AppDO.class))));
 
         List<String> rolesToRevoke = Arrays.asList(
                 currentRoles.get(0),

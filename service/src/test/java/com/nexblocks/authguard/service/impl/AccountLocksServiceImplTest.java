@@ -5,6 +5,7 @@ import com.nexblocks.authguard.dal.model.AccountLockDO;
 import com.nexblocks.authguard.service.AccountLocksService;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.AccountLockBO;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -62,7 +63,7 @@ class AccountLocksServiceImplTest {
         Instant now = Instant.now();
 
         Mockito.when(repository.delete(1))
-                .thenReturn(CompletableFuture.completedFuture(
+                .thenReturn(Uni.createFrom().item(
                         Optional.of(AccountLockDO.builder()
                                 .accountId(101)
                                 .expiresAt(now.plus(Duration.ofMinutes(5)))

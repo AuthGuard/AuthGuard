@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Data
 @NoArgsConstructor
@@ -14,7 +14,7 @@ import javax.persistence.*;
 // JPA
 @Entity
 @Table(name = "permissions", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "group", "name", "domain" }, name = "PERMISSION_DUP")
+        @UniqueConstraint(columnNames = { "permissionGroup", "name", "domain" }, name = "PERMISSION_DUP")
 })
 @NamedQuery(
         name = "permissions.getById",
@@ -31,18 +31,17 @@ import javax.persistence.*;
 @NamedQuery(
         name = "permissions.getByGroupAndName",
         query = "SELECT permission FROM PermissionDO permission " +
-                "WHERE permission.group = :group AND permission.name = :name AND permission.domain = :domain AND permission.deleted = false"
+                "WHERE permission.permissionGroup = :group AND permission.name = :name AND permission.domain = :domain AND permission.deleted = false"
 )
 @NamedQuery(
         name = "permissions.getByGroup",
         query = "SELECT permission FROM PermissionDO permission " +
-                "WHERE permission.group = :group AND permission.domain = :domain " +
+                "WHERE permission.permissionGroup = :group AND permission.domain = :domain " +
                 "AND permission.deleted = false AND permission.id > :cursor " +
                 "ORDER BY permission.id"
 )
 public class PermissionDO extends AbstractDO {
-    @Column(name = "\"group\"")
-    private String group;
+    private String permissionGroup;
     private String name;
     private String domain;
     private boolean forAccounts;

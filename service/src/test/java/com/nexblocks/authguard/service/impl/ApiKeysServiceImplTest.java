@@ -20,6 +20,7 @@ import com.nexblocks.authguard.service.model.ApiKeyBO;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.ClientBO;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -110,7 +111,7 @@ class ApiKeysServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
         Mockito.when(apiKeysRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, ApiKeyDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, ApiKeyDO.class)));
 
         Mockito.when(apiKeyExchange.generateKey(app, null))
                 .thenReturn(AuthResponseBO.builder()
@@ -151,7 +152,7 @@ class ApiKeysServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
         Mockito.when(apiKeysRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, ApiKeyDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, ApiKeyDO.class)));
 
         Mockito.when(apiKeyExchange.generateKey(app, null))
                 .thenReturn(AuthResponseBO.builder()
@@ -217,7 +218,7 @@ class ApiKeysServiceImplTest {
         ApiKeyDO apiKeyDO = serviceMapper.toDO(apiKeyBO);
 
         Mockito.when(apiKeysRepository.getByAppId(appId))
-                .thenReturn(CompletableFuture.completedFuture(Collections.singletonList(apiKeyDO)));
+                .thenReturn(Uni.createFrom().item(Collections.singletonList(apiKeyDO)));
 
         List<ApiKeyBO> actual = apiKeysService.getByAppId(appId, "main").join();
 
@@ -255,7 +256,7 @@ class ApiKeysServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(app)));
 
         Mockito.when(apiKeysRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, ApiKeyDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, ApiKeyDO.class)));
 
         Mockito.when(apiKeyExchange.generateKey(app, null))
                 .thenReturn(AuthResponseBO.builder()
@@ -296,7 +297,7 @@ class ApiKeysServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
 
         Mockito.when(apiKeysRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, ApiKeyDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, ApiKeyDO.class)));
 
         Mockito.when(apiKeyExchange.generateKey(client, null))
                 .thenReturn(AuthResponseBO.builder()
@@ -381,7 +382,7 @@ class ApiKeysServiceImplTest {
                 .build();
 
         Mockito.when(apiKeysRepository.getById(id))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
+                .thenReturn(Uni.createFrom().item(Optional.of(apiKeyDO)));
 
         Optional<ApiKeyBO> actual = apiKeysService.getById(id, "main").join();
 
@@ -399,10 +400,10 @@ class ApiKeysServiceImplTest {
                 .build();
 
         Mockito.when(apiKeysRepository.getById(id))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
+                .thenReturn(Uni.createFrom().item(Optional.of(apiKeyDO)));
 
         Mockito.when(apiKeysRepository.delete(id))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
+                .thenReturn(Uni.createFrom().item(Optional.of(apiKeyDO)));
 
         Optional<ApiKeyBO> actual = apiKeysService.delete(id, "main").join();
 

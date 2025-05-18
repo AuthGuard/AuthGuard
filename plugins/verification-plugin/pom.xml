@@ -14,6 +14,12 @@
     <dependencies>
         <dependency>
             <groupId>com.nexblocks.authguard</groupId>
+            <artifactId>dal-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nexblocks.authguard</groupId>
             <artifactId>emb</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>

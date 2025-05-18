@@ -21,6 +21,12 @@
 
         <dependency>
             <groupId>com.nexblocks.authguard</groupId>
+            <artifactId>service-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nexblocks.authguard</groupId>
             <artifactId>service</artifactId>
             <version>${project.version}</version>
         </dependency>

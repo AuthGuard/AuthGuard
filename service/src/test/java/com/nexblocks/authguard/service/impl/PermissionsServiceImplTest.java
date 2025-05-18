@@ -1,9 +1,7 @@
 package com.nexblocks.authguard.service.impl;
 
 import com.nexblocks.authguard.dal.model.PermissionDO;
-import com.nexblocks.authguard.dal.model.RoleDO;
 import com.nexblocks.authguard.dal.persistence.LongPage;
-import com.nexblocks.authguard.dal.persistence.Page;
 import com.nexblocks.authguard.dal.persistence.PermissionsRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.PermissionsService;
@@ -11,7 +9,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.PermissionBO;
-import com.nexblocks.authguard.service.model.RoleBO;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -52,7 +50,7 @@ class PermissionsServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         Mockito.when(permissionsRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, PermissionDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, PermissionDO.class)));
 
         PermissionBO actual = permissionsService.create(request).join();
 
@@ -85,7 +83,7 @@ class PermissionsServiceImplTest {
     void getById() {
         PermissionDO permission = PermissionDO.builder()
                 .id(1)
-                .group("test")
+                .permissionGroup("test")
                 .name("read")
                 .build();
 
@@ -96,7 +94,7 @@ class PermissionsServiceImplTest {
                 .build();
 
         Mockito.when(permissionsRepository.getById(permission.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(permission)));
+                .thenReturn(Uni.createFrom().item(Optional.of(permission)));
 
         Optional<PermissionBO> actual = permissionsService.getById(permission.getId(), "main").join();
 
@@ -106,8 +104,8 @@ class PermissionsServiceImplTest {
     @Test
     void getAll() {
         List<PermissionDO> permissions = Arrays.asList(
-                PermissionDO.builder().group("test").name("read").build(),
-                PermissionDO.builder().group("test").name("write").build()
+                PermissionDO.builder().permissionGroup("test").name("read").build(),
+                PermissionDO.builder().permissionGroup("test").name("write").build()
         );
 
         Mockito.when(permissionsRepository.getAll("main", LongPage.of(null, 20)))
@@ -126,8 +124,8 @@ class PermissionsServiceImplTest {
     @Test
     void getAllForGroup() {
         List<PermissionDO> permissions = Arrays.asList(
-                PermissionDO.builder().group("test").name("read").build(),
-                PermissionDO.builder().group("test").name("write").build()
+                PermissionDO.builder().permissionGroup("test").name("read").build(),
+                PermissionDO.builder().permissionGroup("test").name("write").build()
         );
 
         Mockito.when(permissionsRepository.getAllForGroup("test", "main", LongPage.of(null, 20)))
@@ -147,7 +145,7 @@ class PermissionsServiceImplTest {
     void delete() {
         PermissionDO permission = PermissionDO.builder()
                 .id(1)
-                .group("test")
+                .permissionGroup("test")
                 .name("read")
                 .build();
 
@@ -158,7 +156,7 @@ class PermissionsServiceImplTest {
                 .build();
 
         Mockito.when(permissionsRepository.delete(permission.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(permission)));
+                .thenReturn(Uni.createFrom().item(Optional.of(permission)));
 
         Optional<PermissionBO> actual = permissionsService.delete(permission.getId(), "main").join();
 
@@ -168,8 +166,8 @@ class PermissionsServiceImplTest {
     @Test
     void verifyPermissionsForAccount() {
         List<PermissionDO> existing = Arrays.asList(
-                PermissionDO.builder().group("test").name("read").forAccounts(true).build(),
-                PermissionDO.builder().group("test").name("write").forAccounts(false).build()
+                PermissionDO.builder().permissionGroup("test").name("read").forAccounts(true).build(),
+                PermissionDO.builder().permissionGroup("test").name("write").forAccounts(false).build()
         );
 
         List<PermissionBO> request = Arrays.asList(
@@ -191,7 +189,8 @@ class PermissionsServiceImplTest {
                 PermissionBO.builder().group("test").name("read").forAccounts(true).build()
         );
 
-        List<PermissionBO> actual = permissionsService.validate(request, "main", EntityType.ACCOUNT);
+        List<PermissionBO> actual = permissionsService.validate(request, "main", EntityType.ACCOUNT)
+                .subscribeAsCompletionStage().join();
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -199,8 +198,8 @@ class PermissionsServiceImplTest {
     @Test
     void verifyPermissionsForApplication() {
         List<PermissionDO> existing = Arrays.asList(
-                PermissionDO.builder().group("test").name("read").forApplications(false).build(),
-                PermissionDO.builder().group("test").name("write").forApplications(true).build()
+                PermissionDO.builder().permissionGroup("test").name("read").forApplications(false).build(),
+                PermissionDO.builder().permissionGroup("test").name("write").forApplications(true).build()
         );
 
         List<PermissionBO> request = Arrays.asList(
@@ -222,7 +221,8 @@ class PermissionsServiceImplTest {
                 PermissionBO.builder().group("test").name("write").forApplications(true).build()
         );
 
-        List<PermissionBO> actual = permissionsService.validate(request, "main", EntityType.APPLICATION);
+        List<PermissionBO> actual = permissionsService.validate(request, "main", EntityType.APPLICATION)
+                .subscribeAsCompletionStage().join();
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -236,18 +236,18 @@ class PermissionsServiceImplTest {
                 .build();
 
         Mockito.when(permissionsRepository.getById(1))
-                .thenReturn(CompletableFuture.completedFuture(
+                .thenReturn(Uni.createFrom().item(
                         Optional.of(PermissionDO.builder()
                                 .id(1)
                                 .domain("main")
-                                .group("tests")
+                                .permissionGroup("tests")
                                 .name("test")
                                 .forAccounts(false)
                                 .forApplications(true)
                                 .build())));
 
         Mockito.when(permissionsRepository.update(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, PermissionDO.class))));
+                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, PermissionDO.class))));
 
         PermissionBO actual = permissionsService.update(request, "main").join().get();
 

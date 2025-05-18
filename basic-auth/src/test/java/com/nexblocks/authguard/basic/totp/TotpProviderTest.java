@@ -9,6 +9,7 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -35,7 +36,7 @@ class TotpProviderTest {
         messageBus = Mockito.mock(MessageBus.class);
 
         Mockito.when(accountTokensRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
         totpProvider = new TotpProvider(accountTokensRepository, new ServiceMapperImpl(),
                 messageBus);

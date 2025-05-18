@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Data
 @NoArgsConstructor
@@ -25,6 +25,7 @@ public class UserIdentifierDO {
     private String identifier;
     private boolean active;
     private String domain;
+    private Long accountId;
 
     public enum Type {
         USERNAME,

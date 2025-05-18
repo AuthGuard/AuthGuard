@@ -1,5 +1,8 @@
 package com.nexblocks.authguard.bootstrap.steps;
 
+import com.nexblocks.authguard.bootstrap.BootstrapStepResult;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.groups.UniAndGroupIterable;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.nexblocks.authguard.bootstrap.BootstrapStep;
@@ -15,8 +18,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 public class EntitiesBootstrap implements BootstrapStep {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
@@ -44,48 +48,84 @@ public class EntitiesBootstrap implements BootstrapStep {
     }
 
     @Override
-    public void run() {
+    public Uni<BootstrapStepResult> run() {
         if (entitiesConfig == null || entitiesConfig.getDomains() == null) {
             log.info("No entities config was provided. Skipping.");
 
-            return;
+            return Uni.createFrom().item(BootstrapStepResult.success());
         }
 
-        entitiesConfig.getDomains().forEach((domain, entities) -> {
-           createRoles(domain, entities.getRoles());
+        // create roles
+        List<Uni<BootstrapStepResult>> rolesUnis = entitiesConfig.getDomains().entrySet().stream()
+                .map(entry -> {
+                    String domain = entry.getKey();
+                    List<RolesConfig> roles = entry.getValue().getRoles();
 
-           createPermissions(domain, entities.getPermissions());
-        });
+                    return createRoles(domain, roles);
+                })
+                .toList();
+
+        List<Uni<BootstrapStepResult>> permissionsUnis = entitiesConfig.getDomains().entrySet().stream()
+                .map(entry -> {
+                    String domain = entry.getKey();
+                    List<PermissionConfig> permissions = entry.getValue().getPermissions();
+
+                    return createPermissions(domain, permissions);
+                })
+                .toList();
+
+        List<Uni<BootstrapStepResult>> allUnis = Stream.concat(rolesUnis.stream(), permissionsUnis.stream()).toList();
+
+        if (allUnis.isEmpty()) {
+            return Uni.createFrom().item(BootstrapStepResult.success());
+        }
+
+        return Uni.combine().all()
+                .unis(allUnis)
+                .with(ignored -> BootstrapStepResult.success());
     }
 
-    private void createRoles(String domain, List<RolesConfig> roles) {
+    private Uni<BootstrapStepResult> createRoles(String domain, List<RolesConfig> roles) {
         if (roles == null) {
-            return;
+            return Uni.createFrom().item(BootstrapStepResult.success());
         }
 
-        roles.stream()
+        List<Uni<BootstrapStepResult>> rolesUnis = roles.stream()
                 .map(role -> RoleBO.builder()
                         .domain(domain)
                         .name(role.getName())
                         .forAccounts(role.isForAccounts())
                         .forApplications(role.isForApplications())
                         .build())
-                .forEach(role -> {
+                .map(role -> {
                     if (rolesService.getRoleByName(role.getName(), domain).join().isPresent()) {
                         log.info("Role {} already exists in domain {}", role.getName(), domain);
 
-                        return;
+                        return Uni.createFrom().item(BootstrapStepResult.success());
                     }
 
-                    rolesService.create(role);
+                    return Uni.createFrom().completionStage(rolesService.create(role))
+                            .map(created -> {
+                                log.info("Created role {} in domain {}", role.getName(), domain);
 
-                    log.info("Created role {} in domain {}", role.getName(), domain);
-                });
+                                return BootstrapStepResult.success();
+                            });
+                })
+                .toList();
+
+        if (rolesUnis.isEmpty()) {
+            return Uni.createFrom().item(BootstrapStepResult.success());
+        }
+
+        // 2.  Combine them into a single Uni<Result>
+        return Uni.combine().all().unis(rolesUnis)
+                .with(list -> BootstrapStepResult.success()); // list is List<RoleBO>
+
     }
 
-    private void createPermissions(String domain, List<PermissionConfig> permissions) {
+    private Uni<BootstrapStepResult> createPermissions(String domain, List<PermissionConfig> permissions) {
         if (permissions == null) {
-            return;
+            return null;
         }
 
         List<PermissionBO> permissionBOS = permissions.stream()
@@ -95,26 +135,32 @@ public class EntitiesBootstrap implements BootstrapStep {
                         .forAccounts(permission.isForAccounts())
                         .forApplications(permission.isForApplications())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
-        List<PermissionBO> existing = permissionBOS.stream()
-                .map(permission -> permissionsService.get(domain, permission.getGroup(), permission.getName()).join())
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toList());
+        List<Uni<BootstrapStepResult>> unis = permissionBOS.stream()
+                .map(permission -> {
+                    CompletableFuture<BootstrapStepResult> future = permissionsService.get(domain, permission.getGroup(), permission.getName())
+                            .thenCompose(opt -> {
+                                if (opt.isPresent()) {
+                                    return CompletableFuture.completedFuture(BootstrapStepResult.success());
+                                }
 
-        if (existing.size() == permissionBOS.size()) {
-            log.info("No new permissions to create for domain {}", domain);
+                                return permissionsService.create(permission.withDomain(domain))
+                                        .thenApply(created -> {
+                                            log.info("Created permission {}:{} in domain {}", permission.getGroup(), permission.getName(), domain);
+
+                                            return BootstrapStepResult.success();
+                                        });
+                            });
+                    return Uni.createFrom().completionStage(future);
+                })
+                .toList();
+
+        if (unis.isEmpty()) {
+            return Uni.createFrom().item(BootstrapStepResult.success());
         }
 
-        List<PermissionBO> difference = permissionBOS.stream()
-                .filter(permission -> !existing.contains(permission))
-                .collect(Collectors.toList());
-
-        difference.forEach(permission -> {
-            permissionsService.create(permission.withDomain(domain));
-
-            log.info("Created permission {}:{} in domain {}", permission.getGroup(), permission.getName(), domain);
-        });
+        return Uni.combine().all().unis(unis)
+                .with(ignored -> BootstrapStepResult.success());
     }
 }

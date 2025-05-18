@@ -214,6 +214,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                             .build();
 
                     return accountTokensRepository.save(accountToken)
+                            .subscribeAsCompletionStage()
                             .thenApply(persistedToken -> {
                                 LOG.info("Password reset token persisted. accountId={}, domain={}, tokenId={}, expiresAt={}",
                                         account.getId(), account.getDomain(), accountToken.getId(), accountToken.getExpiresAt());

@@ -66,7 +66,7 @@ public class OtpProvider implements AuthProvider {
                 .build();
 
         return otpRepository.save(serviceMapper.toDO(oneTimePassword))
-                .thenApply(persistedOtp -> {
+                .map(persistedOtp -> {
                     OtpMessageBody messageBody = new OtpMessageBody(oneTimePassword, account,
                             options,
                             otpConfig.getMethod() == OtpConfigInterface.Method.EMAIL,
@@ -78,7 +78,8 @@ public class OtpProvider implements AuthProvider {
                     messageBus.publish(OTP_CHANNEL, Messages.otpGenerated(messageBody, account.getDomain()));
 
                     return token;
-                });
+                })
+                .subscribeAsCompletionStage();
     }
 
     @Override

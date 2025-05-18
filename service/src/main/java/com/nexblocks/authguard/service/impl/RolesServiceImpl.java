@@ -13,6 +13,7 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.RoleBO;
+import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,8 +107,8 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public List<String> verifyRoles(final Collection<String> roles, final String domain, EntityType entityType) {
-        return rolesRepository.getMultiple(roles, domain)
+    public Uni<List<String>> verifyRoles(final Collection<String> roles, final String domain, EntityType entityType) {
+        return Uni.createFrom().completionStage(rolesRepository.getMultiple(roles, domain)
                 .thenApply(found -> found.stream()
                         .filter(role -> {
                             switch (entityType) {
@@ -118,6 +119,6 @@ public class RolesServiceImpl implements RolesService {
                         })
                         .map(RoleDO::getName)
                         .collect(Collectors.toList())
-                ).join();
+                ));
     }
 }

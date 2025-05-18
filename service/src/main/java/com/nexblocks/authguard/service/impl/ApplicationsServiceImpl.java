@@ -4,7 +4,6 @@ import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.model.AppDO;
 import com.nexblocks.authguard.dal.persistence.ApplicationsRepository;
 import com.nexblocks.authguard.dal.persistence.LongPage;
-import com.nexblocks.authguard.dal.persistence.Page;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.*;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
@@ -13,6 +12,7 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.AsyncUtils;
+import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,8 +60,11 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     private CompletableFuture<AppBO> doCreate(final AppBO app) {
-        verifyRolesOrFail(app.getRoles(), app.getDomain());
-        verifyPermissionsOrFail(app.getPermissions(), app.getDomain());
+        Uni<Void> roleValidationUni = verifyRolesOrFail(app.getRoles(), app.getDomain());
+        Uni<Void> permissionsValidationUni = verifyPermissionsOrFail(app.getPermissions(), app.getDomain());
+
+        Uni<Object> combined = Uni.combine().all().unis(roleValidationUni, permissionsValidationUni)
+                .with(ignored -> null);
 
         /*
          * It's undecided whether an app should be under an
@@ -69,7 +72,8 @@ public class ApplicationsServiceImpl implements ApplicationsService {
          * account exists if it's set.
          */
         if (app.getParentAccountId() != null) {
-            return accountsService.getById(app.getParentAccountId(), app.getDomain())
+            return combined.subscribeAsCompletionStage()
+                    .thenCompose(ignored -> accountsService.getById(app.getParentAccountId(), app.getDomain()))
                     .thenCompose(opt -> {
                         if (opt.isEmpty()) {
                             throw new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " + app.getParentAccountId() + " exists");
@@ -79,7 +83,8 @@ public class ApplicationsServiceImpl implements ApplicationsService {
                     });
         }
 
-        return persistenceService.create(app);
+        return combined.subscribeAsCompletionStage()
+                .thenCompose(ignored -> persistenceService.create(app));
     }
 
     @Override
@@ -90,7 +95,7 @@ public class ApplicationsServiceImpl implements ApplicationsService {
 
     @Override
     public CompletableFuture<Optional<AppBO>> getByExternalId(final long externalId, String domain) {
-        return applicationsRepository.getById(externalId)
+        return applicationsRepository.getById(externalId).subscribe().asCompletionStage()
                 .thenApply(optional -> optional
                         .filter(app -> Objects.equals(app.getDomain(), domain))
                         .map(serviceMapper::toBO));
@@ -164,16 +169,17 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     public CompletableFuture<Optional<AppBO>> grantPermissions(long id, List<PermissionBO> permissions, String domain) {
         return getById(id, domain)
                 .thenCompose(AsyncUtils::fromAppOptional)
+                .thenCompose(app -> verifyPermissionsOrFail(permissions, domain)
+                        .subscribeAsCompletionStage()
+                        .thenApply(ignored -> app))
                 .thenCompose(app -> {
-                    verifyPermissionsOrFail(permissions, domain);
-
                     List<PermissionBO> combinedPermissions = Stream.concat(app.getPermissions().stream(), permissions.stream())
                             .distinct()
                             .collect(Collectors.toList());
 
                     AppBO withNewPermissions = app.withPermissions(combinedPermissions);
 
-                    return applicationsRepository.update(serviceMapper.toDO(withNewPermissions))
+                    return applicationsRepository.update(serviceMapper.toDO(withNewPermissions)).subscribe().asCompletionStage()
                             .thenApply(updated -> updated.map(appDO -> {
                                 LOG.info("Granted app permissions. accountId={}, domain={}, permissions={}",
                                         app.getId(), app.getDomain(), permissions);
@@ -201,7 +207,7 @@ public class ApplicationsServiceImpl implements ApplicationsService {
 
                     AppBO withNewPermissions = app.withPermissions(filteredPermissions);
 
-                    return applicationsRepository.update(serviceMapper.toDO(withNewPermissions))
+                    return applicationsRepository.update(serviceMapper.toDO(withNewPermissions)).subscribe().asCompletionStage()
                             .thenApply(updated -> updated.map(appDO -> {
                                 LOG.info("Revoked app permissions. accountId={}, domain={}, permissions={}",
                                         app.getId(), app.getDomain(), permissionsFullNames);
@@ -215,9 +221,10 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     public CompletableFuture<Optional<AppBO>> grantRoles(long id, List<String> roles, String domain) {
         return getById(id, domain)
                 .thenCompose(AsyncUtils::fromAppOptional)
+                .thenCompose(app -> verifyRolesOrFail(roles, app.getDomain())
+                        .subscribeAsCompletionStage()
+                        .thenApply(ignored -> app))
                 .thenCompose(app -> {
-                    verifyRolesOrFail(roles, app.getDomain());
-
                     LOG.info("Grant app roles request. accountId={}, domain={}, permissions={}",
                             app.getId(), app.getDomain(), roles);
 
@@ -227,7 +234,7 @@ public class ApplicationsServiceImpl implements ApplicationsService {
 
                     AppBO withNewRoles = app.withRoles(combinedRoles);
 
-                    return applicationsRepository.update(serviceMapper.toDO(withNewRoles))
+                    return applicationsRepository.update(serviceMapper.toDO(withNewRoles)).subscribe().asCompletionStage()
                             .thenApply(updated -> updated.map(appDO -> {
                                 LOG.info("Granted app roles request. accountId={}, domain={}, permissions={}",
                                         app.getId(), app.getDomain(), roles);
@@ -251,7 +258,7 @@ public class ApplicationsServiceImpl implements ApplicationsService {
 
                     AppBO withNewRoles = app.withRoles(filteredRoles);
 
-                    return applicationsRepository.update(serviceMapper.toDO(withNewRoles))
+                    return applicationsRepository.update(serviceMapper.toDO(withNewRoles)).subscribe().asCompletionStage()
                             .thenApply(updated -> updated.map(appDO -> {
                                 LOG.info("Revoked app roles. accountId={}, domain={}, permissions={}",
                                         app.getId(), app.getDomain(), roles);
@@ -261,32 +268,40 @@ public class ApplicationsServiceImpl implements ApplicationsService {
                 });
     }
 
-    private void verifyRolesOrFail(final Collection<String> roles, final String domain) {
-        final List<String> verifiedRoles = rolesService.verifyRoles(roles, domain, EntityType.APPLICATION);
 
-        if (verifiedRoles.size() != roles.size()) {
-            final List<String> difference = roles.stream()
-                    .filter(role -> !verifiedRoles.contains(role))
-                    .collect(Collectors.toList());
+    private Uni<Void> verifyRolesOrFail(final Collection<String> roles, final String domain) {
+        return rolesService.verifyRoles(roles, domain, EntityType.APPLICATION)
+                .flatMap(verifiedRoles-> {
+                    if (verifiedRoles.size() != roles.size()) {
+                        List<String> difference = roles.stream()
+                                .filter(role -> !verifiedRoles.contains(role))
+                                .toList();
 
-            throw new ServiceException(ErrorCode.ROLE_DOES_NOT_EXIST, "The following roles are not valid " + difference);
-        }
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.ROLE_DOES_NOT_EXIST,
+                                "The following roles are not valid " + difference));
+                    }
+
+                    return Uni.createFrom().voidItem();
+                });
     }
 
-    private void verifyPermissionsOrFail(final Collection<PermissionBO> permissions, final String domain) {
-        List<PermissionBO> verifiedPermissions = permissionsService.validate(permissions, domain, EntityType.APPLICATION);
+    private Uni<Void> verifyPermissionsOrFail(final Collection<PermissionBO> permissions, final String domain) {
+        return permissionsService.validate(permissions, domain, EntityType.APPLICATION)
+                .flatMap(verifiedPermissions -> {
+                    if (verifiedPermissions.size() != permissions.size()) {
+                        Set<String> verifiedPermissionNames = verifiedPermissions.stream()
+                                .map(Permission::getFullName)
+                                .collect(Collectors.toSet());
+                        List<String> difference = permissions.stream()
+                                .map(Permission::getFullName)
+                                .filter(permission -> !verifiedPermissionNames.contains(permission))
+                                .toList();
 
-        if (verifiedPermissions.size() != permissions.size()) {
-            Set<String> verifiedPermissionNames = verifiedPermissions.stream()
-                    .map(Permission::getFullName)
-                    .collect(Collectors.toSet());
-            List<String> difference = permissions.stream()
-                    .map(Permission::getFullName)
-                    .filter(permission -> !verifiedPermissionNames.contains(permission))
-                    .collect(Collectors.toList());
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.PERMISSION_DOES_NOT_EXIST,
+                                "The following permissions are not valid " + difference));
+                    }
 
-            throw new ServiceException(ErrorCode.PERMISSION_DOES_NOT_EXIST,
-                    "The following permissions are not valid " + difference);
-        }
+                    return Uni.createFrom().voidItem();
+                });
     }
 }

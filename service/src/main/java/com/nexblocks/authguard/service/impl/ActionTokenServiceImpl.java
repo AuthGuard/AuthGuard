@@ -152,6 +152,8 @@ public class ActionTokenServiceImpl implements ActionTokenService {
                 .expiresAt(now.plus(TOKEN_LIFETIME))
                 .build();
 
-        return accountTokensRepository.save(accountToken).join();
+        return accountTokensRepository.save(accountToken)
+                .subscribeAsCompletionStage()
+                .join();
     }
 }

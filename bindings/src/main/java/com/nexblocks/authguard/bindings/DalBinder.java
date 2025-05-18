@@ -23,7 +23,7 @@ public class DalBinder extends AbstractModule {
     @Override
     public void configure() {
         // essential bindings
-        bindAndRegister(CredentialsRepository.class);
+//        bindAndRegister(CredentialsRepository.class);
         bindAndRegister(CredentialsAuditRepository.class);
         bindAndRegister(AccountsRepository.class);
         bindAndRegister(ApplicationsRepository.class);

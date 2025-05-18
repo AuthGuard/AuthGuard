@@ -1,9 +1,10 @@
 package com.nexblocks.authguard.rest;
 
-import com.nexblocks.authguard.config.ConfigContext;
-import com.nexblocks.authguard.config.JacksonConfigContext;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.nexblocks.authguard.config.ConfigContext;
+import com.nexblocks.authguard.config.JacksonConfigContext;
+import com.nexblocks.authguard.rest.vertx.VertxServerRunner;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -12,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class AuthGuardCliTest {
     private ConfigurationLoader configurationLoader;
-    private ServerRunner serverRunner;
+    private VertxServerRunner serverRunner;
     private final ConfigContext configContext = new JacksonConfigContext(new ObjectNode(JsonNodeFactory.instance));
 
     private AuthGuardCli cli;
@@ -20,7 +21,7 @@ class AuthGuardCliTest {
     @BeforeEach
     void setup() {
         configurationLoader = Mockito.mock(ConfigurationLoader.class);
-        serverRunner = Mockito.mock(ServerRunner.class);
+        serverRunner = Mockito.mock(VertxServerRunner.class);
 
         Mockito.when(configurationLoader.loadFromFile(Mockito.any()))
                 .thenReturn(configContext);

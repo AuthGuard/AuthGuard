@@ -5,6 +5,7 @@ import com.nexblocks.authguard.api.dto.validation.Validator;
 import com.nexblocks.authguard.api.dto.validation.validators.Validators;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import io.javalin.http.Context;
+import io.vertx.ext.web.RoutingContext;
 
 import java.util.List;
 
@@ -23,6 +24,22 @@ public class BodyHandler<T> {
 
     public T getValidated(final Context context) {
         T body = RestJsonMapper.asClass(context.body(), bodyClass);
+
+        if (DomainScoped.class.isAssignableFrom(body.getClass())) {
+            EntityDomainChecker.checkEntityDomainOrFail((DomainScoped) body, context);
+        }
+
+        List<Violation> violations = validator.validate(body);
+
+        if (!violations.isEmpty()) {
+            throw new RequestValidationException(violations);
+        }
+
+        return body;
+    }
+
+    public T getValidated(final RoutingContext context) {
+        T body = context.body().asPojo(bodyClass);
 
         if (DomainScoped.class.isAssignableFrom(body.getClass())) {
             EntityDomainChecker.checkEntityDomainOrFail((DomainScoped) body, context);

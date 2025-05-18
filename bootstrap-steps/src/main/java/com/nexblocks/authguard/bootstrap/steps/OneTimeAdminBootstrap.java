@@ -1,16 +1,21 @@
 package com.nexblocks.authguard.bootstrap.steps;
 
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.nexblocks.authguard.bootstrap.BootstrapStep;
+import com.nexblocks.authguard.bootstrap.BootstrapStepResult;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.RolesService;
 import com.nexblocks.authguard.service.exceptions.ConfigurationException;
 import com.nexblocks.authguard.service.model.*;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.tuples.Tuple2;
+import io.smallrye.mutiny.tuples.Tuples;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -35,28 +40,48 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
     }
 
     @Override
-    public void run() {
-        final List<AccountBO> admins = accountsService.getAdmins().join();
-        final List<AccountBO> oneTimeAdmins = accountsService.getByRole(OTA_ROLE, RESERVED_DOMAIN).join();
+    public Uni<BootstrapStepResult> run() {
+        return accountsService.getAdmins()
+                .flatMap(admins -> {
+                    return accountsService.getByRole(OTA_ROLE, RESERVED_DOMAIN)
+                            .map(oneTimeAdmins -> Tuple2.of(admins, oneTimeAdmins));
+                })
+                .flatMap(tuple -> {
+                    List<AccountBO> admins = tuple.getItem1();
+                    List<AccountBO> oneTimeAdmins = tuple.getItem2();
 
-        if (admins.isEmpty() && oneTimeAdmins.isEmpty()) {
-            log.info("No admin accounts were found, a one-time admin account will be created");
+                    if (admins.isEmpty() && oneTimeAdmins.isEmpty()) {
+                        log.info("No admin accounts were found, a one-time admin account will be created");
 
-            if (rolesService.getRoleByName(OTA_ROLE, RESERVED_DOMAIN).join().isEmpty()) {
-                log.info("Default role {} wasn't found and will be created", OTA_ROLE);
+                        return createOneTimeAdmin().map(createdAccount -> {
+                            log.info("A one-time admin account was created with {}", createdAccount.getIdentifiers());
 
-                final RoleBO created = createOtaRole();
-                log.info("Created default role {}", created);
-            }
+                            return BootstrapStepResult.success();
+                        });
+                    }
 
-            final RequestContextBO requestContext = RequestContextBO.builder()
-                    .idempotentKey(UUID.randomUUID().toString())
-                    .build();
+                    return Uni.createFrom().item(BootstrapStepResult.success());
+                });
+    }
 
-            final AccountBO createdAccount = accountsService.create(oneTimeAccount(), requestContext).join();
+    private Uni<AccountBO> createOneTimeAdmin() {
+        return Uni.createFrom().completionStage(rolesService.getRoleByName(OTA_ROLE, RESERVED_DOMAIN))
+                .flatMap(opt -> {
+                    if (opt.isEmpty()) {
+                        log.info("Default role {} wasn't found and will be created", OTA_ROLE);
 
-            log.info("A one-time admin account was created with {}", createdAccount.getIdentifiers());
-        }
+                        return createOtaRole();
+                    }
+
+                    return Uni.createFrom().item(opt.get());
+                })
+                .flatMap(role -> {
+                    final RequestContextBO requestContext = RequestContextBO.builder()
+                            .idempotentKey(UUID.randomUUID().toString())
+                            .build();
+
+                    return Uni.createFrom().completionStage(accountsService.create(oneTimeAccount(), requestContext));
+                });
     }
 
     private AccountBO oneTimeAccount() {
@@ -91,14 +116,14 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
                 .build();
     }
 
-    private RoleBO createOtaRole() {
+    private Uni<RoleBO> createOtaRole() {
         final RoleBO role = RoleBO.builder()
                 .name(OneTimeAdminBootstrap.OTA_ROLE)
                 .domain(RESERVED_DOMAIN)
                 .forAccounts(true)
                 .build();
 
-        return rolesService.create(role).join();
+        return Uni.createFrom().completionStage(rolesService.create(role));
     }
 
 }

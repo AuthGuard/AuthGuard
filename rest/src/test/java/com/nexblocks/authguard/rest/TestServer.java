@@ -11,6 +11,7 @@ import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.rest.bindings.MappersBinder;
 import com.nexblocks.authguard.rest.config.ImmutableServerConfig;
 import com.nexblocks.authguard.rest.server.AuthGuardServer;
+import com.nexblocks.authguard.rest.vertx.RoutesBindings;
 import io.javalin.Javalin;
 
 import java.util.Collections;
@@ -34,7 +35,8 @@ class TestServer {
                 new MocksBinder(),
                 new MappersBinder(),
                 new ConfigBinder(configContext),
-                new ApiRoutesBinder(Collections.singleton("com.nexblocks.authguard"), configContext));
+                new ApiRoutesBinder(Collections.singleton("com.nexblocks.authguard"), configContext),
+                new RoutesBindings(Collections.singleton("com.nexblocks.authguard"), configContext));
 
         List<Binding<ApiRoute>> routeBindings =
                 injector.findBindingsByType(TypeLiteral.get(ApiRoute.class));

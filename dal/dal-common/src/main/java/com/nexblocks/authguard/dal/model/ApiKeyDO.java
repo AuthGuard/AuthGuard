@@ -1,15 +1,12 @@
 package com.nexblocks.authguard.dal.model;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import javax.persistence.Entity;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 import java.time.Instant;
 
 @Data
@@ -38,6 +35,7 @@ import java.time.Instant;
                 "WHERE api_key.key = :key AND api_key.deleted = false"
 )
 public class ApiKeyDO extends AbstractDO {
+    @Column(name = "\"key\"")
     private String key;
     private long appId;
     private String type;

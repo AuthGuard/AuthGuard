@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.nexblocks.authguard.api.access.ActorRoles;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.common.Cursors;
 import com.nexblocks.authguard.api.common.Domain;
@@ -17,6 +18,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static io.javalin.apibuilder.ApiBuilder.get;
+
 public class EventsRoute extends EventsApi {
     private final EventsService eventsService;
     private final RestMapper restMapper;
@@ -25,6 +28,16 @@ public class EventsRoute extends EventsApi {
     public EventsRoute(final EventsService eventsService, final RestMapper restMapper) {
         this.eventsService = eventsService;
         this.restMapper = restMapper;
+    }
+
+    @Override
+    public String getPath() {
+        return "/domains/{domain}/events";
+    }
+
+    @Override
+    public void addEndpoints() {
+        get("/", this::getByDomain, ActorRoles.adminClient());
     }
 
     @Override

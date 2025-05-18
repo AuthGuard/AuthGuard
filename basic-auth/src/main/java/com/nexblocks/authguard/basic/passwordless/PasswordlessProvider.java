@@ -62,7 +62,7 @@ public class PasswordlessProvider implements AuthProvider {
                 .build();
 
         return accountTokensRepository.save(accountToken)
-                .thenApply(persistedToken -> {
+                .map(persistedToken -> {
                     PasswordlessMessageBody messageBody =
                             new PasswordlessMessageBody(persistedToken, account, tokenOptions);
 
@@ -75,7 +75,8 @@ public class PasswordlessProvider implements AuthProvider {
                             .entityId(account.getId())
                             .trackingSession(tokenOptions.getTrackingSession())
                             .build();
-                });
+                })
+                .subscribeAsCompletionStage();
     }
 
     @Override

@@ -21,6 +21,7 @@ import com.nexblocks.authguard.service.util.AccountPreProcessor;
 import com.nexblocks.authguard.service.util.AccountUpdateMerger;
 import com.nexblocks.authguard.service.util.CredentialsManager;
 import com.nexblocks.authguard.service.util.ValueComparator;
+import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,13 +75,16 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     private CompletableFuture<AccountBO> doCreate(final AccountBO account) {
-        final AccountBO withHashedPasswords = credentialsManager.verifyAndHashPlainPassword(account);
-        final AccountBO preProcessed = AccountPreProcessor.preProcess(withHashedPasswords, accountConfig);
+        AccountBO withHashedPasswords = credentialsManager.verifyAndHashPlainPassword(account);
+        AccountBO preProcessed = AccountPreProcessor.preProcess(withHashedPasswords, accountConfig);
 
-        verifyRolesOrFail(preProcessed.getRoles(), preProcessed.getDomain());
-        verifyPermissionsOrFail(preProcessed.getPermissions(), preProcessed.getDomain());
+        Uni<Void> roleValidationUni = verifyRolesOrFail(preProcessed.getRoles(), preProcessed.getDomain());
+        Uni<Void> permissionsValidationUni = verifyPermissionsOrFail(preProcessed.getPermissions(), preProcessed.getDomain());
 
-        return persistenceService.create(preProcessed)
+        return Uni.combine().all().unis(roleValidationUni, permissionsValidationUni)
+                .with(ignored -> null)
+                .subscribeAsCompletionStage()
+                .thenCompose(ignored -> persistenceService.create(preProcessed))
                 .thenApply(created -> {
                     if (accountConfig.verifyEmail()) {
                         final List<AccountEmailBO> toVerify = new ArrayList<>(2);
@@ -163,6 +167,7 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public CompletableFuture<Optional<AccountBO>> getByIdentifier(final String identifier, final String domain) {
         return accountsRepository.findByIdentifier(identifier, domain)
+                .subscribeAsCompletionStage()
                 .thenApply(opt -> opt
                         .map(serviceMapper::toBO)
                         .map(credentialsManager::removeSensitiveInformation));
@@ -171,6 +176,7 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public CompletableFuture<Optional<AccountBO>> getByIdentifierUnsafe(final String identifier, final String domain) {
         return accountsRepository.findByIdentifier(identifier, domain)
+                .subscribeAsCompletionStage()
                 .thenApply(opt -> opt.map(serviceMapper::toBO));
     }
 
@@ -300,16 +306,17 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public CompletableFuture<Optional<AccountBO>> grantPermissions(final long accountId, final List<PermissionBO> permissions, String domain) {
         return getByIdUnsafe(accountId, domain)
+                .thenCompose(account -> verifyPermissionsOrFail(permissions, account.getDomain())
+                        .subscribeAsCompletionStage()
+                        .thenApply(ignored -> account))
                 .thenCompose(account -> {
-                    verifyPermissionsOrFail(permissions, account.getDomain());
-
                     List<PermissionBO> combinedPermissions = Stream.concat(account.getPermissions().stream(), permissions.stream())
                             .distinct()
                             .collect(Collectors.toList());
 
                     AccountBO withNewPermissions = account.withPermissions(combinedPermissions);
 
-                    return accountsRepository.update(serviceMapper.toDO(withNewPermissions))
+                    return accountsRepository.update(serviceMapper.toDO(withNewPermissions)).subscribe().asCompletionStage()
                             .thenApply(updated -> updated.map(accountDO -> {
                                 LOG.info("Granted account permissions. accountId={}, domain={}, permissions={}",
                                         account.getId(), account.getDomain(), permissions);
@@ -336,7 +343,7 @@ public class AccountsServiceImpl implements AccountsService {
 
                     AccountBO withNewPermissions = account.withPermissions(filteredPermissions);
 
-                    return accountsRepository.update(serviceMapper.toDO(withNewPermissions))
+                    return accountsRepository.update(serviceMapper.toDO(withNewPermissions)).subscribe().asCompletionStage()
                             .thenApply(updated -> updated.map(accountDO -> {
                                         LOG.info("Revoked account permissions. accountId={}, domain={}, permissions={}",
                                                 account.getId(), account.getDomain(), permissionsFullNames);
@@ -349,9 +356,10 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public CompletableFuture<Optional<AccountBO>> grantRoles(final long accountId, final List<String> roles, String domain) {
         return getByIdUnsafe(accountId, domain)
+                .thenCompose(account -> verifyRolesOrFail(roles, account.getDomain())
+                        .subscribeAsCompletionStage()
+                        .thenApply(ignored -> account))
                 .thenCompose(account -> {
-                    verifyRolesOrFail(roles, account.getDomain());
-
                     LOG.info("Grant account roles request. accountId={}, domain={}, permissions={}",
                             account.getId(), account.getDomain(), roles);
 
@@ -361,7 +369,7 @@ public class AccountsServiceImpl implements AccountsService {
 
                     AccountBO withNewRoles = account.withRoles(combinedRoles);
 
-                    return accountsRepository.update(serviceMapper.toDO(withNewRoles))
+                    return accountsRepository.update(serviceMapper.toDO(withNewRoles)).subscribe().asCompletionStage()
                             .thenApply(updated -> updated.map(accountDO -> {
                                         LOG.info("Granted account roles request. accountId={}, domain={}, permissions={}",
                                                 account.getId(), account.getDomain(), roles);
@@ -384,7 +392,7 @@ public class AccountsServiceImpl implements AccountsService {
 
                     AccountBO withNewRoles = account.withRoles(filteredRoles);
 
-                    return accountsRepository.update(serviceMapper.toDO(withNewRoles))
+                    return accountsRepository.update(serviceMapper.toDO(withNewRoles)).subscribe().asCompletionStage()
                             .thenApply(updated -> updated.map(accountDO -> {
                                 LOG.info("Revoked account roles. accountId={}, domain={}, permissions={}",
                                         account.getId(), account.getDomain(), roles);
@@ -395,45 +403,51 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<List<AccountBO>> getAdmins() {
+    public Uni<List<AccountBO>> getAdmins() {
         return getByRole(accountConfig.getAuthguardAdminRole(), "global");
     }
 
     @Override
-    public CompletableFuture<List<AccountBO>> getByRole(final String role, final String domain) {
+    public Uni<List<AccountBO>> getByRole(final String role, final String domain) {
         return accountsRepository.getByRole(role, domain)
-                .thenApply(accounts -> accounts.stream()
+                .map(accounts -> accounts.stream()
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList()));
     }
 
-    private void verifyRolesOrFail(final Collection<String> roles, final String domain) {
-        List<String> verifiedRoles = rolesService.verifyRoles(roles, domain, EntityType.ACCOUNT);
+    private Uni<Void> verifyRolesOrFail(final Collection<String> roles, final String domain) {
+        return rolesService.verifyRoles(roles, domain, EntityType.ACCOUNT)
+                .flatMap(verifiedRoles-> {
+                    if (verifiedRoles.size() != roles.size()) {
+                        List<String> difference = roles.stream()
+                                .filter(role -> !verifiedRoles.contains(role))
+                                .collect(Collectors.toList());
 
-        if (verifiedRoles.size() != roles.size()) {
-            List<String> difference = roles.stream()
-                    .filter(role -> !verifiedRoles.contains(role))
-                    .collect(Collectors.toList());
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.ROLE_DOES_NOT_EXIST,
+                                "The following roles are not valid " + difference));
+                    }
 
-            throw new ServiceException(ErrorCode.ROLE_DOES_NOT_EXIST,
-                    "The following roles are not valid " + difference);
-        }
+                    return Uni.createFrom().voidItem();
+                });
     }
 
-    private void verifyPermissionsOrFail(final Collection<PermissionBO> permissions, final String domain) {
-        List<PermissionBO> verifiedPermissions = permissionsService.validate(permissions, domain, EntityType.ACCOUNT);
+    private Uni<Void> verifyPermissionsOrFail(final Collection<PermissionBO> permissions, final String domain) {
+        return permissionsService.validate(permissions, domain, EntityType.ACCOUNT)
+                .flatMap(verifiedPermissions -> {
+                    if (verifiedPermissions.size() != permissions.size()) {
+                        Set<String> verifiedPermissionNames = verifiedPermissions.stream()
+                                .map(Permission::getFullName)
+                                .collect(Collectors.toSet());
+                        List<String> difference = permissions.stream()
+                                .map(Permission::getFullName)
+                                .filter(permission -> !verifiedPermissionNames.contains(permission))
+                                .collect(Collectors.toList());
 
-        if (verifiedPermissions.size() != permissions.size()) {
-            Set<String> verifiedPermissionNames = verifiedPermissions.stream()
-                    .map(Permission::getFullName)
-                    .collect(Collectors.toSet());
-            List<String> difference = permissions.stream()
-                    .map(Permission::getFullName)
-                    .filter(permission -> !verifiedPermissionNames.contains(permission))
-                    .collect(Collectors.toList());
+                        throw new ServiceException(ErrorCode.PERMISSION_DOES_NOT_EXIST,
+                                "The following permissions are not valid " + difference);
+                    }
 
-            throw new ServiceException(ErrorCode.PERMISSION_DOES_NOT_EXIST,
-                    "The following permissions are not valid " + difference);
-        }
+                    return Uni.createFrom().voidItem();
+                });
     }
 }

@@ -6,9 +6,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import javax.persistence.Convert;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
 import java.time.Instant;
 
 @Data

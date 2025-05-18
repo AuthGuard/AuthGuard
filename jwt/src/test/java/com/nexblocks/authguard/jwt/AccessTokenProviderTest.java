@@ -14,6 +14,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.*;
+import io.smallrye.mutiny.Uni;
 import io.vavr.control.Either;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
@@ -99,7 +100,7 @@ class AccessTokenProviderTest {
 
         Mockito.when(accountTokensRepository.save(Mockito.any())).thenAnswer(invocation -> {
             AccountTokenDO arg = invocation.getArgument(0);
-            return CompletableFuture.completedFuture(arg);
+            return Uni.createFrom().item(arg);
         });
 
         return new AccessTokenProvider(trackingSessionsService, accountTokensRepository, jwtConfig,

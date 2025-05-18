@@ -3,6 +3,7 @@ package com.nexblocks.authguard.service;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.PermissionBO;
+import io.smallrye.mutiny.Uni;
 
 import java.util.List;
 import java.util.Optional;
@@ -64,12 +65,12 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
      * Finds a list of all admins. This is useful only when deciding
      * if a one-time admin account should be created or not.
      */
-    CompletableFuture<List<AccountBO>> getAdmins();
+    Uni<List<AccountBO>> getAdmins();
 
     /**
      * Finds a list of all accounts with a certain role.
      * This is useful only when deciding if a one-time
      * admin account should be created or not.
      */
-    CompletableFuture<List<AccountBO>> getByRole(String role, String domain);
+    Uni<List<AccountBO>> getByRole(String role, String domain);
 }

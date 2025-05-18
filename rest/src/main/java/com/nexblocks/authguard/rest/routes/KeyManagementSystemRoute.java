@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.nexblocks.authguard.api.access.ActorRoles;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.common.BodyHandler;
 import com.nexblocks.authguard.api.common.Cursors;
@@ -28,6 +29,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static io.javalin.apibuilder.ApiBuilder.*;
+
 public class KeyManagementSystemRoute extends KeyManagementSystemApi {
 
     private final KeyManagementService keyManagementService;
@@ -42,6 +45,19 @@ public class KeyManagementSystemRoute extends KeyManagementSystemApi {
 
         this.requestBodyHandler = new BodyHandler.Builder<>(CryptoKeyRequestDTO.class)
                 .build();
+    }
+
+    @Override
+    public String getPath() {
+        return "/domains/{domain}/kms";
+    }
+
+    @Override
+    public void addEndpoints() {
+        post("/generator", this::generate, ActorRoles.adminClient());
+        get("/keys", this::getByDomain, ActorRoles.adminClient());
+        get("/keys/{id}", this::getById, ActorRoles.adminClient());
+        delete("/keys/{id}", this::deleteById, ActorRoles.adminClient());
     }
 
     @Override

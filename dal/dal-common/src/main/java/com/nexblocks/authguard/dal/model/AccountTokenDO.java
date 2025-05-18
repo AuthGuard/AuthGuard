@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.Map;
 
@@ -37,8 +37,8 @@ public class AccountTokenDO extends AbstractDO {
     private String domain;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    @MapKeyColumn(name="key")
-    @Column(name="value")
+    @MapKeyColumn(name="\"key\"")
+    @Column(name="\"value\"")
     private Map<String, String> additionalInformation;
 
     @Embedded

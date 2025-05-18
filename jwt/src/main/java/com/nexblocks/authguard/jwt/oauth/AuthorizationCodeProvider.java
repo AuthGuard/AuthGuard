@@ -76,12 +76,13 @@ public class AuthorizationCodeProvider implements AuthProvider {
         }
 
         return accountTokensRepository.save(accountToken.build())
-                .thenApply(ignored -> AuthResponseBO.builder()
+                .map(ignored -> AuthResponseBO.builder()
                         .type("authorizationCode")
                         .token(code)
                         .entityType(EntityType.ACCOUNT)
                         .entityId(account.getId())
-                        .build());
+                        .build())
+                .subscribeAsCompletionStage();
     }
 
     @Override

@@ -9,6 +9,7 @@ import com.nexblocks.authguard.service.config.RolesConfig;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.PermissionBO;
 import com.nexblocks.authguard.service.model.RoleBO;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -67,6 +68,11 @@ class EntitiesBootstrapTest {
         Mockito.when(rolesService.getRoleByName(Mockito.anyString(), Mockito.anyString()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
+        Mockito.when(rolesService.create(Mockito.any()))
+                        .thenAnswer(invocation -> CompletableFuture.completedFuture(
+                                invocation.getArgument(0, RoleBO.class)
+                        ));
+
         Mockito.when(permissionsService.get("test", "tests", "existing"))
                         .thenReturn(CompletableFuture.completedFuture(Optional.of(
                                 PermissionBO.builder()
@@ -80,11 +86,16 @@ class EntitiesBootstrapTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         Mockito.when(permissionsService.validate(Mockito.anyList(), Mockito.anyString(), Mockito.any()))
-                .thenReturn(Collections.singletonList(PermissionBO.builder()
+                .thenReturn(Uni.createFrom().item(Collections.singletonList(PermissionBO.builder()
                         .group("tests")
                         .name("existing")
                         .domain("test")
-                        .build()));
+                        .build())));
+
+        Mockito.when(permissionsService.create(Mockito.any()))
+                .thenAnswer(invocation -> CompletableFuture.completedFuture(
+                        invocation.getArgument(0, PermissionBO.class)
+                ));
 
         entitiesBootstrap.run();
 

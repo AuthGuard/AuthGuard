@@ -1,15 +1,15 @@
 package com.nexblocks.authguard.dal.model;
 
 import com.google.common.collect.ImmutableMap;
+import jakarta.persistence.PersistenceException;
 import org.assertj.core.api.Assertions;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceException;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import java.util.Collections;
 import java.util.List;
 
@@ -41,7 +41,7 @@ class AccountJpaTest {
         readPermissionId = idCounter++;
         PermissionDO readPostsPermission = PermissionDO.builder()
                 .id(readPermissionId)
-                .group("posts")
+                .permissionGroup("posts")
                 .name("read")
                 .build();
         entityManager.persist(readPostsPermission);
@@ -57,7 +57,7 @@ class AccountJpaTest {
                 .externalId("test-account-external")
                 .permissions(Collections.singleton(PermissionDO.builder()
                         .id(readPostsPermission.getId())
-                        .group("posts")
+                        .permissionGroup("posts")
                         .name("read")
                         .build()))
                 .email(EmailDO.builder()

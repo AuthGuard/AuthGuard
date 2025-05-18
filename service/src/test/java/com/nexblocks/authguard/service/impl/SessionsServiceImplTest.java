@@ -8,6 +8,7 @@ import com.nexblocks.authguard.service.config.SessionsConfig;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.SessionBO;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -43,7 +44,7 @@ class SessionsServiceImplTest {
                 .build();
 
         Mockito.when(repository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, SessionDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, SessionDO.class)));
 
         SessionBO created = service.create(sessionBO).join();
 
@@ -65,7 +66,7 @@ class SessionsServiceImplTest {
                 .build();
 
         Mockito.when(repository.getById(sessionDO.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(sessionDO)));
+                .thenReturn(Uni.createFrom().item(Optional.of(sessionDO)));
 
         SessionBO expected = serviceMapper.toBO(sessionDO);
         Optional<SessionBO> actual = service.getById(sessionDO.getId()).join();

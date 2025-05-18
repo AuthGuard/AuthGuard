@@ -52,6 +52,7 @@ public class OtpVerifier implements AuthVerifier {
         String otp = parts[1];
 
         return otpRepository.getById(passwordId)
+                .subscribeAsCompletionStage()
                 .thenCompose(opt -> {
                     Optional<OneTimePasswordBO> generatedOpt = opt.map(serviceMapper::toBO);
 

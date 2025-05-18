@@ -44,6 +44,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.nexblocks.authguard</groupId>
+            <artifactId>dal-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>de.mkammerer.snowflake-id</groupId>
             <artifactId>snowflake-id</artifactId>
             <version>0.0.1</version>

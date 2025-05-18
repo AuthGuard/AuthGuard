@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.nexblocks.authguard.api.access.ActorRoles;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.common.Domain;
 import com.nexblocks.authguard.api.dto.entities.SessionDTO;
@@ -12,6 +13,8 @@ import io.javalin.http.Context;
 
 import java.util.concurrent.CompletableFuture;
 
+import static io.javalin.apibuilder.ApiBuilder.delete;
+
 public class TrackingSessionsRoute extends TrackingSessionsApi {
     private final TrackingSessionsService trackingSessionsService;
     private final RestMapper restMapper;
@@ -20,6 +23,16 @@ public class TrackingSessionsRoute extends TrackingSessionsApi {
     public TrackingSessionsRoute(final TrackingSessionsService trackingSessionsService, final RestMapper restMapper) {
         this.trackingSessionsService = trackingSessionsService;
         this.restMapper = restMapper;
+    }
+
+    @Override
+    public String getPath() {
+        return "/domains/{domain}/tracking_sessions";
+    }
+
+    @Override
+    public void addEndpoints() {
+        delete("/{token}", this::deleteById, ActorRoles.adminClient());
     }
 
     @Override

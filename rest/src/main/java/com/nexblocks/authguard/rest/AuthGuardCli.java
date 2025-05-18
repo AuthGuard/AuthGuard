@@ -4,6 +4,7 @@ import com.google.inject.CreationException;
 import com.google.inject.ProvisionException;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.rest.exceptions.InitializationException;
+import com.nexblocks.authguard.rest.vertx.VertxServerRunner;
 import com.nexblocks.authguard.service.exceptions.ConfigurationException;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
@@ -14,10 +15,18 @@ public class AuthGuardCli {
 
     private final ConfigurationLoader configurationLoader;
     private final ServerRunner serverRunner;
+    private final VertxServerRunner vertxServerRunner;
 
     public AuthGuardCli(final ConfigurationLoader configurationLoader, final ServerRunner serverRunner) {
         this.configurationLoader = configurationLoader;
         this.serverRunner = serverRunner;
+        this.vertxServerRunner = null;
+    }
+
+    public AuthGuardCli(final ConfigurationLoader configurationLoader, final VertxServerRunner serverRunner) {
+        this.configurationLoader = configurationLoader;
+        this.serverRunner = null;
+        this.vertxServerRunner = serverRunner;
     }
 
     public int execute(final String[] args) {
@@ -55,7 +64,9 @@ public class AuthGuardCli {
         }
 
         try {
-            serverRunner.run(configContext, cmd.hasOption("disable-bootstrap"), cmd.hasOption("disable-server"));
+//            serverRunner.run(configContext, cmd.hasOption("disable-bootstrap"), cmd.hasOption("disable-server"));
+
+            vertxServerRunner.run(configContext, cmd.hasOption("disable-bootstrap"), cmd.hasOption("disable-server"));
         } catch (final ProvisionException | CreationException e) {
             log.error("Failed to initialize the server. Error: ", e);
 

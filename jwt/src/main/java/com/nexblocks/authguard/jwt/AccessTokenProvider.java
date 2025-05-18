@@ -169,7 +169,8 @@ public class AccessTokenProvider implements AuthProvider {
                     .userAgent(tokenOptions.getUserAgent());
         }
 
-        return accountTokensRepository.save(accountToken.build());
+        return accountTokensRepository.save(accountToken.build())
+                .subscribeAsCompletionStage();
     }
 
     private CompletableFuture<Optional<AccountTokenDO>> deleteRefreshToken(final String refreshToken) {

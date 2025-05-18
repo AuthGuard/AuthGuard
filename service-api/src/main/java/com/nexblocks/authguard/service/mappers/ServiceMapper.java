@@ -27,7 +27,9 @@ public interface ServiceMapper {
     ApiKeyDO toDO(ApiKeyBO apiKeyBO);
     ApiKeyBO toBO(ApiKeyDO apiKeyDO);
 
+    @Mapping(target = "permissionGroup", source = "group")
     PermissionDO toDO(PermissionBO permissionBO);
+    @Mapping(target = "group", source = "permissionGroup")
     PermissionBO toBO(PermissionDO permissionDO);
 
     RoleDO toDO(RoleBO roleBO);

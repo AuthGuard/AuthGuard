@@ -9,6 +9,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.AuthRequest;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
+import io.smallrye.mutiny.Uni;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
@@ -60,7 +61,7 @@ class OtpVerifierTest {
                 .build();
 
         Mockito.when(mockOtpRepository.getById(otp.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(otp)));
+                .thenReturn(Uni.createFrom().item(Optional.of(otp)));
 
         Long generated = otpVerifier.verifyAccountTokenAsync(request).join();
 
@@ -84,7 +85,7 @@ class OtpVerifierTest {
                 .build();
 
         Mockito.when(mockOtpRepository.getById(otp.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(otp)));
+                .thenReturn(Uni.createFrom().item(Optional.of(otp)));
 
         assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync(request).join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
@@ -125,7 +126,7 @@ class OtpVerifierTest {
                 .build();
 
         Mockito.when(mockOtpRepository.getById(otp.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync(request).join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);

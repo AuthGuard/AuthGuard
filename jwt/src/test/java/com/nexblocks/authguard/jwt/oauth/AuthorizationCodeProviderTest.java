@@ -11,6 +11,7 @@ import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -38,7 +39,7 @@ class AuthorizationCodeProviderTest {
                 new AuthorizationCodeProvider(accountTokensRepository, new ServiceMapperImpl(), config());
 
         Mockito.when(accountTokensRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
         AccountBO account = AccountBO.builder()
                 .id(101)
@@ -82,7 +83,7 @@ class AuthorizationCodeProviderTest {
                 .build();
 
         Mockito.when(accountTokensRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
         AuthResponseBO tokens = authorizationCodeProvider.generateToken(account, options).join();
 
@@ -135,7 +136,7 @@ class AuthorizationCodeProviderTest {
                 .build();
 
         Mockito.when(accountTokensRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
         AuthResponseBO tokens = authorizationCodeProvider.generateToken(account, options).join();
 

@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.nexblocks.authguard.api.access.ActorRoles;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
 import com.nexblocks.authguard.api.common.BodyHandler;
@@ -20,6 +21,8 @@ import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static io.javalin.apibuilder.ApiBuilder.*;
+
 @DependsOnConfiguration("totpAuthenticators")
 public class TotpRoute extends TotpApi {
     private final TotpKeysService totpKeysService;
@@ -34,6 +37,18 @@ public class TotpRoute extends TotpApi {
 
         this.requestBodyHandler = new BodyHandler.Builder<>(TotpKeyRequestDTO.class)
                 .build();
+    }
+
+    @Override
+    public String getPath() {
+        return "/domains/{domain}/totp";
+    }
+
+    @Override
+    public void addEndpoints() {
+        post("/generate", this::generate, ActorRoles.adminClient());
+        get("/{accountId}/keys", this::getByAccountId, ActorRoles.adminClient());
+        delete("/keys/{id}", this::deleteById, ActorRoles.adminClient());
     }
 
     @Override

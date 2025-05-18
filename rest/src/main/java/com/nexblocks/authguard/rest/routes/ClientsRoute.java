@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.nexblocks.authguard.api.access.ActorRoles;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.common.Domain;
 import com.nexblocks.authguard.api.common.RequestValidationException;
@@ -26,6 +27,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static io.javalin.apibuilder.ApiBuilder.*;
+
 public class ClientsRoute extends ClientsApi {
     private final ClientsService clientsService;
     private final ApiKeysService apiKeysService;
@@ -43,6 +46,26 @@ public class ClientsRoute extends ClientsApi {
 
         this.clientRequestRequestBodyHandler = new BodyHandler.Builder<>(CreateClientRequestDTO.class)
                 .build();
+    }
+
+    @Override
+    public String getPath() {
+        return "/domains/{domain}/clients";
+    }
+
+    @Override
+    public void addEndpoints() {
+        post("/", this::create, ActorRoles.anyAdmin());
+        get("/", this::getByDomain, ActorRoles.adminClient());
+
+        get("/{id}", this::getById, ActorRoles.adminClient());
+        get("/externalId/{id}", this::getByExternalId, ActorRoles.adminClient());
+        delete("/{id}", this::deleteById, ActorRoles.adminClient());
+
+        patch("/{id}/activate", this::activate, ActorRoles.adminClient());
+        patch("/{id}/deactivate", this::deactivate, ActorRoles.adminClient());
+
+        get("/{id}/keys", this::getApiKeys, ActorRoles.adminClient());
     }
 
     public void create(final Context context) {
