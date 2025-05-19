@@ -80,7 +80,8 @@ public class OpenIdConnectService {
                             .trackingSession(session.getSessionToken())
                             .build();
 
-                    return accountTokensRepository.save(accountToken);
+                    return accountTokensRepository.save(accountToken)
+                            .subscribeAsCompletionStage();
                 });
     }
 

@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class BasicAuthProvider {
-    private static final String RESERVED_DOMAIN = "global";
+    public static final String RESERVED_DOMAIN = "global";
 
     private final Logger LOG = LoggerFactory.getLogger(BasicAuthProvider.class);
 

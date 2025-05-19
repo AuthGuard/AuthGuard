@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Map;
 
 @Data
@@ -37,11 +37,11 @@ import java.util.Map;
 )
 @NamedQuery(
         name = "crypto_keys.getByAppId",
-        query = "SELECT key FROM CryptoKeyDO key WHERE key.domain = :domain " +
-                "AND key.appId = :id " +
-                "AND key.deleted = false " +
-                "AND key.createdAt < :cursor " +
-                "ORDER BY key.createdAt desc"
+        query = "SELECT crypto_key FROM CryptoKeyDO crypto_key WHERE crypto_key.domain = :domain " +
+                "AND crypto_key.appId = :id " +
+                "AND crypto_key.deleted = false " +
+                "AND crypto_key.createdAt < :cursor " +
+                "ORDER BY crypto_key.createdAt desc"
 )
 public class CryptoKeyDO extends AbstractDO {
     private String domain;
@@ -64,7 +64,7 @@ public class CryptoKeyDO extends AbstractDO {
     private byte[] publicKey;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    @MapKeyColumn(name="key")
-    @Column(name="value")
+    @MapKeyColumn(name="\"key\"")
+    @Column(name="\"value\"")
     private Map<String, String> parameters;
 }

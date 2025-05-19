@@ -74,6 +74,7 @@ public class TrackingSessionsServiceImpl implements TrackingSessionsService {
                 .build();
 
         return sessionsRepository.save(serviceMapper.toDO(session))
+                .subscribeAsCompletionStage()
                 .thenApply(serviceMapper::toBO);
     }
 
@@ -89,6 +90,7 @@ public class TrackingSessionsServiceImpl implements TrackingSessionsService {
                 .build();
 
         return sessionsRepository.save(serviceMapper.toDO(session))
+                .subscribeAsCompletionStage()
                 .thenApply(serviceMapper::toBO);
     }
 
@@ -101,6 +103,7 @@ public class TrackingSessionsServiceImpl implements TrackingSessionsService {
                         session.setActive(false);
 
                         return sessionsRepository.save(session)
+                                .subscribeAsCompletionStage()
                                 .thenApply(serviceMapper::toBO)
                                 .thenApply(Optional::of);
                     }

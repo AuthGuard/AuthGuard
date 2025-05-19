@@ -14,6 +14,12 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-web</artifactId>
+            <version>${vertx-web.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.nexblocks.authguard</groupId>
             <artifactId>service-api</artifactId>
             <version>${project.version}</version>
@@ -113,14 +119,6 @@
             <version>${jackson.version}</version>
             <scope>provided</scope>
         </dependency>
-
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-web</artifactId>
-            <version>${vertx.version}</version>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
 
 </project>

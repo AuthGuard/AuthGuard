@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.nexblocks.authguard.api.access.ActorRoles;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
 import com.nexblocks.authguard.api.dto.entities.AuthResponseDTO;
@@ -15,6 +16,8 @@ import io.javalin.http.Context;
 
 import java.util.concurrent.CompletableFuture;
 
+import static io.javalin.apibuilder.ApiBuilder.post;
+
 @DependsOnConfiguration("otp")
 public class OtpRoute extends OtpApi {
     private final OtpService otpService;
@@ -27,6 +30,16 @@ public class OtpRoute extends OtpApi {
         this.restMapper = restMapper;
         this.otpRequestBodyHandler = new BodyHandler.Builder<>(OtpRequestDTO.class)
                 .build();
+    }
+
+    @Override
+    public String getPath() {
+        return "/domains/{domain}/otp";
+    }
+
+    @Override
+    public void addEndpoints() {
+        post("/verify", this::verify, ActorRoles.adminOrAuthClient());
     }
 
     public void verify(final Context context) {

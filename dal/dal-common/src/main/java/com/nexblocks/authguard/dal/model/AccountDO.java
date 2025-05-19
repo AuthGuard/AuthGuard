@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
@@ -106,6 +106,7 @@ public class AccountDO extends AbstractDO {
 
     // credentials
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinColumn(name = "account_id")
     private Set<UserIdentifierDO> identifiers;
 
     @Embedded
@@ -117,7 +118,7 @@ public class AccountDO extends AbstractDO {
     private boolean active;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    @MapKeyColumn(name="key")
-    @Column(name="value")
+    @MapKeyColumn(name="\"key\"")
+    @Column(name="\"value\"")
     private Map<String, String> metadata;
 }

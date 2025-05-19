@@ -16,6 +16,7 @@ import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.PersistedKeyBO;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -70,7 +71,7 @@ class KeyManagementServiceImplTest {
                 .build();
 
         Mockito.when(cryptoKeysRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CryptoKeyDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CryptoKeyDO.class)));
 
         PersistedKeyBO persisted = keyManagementService.create(key).join();
 
@@ -87,7 +88,7 @@ class KeyManagementServiceImplTest {
 
         // get decrypted
         Mockito.when(cryptoKeysRepository.getById(Mockito.anyLong()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(keyCaptor.getValue())));
+                .thenReturn(Uni.createFrom().item(Optional.of(keyCaptor.getValue())));
 
         Optional<PersistedKeyBO> retrieved = keyManagementService.getDecrypted(1, "main", null).join();
 
@@ -111,7 +112,7 @@ class KeyManagementServiceImplTest {
                 .build();
 
         Mockito.when(cryptoKeysRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CryptoKeyDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CryptoKeyDO.class)));
 
         PersistedKeyBO persisted = keyManagementService.create(key).join();
 
@@ -128,7 +129,7 @@ class KeyManagementServiceImplTest {
 
         // get decrypted
         Mockito.when(cryptoKeysRepository.getById(Mockito.anyLong()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(keyCaptor.getValue())));
+                .thenReturn(Uni.createFrom().item(Optional.of(keyCaptor.getValue())));
 
         Optional<PersistedKeyBO> retrieved = keyManagementService.getDecrypted(1, "main", "pass").join();
 
@@ -152,7 +153,7 @@ class KeyManagementServiceImplTest {
                 .build();
 
         Mockito.when(cryptoKeysRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CryptoKeyDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CryptoKeyDO.class)));
 
         keyManagementService.create(key).join();
 
@@ -162,7 +163,7 @@ class KeyManagementServiceImplTest {
 
         // get decrypted
         Mockito.when(cryptoKeysRepository.getById(Mockito.anyLong()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(keyCaptor.getValue())));
+                .thenReturn(Uni.createFrom().item(Optional.of(keyCaptor.getValue())));
 
         assertThatThrownBy(() -> keyManagementService.getDecrypted(1, "main", "pas").join())
                 .hasCauseInstanceOf(ServiceException.class);
@@ -182,7 +183,7 @@ class KeyManagementServiceImplTest {
                 .build();
 
         Mockito.when(cryptoKeysRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CryptoKeyDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CryptoKeyDO.class)));
 
         Mockito.when(accountsService.getById(100L, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(AccountBO.builder().build())));
@@ -206,7 +207,7 @@ class KeyManagementServiceImplTest {
                 .build();
 
         Mockito.when(cryptoKeysRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CryptoKeyDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CryptoKeyDO.class)));
 
         Mockito.when(applicationsService.getById(100L, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(AppBO.builder().build())));

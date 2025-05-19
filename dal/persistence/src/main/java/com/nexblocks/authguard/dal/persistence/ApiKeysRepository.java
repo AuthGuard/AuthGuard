@@ -2,12 +2,12 @@ package com.nexblocks.authguard.dal.persistence;
 
 import com.nexblocks.authguard.dal.model.ApiKeyDO;
 import com.nexblocks.authguard.dal.repository.ImmutableRecordRepository;
+import io.smallrye.mutiny.Uni;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 public interface ApiKeysRepository extends ImmutableRecordRepository<ApiKeyDO> {
-    CompletableFuture<Collection<ApiKeyDO>> getByAppId(long id);
-    CompletableFuture<Optional<ApiKeyDO>> getByKey(String key);
+    Uni<Collection<ApiKeyDO>> getByAppId(long id);
+    Uni<Optional<ApiKeyDO>> getByKey(String key);
 }

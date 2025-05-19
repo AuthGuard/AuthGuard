@@ -54,6 +54,7 @@ public class SessionsServiceImpl implements SessionsService {
         sessionDO.setSessionToken(cryptographicRandom.base64Url(config.getRandomSize()));
 
         return sessionsRepository.save(sessionDO)
+                .subscribeAsCompletionStage()
                 .thenApply(created -> {
                     emb.publish(CHANNEL, Messages.created(created, null));
                     return serviceMapper.toBO(created);
@@ -63,6 +64,7 @@ public class SessionsServiceImpl implements SessionsService {
     @Override
     public CompletableFuture<Optional<SessionBO>> getById(final long id) {
         return sessionsRepository.getById(id)
+                .subscribeAsCompletionStage()
                 .thenApply(opt -> opt.map(serviceMapper::toBO));
     }
 

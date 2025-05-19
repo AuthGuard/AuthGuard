@@ -1,10 +1,12 @@
 package com.nexblocks.authguard.bootstrap.steps;
 
 import com.nexblocks.authguard.bootstrap.BootstrapStep;
+import com.nexblocks.authguard.bootstrap.BootstrapStepResult;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.RolesService;
 import com.nexblocks.authguard.service.config.AccountConfig;
 import com.nexblocks.authguard.service.model.RoleBO;
+import io.smallrye.mutiny.Uni;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.slf4j.Logger;
@@ -25,7 +27,7 @@ public class AdminRolesBootstrap implements BootstrapStep {
     }
 
     @Override
-    public void run() {
+    public Uni<BootstrapStepResult> run() {
         final String adminRoleName = accountConfig.getAuthguardAdminRole();
 
         if (adminRoleName == null) {
@@ -35,18 +37,24 @@ public class AdminRolesBootstrap implements BootstrapStep {
         if (rolesService.getRoleByName(adminRoleName, RESERVED_DOMAIN).join().isEmpty()) {
             log.info("Admin role {} wasn't found and will be created", adminRoleName);
 
-            final RoleBO adminRole = createRole(adminRoleName);
-            log.info("Created admin client role {}", adminRole);
+            return createRole(adminRoleName)
+                    .map(role -> {
+                        log.info("Created admin client role {}", role);
+
+                        return BootstrapStepResult.success();
+                    });
         }
+
+        return Uni.createFrom().item(BootstrapStepResult.success());
     }
 
-    private RoleBO createRole(final String roleName) {
+    private Uni<RoleBO> createRole(final String roleName) {
         final RoleBO role = RoleBO.builder()
                 .name(roleName)
                 .domain(RESERVED_DOMAIN)
                 .forAccounts(true)
                 .build();
 
-        return rolesService.create(role).join();
+        return Uni.createFrom().completionStage(rolesService.create(role));
     }
 }

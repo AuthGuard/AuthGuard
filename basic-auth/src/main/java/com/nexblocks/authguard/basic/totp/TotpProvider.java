@@ -77,7 +77,7 @@ public class TotpProvider implements AuthProvider {
                 .build();
 
         return accountTokensRepository.save(accountToken)
-                .thenApply(persisted -> {
+                .map(persisted -> {
                     TotpLinkerMessageBody messageBody = new TotpLinkerMessageBody(token, account,
                             options);
 
@@ -90,7 +90,8 @@ public class TotpProvider implements AuthProvider {
                             .entityId(account.getId())
                             .trackingSession(options.getTrackingSession())
                             .build();
-                });
+                })
+                .subscribeAsCompletionStage();
     }
 
     @Override

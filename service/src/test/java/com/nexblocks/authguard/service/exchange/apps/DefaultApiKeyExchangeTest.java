@@ -9,6 +9,7 @@ import com.nexblocks.authguard.service.keys.DefaultApiKeysProvider;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.EntityType;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -72,7 +73,7 @@ class DefaultApiKeyExchangeTest {
                 .build();
 
         Mockito.when(repository.getByKey(hashedKey))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
+                .thenReturn(Uni.createFrom().item(Optional.of(apiKeyDO)));
 
         final Optional<Long> retrieved = exchange.verifyAndGetAppId(key).join();
 
@@ -85,7 +86,7 @@ class DefaultApiKeyExchangeTest {
         final String hashedKey = apiKeyHashProvider.getHash().hash(key);
 
         Mockito.when(repository.getByKey(hashedKey))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         final Optional<Long> retrieved = exchange.verifyAndGetAppId(key).join();
 
@@ -105,7 +106,7 @@ class DefaultApiKeyExchangeTest {
                 .build();
 
         Mockito.when(repository.getByKey(hashedKey))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
+                .thenReturn(Uni.createFrom().item(Optional.of(apiKeyDO)));
 
         final Optional<Long> retrieved = exchange.verifyAndGetAppId(key).join();
 
@@ -125,7 +126,7 @@ class DefaultApiKeyExchangeTest {
                 .build();
 
         Mockito.when(repository.getByKey(hashedKey))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(apiKeyDO)));
+                .thenReturn(Uni.createFrom().item(Optional.of(apiKeyDO)));
 
         final Optional<Long> retrieved = exchange.verifyAndGetAppId(key).join();
 

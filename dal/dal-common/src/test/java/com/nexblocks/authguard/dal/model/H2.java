@@ -1,10 +1,10 @@
 package com.nexblocks.authguard.dal.model;
 
+import jakarta.persistence.EntityManager;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
-import javax.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
 

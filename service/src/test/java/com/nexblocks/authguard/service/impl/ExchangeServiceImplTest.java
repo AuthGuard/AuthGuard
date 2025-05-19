@@ -64,7 +64,7 @@ class ExchangeServiceImplTest {
         final ExchangeAttemptsService exchangeAttemptsService = Mockito.mock(ExchangeAttemptsService.class);
 
         final ExchangeService exchangeService = new ExchangeServiceImpl(
-                Arrays.asList(
+                 Arrays.asList(
                         new ValidExchange(),
                         new InvalidExchange(),
                         new ExceptionExchange()),

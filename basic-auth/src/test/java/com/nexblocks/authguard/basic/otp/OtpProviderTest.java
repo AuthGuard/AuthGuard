@@ -12,6 +12,7 @@ import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
+import io.smallrye.mutiny.Uni;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ class OtpProviderTest {
 
         Mockito.when(configContext.asConfigBean(OtpConfig.class)).thenReturn(otpConfig);
         Mockito.when(mockOtpRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, OneTimePasswordDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, OneTimePasswordDO.class)));
 
         otpProvider = new OtpProvider(mockOtpRepository, new ServiceMapperImpl(), messageBus, configContext);
     }

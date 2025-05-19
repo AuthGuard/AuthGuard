@@ -24,6 +24,7 @@ import com.nexblocks.authguard.service.model.HashedPasswordBO;
 import com.nexblocks.authguard.service.model.PasswordResetTokenBO;
 import com.nexblocks.authguard.service.model.UserIdentifierBO;
 import com.nexblocks.authguard.service.util.CredentialsManager;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -106,7 +107,7 @@ class AccountCredentialsServiceImplTest {
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountBO.class))));
 
         Mockito.when(accountAuditRepository.save(any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CredentialsAuditDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CredentialsAuditDO.class)));
 
         Mockito.when(securePassword.hash(newPassword))
                 .thenReturn(HashedPasswordBO.builder()
@@ -156,7 +157,7 @@ class AccountCredentialsServiceImplTest {
         Mockito.when(accountsService.getByIdentifier(identifier, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
         Mockito.when(accountTokensRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
         // action
         PasswordResetTokenBO resetToken = accountCredentialsService.generateResetToken(identifier, true, "main").join();
@@ -189,7 +190,7 @@ class AccountCredentialsServiceImplTest {
         Mockito.when(accountsService.getByIdentifier(identifier, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
         Mockito.when(accountTokensRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
         // action
         PasswordResetTokenBO resetToken = accountCredentialsService.generateResetToken(identifier, false, "main").join();
@@ -265,7 +266,7 @@ class AccountCredentialsServiceImplTest {
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountBO.class))));
 
         Mockito.when(accountAuditRepository.save(any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CredentialsAuditDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CredentialsAuditDO.class)));
 
         Mockito.when(securePassword.hash(newPassword))
                 .thenReturn(HashedPasswordBO.builder()
@@ -341,7 +342,7 @@ class AccountCredentialsServiceImplTest {
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountBO.class))));
 
         Mockito.when(accountAuditRepository.save(any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CredentialsAuditDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CredentialsAuditDO.class)));
 
         Mockito.when(securePassword.hash(newPassword))
                 .thenReturn(HashedPasswordBO.builder()

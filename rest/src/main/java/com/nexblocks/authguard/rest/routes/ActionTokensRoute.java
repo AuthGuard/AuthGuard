@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.nexblocks.authguard.api.access.ActorRoles;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
 import com.nexblocks.authguard.api.common.Domain;
@@ -23,6 +24,8 @@ import io.javalin.http.Context;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
+import static io.javalin.apibuilder.ApiBuilder.post;
+
 @DependsOnConfiguration("otp")
 public class ActionTokensRoute extends ActionTokensApi {
     private final ActionTokenService actionTokenService;
@@ -37,6 +40,18 @@ public class ActionTokensRoute extends ActionTokensApi {
 
         this.actionTokenRequestBodyHandler = new BodyHandler.Builder<>(ActionTokenRequestDTO.class)
                 .build();
+    }
+
+    @Override
+    public String getPath() {
+        return "/domains/{domain}/actions";
+    }
+
+    @Override
+    public void addEndpoints() {
+        post("/otp", this::createOtp, ActorRoles.adminClient());
+        post("/token", this::createToken, ActorRoles.adminClient());
+        post("/verify", this::verifyToken, ActorRoles.adminClient());
     }
 
     @Override

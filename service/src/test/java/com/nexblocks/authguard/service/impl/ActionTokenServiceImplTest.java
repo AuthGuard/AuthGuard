@@ -11,6 +11,7 @@ import com.nexblocks.authguard.service.ActionTokenService;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -77,7 +78,7 @@ class ActionTokenServiceImplTest {
 
         Mockito.when(basicAuthProvider.getAccount(authRequest)).thenReturn(CompletableFuture.completedFuture(account));
         Mockito.when(accountTokensRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
         ActionTokenBO actual = actionTokenService.generateFromBasicAuth(authRequest, "something").join();
         ActionTokenBO expected = ActionTokenBO.builder()
@@ -105,7 +106,7 @@ class ActionTokenServiceImplTest {
         Mockito.when(accountsService.getById(101, "main"))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
         Mockito.when(accountTokensRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, AccountTokenDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
         ActionTokenBO actual = actionTokenService.generateFromOtp(1, "main", "otp", "something").join();
         ActionTokenBO expected = ActionTokenBO.builder()

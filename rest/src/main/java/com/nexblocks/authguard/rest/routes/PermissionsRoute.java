@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.nexblocks.authguard.api.access.ActorRoles;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.common.Domain;
 import com.nexblocks.authguard.api.common.RequestValidationException;
@@ -22,6 +23,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static io.javalin.apibuilder.ApiBuilder.*;
+
 public class PermissionsRoute extends PermissionsApi {
     private final PermissionsService permissionsService;
     private final RestMapper restMapper;
@@ -35,6 +38,21 @@ public class PermissionsRoute extends PermissionsApi {
 
         this.createPermissionRequestBodyHandler = new BodyHandler.Builder<>(CreatePermissionRequestDTO.class)
                 .build();
+    }
+
+    @Override
+    public String getPath() {
+        return "/domains/{domain}/permissions";
+    }
+
+    @Override
+    public void addEndpoints() {
+        post("/", this::create, ActorRoles.adminClient());
+        get("/{id}", this::getById, ActorRoles.adminClient());
+        delete("/{id}", this::getById, ActorRoles.adminClient());
+        get("/group/{group}", this::getByGroup, ActorRoles.adminClient());
+        get("", this::getAll, ActorRoles.adminClient());
+        patch("/{id}", this::update, ActorRoles.adminClient());
     }
 
     public void create(final Context context) {

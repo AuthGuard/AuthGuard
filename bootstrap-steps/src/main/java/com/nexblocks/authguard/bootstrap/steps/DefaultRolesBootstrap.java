@@ -1,16 +1,19 @@
 package com.nexblocks.authguard.bootstrap.steps;
 
+import com.nexblocks.authguard.bootstrap.BootstrapStepResult;
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.nexblocks.authguard.bootstrap.BootstrapStep;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.RolesService;
 import com.nexblocks.authguard.service.config.AccountConfig;
-import com.nexblocks.authguard.service.exceptions.ConfigurationException;
 import com.nexblocks.authguard.service.model.RoleBO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,39 +31,43 @@ public class DefaultRolesBootstrap implements BootstrapStep {
     }
 
     @Override
-    public void run() {
+    public Uni<BootstrapStepResult> run() {
         if (accountConfig == null) {
             log.info("No account config was provided. Skipping.");
-            return;
+            return Uni.createFrom().item(BootstrapStepResult.success());
         }
 
         final Map<String, Set<String>> defaultRolesByDomain = accountConfig.getDefaultRolesByDomain();
 
         if (defaultRolesByDomain == null || defaultRolesByDomain.isEmpty()) {
             log.info("No default roles were found");
-            return;
+            return Uni.createFrom().item(BootstrapStepResult.success());
         }
 
-        defaultRolesByDomain.forEach((domain, defaultRoles) -> {
-            defaultRoles.forEach(role -> {
-                if (rolesService.getRoleByName(role, domain).join().isEmpty()) {
-                    log.info("Default role {} for domain {} wasn't found and will be created", role, domain);
+        // 1.  Build a Uni<RoleBO> for each (domain, role) combination
+        List<Uni<BootstrapStepResult>> roleCreations = defaultRolesByDomain.entrySet().stream()
+                .flatMap(e -> e.getValue()                     // Set<String> roles
+                        .stream()
+                        .map(role -> createRole(e.getKey(), role)
+                                .map(created -> {
+                                    log.info("Created default role {}", created);
+                                    return BootstrapStepResult.success();
+                                })))
+                .toList();                                     // Java 17+; otherwise collect(Collectors.toList())
 
-                    final RoleBO created = createRole(role, domain);
-                    log.info("Created default role {}", created);
-                }
-            });
-        });
+        // 2.  Combine them into a single Uni<Result>
+        return Uni.combine().all().unis(roleCreations)
+                .with(list -> BootstrapStepResult.success()); // list is List<RoleBO>
     }
 
-    private RoleBO createRole(final String roleName, final String domain) {
-        final RoleBO role = RoleBO.builder()
+    private Uni<RoleBO> createRole(final String domain, final String roleName) {
+        RoleBO role = RoleBO.builder()
                 .name(roleName)
                 .domain(domain)
                 .forAccounts(true)
                 .forApplications(false)
                 .build();
 
-        return rolesService.create(role).join();
+        return Uni.createFrom().completionStage(rolesService.create(role));
     }
 }

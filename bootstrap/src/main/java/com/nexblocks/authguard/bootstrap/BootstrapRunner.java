@@ -22,7 +22,7 @@ public class BootstrapRunner {
                 .map(injector::getInstance)
                 .forEach(step -> {
                     try {
-                        step.run();
+                        step.run().subscribeAsCompletionStage().join();
                     } catch (final Exception e) {
                         LOG.error("Bootstrap step {} threw an error", step.getClass().getCanonicalName(), e);
                     }

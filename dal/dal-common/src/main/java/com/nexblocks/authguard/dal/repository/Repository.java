@@ -1,11 +1,12 @@
 package com.nexblocks.authguard.dal.repository;
 
+import io.smallrye.mutiny.Uni;
+
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 public interface Repository<T> {
-    CompletableFuture<Optional<T>> getById(long id);
-    CompletableFuture<T> save(T entity);
-    CompletableFuture<Optional<T>> update(T entity);
-    CompletableFuture<Optional<T>> delete(long id);
+    Uni<Optional<T>> getById(long id);
+    Uni<T> save(T entity);
+    Uni<Optional<T>> update(T entity);
+    Uni<Optional<T>> delete(long id);
 }

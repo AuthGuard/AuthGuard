@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.service.impl;
 
+import com.google.common.base.Function;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.model.PermissionDO;
 import com.nexblocks.authguard.dal.persistence.LongPage;
@@ -13,12 +14,11 @@ import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.PermissionBO;
 import com.nexblocks.authguard.service.model.RoleBO;
+import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -78,21 +78,31 @@ public class PermissionsServiceImpl implements PermissionsService {
     }
 
     @Override
-    public List<PermissionBO> validate(final Collection<PermissionBO> permissions, final String domain, EntityType entityType) {
-        return permissions.stream()
-                .map(permission -> permissionsRepository.search(permission.getGroup(), permission.getName(), domain)
-                        .join()
-                        .map(serviceMapper::toBO))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .filter(permission -> {
-                    switch (entityType) {
-                        case ACCOUNT: return permission.isForAccounts();
-                        case APPLICATION: return permission.isForApplications();
-                        default: return false;
-                    }
-                })
-                .collect(Collectors.toList());
+    public Uni<List<PermissionBO>> validate(final Collection<PermissionBO> permissions, final String domain, EntityType entityType) {
+        List<Uni<PermissionBO>> unis = permissions.stream()
+                .map(permission -> Uni.createFrom().completionStage(
+                        permissionsRepository.search(permission.getGroup(), permission.getName(), domain)
+                                .thenApply(opt -> opt
+                                        .filter(perm -> {
+                                            switch (entityType) {
+                                                case ACCOUNT: return perm.isForAccounts();
+                                                case APPLICATION: return perm.isForApplications();
+                                                default: return false;
+                                            }
+                                        })
+                                        .map(serviceMapper::toBO)
+                                        .orElse(null))))
+                .toList();
+
+        if (unis.isEmpty()) {
+            return Uni.createFrom().item(Collections.emptyList());
+        }
+
+        return Uni.combine().all().unis(unis)
+                .with(results -> results.stream()
+                        .map(obj -> (PermissionBO) obj) // ensure proper type casting
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList()));
     }
 
     @Override

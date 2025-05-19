@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.nexblocks.authguard.api.access.ActorRoles;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.common.Domain;
 import com.nexblocks.authguard.api.common.RequestValidationException;
@@ -24,6 +25,8 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
+import static io.javalin.apibuilder.ApiBuilder.*;
+
 public class ApiKeysRoute extends ApiKeysApi {
     private final ApiKeysService apiKeysService;
     private final RestMapper restMapper;
@@ -40,6 +43,19 @@ public class ApiKeysRoute extends ApiKeysApi {
                 .build();
         this.verificationRequestBodyHandler = new BodyHandler.Builder<>(ApiKeyVerificationRequestDTO.class)
                 .build();
+    }
+
+    @Override
+    public String getPath() {
+        return "/domains/{domain}/keys";
+    }
+
+    @Override
+    public void addEndpoints() {
+        post("/", this::generate, ActorRoles.anyAdmin());
+        get("/{id}", this::getById, ActorRoles.adminClient());
+        post("/verify", this::verify, ActorRoles.adminClient());
+        delete("/{id}", this::deleteById, ActorRoles.adminClient());
     }
 
     @Override

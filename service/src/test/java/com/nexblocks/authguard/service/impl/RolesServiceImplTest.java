@@ -10,6 +10,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.RoleBO;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -68,7 +69,7 @@ class RolesServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         Mockito.when(rolesRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, RoleDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, RoleDO.class)));
 
         RoleBO actual = rolesService.create(request).join();
 
@@ -127,7 +128,9 @@ class RolesServiceImplTest {
                         RoleDO.builder().name("role-2").forAccounts(false).build()
                 )));
 
-        List<String> actual = rolesService.verifyRoles(request, "main", EntityType.ACCOUNT);
+        List<String> actual = rolesService.verifyRoles(request, "main", EntityType.ACCOUNT)
+                .subscribeAsCompletionStage()
+                .join();
 
         assertThat(actual).isEqualTo(Collections.singletonList("role-1"));
     }
@@ -142,7 +145,9 @@ class RolesServiceImplTest {
                         RoleDO.builder().name("role-2").forApplications(false).build()
                 )));
 
-        List<String> actual = rolesService.verifyRoles(request, "main", EntityType.APPLICATION);
+        List<String> actual = rolesService.verifyRoles(request, "main", EntityType.APPLICATION)
+                .subscribeAsCompletionStage()
+                .join();
 
         assertThat(actual).isEqualTo(Collections.singletonList("role-1"));
     }
@@ -158,7 +163,9 @@ class RolesServiceImplTest {
 
         List<String> expected = Collections.singletonList("role-1");
 
-        List<String> actual = rolesService.verifyRoles(request, "main", EntityType.ACCOUNT);
+        List<String> actual = rolesService.verifyRoles(request, "main", EntityType.ACCOUNT)
+                .subscribeAsCompletionStage()
+                .join();
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -172,7 +179,7 @@ class RolesServiceImplTest {
                 .build();
 
         Mockito.when(rolesRepository.getById(1))
-                .thenReturn(CompletableFuture.completedFuture(
+                .thenReturn(Uni.createFrom().item(
                         Optional.of(RoleDO.builder()
                                 .id(1)
                                 .domain("main")
@@ -182,7 +189,7 @@ class RolesServiceImplTest {
                                 .build())));
 
         Mockito.when(rolesRepository.update(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, RoleDO.class))));
+                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, RoleDO.class))));
 
         RoleBO actual = rolesService.update(request, "main").join().get();
 

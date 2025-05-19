@@ -26,7 +26,7 @@ public class IdempotencyServiceImpl implements IdempotencyService {
 
     @Override
     public CompletableFuture<IdempotentRecordBO> create(final IdempotentRecordBO record) {
-        return repository.save(serviceMapper.toDO(record))
+        return repository.save(serviceMapper.toDO(record)).subscribe().asCompletionStage()
                 .thenApply(serviceMapper::toBO);
     }
 

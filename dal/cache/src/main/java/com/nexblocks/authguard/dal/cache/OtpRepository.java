@@ -1,11 +1,12 @@
 package com.nexblocks.authguard.dal.cache;
 
 import com.nexblocks.authguard.dal.model.OneTimePasswordDO;
+import io.smallrye.mutiny.Uni;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public interface OtpRepository {
-    CompletableFuture<OneTimePasswordDO> save(OneTimePasswordDO password);
-    CompletableFuture<Optional<OneTimePasswordDO>> getById(long id);
+    Uni<OneTimePasswordDO> save(OneTimePasswordDO password);
+    Uni<Optional<OneTimePasswordDO>> getById(long id);
 }

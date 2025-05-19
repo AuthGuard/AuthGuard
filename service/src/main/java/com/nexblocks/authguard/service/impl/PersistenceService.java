@@ -41,7 +41,7 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
         mappedDo.setCreatedAt(now);
         mappedDo.setLastModified(now);
 
-        return repository.save(mappedDo)
+        return repository.save(mappedDo).subscribe().asCompletionStage()
                 .thenApply(persisted -> {
                     final BO persistedBo = doToBo.apply(persisted);
 
@@ -54,12 +54,12 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
     }
 
     public CompletableFuture<Optional<BO>> getById(final long id) {
-        return repository.getById(id)
+        return repository.getById(id).subscribe().asCompletionStage()
                 .thenApply(opt -> opt.map(doToBo));
     }
 
     public CompletableFuture<Optional<BO>> getById(final long id, final String domain) {
-        return repository.getById(id)
+        return repository.getById(id).subscribe().asCompletionStage()
                 .thenApply(opt -> opt.map(doToBo)
                         .filter(bo -> Objects.equals(bo.getDomain(), domain)));
     }
@@ -70,7 +70,7 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
 
         mappedDo.setLastModified(now);
 
-        return repository.update(mappedDo)
+        return repository.update(mappedDo).subscribe().asCompletionStage()
                 .thenApply(opt -> {
                     final Optional<BO> boOpt = opt.map(doToBo);
 
@@ -83,7 +83,7 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
     }
 
     public CompletableFuture<Optional<BO>> delete(final long id) {
-        return repository.delete(id)
+        return repository.delete(id).subscribe().asCompletionStage()
                 .thenApply(opt -> {
                     final Optional<BO> boOpt = opt.map(doToBo);
 

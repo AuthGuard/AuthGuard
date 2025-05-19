@@ -35,6 +35,7 @@ public class AccountLocksServiceImpl implements AccountLocksService {
         LOG.info("Locking an account. accountId={}, expiresAt={}", accountLock.getAccountId(), accountLock.getExpiresAt());
 
         return accountLocksRepository.save(accountLockDO)
+                .subscribeAsCompletionStage()
                 .thenApply(serviceMapper::toBO);
     }
 
@@ -53,6 +54,7 @@ public class AccountLocksServiceImpl implements AccountLocksService {
     @Override
     public CompletableFuture<Optional<AccountLockBO>> delete(final long lockId) {
         return accountLocksRepository.delete(lockId)
+                .subscribeAsCompletionStage()
                 .thenApply(lock -> lock.map(serviceMapper::toBO));
     }
 }

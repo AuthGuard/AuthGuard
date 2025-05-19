@@ -24,6 +24,7 @@ public class BasicJtiProvider implements JtiProvider {
                 .id(ID.generate())
                 .token(ID.generateSimplifiedUuid())
                 .build())
+                .subscribeAsCompletionStage()
                 .join();
 
         return persistedToken.getToken();

@@ -1,17 +1,17 @@
 package com.nexblocks.authguard.service.util;
 
-import com.google.inject.Inject;
 import com.nexblocks.authguard.basic.passwords.*;
 import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
-import com.nexblocks.authguard.service.exceptions.ServiceException;
-import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
-import com.nexblocks.authguard.service.model.*;
+import com.nexblocks.authguard.service.model.AccountBO;
+import com.nexblocks.authguard.service.model.HashedPasswordBO;
+import com.nexblocks.authguard.service.model.UserIdentifier;
+import com.nexblocks.authguard.service.model.UserIdentifierBO;
+import com.google.inject.Inject;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 

@@ -5,8 +5,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -27,14 +27,14 @@ public class PermissionsJpaTest {
         // create entities
         first = PermissionDO.builder()
                 .id(1)
-                .group("test")
+                .permissionGroup("test")
                 .name("read")
                 .domain("main")
                 .build();
 
         second = PermissionDO.builder()
                 .id(2)
-                .group("test")
+                .permissionGroup("test")
                 .name("write")
                 .domain("main")
                 .build();
@@ -42,7 +42,7 @@ public class PermissionsJpaTest {
         deleted = PermissionDO.builder()
                 .id(3)
                 .deleted(true)
-                .group("test")
+                .permissionGroup("test")
                 .name("delete")
                 .domain("main")
                 .build();
@@ -78,7 +78,7 @@ public class PermissionsJpaTest {
     @Test
     void getByGroupAndName() {
         final TypedQuery<PermissionDO> query = entityManager.createNamedQuery("permissions.getByGroupAndName", PermissionDO.class)
-                .setParameter("group", first.getGroup())
+                .setParameter("group", first.getPermissionGroup())
                 .setParameter("name", first.getName())
                 .setParameter("domain", first.getDomain());
 
@@ -89,7 +89,7 @@ public class PermissionsJpaTest {
     @Test
     void getByGroup() {
         final TypedQuery<PermissionDO> query = entityManager.createNamedQuery("permissions.getByGroup", PermissionDO.class)
-                .setParameter("group", first.getGroup())
+                .setParameter("group", first.getPermissionGroup())
                 .setParameter("domain", first.getDomain())
                 .setParameter("cursor", 0L);
 

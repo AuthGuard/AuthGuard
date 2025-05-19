@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.nexblocks.authguard.api.access.ActorRoles;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.common.BodyHandler;
 import com.nexblocks.authguard.api.common.RequestContextExtractor;
@@ -30,6 +31,9 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.post;
+
 public class AuthRoute extends AuthApi {
     private final AuthenticationService authenticationService;
     private final ExchangeService exchangeService;
@@ -48,6 +52,21 @@ public class AuthRoute extends AuthApi {
 
         this.authRequestBodyHandler = new BodyHandler.Builder<>(AuthRequestDTO.class)
                 .build();
+    }
+
+    @Override
+    public String getPath() {
+        return "/domains/{domain}/auth";
+    }
+
+    @Override
+    public void addEndpoints() {
+        post("/authenticate", this::authenticate, ActorRoles.adminOrAuthClient());
+        post("/logout", this::logout, ActorRoles.adminOrAuthClient());
+        post("/refresh", this::refresh, ActorRoles.adminOrAuthClient());
+        post("/exchange", this::exchange, ActorRoles.adminClient());
+        post("/exchange/clear", this::clearToken, ActorRoles.adminClient());
+        get("/exchange/attempts", this::getExchangeAttempts, ActorRoles.adminClient());
     }
 
     @Override

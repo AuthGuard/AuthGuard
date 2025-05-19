@@ -46,7 +46,8 @@ public class ApiKeysServiceImpl implements ApiKeysService {
 
     @Inject
     public ApiKeysServiceImpl(final ApplicationsService applicationsService,
-                              ClientsService clientsService, final List<ApiKeyExchange> apiKeyExchanges,
+                              final ClientsService clientsService,
+                              final List<ApiKeyExchange> apiKeyExchanges,
                               final ApiKeysRepository apiKeysRepository,
                               final ApiKeyHashProvider apiKeyHashProvider,
                               final MessageBus messageBus,
@@ -149,7 +150,7 @@ public class ApiKeysServiceImpl implements ApiKeysService {
 
     @Override
     public CompletableFuture<List<ApiKeyBO>> getByAppId(final long appId, final String domain) {
-        return apiKeysRepository.getByAppId(appId)
+        return apiKeysRepository.getByAppId(appId).subscribe().asCompletionStage()
                 .thenApply(list -> list.stream()
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList()));

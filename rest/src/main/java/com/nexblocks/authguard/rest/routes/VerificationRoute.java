@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.rest.routes;
 
+import com.nexblocks.authguard.api.access.ActorRoles;
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
 import com.nexblocks.authguard.api.common.Domain;
 import com.nexblocks.authguard.api.dto.entities.RequestValidationError;
@@ -12,6 +13,8 @@ import io.javalin.http.Context;
 
 import java.util.Collections;
 
+import static io.javalin.apibuilder.ApiBuilder.post;
+
 @DependsOnConfiguration("verification")
 public class VerificationRoute extends VerificationApi {
     private final VerificationService verificationService;
@@ -19,6 +22,16 @@ public class VerificationRoute extends VerificationApi {
     @Inject
     public VerificationRoute(final VerificationService verificationService) {
         this.verificationService = verificationService;
+    }
+
+    @Override
+    public String getPath() {
+        return "/domains/{domain}/verification";
+    }
+
+    @Override
+    public void addEndpoints() {
+        post("/email", this::verifyEmail, ActorRoles.adminClient());
     }
 
     public void verifyEmail(final Context context) {
