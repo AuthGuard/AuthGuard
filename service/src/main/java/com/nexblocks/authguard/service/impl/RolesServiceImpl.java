@@ -47,9 +47,10 @@ public class RolesServiceImpl implements RolesService {
     @Override
     public CompletableFuture<List<RoleBO>> getAll(final String domain, final Long cursor) {
         return rolesRepository.getAll(domain, LongPage.of(cursor, 20))
-                .thenApply(list -> list.stream()
+                .map(list -> list.stream()
                         .map(serviceMapper::toBO)
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList()))
+                .subscribeAsCompletionStage();
     }
 
     @Override
@@ -103,13 +104,14 @@ public class RolesServiceImpl implements RolesService {
     @Override
     public CompletableFuture<Optional<RoleBO>> getRoleByName(final String name, final String domain) {
         return rolesRepository.getByName(name, domain)
-                .thenApply(optional -> optional.map(serviceMapper::toBO));
+                .map(optional -> optional.map(serviceMapper::toBO))
+                .subscribeAsCompletionStage();
     }
 
     @Override
     public Uni<List<String>> verifyRoles(final Collection<String> roles, final String domain, EntityType entityType) {
-        return Uni.createFrom().completionStage(rolesRepository.getMultiple(roles, domain)
-                .thenApply(found -> found.stream()
+        return rolesRepository.getMultiple(roles, domain)
+                .map(found -> found.stream()
                         .filter(role -> {
                             switch (entityType) {
                                 case ACCOUNT: return role.isForAccounts();
@@ -119,6 +121,6 @@ public class RolesServiceImpl implements RolesService {
                         })
                         .map(RoleDO::getName)
                         .collect(Collectors.toList())
-                ));
+                );
     }
 }

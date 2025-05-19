@@ -293,7 +293,7 @@ class AccountsServiceImplTest {
         AccountDO accountDO = serviceMapper.toDO(accountBO);
 
         Mockito.when(accountsRepository.getByEmail(accountBO.getEmail().getEmail(), accountBO.getDomain()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountDO)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountDO)));
 
         Optional<AccountBO> retrieved = accountService.getByEmail(accountBO.getEmail().getEmail(), accountBO.getDomain()).join();
         List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()

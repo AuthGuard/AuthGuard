@@ -162,7 +162,8 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     public CompletableFuture<List<AppBO>> getByAccountId(final long accountId, final String domain,
                                                          final Long cursor) {
         return applicationsRepository.getAllForAccount(accountId, LongPage.of(cursor, 20))
-                .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()));
+                .map(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()))
+                .subscribeAsCompletionStage();
     }
 
     @Override

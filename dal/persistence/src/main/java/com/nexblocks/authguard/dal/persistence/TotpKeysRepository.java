@@ -4,8 +4,8 @@ import com.nexblocks.authguard.dal.model.TotpKeyDO;
 import com.nexblocks.authguard.dal.repository.Repository;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface TotpKeysRepository extends Repository<TotpKeyDO> {
-    CompletableFuture<List<TotpKeyDO>> findByAccountId(String domain, long accountId);
+    Uni<List<TotpKeyDO>> findByAccountId(String domain, long accountId);
 }

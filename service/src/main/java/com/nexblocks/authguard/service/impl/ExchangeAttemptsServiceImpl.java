@@ -8,6 +8,7 @@ import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.ExchangeAttemptBO;
 import com.nexblocks.authguard.service.model.ExchangeAttemptsQueryBO;
 import com.google.inject.Inject;
+import io.smallrye.mutiny.Uni;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -56,10 +57,11 @@ public class ExchangeAttemptsServiceImpl implements ExchangeAttemptsService {
     @Override
     public Collection<ExchangeAttemptBO> getByEntityId(final long entityId) {
         return exchangeAttemptsRepository.findByEntity(entityId)
-                .thenApply(collection -> collection.stream()
+                .map(collection -> collection.stream()
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList())
-                ).join();
+                )
+                .subscribeAsCompletionStage().join();
     }
 
     @Override
@@ -84,11 +86,12 @@ public class ExchangeAttemptsServiceImpl implements ExchangeAttemptsService {
     }
 
     private Collection<ExchangeAttemptBO> doFind(
-            final Supplier<CompletableFuture<Collection<ExchangeAttemptDO>>> supplier) {
+            final Supplier<Uni<Collection<ExchangeAttemptDO>>> supplier) {
         return supplier.get()
-                .thenApply(collection -> collection.stream()
+                .map(collection -> collection.stream()
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList())
-                ).join();
+                )
+                .subscribeAsCompletionStage().join();
     }
 }

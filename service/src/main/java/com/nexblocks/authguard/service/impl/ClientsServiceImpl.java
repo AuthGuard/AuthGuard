@@ -87,9 +87,10 @@ public class ClientsServiceImpl implements ClientsService {
     @Override
     public CompletableFuture<Optional<ClientBO>> getByExternalId(final String externalId, final String domain) {
         return clientsRepository.getByExternalId(externalId)
-                .thenApply(optional -> optional
+                .map(optional -> optional
                         .filter(client -> Objects.equals(client.getDomain(), domain))
-                        .map(serviceMapper::toBO));
+                        .map(serviceMapper::toBO))
+                .subscribeAsCompletionStage();
     }
 
     @Override
@@ -155,12 +156,14 @@ public class ClientsServiceImpl implements ClientsService {
     public CompletableFuture<List<ClientBO>> getByAccountId(final long accountId, final String domain,
                                                             final Long cursor) {
         return clientsRepository.getAllForAccount(accountId, LongPage.of(cursor, 20))
-                .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()));
+                .map(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()))
+                .subscribeAsCompletionStage();
     }
 
     @Override
     public CompletableFuture<List<ClientBO>> getByDomain(final String domain, final Long cursor) {
         return clientsRepository.getByDomain(domain, LongPage.of(cursor, 20))
-                .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()));
+                .map(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()))
+                .subscribeAsCompletionStage();
     }
 }

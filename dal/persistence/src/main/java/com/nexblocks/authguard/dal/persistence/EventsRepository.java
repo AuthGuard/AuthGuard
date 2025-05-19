@@ -6,11 +6,11 @@ import com.nexblocks.authguard.dal.repository.IndelibleRecordRepository;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface EventsRepository
         extends ImmutableRecordRepository<EventDO>, IndelibleRecordRepository<EventDO> {
-    CompletableFuture<List<EventDO>> findByDomainDescending(String domain, Page<Instant> page);
-    CompletableFuture<List<EventDO>> findByDomainAndChannelDescending(String domain, String channel,
+    Uni<List<EventDO>> findByDomainDescending(String domain, Page<Instant> page);
+    Uni<List<EventDO>> findByDomainAndChannelDescending(String domain, String channel,
                                                                       Page<Instant> page);
 }

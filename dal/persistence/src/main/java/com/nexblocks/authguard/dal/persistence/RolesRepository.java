@@ -5,10 +5,10 @@ import com.nexblocks.authguard.dal.repository.ImmutableRecordRepository;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface RolesRepository extends ImmutableRecordRepository<RoleDO> {
-    CompletableFuture<Collection<RoleDO>> getAll(String domain, Page<Long> page);
-    CompletableFuture<Optional<RoleDO>> getByName(String name, String domain);
-    CompletableFuture<Collection<RoleDO>> getMultiple(Collection<String> rolesNames, String domain);
+    Uni<Collection<RoleDO>> getAll(String domain, Page<Long> page);
+    Uni<Optional<RoleDO>> getByName(String name, String domain);
+    Uni<Collection<RoleDO>> getMultiple(Collection<String> rolesNames, String domain);
 }

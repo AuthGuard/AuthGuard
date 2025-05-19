@@ -34,7 +34,8 @@ public class IdempotencyServiceImpl implements IdempotencyService {
     public CompletableFuture<Optional<IdempotentRecordBO>> findByKeyAndEntityType(final String idempotentKey,
                                                                                   final String entityType) {
         return repository.findByKeyAndEntityType(idempotentKey, entityType)
-                .thenApply(recordOptional -> recordOptional.map(serviceMapper::toBO));
+                .map(recordOptional -> recordOptional.map(serviceMapper::toBO))
+                .subscribeAsCompletionStage();
     }
 
     @Override

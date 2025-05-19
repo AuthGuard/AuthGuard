@@ -46,7 +46,8 @@ class RolesServiceImplTest {
                 RoleDO.builder().name("role-2").build()
         );
 
-        Mockito.when(rolesRepository.getAll("main", LongPage.of(null, 20))).thenReturn(CompletableFuture.completedFuture(roles));
+        Mockito.when(rolesRepository.getAll("main", LongPage.of(null, 20)))
+                .thenReturn(Uni.createFrom().item(roles));
 
         List<RoleBO> expected = Arrays.asList(
                 RoleBO.builder().name("role-1").build(),
@@ -66,7 +67,7 @@ class RolesServiceImplTest {
                 .build();
 
         Mockito.when(rolesRepository.getByName("role", "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         Mockito.when(rolesRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, RoleDO.class)));
@@ -91,7 +92,7 @@ class RolesServiceImplTest {
                 .build();
 
         Mockito.when(rolesRepository.getByName("role", "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(role)));
+                .thenReturn(Uni.createFrom().item(Optional.of(role)));
 
         Mockito.when(rolesRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, RoleDO.class)));
@@ -107,7 +108,7 @@ class RolesServiceImplTest {
                 .build();
 
         Mockito.when(rolesRepository.getByName("role", "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(role)));
+                .thenReturn(Uni.createFrom().item(Optional.of(role)));
 
         RoleBO expected = RoleBO.builder()
                 .name("role")
@@ -123,7 +124,7 @@ class RolesServiceImplTest {
         List<String> request = Arrays.asList("role-1", "role-2");
 
         Mockito.when(rolesRepository.getMultiple(request, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Arrays.asList(
+                .thenReturn(Uni.createFrom().item(Arrays.asList(
                         RoleDO.builder().name("role-1").forAccounts(true).build(),
                         RoleDO.builder().name("role-2").forAccounts(false).build()
                 )));
@@ -140,7 +141,7 @@ class RolesServiceImplTest {
         List<String> request = Arrays.asList("role-1", "role-2");
 
         Mockito.when(rolesRepository.getMultiple(request, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Arrays.asList(
+                .thenReturn(Uni.createFrom().item(Arrays.asList(
                         RoleDO.builder().name("role-1").forApplications(true).build(),
                         RoleDO.builder().name("role-2").forApplications(false).build()
                 )));
@@ -157,7 +158,7 @@ class RolesServiceImplTest {
         List<String> request = Arrays.asList("role-1", "role-2");
 
         Mockito.when(rolesRepository.getMultiple(request, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Collections.singletonList(
+                .thenReturn(Uni.createFrom().item(Collections.singletonList(
                         RoleDO.builder().name("role-1").forAccounts(true).build()
                 )));
 

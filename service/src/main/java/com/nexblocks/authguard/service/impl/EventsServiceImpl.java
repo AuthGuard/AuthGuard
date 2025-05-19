@@ -60,9 +60,10 @@ public class EventsServiceImpl implements EventsService {
     @Override
     public CompletableFuture<List<EventBO>> getByDomain(final String domain, final Instant cursor) {
         return eventsRepository.findByDomainDescending(domain, Page.of(cursor, PAGE_SIZE, DEFAULT_CURSOR))
-                .thenApply(list -> list.stream()
+                .map(list -> list.stream()
                         .map(serviceMapper::toBO)
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList()))
+                .subscribeAsCompletionStage();
     }
 
     @Override
@@ -70,8 +71,9 @@ public class EventsServiceImpl implements EventsService {
                                                                   final String channel,
                                                                   final Instant cursor) {
         return eventsRepository.findByDomainAndChannelDescending(domain, channel, Page.of(cursor, PAGE_SIZE, DEFAULT_CURSOR))
-                .thenApply(list -> list.stream()
+                .map(list -> list.stream()
                         .map(serviceMapper::toBO)
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList()))
+                .subscribeAsCompletionStage();
     }
 }

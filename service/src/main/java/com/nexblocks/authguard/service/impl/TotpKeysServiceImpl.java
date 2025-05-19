@@ -23,6 +23,7 @@ import com.nexblocks.authguard.service.model.Account;
 import com.nexblocks.authguard.service.model.TotpKeyBO;
 import com.nexblocks.authguard.service.model.UserIdentifierBO;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
+import io.smallrye.mutiny.Uni;
 import org.bouncycastle.util.encoders.Base32;
 
 import java.util.Base64;
@@ -80,9 +81,9 @@ public class TotpKeysServiceImpl implements TotpKeysService {
 
     private CompletableFuture<TotpKeyBO> generate(final Account account, final String authenticator) {
         return repository.findByAccountId(account.getDomain(), account.getId())
-                .thenCompose(existing -> {
+                .flatMap(existing -> {
                     if (!existing.isEmpty()) {
-                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.TOTP_ALREADY_EXISTS,
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.TOTP_ALREADY_EXISTS,
                                 "Account already has an active key"));
                     }
 
@@ -94,7 +95,7 @@ public class TotpKeysServiceImpl implements TotpKeysService {
                     String qrCode = config.generateQrCode() ? generateQrCode(base32Key, account) : "";
 
                     // we store the encrypted version but return the plain one
-                    return persistenceService.create(TotpKeyBO.builder()
+                    return Uni.createFrom().completionStage(persistenceService.create(TotpKeyBO.builder()
                                     .domain(account.getDomain())
                                     .accountId(account.getId())
                                     .authenticator(authenticator)
@@ -105,30 +106,33 @@ public class TotpKeysServiceImpl implements TotpKeysService {
                                     .from(persisted)
                                     .qrCode(qrCode)
                                     .key(key)
-                                    .build());
-                });
+                                    .build()));
+                })
+                .subscribeAsCompletionStage();
     }
 
     @Override
     public CompletableFuture<List<TotpKeyBO>> getByAccountId(final long accountId, final String domain) {
         return repository.findByAccountId(domain, accountId)
-                .thenApply(list -> list.stream()
+                .map(list -> list.stream()
                         .map(serviceMapper::toBO)
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList()))
+                .subscribeAsCompletionStage();
     }
 
     @Override
     public CompletableFuture<Optional<TotpKeyBO>> getByAccountIdDecrypted(final long accountId, final String domain) {
         return repository.findByAccountId(domain, accountId)
-                .thenApply(list -> list.stream().findFirst())
-                .thenApply(opt -> opt.map(totpKeyDO -> {
+                .map(list -> list.stream().findFirst())
+                .map(opt -> opt.map(totpKeyDO -> {
                     byte[] encrypted = totpKeyDO.getEncryptedKey();
                     byte[] decrypted = ChaCha20Encryptor.decrypt(encrypted, encryptionKey,
                             totpKeyDO.getNonce());
 
                     return serviceMapper.toBO(totpKeyDO)
                             .withKey(decrypted);
-                }));
+                }))
+                .subscribeAsCompletionStage();
     }
 
     @Override

@@ -5,9 +5,9 @@ import com.nexblocks.authguard.dal.repository.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface ApplicationsRepository extends Repository<AppDO> {
-    CompletableFuture<Optional<AppDO>> getByExternalId(String externalId);
-    CompletableFuture<List<AppDO>> getAllForAccount(long accountId, Page<Long> page);
+    Uni<Optional<AppDO>> getByExternalId(String externalId);
+    Uni<List<AppDO>> getAllForAccount(long accountId, Page<Long> page);
 }

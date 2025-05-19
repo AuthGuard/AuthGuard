@@ -47,7 +47,7 @@ class PermissionsServiceImplTest {
                 .build();
 
         Mockito.when(permissionsRepository.search(request.getGroup(), request.getName(), "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         Mockito.when(permissionsRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, PermissionDO.class)));
@@ -71,7 +71,7 @@ class PermissionsServiceImplTest {
                 .build();
 
         Mockito.when(permissionsRepository.search(request.getGroup(), request.getName(), "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(permission)));
+                .thenReturn(Uni.createFrom().item(Optional.of(permission)));
 
         Mockito.when(permissionsRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, PermissionDO.class)));
@@ -109,7 +109,7 @@ class PermissionsServiceImplTest {
         );
 
         Mockito.when(permissionsRepository.getAll("main", LongPage.of(null, 20)))
-                .thenReturn(CompletableFuture.completedFuture(permissions));
+                .thenReturn(Uni.createFrom().item(permissions));
 
         List<PermissionBO> expected = Arrays.asList(
                 PermissionBO.builder().group("test").name("read").build(),
@@ -129,7 +129,7 @@ class PermissionsServiceImplTest {
         );
 
         Mockito.when(permissionsRepository.getAllForGroup("test", "main", LongPage.of(null, 20)))
-                .thenReturn(CompletableFuture.completedFuture(permissions));
+                .thenReturn(Uni.createFrom().item(permissions));
 
         List<PermissionBO> expected = Arrays.asList(
                 PermissionBO.builder().group("test").name("read").build(),
@@ -177,13 +177,13 @@ class PermissionsServiceImplTest {
         );
 
         Mockito.when(permissionsRepository.search("test", "read", "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(existing.get(0))));
+                .thenReturn(Uni.createFrom().item(Optional.of(existing.get(0))));
 
         Mockito.when(permissionsRepository.search("test", "write", "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(existing.get(1))));
+                .thenReturn(Uni.createFrom().item(Optional.of(existing.get(1))));
 
         Mockito.when(permissionsRepository.search("test", "delete", "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         List<PermissionBO> expected = Collections.singletonList(
                 PermissionBO.builder().group("test").name("read").forAccounts(true).build()
@@ -209,13 +209,13 @@ class PermissionsServiceImplTest {
         );
 
         Mockito.when(permissionsRepository.search("test", "read", "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(existing.get(0))));
+                .thenReturn(Uni.createFrom().item(Optional.of(existing.get(0))));
 
         Mockito.when(permissionsRepository.search("test", "write", "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(existing.get(1))));
+                .thenReturn(Uni.createFrom().item(Optional.of(existing.get(1))));
 
         Mockito.when(permissionsRepository.search("test", "delete", "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         List<PermissionBO> expected = Collections.singletonList(
                 PermissionBO.builder().group("test").name("write").forApplications(true).build()

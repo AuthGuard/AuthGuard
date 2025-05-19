@@ -80,7 +80,7 @@ class TotpKeysServiceImplTest {
     @Test
     void generate() {
         Mockito.when(totpKeysRepository.findByAccountId(DOMAIN, ACCOUNT_ID))
-                .thenReturn(CompletableFuture.completedFuture(Collections.emptyList()));
+                .thenReturn(Uni.createFrom().item(Collections.emptyList()));
 
         TotpKeyBO generated = totpKeysService.generate(ACCOUNT_ID, DOMAIN, "google")
                 .join();
@@ -115,7 +115,7 @@ class TotpKeysServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(totpKeysRepository.findByAccountId(account.getDomain(), account.getId()))
-                .thenReturn(CompletableFuture.completedFuture(Collections.emptyList()));
+                .thenReturn(Uni.createFrom().item(Collections.emptyList()));
 
         CompletableFuture<TotpKeyBO> future = totpKeysService.generate(account.getId(), account.getDomain(), null);
 
@@ -127,7 +127,7 @@ class TotpKeysServiceImplTest {
     void getByAccountId() {
         // first generate a key
         Mockito.when(totpKeysRepository.findByAccountId(DOMAIN, ACCOUNT_ID))
-                .thenReturn(CompletableFuture.completedFuture(Collections.emptyList()));
+                .thenReturn(Uni.createFrom().item(Collections.emptyList()));
 
         TotpKeyBO generated = totpKeysService.generate(account.getId(), account.getDomain(), "google")
                 .join();
@@ -138,7 +138,7 @@ class TotpKeysServiceImplTest {
                 .save(keyCaptor.capture());
 
         Mockito.when(totpKeysRepository.findByAccountId(DOMAIN, ACCOUNT_ID))
-                .thenReturn(CompletableFuture.completedFuture(Collections.singletonList(keyCaptor.getValue())));
+                .thenReturn(Uni.createFrom().item(Collections.singletonList(keyCaptor.getValue())));
 
         // retrieve the key and ensure the encrypted key is what is returned
         List<TotpKeyBO> keys = totpKeysService.getByAccountId(ACCOUNT_ID, DOMAIN).join();
@@ -154,7 +154,7 @@ class TotpKeysServiceImplTest {
     void getByAccountIdDecrypted() {
         // first generate a key
         Mockito.when(totpKeysRepository.findByAccountId(DOMAIN, ACCOUNT_ID))
-                .thenReturn(CompletableFuture.completedFuture(Collections.emptyList()));
+                .thenReturn(Uni.createFrom().item(Collections.emptyList()));
 
         TotpKeyBO generated = totpKeysService.generate(ACCOUNT_ID, DOMAIN, null)
                 .join();
@@ -165,7 +165,7 @@ class TotpKeysServiceImplTest {
                 .save(keyCaptor.capture());
 
         Mockito.when(totpKeysRepository.findByAccountId(DOMAIN, ACCOUNT_ID))
-                .thenReturn(CompletableFuture.completedFuture(Collections.singletonList(keyCaptor.getValue())));
+                .thenReturn(Uni.createFrom().item(Collections.singletonList(keyCaptor.getValue())));
 
         // retrieve the key and ensure the encrypted key is what is returned
         Optional<TotpKeyBO> keys = totpKeysService.getByAccountIdDecrypted(ACCOUNT_ID, DOMAIN).join();

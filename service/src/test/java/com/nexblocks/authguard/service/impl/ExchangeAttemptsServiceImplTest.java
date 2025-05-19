@@ -7,6 +7,7 @@ import com.nexblocks.authguard.service.ExchangeAttemptsService;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.ExchangeAttemptBO;
 import com.nexblocks.authguard.service.model.ExchangeAttemptsQueryBO;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -38,7 +39,7 @@ class ExchangeAttemptsServiceImplTest {
                 .build();
 
         Mockito.when(repository.findByEntity(101))
-                .thenReturn(CompletableFuture.completedFuture(
+                .thenReturn(Uni.createFrom().item(
                         Collections.singletonList(ExchangeAttemptDO.builder()
                                 .entityId(101L)
                                 .exchangeFrom("basic")
@@ -65,7 +66,7 @@ class ExchangeAttemptsServiceImplTest {
                 .build();
 
         Mockito.when(repository.findByEntityAndTimestamp(101, now))
-                .thenReturn(CompletableFuture.completedFuture(
+                .thenReturn(Uni.createFrom().item(
                         Collections.singletonList(ExchangeAttemptDO.builder()
                                 .entityId(101L)
                                 .exchangeFrom("basic")
@@ -93,7 +94,7 @@ class ExchangeAttemptsServiceImplTest {
                 .build();
 
         Mockito.when(repository.findByEntityAndTimestampAndExchange(101, now, "basic"))
-                .thenReturn(CompletableFuture.completedFuture(
+                .thenReturn(Uni.createFrom().item(
                         Collections.singletonList(ExchangeAttemptDO.builder()
                                 .entityId(101L)
                                 .exchangeFrom("basic")

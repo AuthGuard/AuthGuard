@@ -5,10 +5,10 @@ import com.nexblocks.authguard.dal.repository.ImmutableRecordRepository;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface PermissionsRepository extends ImmutableRecordRepository<PermissionDO> {
-    CompletableFuture<Optional<PermissionDO>> search(String group, String name, String domain);
-    CompletableFuture<Collection<PermissionDO>> getAll(String domain, Page<Long> page);
-    CompletableFuture<Collection<PermissionDO>> getAllForGroup(String group, String domain, Page<Long> page);
+    Uni<Optional<PermissionDO>> search(String group, String name, String domain);
+    Uni<Collection<PermissionDO>> getAll(String domain, Page<Long> page);
+    Uni<Collection<PermissionDO>> getAllForGroup(String group, String domain, Page<Long> page);
 }

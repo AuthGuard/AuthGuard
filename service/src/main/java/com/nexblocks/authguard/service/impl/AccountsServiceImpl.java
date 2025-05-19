@@ -142,26 +142,29 @@ public class AccountsServiceImpl implements AccountsService {
     @Override
     public CompletableFuture<Optional<AccountBO>> getByExternalId(final String externalId, String domain) {
         return accountsRepository.getByExternalId(externalId)
-                .thenApply(opt -> opt
+                .map(opt -> opt
                         .filter(account -> Objects.equals(account.getDomain(), domain))
                         .map(serviceMapper::toBO)
-                        .map(credentialsManager::removeSensitiveInformation));
+                        .map(credentialsManager::removeSensitiveInformation))
+                .subscribeAsCompletionStage();
     }
 
     @Override
     public CompletableFuture<Optional<AccountBO>> getByExternalIdUnchecked(String externalId) {
         return accountsRepository.getByExternalId(externalId)
-                .thenApply(opt -> opt
+                .map(opt -> opt
                         .map(serviceMapper::toBO)
-                        .map(credentialsManager::removeSensitiveInformation));
+                        .map(credentialsManager::removeSensitiveInformation))
+                .subscribeAsCompletionStage();
     }
 
     @Override
     public CompletableFuture<Optional<AccountBO>> getByEmail(final String email, final String domain) {
         return accountsRepository.getByEmail(email, domain)
-                .thenApply(opt -> opt
+                .map(opt -> opt
                         .map(serviceMapper::toBO)
-                        .map(credentialsManager::removeSensitiveInformation));
+                        .map(credentialsManager::removeSensitiveInformation))
+                .subscribeAsCompletionStage();
     }
 
     @Override

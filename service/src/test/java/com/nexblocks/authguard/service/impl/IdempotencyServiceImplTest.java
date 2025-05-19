@@ -6,6 +6,7 @@ import com.nexblocks.authguard.service.IdempotencyService;
 import com.nexblocks.authguard.service.exceptions.IdempotencyException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.Entity;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -74,7 +75,7 @@ class IdempotencyServiceImplTest {
         final Supplier<TestEntity> operation = () -> entity;
 
         Mockito.when(repository.findByKeyAndEntityType(idempotentKey, ENTITY_TYPE))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         Mockito.when(repository.save(Mockito.any())).thenAnswer(Mockito.RETURNS_DEEP_STUBS);
 
@@ -106,7 +107,7 @@ class IdempotencyServiceImplTest {
         final Supplier<TestEntity> operation = () -> entity;
 
         Mockito.when(repository.findByKeyAndEntityType(idempotentKey, ENTITY_TYPE))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(idempotentRecord)));
+                .thenReturn(Uni.createFrom().item(Optional.of(idempotentRecord)));
 
         Mockito.when(repository.save(Mockito.any())).thenAnswer(Mockito.RETURNS_DEEP_STUBS);
 

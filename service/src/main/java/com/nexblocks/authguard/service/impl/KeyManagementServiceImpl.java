@@ -180,27 +180,29 @@ public class KeyManagementServiceImpl implements KeyManagementService {
     @Override
     public CompletableFuture<List<PersistedKeyBO>> getByDomain(final String domain, final Instant cursor) {
         return repository.findByDomain(domain, Page.of(cursor, PAGE_SIZE, DEFAULT_CURSOR))
-                .thenApply(list -> list.stream()
+                .map(list -> list.stream()
                         .map(serviceMapper::toBO)
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList()))
+                .subscribeAsCompletionStage();
     }
 
     @Override
     public CompletableFuture<List<PersistedKeyBO>> getByAccountId(final String domain, final long accountId,
                                                                   final Instant cursor) {
         return repository.findByAccountId(domain, accountId, Page.of(cursor, PAGE_SIZE, DEFAULT_CURSOR))
-                .thenApply(list -> list.stream()
+                .map(list -> list.stream()
                         .map(serviceMapper::toBO)
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList()))
+                .subscribeAsCompletionStage();
     }
 
     @Override
     public CompletableFuture<List<PersistedKeyBO>> getByAppId(final String domain, final long appId, final Instant cursor) {
         return repository.findByAppId(domain, appId, Page.of(cursor, PAGE_SIZE, DEFAULT_CURSOR))
-                .thenApply(list -> list.stream()
+                .map(list -> list.stream()
                         .map(serviceMapper::toBO)
-                        .collect(Collectors.toList()));
-
+                        .collect(Collectors.toList()))
+                .subscribeAsCompletionStage();
     }
 
     private void verifySize(final AlgorithmDetails<?> algorithmDetails, final int size) {
