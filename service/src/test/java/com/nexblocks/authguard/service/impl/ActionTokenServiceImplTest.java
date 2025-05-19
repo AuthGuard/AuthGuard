@@ -128,7 +128,7 @@ class ActionTokenServiceImplTest {
                 .build();
 
         Mockito.when(accountTokensRepository.getByToken("action-token"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         ActionTokenBO actual = actionTokenService.verifyToken("action-token", "something").join();
 
@@ -143,7 +143,7 @@ class ActionTokenServiceImplTest {
                 .build();
 
         Mockito.when(accountTokensRepository.getByToken("action-token"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         assertThatThrownBy(() -> actionTokenService.verifyToken("action-token", "else").join())
                 .hasCauseInstanceOf(ServiceException.class)
@@ -160,7 +160,7 @@ class ActionTokenServiceImplTest {
                 .build();
 
         Mockito.when(accountTokensRepository.getByToken("action-token"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         assertThatThrownBy(() -> actionTokenService.verifyToken("action-token", "something").join())
                 .hasCauseInstanceOf(ServiceException.class)
@@ -172,7 +172,7 @@ class ActionTokenServiceImplTest {
     @Test
     void verifyTokenWrongToken() {
         Mockito.when(accountTokensRepository.getByToken("action-token"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         assertThatThrownBy(() -> actionTokenService.verifyToken("action-token", "something").join())
                 .hasCauseInstanceOf(ServiceException.class)

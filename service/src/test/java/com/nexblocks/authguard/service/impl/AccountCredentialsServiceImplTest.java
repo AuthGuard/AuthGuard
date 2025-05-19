@@ -257,7 +257,7 @@ class AccountCredentialsServiceImplTest {
 
         // mocks
         Mockito.when(accountTokensRepository.getByToken(resetToken))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(persistedToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(persistedToken)));
 
         Mockito.when(accountsService.getByIdUnsafe(accountId, "main"))
                 .thenReturn(CompletableFuture.completedFuture(accountBO));
@@ -290,7 +290,7 @@ class AccountCredentialsServiceImplTest {
         String newPassword = "new_password";
 
         Mockito.when(accountTokensRepository.getByToken(resetToken))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         assertThatThrownBy(() -> accountCredentialsService.resetPasswordByToken(resetToken, newPassword, "main").join())
                 .hasCauseInstanceOf(ServiceNotFoundException.class);
@@ -309,7 +309,7 @@ class AccountCredentialsServiceImplTest {
         String newPassword = "new_password";
 
         Mockito.when(accountTokensRepository.getByToken(resetToken))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(persistedToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(persistedToken)));
 
         assertThatThrownBy(() -> accountCredentialsService.resetPasswordByToken(resetToken, newPassword, "main").join())
                 .hasCauseInstanceOf(ServiceException.class);

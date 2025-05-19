@@ -11,6 +11,7 @@ import com.nexblocks.authguard.service.model.AuthRequest;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.util.AsyncUtils;
+import io.smallrye.mutiny.Uni;
 import io.vavr.control.Either;
 import io.vavr.control.Try;
 
@@ -35,6 +36,7 @@ public class AuthorizationCodeVerifier implements AuthVerifier {
     @Override
     public Either<Exception, AccountTokenDO> verifyAndGetAccountToken(final AuthRequest request) {
         return accountTokensRepository.getByToken(request.getToken())
+                .subscribeAsCompletionStage()
                 .join()
                 .map(this::verifyToken)
                 .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid authorization code")));
@@ -49,13 +51,14 @@ public class AuthorizationCodeVerifier implements AuthVerifier {
     @Override
     public CompletableFuture<AccountTokenDO> verifyAndGetAccountTokenAsync(final AuthRequest request) {
         return accountTokensRepository.getByToken(request.getToken())
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isPresent()) {
-                        return AsyncUtils.fromTry(tryVerifyToken(opt.get()));
+                        return AsyncUtils.uniFromTry(tryVerifyToken(opt.get()));
                     }
 
-                    return CompletableFuture.failedFuture(new ServiceException(ErrorCode.INVALID_TOKEN, "Invalid expired or invalid"));
-                });
+                    return Uni.createFrom().failure(new ServiceException(ErrorCode.INVALID_TOKEN, "Invalid expired or invalid"));
+                })
+                .subscribeAsCompletionStage();
     }
 
     private Either<Exception, AccountTokenDO> verifyToken(final AccountTokenDO accountToken) {

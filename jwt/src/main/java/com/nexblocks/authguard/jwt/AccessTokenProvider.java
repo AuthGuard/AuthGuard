@@ -174,7 +174,8 @@ public class AccessTokenProvider implements AuthProvider {
     }
 
     private CompletableFuture<Optional<AccountTokenDO>> deleteRefreshToken(final String refreshToken) {
-        return accountTokensRepository.deleteToken(refreshToken);
+        return accountTokensRepository.deleteToken(refreshToken)
+                .subscribeAsCompletionStage();
     }
 
     private JwtTokenBuilder generateAccessToken(final AccountBO account, final TokenRestrictionsBO restrictions,

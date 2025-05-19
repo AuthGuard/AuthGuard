@@ -15,6 +15,7 @@ import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.AsyncUtils;
 import com.nexblocks.authguard.service.util.ID;
+import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -111,32 +112,33 @@ public class ActionTokenServiceImpl implements ActionTokenService {
     @Override
     public CompletableFuture<ActionTokenBO> verifyToken(final String token, final String action) {
         return accountTokensRepository.getByToken(token)
-                .thenCompose(persisted -> {
+                .flatMap(persisted -> {
                     if (persisted.isEmpty()) {
-                        return CompletableFuture.failedFuture(
+                        return Uni.createFrom().failure(
                                 new ServiceException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST, "Token does not exist"));
                     }
 
                     Instant now = Instant.now();
 
                     if (persisted.get().getExpiresAt().isBefore(now)) {
-                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token has expired"));
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token has expired"));
                     }
 
                     String allowedAction = persisted.get().getAdditionalInformation().get("action");
 
                     if (allowedAction == null || !allowedAction.equals(action)) {
-                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.INVALID_TOKEN, "Token was created for a different action"));
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.INVALID_TOKEN, "Token was created for a different action"));
                     }
 
                     LOG.info("Action token verified. tokenId={}, action={}", persisted.get().getId(), action);
 
-                    return CompletableFuture.completedFuture(ActionTokenBO.builder()
+                    return Uni.createFrom().item(ActionTokenBO.builder()
                             .accountId(persisted.get().getAssociatedAccountId())
                             .token(token)
                             .action(action)
                             .build());
-                });
+                })
+                .subscribeAsCompletionStage();
     }
 
     private AccountTokenDO generateToken(final AccountBO account, final String action) {

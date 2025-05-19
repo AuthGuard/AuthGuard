@@ -36,7 +36,7 @@ class AccountLocksServiceImplTest {
         Instant now = Instant.now();
 
         Mockito.when(repository.findByAccountId(101))
-                .thenReturn(CompletableFuture.completedFuture(
+                .thenReturn(Uni.createFrom().item(
                         Arrays.asList(
                                 AccountLockDO.builder()
                                         .accountId(101)

@@ -14,6 +14,7 @@ import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
+import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,14 +58,15 @@ public class RefreshToAccessToken implements Exchange {
     @Override
     public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
         return accountTokensRepository.getByToken(request.getToken())
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isPresent()) {
-                        return this.generateAndClear(opt.get(), request);
+                        return Uni.createFrom().completionStage(this.generateAndClear(opt.get(), request));
                     }
 
-                    return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN,
+                    return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN,
                             "Invalid token"));
-                });
+                })
+                .subscribeAsCompletionStage();
     }
 
     private CompletableFuture<AuthResponseBO> generateAndClear(final AccountTokenDO accountToken,
@@ -183,14 +185,12 @@ public class RefreshToAccessToken implements Exchange {
                 accountToken.getId(), accountToken.getAssociatedAccountId());
 
         accountTokensRepository.deleteToken(accountToken.getToken())
-                .whenComplete((deletedToken, e) -> {
-                    if (e == null) {
-                        LOG.info("Deleted refresh token. tokenId={}, accountId={}",
-                                accountToken.getId(), accountToken.getAssociatedAccountId());
-                    } else {
-                        LOG.error("Failed to delete refresh token. tokenId={}, accountId={}",
-                                accountToken.getId(), accountToken.getAssociatedAccountId(), e);
-                    }
+                .onFailure()
+                .invoke(e -> LOG.error("Failed to delete refresh token. tokenId={}, accountId={}",
+                        accountToken.getId(), accountToken.getAssociatedAccountId(), e))
+                .subscribe().with(deletedToken -> {
+                    LOG.info("Deleted refresh token. tokenId={}, accountId={}",
+                            accountToken.getId(), accountToken.getAssociatedAccountId());
                 });
     }
 }

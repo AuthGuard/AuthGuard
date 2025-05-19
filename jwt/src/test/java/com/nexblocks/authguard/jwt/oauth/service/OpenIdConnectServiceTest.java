@@ -14,6 +14,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
+import io.smallrye.mutiny.Uni;
 import org.assertj.core.api.AbstractThrowableAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -96,7 +97,7 @@ class OpenIdConnectServiceTest {
                 .build();
         
         Mockito.when(accountTokensRepository.getByToken(token.getToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(token)));
+                .thenReturn(Uni.createFrom().item(Optional.of(token)));
 
         OpenIdConnectRequest retrievedRequest =
                 openIdConnectService.getRequestFromToken(token.getToken(), requestContext, "main").join();
@@ -117,7 +118,7 @@ class OpenIdConnectServiceTest {
                 .build();
 
         Mockito.when(accountTokensRepository.getByToken(token.getToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(token)));
+                .thenReturn(Uni.createFrom().item(Optional.of(token)));
 
         assertThatThrownBy(() -> openIdConnectService.getRequestFromToken(token.getToken(), requestContext, "main").join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class)
@@ -138,7 +139,7 @@ class OpenIdConnectServiceTest {
                 .build();
 
         Mockito.when(accountTokensRepository.getByToken(token.getToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(token)));
+                .thenReturn(Uni.createFrom().item(Optional.of(token)));
 
         assertThatThrownBy(() -> openIdConnectService.getRequestFromToken(token.getToken(), requestContext, "other").join())
                 .hasCauseInstanceOf(ServiceNotFoundException.class)

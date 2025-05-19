@@ -34,7 +34,7 @@ class BasicJtiProviderTest {
     @Test
     void notGenerated() {
         Mockito.when(repository.getByToken(any()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         assertThat(provider.validate("malicious")).isFalse();
     }

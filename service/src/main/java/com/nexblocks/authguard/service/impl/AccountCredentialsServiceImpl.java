@@ -21,6 +21,7 @@ import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.AsyncUtils;
 import com.nexblocks.authguard.service.util.CredentialsManager;
 import com.nexblocks.authguard.service.util.ID;
+import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -234,7 +235,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     @Override
     public CompletableFuture<AccountBO> resetPasswordByToken(final String token, final String plainPassword, final String domain) {
         return accountTokensRepository.getByToken(token)
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     AccountTokenDO accountToken = opt.orElseThrow(() -> new ServiceNotFoundException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
                                     "AccountDO token " + token + " does not exist"));
 
@@ -244,8 +245,9 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                         throw new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token " + token + " has expired");
                     }
 
-                    return updatePassword(accountToken.getAssociatedAccountId(), plainPassword, domain);
-                });
+                    return Uni.createFrom().completionStage(updatePassword(accountToken.getAssociatedAccountId(), plainPassword, domain));
+                })
+                .subscribeAsCompletionStage();
     }
 
     @Override

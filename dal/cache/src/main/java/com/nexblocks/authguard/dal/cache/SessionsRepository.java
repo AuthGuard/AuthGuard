@@ -5,12 +5,12 @@ import io.smallrye.mutiny.Uni;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface SessionsRepository {
     Uni<SessionDO> save(SessionDO session);
     Uni<Optional<SessionDO>> getById(long sessionId);
-    CompletableFuture<Optional<SessionDO>> getByToken(String sessionToken);
-    CompletableFuture<Optional<SessionDO>> deleteByToken(String sessionToken);
-    CompletableFuture<List<SessionDO>> findByAccountId(long accountId, String domain);
+    Uni<Optional<SessionDO>> getByToken(String sessionToken);
+    Uni<Optional<SessionDO>> deleteByToken(String sessionToken);
+    Uni<List<SessionDO>> findByAccountId(long accountId, String domain);
 }

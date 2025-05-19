@@ -16,6 +16,7 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.ID;
+import io.smallrye.mutiny.Uni;
 import io.vavr.control.Try;
 import okhttp3.HttpUrl;
 
@@ -89,21 +90,21 @@ public class OpenIdConnectService {
                                                                        final RequestContextBO requestContext,
                                                                        final String domain) {
         return accountTokensRepository.getByToken(token)
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isEmpty()) {
-                        return CompletableFuture.failedFuture(new ServiceNotFoundException(ErrorCode.INVALID_TOKEN,
+                        return Uni.createFrom().failure(new ServiceNotFoundException(ErrorCode.INVALID_TOKEN,
                                 "invalid_token"));
                     }
 
                     AccountTokenDO accountToken = opt.get();
 
                     if (!Objects.equals(accountToken.getDomain(), domain)) {
-                        return CompletableFuture.failedFuture(new ServiceNotFoundException(ErrorCode.INVALID_TOKEN,
+                        return Uni.createFrom().failure(new ServiceNotFoundException(ErrorCode.INVALID_TOKEN,
                                 "invalid_token"));
                     }
 
                     if (!Objects.equals(accountToken.getUserAgent(), requestContext.getUserAgent())) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
+                        return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
                                 "invalid_user_agent"));
                     }
 
@@ -121,8 +122,10 @@ public class OpenIdConnectService {
 
                     // TODO what else should we check?
 
-                    return CompletableFuture.completedFuture(request);
-                });
+                    return Uni.createFrom().item(request);
+                })
+                .map(OpenIdConnectRequest.class::cast)
+                .subscribeAsCompletionStage();
     }
 
     public CompletableFuture<AuthResponseBO> processAuth(final OpenIdConnectRequest request,

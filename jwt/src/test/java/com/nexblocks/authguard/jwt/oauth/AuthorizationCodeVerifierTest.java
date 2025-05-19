@@ -3,6 +3,7 @@ package com.nexblocks.authguard.jwt.oauth;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -31,7 +32,7 @@ class AuthorizationCodeVerifierTest {
                 .build();
 
         Mockito.when(accountTokensRepository.getByToken(authorizationCode))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         assertThat(authorizationCodeVerifier.verifyAccountToken(authorizationCode)).isEqualTo(accountId);
     }
@@ -44,7 +45,7 @@ class AuthorizationCodeVerifierTest {
         String authorizationCode = "authorization-code";
 
         Mockito.when(accountTokensRepository.getByToken(authorizationCode))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         assertThatThrownBy(() -> authorizationCodeVerifier.verifyAccountToken(authorizationCode))
                 .isInstanceOf(ServiceAuthorizationException.class);
@@ -65,7 +66,7 @@ class AuthorizationCodeVerifierTest {
                 .build();
 
         Mockito.when(accountTokensRepository.getByToken(authorizationCode))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         assertThatThrownBy(() -> authorizationCodeVerifier.verifyAccountToken(authorizationCode))
                 .isInstanceOf(ServiceAuthorizationException.class);

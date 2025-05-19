@@ -10,6 +10,7 @@ import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.VerificationService;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.model.*;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -60,7 +61,7 @@ class VerificationServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accountTokensRepository.getByToken("verification-token"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(AccountTokenDO.builder()
+                .thenReturn(Uni.createFrom().item(Optional.of(AccountTokenDO.builder()
                         .associatedAccountId(101)
                         .expiresAt(Instant.now().plusSeconds(2))
                                 .additionalInformation(ImmutableMap.of("email", "to-verify@test.com"))
@@ -95,7 +96,7 @@ class VerificationServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accountTokensRepository.getByToken("verification-token"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(AccountTokenDO.builder()
+                .thenReturn(Uni.createFrom().item(Optional.of(AccountTokenDO.builder()
                         .associatedAccountId(101)
                         .expiresAt(Instant.now().plusSeconds(2))
                         .additionalInformation(ImmutableMap.of("email", "wrong@test.com"))
@@ -123,7 +124,7 @@ class VerificationServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accountTokensRepository.getByToken("verification-token"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(AccountTokenDO.builder()
+                .thenReturn(Uni.createFrom().item(Optional.of(AccountTokenDO.builder()
                         .associatedAccountId(101)
                         .expiresAt(Instant.now().plusSeconds(2))
                         .build())));
@@ -150,7 +151,7 @@ class VerificationServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
 
         Mockito.when(accountTokensRepository.getByToken("verification-token"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(AccountTokenDO.builder()
+                .thenReturn(Uni.createFrom().item(Optional.of(AccountTokenDO.builder()
                         .associatedAccountId(101)
                         .expiresAt(Instant.now().minusSeconds(2))
                         .additionalInformation(ImmutableMap.of("email", "wrong@test.com"))

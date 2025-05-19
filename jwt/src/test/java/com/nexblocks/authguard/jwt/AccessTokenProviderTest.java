@@ -314,7 +314,7 @@ class AccessTokenProviderTest {
         AuthRequestBO deleteRequest = AuthRequestBO.builder().token(refreshToken).build();
 
         Mockito.when(accountTokensRepository.deleteToken(refreshToken))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(
+                .thenReturn(Uni.createFrom().item(Optional.of(
                         AccountTokenDO.builder()
                                 .associatedAccountId(accountId)
                                 .token(refreshToken)
@@ -341,7 +341,7 @@ class AccessTokenProviderTest {
         AuthRequestBO deleteRequest = AuthRequestBO.builder().token(refreshToken).build();
 
         Mockito.when(accountTokensRepository.deleteToken(refreshToken))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         assertThatThrownBy(() -> accessTokenProvider.delete(deleteRequest).join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);

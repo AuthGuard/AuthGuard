@@ -71,12 +71,14 @@ public class SessionsServiceImpl implements SessionsService {
     @Override
     public CompletableFuture<Optional<SessionBO>> getByToken(final String token) {
         return sessionsRepository.getByToken(token)
-                .thenApply(opt -> opt.map(serviceMapper::toBO));
+                .map(opt -> opt.map(serviceMapper::toBO))
+                .subscribeAsCompletionStage();
     }
 
     @Override
     public CompletableFuture<Optional<SessionBO>> deleteByToken(final String token) {
         return sessionsRepository.deleteByToken(token)
-                .thenApply(opt -> opt.map(serviceMapper::toBO));
+                .map(opt -> opt.map(serviceMapper::toBO))
+                .subscribeAsCompletionStage();
     }
 }

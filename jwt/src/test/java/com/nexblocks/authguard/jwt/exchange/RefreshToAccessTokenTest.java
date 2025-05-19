@@ -9,6 +9,7 @@ import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.*;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -39,7 +40,7 @@ class RefreshToAccessTokenTest {
                 accessTokenProvider, JwtConfig.builder().build(), new ServiceMapperImpl());
 
         Mockito.when(accountTokensRepository.deleteToken(Mockito.any()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(AccountTokenDO.builder().build())));
+                .thenReturn(Uni.createFrom().item(Optional.of(AccountTokenDO.builder().build())));
     }
 
     @Test
@@ -79,7 +80,7 @@ class RefreshToAccessTokenTest {
 
         // mock
         Mockito.when(accountTokensRepository.getByToken(authRequest.getToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         Mockito.when(accountsService.getByIdUnchecked(accountId))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
@@ -144,7 +145,7 @@ class RefreshToAccessTokenTest {
 
         // mock
         Mockito.when(accountTokensRepository.getByToken(authRequest.getToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         Mockito.when(accountsService.getByIdUnchecked(accountId))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
@@ -180,7 +181,7 @@ class RefreshToAccessTokenTest {
 
         // mock
         Mockito.when(accountTokensRepository.getByToken(authRequest.getToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         // do
         assertThatThrownBy(() -> refreshToAccessToken.exchange(authRequest).join())
@@ -208,7 +209,7 @@ class RefreshToAccessTokenTest {
 
         // mock
         Mockito.when(accountTokensRepository.getByToken(authRequest.getToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         Mockito.when(accountsService.getByIdUnchecked(accountId))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
@@ -229,7 +230,7 @@ class RefreshToAccessTokenTest {
 
         // mock
         Mockito.when(accountTokensRepository.getByToken(authRequest.getToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         // do
         assertThatThrownBy(() -> refreshToAccessToken.exchange(authRequest).join())
@@ -283,7 +284,7 @@ class RefreshToAccessTokenTest {
 
         // mock
         Mockito.when(accountTokensRepository.getByToken(authRequest.getToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         Mockito.when(accountsService.getByIdUnchecked(accountId))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
@@ -324,7 +325,7 @@ class RefreshToAccessTokenTest {
 
         // mock
         Mockito.when(accountTokensRepository.getByToken(authRequest.getToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         // do
         assertThatThrownBy(() -> refreshToAccessToken.exchange(authRequest).join())

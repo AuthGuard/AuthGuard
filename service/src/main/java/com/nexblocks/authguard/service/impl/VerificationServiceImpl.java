@@ -48,6 +48,7 @@ public class VerificationServiceImpl implements VerificationService {
     @Override
     public void verifyEmail(final String verificationToken, String domain) {
         final AccountTokenDO accountToken = accountTokensRepository.getByToken(verificationToken)
+                .subscribeAsCompletionStage()
                 .join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
                         "AccountDO token " + verificationToken + " does not exist"));

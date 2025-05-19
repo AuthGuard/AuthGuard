@@ -5,6 +5,7 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.AppBO;
 import com.nexblocks.authguard.service.model.ClientBO;
+import io.smallrye.mutiny.Uni;
 import io.vavr.control.Try;
 
 import java.util.Optional;
@@ -14,6 +15,11 @@ public final class AsyncUtils {
     public static <T> CompletableFuture<T> fromTry(final Try<T> opt) {
         return opt.map(CompletableFuture::completedFuture)
                 .getOrElseGet(CompletableFuture::failedFuture);
+    }
+
+    public static <T> Uni<T> uniFromTry(final Try<T> opt) {
+        return opt.map(item -> Uni.createFrom().item(item))
+                .getOrElseGet(ex -> Uni.createFrom().failure(ex));
     }
 
     public static <T> CompletableFuture<T> fromOptional(final Optional<T> opt, final ErrorCode missingCode, final String missingMessage) {

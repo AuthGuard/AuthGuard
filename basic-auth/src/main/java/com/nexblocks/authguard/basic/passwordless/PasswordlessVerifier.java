@@ -9,6 +9,7 @@ import com.nexblocks.authguard.service.model.AuthRequest;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.service.util.AsyncUtils;
+import io.smallrye.mutiny.Uni;
 import io.vavr.control.Try;
 
 import java.time.Instant;
@@ -30,14 +31,15 @@ public class PasswordlessVerifier implements AuthVerifier {
     @Override
     public CompletableFuture<Long> verifyAccountTokenAsync(final AuthRequest request) {
         return accountTokensRepository.getByToken(request.getToken())
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isEmpty()) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN,
+                        return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN,
                                 "Passwordless token doesn't exist"));
                     }
 
-                    return AsyncUtils.fromTry(verifyToken(opt.get()));
-                });
+                    return AsyncUtils.uniFromTry(verifyToken(opt.get()));
+                })
+                .subscribeAsCompletionStage();
     }
 
     private Try<Long> verifyToken(final AccountTokenDO accountToken) {

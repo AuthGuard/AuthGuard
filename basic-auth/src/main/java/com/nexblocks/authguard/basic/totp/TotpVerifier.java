@@ -22,6 +22,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AuthRequest;
 import com.nexblocks.authguard.service.util.AsyncUtils;
+import io.smallrye.mutiny.Uni;
 import io.vavr.control.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,15 +83,16 @@ public class TotpVerifier implements AuthVerifier {
         String totp = parts[1];
 
         return accountTokensRepository.getByToken(accountToken)
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isPresent()) {
-                        return AsyncUtils.fromTry(checkIfExpired(opt.get()));
+                        return AsyncUtils.uniFromTry(checkIfExpired(opt.get()));
                     }
 
-                    return CompletableFuture.failedFuture(new ServiceException(ErrorCode.INVALID_TOKEN,
+                    return Uni.createFrom().failure(new ServiceException(ErrorCode.INVALID_TOKEN,
                             "Invalid or expired token"));
                 })
-                .thenCompose(retrievedToken -> verifyTotp(retrievedToken, totp));
+                .flatMap(retrievedToken -> Uni.createFrom().completionStage(verifyTotp(retrievedToken, totp)))
+                .subscribeAsCompletionStage();
     }
 
     private Try<AccountTokenDO> checkIfExpired(final AccountTokenDO accountToken) {

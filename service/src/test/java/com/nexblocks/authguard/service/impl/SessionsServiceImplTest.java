@@ -84,7 +84,7 @@ class SessionsServiceImplTest {
                 .build();
 
         Mockito.when(repository.getByToken(sessionDO.getSessionToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(sessionDO)));
+                .thenReturn(Uni.createFrom().item(Optional.of(sessionDO)));
 
         SessionBO expected = serviceMapper.toBO(sessionDO);
         Optional<SessionBO> actual = service.getByToken(sessionDO.getSessionToken()).join();
@@ -102,7 +102,7 @@ class SessionsServiceImplTest {
                 .build();
 
         Mockito.when(repository.deleteByToken(sessionDO.getSessionToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(sessionDO)));
+                .thenReturn(Uni.createFrom().item(Optional.of(sessionDO)));
 
         SessionBO expected = serviceMapper.toBO(sessionDO);
         Optional<SessionBO> actual = service.deleteByToken(sessionDO.getSessionToken()).join();

@@ -12,6 +12,7 @@ import com.nexblocks.authguard.service.model.AuthRequest;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.TotpKeyBO;
 import de.taimos.totp.TOTP;
+import io.smallrye.mutiny.Uni;
 import org.apache.commons.codec.binary.Hex;
 import org.bouncycastle.util.encoders.Base32;
 import org.junit.jupiter.api.BeforeEach;
@@ -77,7 +78,7 @@ class TotpVerifierTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(totpKey)));
 
         Mockito.when(accountTokensRepository.getByToken(accountToken.getToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         AccountTokenDO actual = totpVerifier.verifyAndGetAccountTokenAsync(request).join();
 
@@ -96,7 +97,7 @@ class TotpVerifierTest {
                 .build();
 
         Mockito.when(accountTokensRepository.getByToken(accountToken.getToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         String totp = getTOTPCode();
 
@@ -154,7 +155,7 @@ class TotpVerifierTest {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(totpKey)));
 
         Mockito.when(accountTokensRepository.getByToken(accountToken.getToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         CompletableFuture<AccountTokenDO> future =
                 totpVerifier.verifyAndGetAccountTokenAsync(request);

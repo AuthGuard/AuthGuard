@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class AccountLocksServiceImpl implements AccountLocksService {
@@ -44,11 +45,13 @@ public class AccountLocksServiceImpl implements AccountLocksService {
         final Instant now = Instant.now();
 
         return accountLocksRepository.findByAccountId(accountId)
-                .thenApply(locks -> locks.stream()
+                .map(locks -> locks.stream()
                         .filter(lock -> lock.getExpiresAt().isAfter(now))
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList())
-                );
+                )
+                .subscribeAsCompletionStage()
+                .thenApply(Function.identity());
     }
 
     @Override
