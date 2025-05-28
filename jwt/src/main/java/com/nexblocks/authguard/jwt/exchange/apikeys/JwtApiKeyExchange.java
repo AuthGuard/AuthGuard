@@ -11,7 +11,7 @@ import com.nexblocks.authguard.service.model.ClientBO;
 
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @KeyExchange(keyType = "jwtApiKey")
 public class JwtApiKeyExchange implements ApiKeyExchange {
@@ -40,12 +40,12 @@ public class JwtApiKeyExchange implements ApiKeyExchange {
     }
 
     @Override
-    public CompletableFuture<Optional<Long>> verifyAndGetAppId(final String apiKey) {
-        return CompletableFuture.completedFuture(Optional.of(tokenVerifier.verifyAccountToken(apiKey)));
+    public Uni<Optional<Long>> verifyAndGetAppId(final String apiKey) {
+        return Uni.createFrom().item(Optional.of(tokenVerifier.verifyAccountToken(apiKey)));
     }
 
     @Override
-    public CompletableFuture<Optional<Long>> verifyAndGetClientId(String apiKey) {
+    public Uni<Optional<Long>> verifyAndGetClientId(String apiKey) {
         return verifyAndGetAppId(apiKey);
     }
 }

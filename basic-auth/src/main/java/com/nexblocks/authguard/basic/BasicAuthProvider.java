@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public class BasicAuthProvider {
     public static final String RESERVED_DOMAIN = "global";
@@ -41,13 +41,13 @@ public class BasicAuthProvider {
         LOG.debug("Initialized with password implementation {}", this.securePassword.getClass());
     }
 
-    public CompletableFuture<AccountSession> authenticateAndGetAccountSession(final AuthRequestBO authRequest) {
+    public Uni<AccountSession> authenticateAndGetAccountSession(final AuthRequestBO authRequest) {
         return verifyCredentialsAndGetAccount(authRequest.getIdentifier(), authRequest.getPassword(),
                 authRequest.getDomain())
-                .thenCompose(this::createTrackingSession);
+                .flatMap(this::createTrackingSession);
     }
 
-    public CompletableFuture<AccountBO> authenticateAndGetAccount(final AuthRequestBO authRequest) {
+    public Uni<AccountBO> authenticateAndGetAccount(final AuthRequestBO authRequest) {
         return verifyCredentialsAndGetAccount(authRequest.getIdentifier(), authRequest.getPassword(),
                 authRequest.getDomain());
     }
@@ -58,28 +58,28 @@ public class BasicAuthProvider {
      * 'Authorization' headers made to AuthGuard. For any other scenario, use
      * authenticateAndGetAccount(AuthRequest);
      */
-    public CompletableFuture<AccountBO> authenticateAndGetAccount(final String basicToken) {
+    public Uni<AccountBO> authenticateAndGetAccount(final String basicToken) {
         return handleBasicAuthentication(basicToken);
     }
 
-    public CompletableFuture<AccountBO> getAccount(final AuthRequestBO request) {
+    public Uni<AccountBO> getAccount(final AuthRequestBO request) {
         return verifyCredentialsAndGetAccount(request.getIdentifier(), request.getDomain());
     }
 
-    public CompletableFuture<AccountSession> getAccountSessionAsync(final AuthRequestBO request) {
+    public Uni<AccountSession> getAccountSessionAsync(final AuthRequestBO request) {
         return verifyCredentialsAndGetAccount(request.getIdentifier(), request.getDomain())
-                .thenCompose(this::createTrackingSession);
+                .flatMap(this::createTrackingSession);
     }
 
-    private CompletableFuture<AccountSession> createTrackingSession(AccountBO account) {
+    private Uni<AccountSession> createTrackingSession(AccountBO account) {
         return trackingSessionsService.startSession(account)
-                .thenApply(session -> AccountSessionBO.builder()
+                .map(session -> AccountSessionBO.builder()
                         .account(account)
                         .session(session)
                         .build());
     }
 
-    private CompletableFuture<AccountBO> handleBasicAuthentication(final String base64Credentials) {
+    private Uni<AccountBO> handleBasicAuthentication(final String base64Credentials) {
         final String[] decoded = new String(Base64.getDecoder().decode(base64Credentials)).split(":");
 
         if (decoded.length != 2) {
@@ -92,15 +92,15 @@ public class BasicAuthProvider {
         return verifyCredentialsAndGetAccount(username, password, RESERVED_DOMAIN);
     }
 
-    private CompletableFuture<AccountBO> verifyCredentialsAndGetAccount(final String username, final String password, final String domain) {
+    private Uni<AccountBO> verifyCredentialsAndGetAccount(final String username, final String password, final String domain) {
         return accountsService.getByIdentifierUnsafe(username, domain)
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isEmpty()) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
+                        return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
                                 "Identifier does not exist"));
                     }
 
-                    return AsyncUtils.fromTry(tryVerifyCredentials(opt.get(), username, password));
+                    return AsyncUtils.uniFromTry(tryVerifyCredentials(opt.get(), username, password));
                 });
     }
 
@@ -169,21 +169,21 @@ public class BasicAuthProvider {
         return securePasswordProvider.getPreviousVersions().get(credentials.getPasswordVersion());
     }
 
-    private CompletableFuture<AccountBO> verifyCredentialsAndGetAccount(final String username, final String domain) {
+    private Uni<AccountBO> verifyCredentialsAndGetAccount(final String username, final String domain) {
         return accountsService.getByIdentifierUnsafe(username, domain)
-                .thenCompose(credentials -> {
+                .flatMap(credentials -> {
                     if (credentials.isEmpty()) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
+                        return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
                                 "Identifier does not exist"));
                     }
 
                     Optional<Exception> validationError = checkIdentifier(credentials.get(), username);
 
                     if (validationError.isPresent()) {
-                        return CompletableFuture.failedFuture(validationError.get());
+                        return Uni.createFrom().failure(validationError.get());
                     }
 
-                    return CompletableFuture.completedFuture(credentials.get());
+                    return Uni.createFrom().item(credentials.get());
                 });
     }
 

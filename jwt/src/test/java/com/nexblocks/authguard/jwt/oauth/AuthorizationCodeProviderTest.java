@@ -18,7 +18,7 @@ import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -45,7 +45,8 @@ class AuthorizationCodeProviderTest {
                 .id(101)
                 .build();
 
-        AuthResponseBO tokens = authorizationCodeProvider.generateToken(account).join();
+        AuthResponseBO tokens = authorizationCodeProvider.generateToken(account)
+                .subscribeAsCompletionStage().join();
 
         assertThat(tokens.getType()).isEqualTo("authorizationCode");
         assertThat(tokens.getToken()).isNotNull();
@@ -85,7 +86,8 @@ class AuthorizationCodeProviderTest {
         Mockito.when(accountTokensRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
-        AuthResponseBO tokens = authorizationCodeProvider.generateToken(account, options).join();
+        AuthResponseBO tokens = authorizationCodeProvider.generateToken(account, options)
+                .subscribeAsCompletionStage().join();
 
         assertThat(tokens.getType()).isEqualTo("authorizationCode");
         assertThat(tokens.getToken()).isNotNull();
@@ -138,7 +140,8 @@ class AuthorizationCodeProviderTest {
         Mockito.when(accountTokensRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
-        AuthResponseBO tokens = authorizationCodeProvider.generateToken(account, options).join();
+        AuthResponseBO tokens = authorizationCodeProvider.generateToken(account, options)
+                .subscribeAsCompletionStage().join();
 
         assertThat(tokens.getType()).isEqualTo("authorizationCode");
         assertThat(tokens.getToken()).isNotNull();

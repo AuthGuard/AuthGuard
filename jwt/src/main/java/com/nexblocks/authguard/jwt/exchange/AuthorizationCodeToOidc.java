@@ -13,7 +13,7 @@ import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import com.nexblocks.authguard.service.model.TokenRestrictionsBO;
 import io.vavr.control.Try;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @TokenExchange(from = "authorizationCode", to = "oidc")
 public class AuthorizationCodeToOidc implements Exchange {
@@ -34,12 +34,12 @@ public class AuthorizationCodeToOidc implements Exchange {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+    public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
         return authorizationCodeVerifier.verifyAndGetAccountTokenAsync(request)
-                .thenCompose(accountToken -> generateToken(accountToken, request));
+                .flatMap(accountToken -> generateToken(accountToken, request));
     }
 
-    private CompletableFuture<AuthResponseBO> generateToken(final AccountTokenDO accountToken, final AuthRequestBO request) {
+    private Uni<AuthResponseBO> generateToken(final AccountTokenDO accountToken, final AuthRequestBO request) {
         TokenRestrictionsBO restrictions = getRestrictions(accountToken);
         TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("authorizationCode")
@@ -54,11 +54,11 @@ public class AuthorizationCodeToOidc implements Exchange {
         Try<Boolean> verificationResult = PkceVerifier.verifyIfPkce(accountToken, request);
 
         if (verificationResult.isFailure()) {
-            return CompletableFuture.failedFuture(verificationResult.getCause());
+            return Uni.createFrom().failure(verificationResult.getCause());
         }
 
         return accountsServiceAdapter.getAccount(accountToken.getAssociatedAccountId())
-                .thenCompose(account -> openIdConnectTokenProvider.generateToken(account, restrictions, options));
+                .flatMap(account -> openIdConnectTokenProvider.generateToken(account, restrictions, options));
     }
 
     private TokenRestrictionsBO getRestrictions(final AccountTokenDO accountToken) {

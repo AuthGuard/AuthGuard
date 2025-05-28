@@ -14,7 +14,7 @@ import org.mockito.Mockito;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 
@@ -79,7 +79,7 @@ class IdempotencyServiceImplTest {
 
         Mockito.when(repository.save(Mockito.any())).thenAnswer(Mockito.RETURNS_DEEP_STUBS);
 
-        final TestEntity result = service.performOperation(operation, idempotentKey, ENTITY_TYPE).join();
+        final TestEntity result = service.performOperation(operation, idempotentKey, ENTITY_TYPE).subscribeAsCompletionStage().join();
         final IdempotentRecordDO expectedRecord = IdempotentRecordDO.builder()
                 .idempotentKey(idempotentKey)
                 .entityId(entity.getId())
@@ -111,7 +111,7 @@ class IdempotencyServiceImplTest {
 
         Mockito.when(repository.save(Mockito.any())).thenAnswer(Mockito.RETURNS_DEEP_STUBS);
 
-        assertThatThrownBy(() -> service.performOperation(operation, idempotentKey, ENTITY_TYPE).join())
+        assertThatThrownBy(() -> service.performOperation(operation, idempotentKey, ENTITY_TYPE).subscribeAsCompletionStage().join())
                 .isInstanceOf(CompletionException.class)
                 .hasCauseInstanceOf(IdempotencyException.class);
     }

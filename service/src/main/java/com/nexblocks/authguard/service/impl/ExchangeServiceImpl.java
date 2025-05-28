@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -45,7 +45,7 @@ public class ExchangeServiceImpl implements ExchangeService {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO authRequest, final String fromTokenType, final String toTokenType,
+    public Uni<AuthResponseBO> exchange(final AuthRequestBO authRequest, final String fromTokenType, final String toTokenType,
                                    final RequestContextBO requestContext) {
         final String key = exchangeKey(fromTokenType, toTokenType);
         final Exchange exchange = exchanges.get(key);
@@ -65,17 +65,19 @@ public class ExchangeServiceImpl implements ExchangeService {
                 .build();
 
         return exchange.exchange(enrichedRequest)
-                .whenComplete((tokens, e) -> {
-                    if (e == null) {
-                        LOG.info("Successful exchange. from={}, to={}, request={}", fromTokenType, toTokenType, authRequest);
+                .onFailure()
+                .invoke(e -> {
+                    LOG.info("Unsuccessful exchange. from={}, to={}, request={}, error={}", fromTokenType, toTokenType,
+                            authRequest, e.getMessage());
 
-                        exchangeSuccess(authRequest, requestContext, tokens, fromTokenType, toTokenType);
-                    } else {
-                        LOG.info("Unsuccessful exchange. from={}, to={}, request={}, error={}", fromTokenType, toTokenType,
-                                authRequest, e.getMessage());
+                    exchangeFailure(authRequest, requestContext, e, fromTokenType, toTokenType);
+                })
+                .map(tokens -> {
+                    LOG.info("Successful exchange. from={}, to={}, request={}", fromTokenType, toTokenType, authRequest);
 
-                        exchangeFailure(authRequest, requestContext, e, fromTokenType, toTokenType);
-                    }
+                    exchangeSuccess(authRequest, requestContext, tokens, fromTokenType, toTokenType);
+
+                    return tokens;
                 });
     }
 
@@ -85,7 +87,7 @@ public class ExchangeServiceImpl implements ExchangeService {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> delete(final AuthRequestBO authRequest, final String tokenType) {
+    public Uni<AuthResponseBO> delete(final AuthRequestBO authRequest, final String tokenType) {
         AuthProvider provider = authProviders.get(tokenType);
 
         if (provider == null) {

@@ -91,26 +91,29 @@ public class EntitiesBootstrap implements BootstrapStep {
         }
 
         List<Uni<BootstrapStepResult>> rolesUnis = roles.stream()
-                .map(role -> RoleBO.builder()
-                        .domain(domain)
-                        .name(role.getName())
-                        .forAccounts(role.isForAccounts())
-                        .forApplications(role.isForApplications())
-                        .build())
-                .map(role -> {
-                    if (rolesService.getRoleByName(role.getName(), domain).join().isPresent()) {
-                        log.info("Role {} already exists in domain {}", role.getName(), domain);
+                .map(rolesConfig -> rolesService.getRoleByName(rolesConfig.getName(), domain)
+                        .flatMap(opt -> {
+                            if (opt.isPresent()) {
+                                log.info("Role {} already exists in domain {}", opt.get().getName(), domain);
 
-                        return Uni.createFrom().item(BootstrapStepResult.success());
-                    }
+                                return Uni.createFrom().item(BootstrapStepResult.success());
+                            }
 
-                    return Uni.createFrom().completionStage(rolesService.create(role))
-                            .map(created -> {
-                                log.info("Created role {} in domain {}", role.getName(), domain);
+                            RoleBO role = RoleBO.builder()
+                                    .domain(domain)
+                                    .name(rolesConfig.getName())
+                                    .forAccounts(rolesConfig.isForAccounts())
+                                    .forApplications(rolesConfig.isForApplications())
+                                    .build();
 
-                                return BootstrapStepResult.success();
-                            });
-                })
+                            return rolesService.create(role)
+                                    .map(created -> {
+                                        log.info("Created role {} in domain {}", role.getName(), domain);
+
+                                        return BootstrapStepResult.success();
+                                    });
+
+                        }))
                 .toList();
 
         if (rolesUnis.isEmpty()) {
@@ -138,22 +141,19 @@ public class EntitiesBootstrap implements BootstrapStep {
                 .toList();
 
         List<Uni<BootstrapStepResult>> unis = permissionBOS.stream()
-                .map(permission -> {
-                    CompletableFuture<BootstrapStepResult> future = permissionsService.get(domain, permission.getGroup(), permission.getName())
-                            .thenCompose(opt -> {
-                                if (opt.isPresent()) {
-                                    return CompletableFuture.completedFuture(BootstrapStepResult.success());
-                                }
+                .map(permission -> permissionsService.get(domain, permission.getGroup(), permission.getName())
+                        .flatMap(opt -> {
+                            if (opt.isPresent()) {
+                                return Uni.createFrom().item(BootstrapStepResult.success());
+                            }
 
-                                return permissionsService.create(permission.withDomain(domain))
-                                        .thenApply(created -> {
-                                            log.info("Created permission {}:{} in domain {}", permission.getGroup(), permission.getName(), domain);
+                            return permissionsService.create(permission.withDomain(domain))
+                                    .map(created -> {
+                                        log.info("Created permission {}:{} in domain {}", permission.getGroup(), permission.getName(), domain);
 
-                                            return BootstrapStepResult.success();
-                                        });
-                            });
-                    return Uni.createFrom().completionStage(future);
-                })
+                                        return BootstrapStepResult.success();
+                                    });
+                        }))
                 .toList();
 
         if (unis.isEmpty()) {

@@ -10,7 +10,7 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public class OtpServiceImpl implements OtpService {
     private final ExchangeService exchangeService;
@@ -24,12 +24,12 @@ public class OtpServiceImpl implements OtpService {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> authenticate(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
+    public Uni<AuthResponseBO> authenticate(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
         return exchangeService.exchange(authRequest, "otp", otpConfig.getGenerateToken(), requestContext);
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> authenticate(final long passwordId, final String otp, final RequestContextBO requestContext) {
+    public Uni<AuthResponseBO> authenticate(final long passwordId, final String otp, final RequestContextBO requestContext) {
         final String token = passwordId + ":" + otp;
 
         return authenticate(AuthRequestBO.builder().token(token).build(), requestContext);

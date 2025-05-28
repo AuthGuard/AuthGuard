@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,7 +57,7 @@ class AuthRouteTest extends AbstractRouteTest {
         AuthResponseDTO tokensDTO = mapper().toDTO(tokensBO);
 
         Mockito.when(authenticationService.authenticate(Mockito.eq(requestBO), Mockito.any()))
-                .thenReturn(CompletableFuture.completedFuture(tokensBO));
+                .thenReturn(Uni.createFrom().item(tokensBO));
 
         ValidatableResponse httpResponse = given()
                 .body(requestDTO)
@@ -85,7 +85,7 @@ class AuthRouteTest extends AbstractRouteTest {
         AuthResponseDTO tokensDTO = mapper().toDTO(tokensBO);
 
         Mockito.when(authenticationService.authenticate(Mockito.eq(requestBO), Mockito.any()))
-                .thenReturn(CompletableFuture.completedFuture(tokensBO));
+                .thenReturn(Uni.createFrom().item(tokensBO));
 
         ValidatableResponse httpResponse = given()
                 .body(requestDTO)
@@ -145,7 +145,7 @@ class AuthRouteTest extends AbstractRouteTest {
                 .withClientId("201");
 
         Mockito.when(authenticationService.authenticate(Mockito.eq(requestBO), Mockito.any()))
-                .thenReturn(CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE, "")));
+                .thenReturn(Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE, "")));
 
         given()
                 .body(requestDTO)

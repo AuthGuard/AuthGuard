@@ -30,7 +30,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.stream.Collectors;
 
 public class TotpKeysServiceImpl implements TotpKeysService {
@@ -66,12 +66,12 @@ public class TotpKeysServiceImpl implements TotpKeysService {
     }
 
     @Override
-    public CompletableFuture<TotpKeyBO> generate(final long accountId, final String domain,
+    public Uni<TotpKeyBO> generate(final long accountId, final String domain,
                                                  final String authenticator) {
         return accountsService.getById(accountId, domain)
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isEmpty()) {
-                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                                 "Account does not exist"));
                     }
 
@@ -79,7 +79,7 @@ public class TotpKeysServiceImpl implements TotpKeysService {
                 });
     }
 
-    private CompletableFuture<TotpKeyBO> generate(final Account account, final String authenticator) {
+    private Uni<TotpKeyBO> generate(final Account account, final String authenticator) {
         return repository.findByAccountId(account.getDomain(), account.getId())
                 .flatMap(existing -> {
                     if (!existing.isEmpty()) {
@@ -95,33 +95,31 @@ public class TotpKeysServiceImpl implements TotpKeysService {
                     String qrCode = config.generateQrCode() ? generateQrCode(base32Key, account) : "";
 
                     // we store the encrypted version but return the plain one
-                    return Uni.createFrom().completionStage(persistenceService.create(TotpKeyBO.builder()
+                    return persistenceService.create(TotpKeyBO.builder()
                                     .domain(account.getDomain())
                                     .accountId(account.getId())
                                     .authenticator(authenticator)
                                     .key(encryptedKey)
                                     .nonce(nonce)
                                     .build())
-                            .thenApply(persisted -> TotpKeyBO.builder()
+                            .map(persisted -> TotpKeyBO.builder()
                                     .from(persisted)
                                     .qrCode(qrCode)
                                     .key(key)
-                                    .build()));
-                })
-                .subscribeAsCompletionStage();
+                                    .build());
+                });
     }
 
     @Override
-    public CompletableFuture<List<TotpKeyBO>> getByAccountId(final long accountId, final String domain) {
+    public Uni<List<TotpKeyBO>> getByAccountId(final long accountId, final String domain) {
         return repository.findByAccountId(domain, accountId)
                 .map(list -> list.stream()
                         .map(serviceMapper::toBO)
-                        .collect(Collectors.toList()))
-                .subscribeAsCompletionStage();
+                        .collect(Collectors.toList()));
     }
 
     @Override
-    public CompletableFuture<Optional<TotpKeyBO>> getByAccountIdDecrypted(final long accountId, final String domain) {
+    public Uni<Optional<TotpKeyBO>> getByAccountIdDecrypted(final long accountId, final String domain) {
         return repository.findByAccountId(domain, accountId)
                 .map(list -> list.stream().findFirst())
                 .map(opt -> opt.map(totpKeyDO -> {
@@ -131,17 +129,16 @@ public class TotpKeysServiceImpl implements TotpKeysService {
 
                     return serviceMapper.toBO(totpKeyDO)
                             .withKey(decrypted);
-                }))
-                .subscribeAsCompletionStage();
+                }));
     }
 
     @Override
-    public CompletableFuture<Optional<TotpKeyBO>> getById(final long id, final String domain) {
+    public Uni<Optional<TotpKeyBO>> getById(final long id, final String domain) {
         return persistenceService.getById(id, domain);
     }
 
     @Override
-    public CompletableFuture<Optional<TotpKeyBO>> delete(final long id, final String domain) {
+    public Uni<Optional<TotpKeyBO>> delete(final long id, final String domain) {
         return persistenceService.delete(id);
     }
 

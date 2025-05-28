@@ -15,7 +15,7 @@ import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -24,8 +24,8 @@ class ExchangeServiceImplTest {
     @TokenExchange(from = "basic", to = "basic")
     static class ValidExchange implements Exchange {
         @Override
-        public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
-            return CompletableFuture.completedFuture(AuthResponseBO.builder()
+        public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
+            return Uni.createFrom().item(AuthResponseBO.builder()
                     .token(request.getToken())
                     .type("Basic")
                     .entityType(EntityType.ACCOUNT)
@@ -36,24 +36,24 @@ class ExchangeServiceImplTest {
 
     static class InvalidExchange implements Exchange {
         @Override
-        public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
-            return CompletableFuture.completedFuture(null);
+        public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
+            return Uni.createFrom().item(null);
         }
     }
 
     @TokenExchange(from = "basic", to = "empty")
     static class EmptyExchange implements Exchange {
         @Override
-        public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
-            return CompletableFuture.failedFuture(new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "Empty"));
+        public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
+            return Uni.createFrom().failure(new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE, "Empty"));
         }
     }
 
     @TokenExchange(from = "basic", to = "exception")
     static class ExceptionExchange implements Exchange {
         @Override
-        public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
-            return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE, "Empty",
+        public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
+            return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE, "Empty",
                     EntityType.ACCOUNT, 101));
         }
     }
@@ -89,7 +89,7 @@ class ExchangeServiceImplTest {
                 .entityId(101)
                 .build();
 
-        Assertions.assertThat(exchangeService.exchange(authRequest, "basic", "basic", requestContext).join())
+        Assertions.assertThat(exchangeService.exchange(authRequest, "basic", "basic", requestContext).subscribeAsCompletionStage().join())
                 .isEqualTo(expected);
 
         Mockito.verify(exchangeAttemptsService).create(ExchangeAttemptBO.builder()
@@ -125,7 +125,7 @@ class ExchangeServiceImplTest {
                 .build();
         final RequestContextBO requestContext = RequestContextBO.builder().build();
 
-        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "unknown", "unknown", requestContext).join())
+        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "unknown", "unknown", requestContext).subscribeAsCompletionStage().join())
                 .isInstanceOf(ServiceException.class);
     }
 
@@ -145,7 +145,7 @@ class ExchangeServiceImplTest {
                 .build();
         final RequestContextBO requestContext = RequestContextBO.builder().build();
 
-        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "basic", "empty", requestContext).join())
+        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "basic", "empty", requestContext).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class);
 
         Mockito.verify(emb).publish(Mockito.eq(ExchangeServiceImpl.CHANNEL), Mockito.any());
@@ -167,7 +167,7 @@ class ExchangeServiceImplTest {
                 .build();
         final RequestContextBO requestContext = RequestContextBO.builder().build();
 
-        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "basic", "exception", requestContext).join())
+        assertThatThrownBy(() -> exchangeService.exchange(authRequest, "basic", "exception", requestContext).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
 
         Mockito.verify(exchangeAttemptsService).create(ExchangeAttemptBO.builder()
@@ -213,7 +213,7 @@ class ExchangeServiceImplTest {
                 .entityId(101)
                 .build();
 
-        Assertions.assertThat(exchangeService.exchange(authRequest, "basic", "basic", requestContext).join())
+        Assertions.assertThat(exchangeService.exchange(authRequest, "basic", "basic", requestContext).subscribeAsCompletionStage().join())
                 .isEqualTo(expected);
 
         Mockito.verify(exchangeAttemptsService).create(ExchangeAttemptBO.builder()

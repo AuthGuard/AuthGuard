@@ -58,67 +58,67 @@ public class ClientsHandler implements VertxApiHandler {
                 .build();
 
         clientsService.create(restMapper.toBO(request), requestContext)
-                .thenApply(restMapper::toDTO)
-                .thenAccept(dto -> context.response().setStatusCode(201).end(Json.encode(dto)));
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context, 201));
     }
 
     private void getByDomain(final RoutingContext context) {
         Long cursor = context.queryParam("cursor").isEmpty() ? null : Long.valueOf(context.queryParam("cursor").get(0));
 
         clientsService.getByDomain(Domain.fromContext(context), cursor)
-                .thenApply(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
-                .thenAccept(dto -> context.response().end(Json.encode(dto)));
+                .map(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void getById(final RoutingContext context) {
         long clientId = parseIdParam(context);
 
         clientsService.getById(clientId, Domain.fromContext(context))
-                .thenApply(opt -> opt.map(restMapper::toDTO)
+                .map(opt -> opt.map(restMapper::toDTO)
                         .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST, "Client does not exist")))
-                .thenAccept(dto -> context.response().end(Json.encode(dto)));
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void getByExternalId(final RoutingContext context) {
         long clientId = parseIdParam(context);
 
         clientsService.getById(clientId, Domain.fromContext(context))
-                .thenApply(opt -> opt.map(restMapper::toDTO)
+                .map(opt -> opt.map(restMapper::toDTO)
                         .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST, "Client does not exist")))
-                .thenAccept(dto -> context.response().end(Json.encode(dto)));
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void deleteById(final RoutingContext context) {
         long clientId = parseIdParam(context);
 
         clientsService.delete(clientId, Domain.fromContext(context))
-                .thenCompose(AsyncUtils::fromClientOptional)
-                .thenApply(restMapper::toDTO)
-                .thenAccept(dto -> context.response().end(Json.encode(dto)));
+                .flatMap(AsyncUtils::uniFromClientOptional)
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void activate(final RoutingContext context) {
         long clientId = parseIdParam(context);
 
         clientsService.activate(clientId, Domain.fromContext(context))
-                .thenApply(restMapper::toDTO)
-                .thenAccept(dto -> context.response().end(Json.encode(dto)));
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void deactivate(final RoutingContext context) {
         long clientId = parseIdParam(context);
 
         clientsService.deactivate(clientId, Domain.fromContext(context))
-                .thenApply(restMapper::toDTO)
-                .thenAccept(dto -> context.response().end(Json.encode(dto)));
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void getApiKeys(final RoutingContext context) {
         long clientId = parseIdParam(context);
 
         apiKeysService.getByAppId(clientId, Domain.fromContext(context))
-                .thenApply(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
-                .thenAccept(dto -> context.response().end(Json.encode(dto)));
+                .map(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private long parseIdParam(final RoutingContext context) {

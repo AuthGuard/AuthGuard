@@ -9,7 +9,7 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import io.vavr.control.Either;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @TokenExchange(from = "encryptedToken", to = "idToken")
 public class EncryptedToIdToken implements Exchange {
@@ -25,16 +25,16 @@ public class EncryptedToIdToken implements Exchange {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+    public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
         String encrypted = request.getToken();
         Either<Exception, String> decrypted = tokenEncryptor.decryptEncoded(encrypted)
                 .map(idTokenVerifier::verify);
 
         if (decrypted.isLeft()) {
-            return CompletableFuture.failedFuture(decrypted.getLeft());
+            return Uni.createFrom().failure(decrypted.getLeft());
         }
 
-        return CompletableFuture.completedFuture(AuthResponseBO.builder()
+        return Uni.createFrom().item(AuthResponseBO.builder()
                         .type(TOKEN_TYPE)
                         .token(decrypted.get())
                         .build());

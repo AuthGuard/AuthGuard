@@ -21,7 +21,7 @@ import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -71,7 +71,7 @@ class OtpProviderTest {
 
         TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
 
-        AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions).join();
+        AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions).subscribeAsCompletionStage().join();
 
         assertThat(generated)
                 .usingRecursiveComparison()
@@ -117,7 +117,7 @@ class OtpProviderTest {
 
         TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
 
-        AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions).join();
+        AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions).subscribeAsCompletionStage().join();
 
         assertThat(generated)
                 .usingRecursiveComparison()
@@ -167,7 +167,7 @@ class OtpProviderTest {
                 .entityId(account.getId())
                 .build();
 
-        AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions).join();
+        AuthResponseBO generated = otpProvider.generateToken(account, tokenOptions).subscribeAsCompletionStage().join();
 
         assertThat(generated)
                 .usingRecursiveComparison()

@@ -19,7 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -54,7 +54,7 @@ class RolesServiceImplTest {
                 RoleBO.builder().name("role-2").build()
         );
 
-        List<RoleBO> actual = rolesService.getAll("main", null).join();
+        List<RoleBO> actual = rolesService.getAll("main", null).subscribeAsCompletionStage().join();
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -72,7 +72,7 @@ class RolesServiceImplTest {
         Mockito.when(rolesRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, RoleDO.class)));
 
-        RoleBO actual = rolesService.create(request).join();
+        RoleBO actual = rolesService.create(request).subscribeAsCompletionStage().join();
 
         assertThat(actual).usingRecursiveComparison()
                 .ignoringFields(SKIPPED_FIELDS)
@@ -95,9 +95,9 @@ class RolesServiceImplTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(role)));
 
         Mockito.when(rolesRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, RoleDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, RoleDO.class)));
 
-        assertThatThrownBy(() -> rolesService.create(request).join())
+        assertThatThrownBy(() -> rolesService.create(request).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceConflictException.class);
     }
 
@@ -114,7 +114,7 @@ class RolesServiceImplTest {
                 .name("role")
                 .build();
 
-        Optional<RoleBO> actual = rolesService.getRoleByName("role", "main").join();
+        Optional<RoleBO> actual = rolesService.getRoleByName("role", "main").subscribeAsCompletionStage().join();
 
         assertThat(actual).contains(expected);
     }
@@ -130,8 +130,7 @@ class RolesServiceImplTest {
                 )));
 
         List<String> actual = rolesService.verifyRoles(request, "main", EntityType.ACCOUNT)
-                .subscribeAsCompletionStage()
-                .join();
+                .subscribeAsCompletionStage().join();
 
         assertThat(actual).isEqualTo(Collections.singletonList("role-1"));
     }
@@ -147,8 +146,7 @@ class RolesServiceImplTest {
                 )));
 
         List<String> actual = rolesService.verifyRoles(request, "main", EntityType.APPLICATION)
-                .subscribeAsCompletionStage()
-                .join();
+                .subscribeAsCompletionStage().join();
 
         assertThat(actual).isEqualTo(Collections.singletonList("role-1"));
     }
@@ -165,8 +163,7 @@ class RolesServiceImplTest {
         List<String> expected = Collections.singletonList("role-1");
 
         List<String> actual = rolesService.verifyRoles(request, "main", EntityType.ACCOUNT)
-                .subscribeAsCompletionStage()
-                .join();
+                .subscribeAsCompletionStage().join();
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -192,7 +189,7 @@ class RolesServiceImplTest {
         Mockito.when(rolesRepository.update(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, RoleDO.class))));
 
-        RoleBO actual = rolesService.update(request, "main").join().get();
+        RoleBO actual = rolesService.update(request, "main").subscribeAsCompletionStage().join().get();
 
         assertThat(actual).usingRecursiveComparison()
                 .ignoringFields(SKIPPED_FIELDS)

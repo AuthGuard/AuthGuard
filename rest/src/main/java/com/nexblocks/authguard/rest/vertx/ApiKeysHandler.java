@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.rest.routes;
+package com.nexblocks.authguard.rest.vertx;
 
 import com.google.inject.Inject;
 import com.nexblocks.authguard.api.common.BodyHandler;
@@ -11,6 +11,7 @@ import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.api.routes.VertxApiHandler;
 import com.nexblocks.authguard.api.access.VertxRolesAccessHandler;
+import com.nexblocks.authguard.rest.vertx.VertxJsonSubscriber;
 import com.nexblocks.authguard.service.ApiKeysService;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.ApiKeyBO;
@@ -22,7 +23,7 @@ import io.vertx.ext.web.RoutingContext;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public class ApiKeysHandler implements VertxApiHandler {
     private final ApiKeysService apiKeysService;
@@ -66,7 +67,7 @@ public class ApiKeysHandler implements VertxApiHandler {
                     : request.getValidFor().toDuration();
             final String domain = context.pathParam("domain");
 
-            CompletableFuture<ApiKeyBO> keyFuture = request.isForClient()
+            Uni<ApiKeyBO> keyFuture = request.isForClient()
                     ? apiKeysService.generateClientApiKey(
                     IdParser.from(request.getAppId()),
                     domain,
@@ -81,17 +82,8 @@ public class ApiKeysHandler implements VertxApiHandler {
                     validFor);
 
             keyFuture
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) {
-                            context.fail(ex);
-                        } else {
-                            context.response()
-                                    .setStatusCode(201)
-                                    .putHeader("Content-Type", "application/json")
-                                    .end(Json.encode(res));
-                        }
-                    });
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context, 201));
         } catch (Exception e) {
             context.fail(e);
         }
@@ -103,17 +95,9 @@ public class ApiKeysHandler implements VertxApiHandler {
             final String domain = context.pathParam("domain");
 
             apiKeysService.getById(id, domain)
-                    .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.API_KEY_DOES_NOT_EXIST, "API key does not exist"))
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) {
-                            context.fail(ex);
-                        } else {
-                            context.response()
-                                    .putHeader("Content-Type", "application/json")
-                                    .end(Json.encode(res));
-                        }
-                    });
+                    .flatMap(opt -> AsyncUtils.uniFromOptional(opt, ErrorCode.API_KEY_DOES_NOT_EXIST, "API key does not exist"))
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (NumberFormatException e) {
             List<Violation> violations = Collections.singletonList(
                     new Violation("id", ViolationType.INVALID_VALUE)
@@ -128,16 +112,8 @@ public class ApiKeysHandler implements VertxApiHandler {
             final String domain = context.pathParam("domain");
 
             apiKeysService.validateApiKey(request.getKey(), domain, request.getKeyType())
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) {
-                            context.fail(ex);
-                        } else {
-                            context.response()
-                                    .putHeader("Content-Type", "application/json")
-                                    .end(Json.encode(res));
-                        }
-                    });
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (Exception e) {
             context.fail(e);
         }
@@ -149,17 +125,9 @@ public class ApiKeysHandler implements VertxApiHandler {
             final String domain = context.pathParam("domain");
 
             apiKeysService.delete(id, domain)
-                    .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.API_KEY_DOES_NOT_EXIST, "API key does not exist"))
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) {
-                            context.fail(ex);
-                        } else {
-                            context.response()
-                                    .putHeader("Content-Type", "application/json")
-                                    .end(Json.encode(res));
-                        }
-                    });
+                    .flatMap(opt -> AsyncUtils.uniFromOptional(opt, ErrorCode.API_KEY_DOES_NOT_EXIST, "API key does not exist"))
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (NumberFormatException e) {
             List<Violation> violations = Collections.singletonList(
                     new Violation("id", ViolationType.INVALID_VALUE)

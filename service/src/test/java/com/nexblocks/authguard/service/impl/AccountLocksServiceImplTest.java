@@ -16,7 +16,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -49,7 +49,7 @@ class AccountLocksServiceImplTest {
                         )
                 ));
 
-        Collection<AccountLockBO> actual = service.getActiveLocksByAccountId(101).join();
+        Collection<AccountLockBO> actual = service.getActiveLocksByAccountId(101).subscribeAsCompletionStage().join();
         Collection<AccountLockBO> expected = Collections.singletonList(AccountLockBO.builder()
                 .accountId(101L)
                 .expiresAt(now.plus(Duration.ofMinutes(5)))
@@ -70,7 +70,7 @@ class AccountLocksServiceImplTest {
                                 .build())
                 ));
 
-        Optional<AccountLockBO> actual = service.delete(1).join();
+        Optional<AccountLockBO> actual = service.delete(1).subscribeAsCompletionStage().join();
         AccountLockBO expected = AccountLockBO.builder()
                 .accountId(101L)
                 .expiresAt(now.plus(Duration.ofMinutes(5)))

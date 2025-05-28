@@ -5,16 +5,16 @@ import com.nexblocks.authguard.service.model.PermissionBO;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface ApplicationsService extends IdempotentCrudService<AppBO> {
-    CompletableFuture<Optional<AppBO>> getByExternalId(long externalId, String domain);
-    CompletableFuture<AppBO> activate(long id, String domain);
-    CompletableFuture<AppBO> deactivate(long id, String domain);
-    CompletableFuture<List<AppBO>> getByAccountId(long accountId, String domain, Long cursor);
+    Uni<Optional<AppBO>> getByExternalId(long externalId, String domain);
+    Uni<AppBO> activate(long id, String domain);
+    Uni<AppBO> deactivate(long id, String domain);
+    Uni<List<AppBO>> getByAccountId(long accountId, String domain, Long cursor);
 
-    CompletableFuture<Optional<AppBO>> grantPermissions(long id, List<PermissionBO> permissions, String domain);
-    CompletableFuture<Optional<AppBO>> revokePermissions(long id, List<PermissionBO> permissions, String domain);
-    CompletableFuture<Optional<AppBO>> grantRoles(long id, List<String> roles, String domain);
-    CompletableFuture<Optional<AppBO>> revokeRoles(long id, List<String> roles, String domain);
+    Uni<Optional<AppBO>> grantPermissions(long id, List<PermissionBO> permissions, String domain);
+    Uni<Optional<AppBO>> revokePermissions(long id, List<PermissionBO> permissions, String domain);
+    Uni<Optional<AppBO>> grantRoles(long id, List<String> roles, String domain);
+    Uni<Optional<AppBO>> revokeRoles(long id, List<String> roles, String domain);
 }

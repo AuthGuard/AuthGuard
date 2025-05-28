@@ -16,7 +16,7 @@ import io.vavr.control.Either;
 import io.vavr.control.Try;
 
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public class AuthorizationCodeVerifier implements AuthVerifier {
     private final AccountTokensRepository accountTokensRepository;
@@ -43,13 +43,13 @@ public class AuthorizationCodeVerifier implements AuthVerifier {
     }
 
     @Override
-    public CompletableFuture<Long> verifyAccountTokenAsync(final AuthRequest request) {
+    public Uni<Long> verifyAccountTokenAsync(final AuthRequest request) {
         return verifyAndGetAccountTokenAsync(request)
-                .thenApply(AccountTokenDO::getAssociatedAccountId);
+                .map(AccountTokenDO::getAssociatedAccountId);
     }
 
     @Override
-    public CompletableFuture<AccountTokenDO> verifyAndGetAccountTokenAsync(final AuthRequest request) {
+    public Uni<AccountTokenDO> verifyAndGetAccountTokenAsync(final AuthRequest request) {
         return accountTokensRepository.getByToken(request.getToken())
                 .flatMap(opt -> {
                     if (opt.isPresent()) {
@@ -57,8 +57,7 @@ public class AuthorizationCodeVerifier implements AuthVerifier {
                     }
 
                     return Uni.createFrom().failure(new ServiceException(ErrorCode.INVALID_TOKEN, "Invalid expired or invalid"));
-                })
-                .subscribeAsCompletionStage();
+                });
     }
 
     private Either<Exception, AccountTokenDO> verifyToken(final AccountTokenDO accountToken) {

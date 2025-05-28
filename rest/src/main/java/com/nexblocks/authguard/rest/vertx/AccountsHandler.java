@@ -6,9 +6,9 @@ import com.nexblocks.authguard.api.common.BodyHandler;
 import com.nexblocks.authguard.api.common.Cursors;
 import com.nexblocks.authguard.api.common.IdempotencyHeader;
 import com.nexblocks.authguard.api.common.RequestValidationException;
-import com.nexblocks.authguard.api.dto.entities.*;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.UserIdentifier;
+import com.nexblocks.authguard.api.dto.entities.*;
 import com.nexblocks.authguard.api.dto.requests.CreateAccountRequestDTO;
 import com.nexblocks.authguard.api.dto.requests.PermissionsRequestDTO;
 import com.nexblocks.authguard.api.dto.requests.RolesRequestDTO;
@@ -19,9 +19,10 @@ import com.nexblocks.authguard.api.routes.VertxApiHandler;
 import com.nexblocks.authguard.rest.access.ActorDomainVerifier;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.service.*;
-import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.model.Client;
+import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.AsyncUtils;
+import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.Json;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -31,7 +32,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class AccountsHandler implements VertxApiHandler {
@@ -143,19 +143,10 @@ public class AccountsHandler implements VertxApiHandler {
 
         AccountBO withIdentifiers = account.withIdentifiers(identifiers);
 
-        CompletableFuture<AccountDTO> future = accountsService.create(withIdentifiers, requestContext)
-                .thenApply(restMapper::toDTO);
+        Uni<AccountDTO> future = accountsService.create(withIdentifiers, requestContext)
+                .map(restMapper::toDTO);
 
-        future.whenComplete((result, ex) -> {
-            if (ex != null) {
-                context.fail(ex);
-            } else {
-                context.response()
-                        .setStatusCode(201)
-                        .putHeader("Content-Type", "application/json")
-                        .end(Json.encode(result));
-            }
-        });
+        future.subscribe().withSubscriber(new VertxJsonSubscriber<>(context, 201));
     }
 
     private void getById(RoutingContext context) {
@@ -163,18 +154,8 @@ public class AccountsHandler implements VertxApiHandler {
         String domain = context.pathParam("domain");
 
         accountsService.getById(id, domain)
-                .thenApply(opt -> opt.map(restMapper::toDTO))
-                .whenComplete((result, ex) -> {
-                    if (ex != null) {
-                        context.fail(ex);
-                    } else if (result.isEmpty()) {
-                        context.response().setStatusCode(404).end();
-                    } else {
-                        context.response()
-                                .putHeader("Content-Type", "application/json")
-                                .end(Json.encode(result.get()));
-                    }
-                });
+                .map(opt -> opt.map(restMapper::toDTO))
+                .subscribe().withSubscriber(new VertxOptJsonSubscriber<>(context));
     }
 
     private void getByIdentifier(final RoutingContext context) {
@@ -187,17 +168,9 @@ public class AccountsHandler implements VertxApiHandler {
         }
 
         accountsService.getByIdentifier(identifier, domain)
-                .thenCompose(AsyncUtils::fromAccountOptional)
-                .thenApply(restMapper::toDTO)
-                .whenComplete((res, ex) -> {
-                    if (ex != null) {
-                        context.fail(ex);
-                    } else {
-                        context.response()
-                                .putHeader("Content-Type", "application/json")
-                                .end(Json.encode(res));
-                    }
-                });
+                .flatMap(AsyncUtils::uniFromAccountOptional)
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void identifierExists(final RoutingContext context) {
@@ -211,17 +184,9 @@ public class AccountsHandler implements VertxApiHandler {
         String identifier = context.pathParam("identifier");
 
         accountsService.getByIdentifier(identifier, domain)
-                .thenCompose(AsyncUtils::fromAccountOptional)
-                .thenApply(ignored -> ExistsResponseDTO.builder().success(true).build())
-                .whenComplete((res, ex) -> {
-                    if (ex != null) {
-                        context.fail(ex);
-                    } else {
-                        context.response()
-                                .putHeader("Content-Type", "application/json")
-                                .end(Json.encode(res));
-                    }
-                });
+                .flatMap(AsyncUtils::uniFromAccountOptional)
+                .map(ignored -> ExistsResponseDTO.builder().success(true).build())
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void deleteAccount(final RoutingContext context) {
@@ -230,17 +195,9 @@ public class AccountsHandler implements VertxApiHandler {
             final String domain = context.pathParam("domain");
 
             accountsService.delete(accountId, domain)
-                    .thenCompose(AsyncUtils::fromAccountOptional)
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) {
-                            context.fail(ex);
-                        } else {
-                            context.response()
-                                    .putHeader("Content-Type", "application/json")
-                                    .end(Json.encode(res));
-                        }
-                    });
+                    .flatMap(AsyncUtils::uniFromAccountOptional)
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (NumberFormatException e) {
             List<Violation> violations = Collections.singletonList(
                     new Violation("id", ViolationType.INVALID_VALUE)
@@ -258,7 +215,7 @@ public class AccountsHandler implements VertxApiHandler {
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
 
-        CompletableFuture<Optional<AccountBO>> updated;
+        Uni<Optional<AccountBO>> updated;
 
         if (request.getAction() == PermissionsRequestDTO.Action.GRANT) {
             updated = accountsService.grantPermissions(accountId, permissions, domain);
@@ -266,17 +223,8 @@ public class AccountsHandler implements VertxApiHandler {
             updated = accountsService.revokePermissions(accountId, permissions, domain);
         }
 
-        updated.whenComplete((result, ex) -> {
-            if (ex != null) {
-                context.fail(ex);
-            } else if (result.isEmpty()) {
-                context.response().setStatusCode(404).end();
-            } else {
-                context.response()
-                        .putHeader("Content-Type", "application/json")
-                        .end(Json.encode(restMapper.toDTO(result.get())));
-            }
-        });
+        updated.map(opt -> opt.map(restMapper::toDTO))
+                .subscribe().withSubscriber(new VertxOptJsonSubscriber<>(context));
     }
 
     private void updateRoles(RoutingContext context) {
@@ -284,7 +232,7 @@ public class AccountsHandler implements VertxApiHandler {
         long accountId = Long.parseLong(context.pathParam("id"));
         String domain = context.pathParam("domain");
 
-        CompletableFuture<Optional<AccountBO>> updated;
+        Uni<Optional<AccountBO>> updated;
 
         if (request.getAction() == RolesRequestDTO.Action.GRANT) {
             updated = accountsService.grantRoles(accountId, request.getRoles(), domain);
@@ -292,17 +240,8 @@ public class AccountsHandler implements VertxApiHandler {
             updated = accountsService.revokeRoles(accountId, request.getRoles(), domain);
         }
 
-        updated.whenComplete((result, ex) -> {
-            if (ex != null) {
-                context.fail(ex);
-            } else if (result.isEmpty()) {
-                context.response().setStatusCode(404).end();
-            } else {
-                context.response()
-                        .putHeader("Content-Type", "application/json")
-                        .end(Json.encode(restMapper.toDTO(result.get())));
-            }
-        });
+        updated.map(opt -> opt.map(restMapper::toDTO))
+                .subscribe().withSubscriber(new VertxOptJsonSubscriber<>(context));
     }
 
     private void patchAccount(final RoutingContext context) {
@@ -312,12 +251,9 @@ public class AccountsHandler implements VertxApiHandler {
             final UpdateAccountRequestDTO request = updateAccountRequestBodyHandler.getValidated(context);
 
             accountsService.patch(id, restMapper.toBO(request), domain)
-                    .thenCompose(AsyncUtils::fromAccountOptional)
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().end(Json.encode(res));
-                    });
+                    .flatMap(AsyncUtils::uniFromAccountOptional)
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (Exception e) {
             context.fail(e);
         }
@@ -328,12 +264,9 @@ public class AccountsHandler implements VertxApiHandler {
         final String domain = context.pathParam("domain");
 
         accountsService.getByExternalId(id, domain)
-                .thenCompose(AsyncUtils::fromAccountOptional)
-                .thenApply(restMapper::toDTO)
-                .whenComplete((res, ex) -> {
-                    if (ex != null) context.fail(ex);
-                    else context.response().end(Json.encode(res));
-                });
+                .flatMap(AsyncUtils::uniFromAccountOptional)
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void getByEmail(final RoutingContext context) {
@@ -341,12 +274,9 @@ public class AccountsHandler implements VertxApiHandler {
         final String domain = context.pathParam("domain");
 
         accountsService.getByEmail(email, domain)
-                .thenCompose(AsyncUtils::fromAccountOptional)
-                .thenApply(restMapper::toDTO)
-                .whenComplete((res, ex) -> {
-                    if (ex != null) context.fail(ex);
-                    else context.response().end(Json.encode(res));
-                });
+                .flatMap(AsyncUtils::uniFromAccountOptional)
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void emailExists(final RoutingContext context) {
@@ -359,12 +289,9 @@ public class AccountsHandler implements VertxApiHandler {
         }
 
         accountsService.getByEmail(email, domain)
-                .thenCompose(AsyncUtils::fromAccountOptional)
-                .thenApply(ignored -> ExistsResponseDTO.builder().success(true).build())
-                .whenComplete((res, ex) -> {
-                    if (ex != null) context.fail(ex);
-                    else context.response().end(Json.encode(res));
-                });
+                .flatMap(AsyncUtils::uniFromAccountOptional)
+                .map(ignored -> ExistsResponseDTO.builder().success(true).build())
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void getApps(final RoutingContext context) {
@@ -374,11 +301,8 @@ public class AccountsHandler implements VertxApiHandler {
             final Long cursor = Cursors.getLongCursor(context);
 
             applicationsService.getByAccountId(id, domain, cursor)
-                    .thenApply(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().end(Json.encode(res));
-                    });
+                    .map(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (Exception e) {
             context.fail(e);
         }
@@ -391,11 +315,8 @@ public class AccountsHandler implements VertxApiHandler {
             final Instant instantCursor = Cursors.parseInstantCursor(context);
 
             keyManagementService.getByAccountId(domain, id, instantCursor)
-                    .thenApply(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().end(Json.encode(res));
-                    });
+                    .map(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (Exception e) {
             context.fail(e);
         }
@@ -407,13 +328,10 @@ public class AccountsHandler implements VertxApiHandler {
             final String domain = context.pathParam("domain");
 
             trackingSessionsService.getByAccountId(id, domain)
-                    .thenApply(list -> CollectionResponseDTO.<SessionDTO>builder()
+                    .map(list -> CollectionResponseDTO.<SessionDTO>builder()
                             .items(list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
                             .build())
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().end(Json.encode(res));
-                    });
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (Exception e) {
             context.fail(e);
         }
@@ -425,12 +343,9 @@ public class AccountsHandler implements VertxApiHandler {
             final String domain = context.pathParam("domain");
 
             accountsService.activate(id, domain)
-                    .thenCompose(AsyncUtils::fromAccountOptional)
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().end(Json.encode(res));
-                    });
+                    .flatMap(AsyncUtils::uniFromAccountOptional)
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (Exception e) {
             context.fail(e);
         }
@@ -442,12 +357,9 @@ public class AccountsHandler implements VertxApiHandler {
             final String domain = context.pathParam("domain");
 
             accountsService.deactivate(id, domain)
-                    .thenCompose(AsyncUtils::fromAccountOptional)
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().end(Json.encode(res));
-                    });
+                    .flatMap(AsyncUtils::uniFromAccountOptional)
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (Exception e) {
             context.fail(e);
         }
@@ -458,11 +370,8 @@ public class AccountsHandler implements VertxApiHandler {
             final long id = Long.parseLong(context.pathParam("id"));
 
             accountLocksService.getActiveLocksByAccountId(id)
-                    .thenApply(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().end(Json.encode(res));
-                    });
+                    .map(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (Exception e) {
             context.fail(e);
         }

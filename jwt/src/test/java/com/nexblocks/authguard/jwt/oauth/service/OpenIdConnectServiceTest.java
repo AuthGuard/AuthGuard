@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -59,7 +59,7 @@ class OpenIdConnectServiceTest {
         accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
 
         Mockito.when(trackingSessionsService.startSession(Mockito.any()))
-                .thenReturn(CompletableFuture.completedFuture(SessionBO.builder()
+                .thenReturn(Uni.createFrom().item(SessionBO.builder()
                         .sessionToken("tracking-session")
                         .build()));
 
@@ -100,7 +100,7 @@ class OpenIdConnectServiceTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(token)));
 
         OpenIdConnectRequest retrievedRequest =
-                openIdConnectService.getRequestFromToken(token.getToken(), requestContext, "main").join();
+                openIdConnectService.getRequestFromToken(token.getToken(), requestContext, "main").subscribeAsCompletionStage().join();
         
         assertThat(retrievedRequest).isEqualTo(fullRequest);
     }
@@ -120,7 +120,7 @@ class OpenIdConnectServiceTest {
         Mockito.when(accountTokensRepository.getByToken(token.getToken()))
                 .thenReturn(Uni.createFrom().item(Optional.of(token)));
 
-        assertThatThrownBy(() -> openIdConnectService.getRequestFromToken(token.getToken(), requestContext, "main").join())
+        assertThatThrownBy(() -> openIdConnectService.getRequestFromToken(token.getToken(), requestContext, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class)
                 .cause()
                 .extracting(e -> ((ServiceException) e).getErrorCode())
@@ -141,7 +141,7 @@ class OpenIdConnectServiceTest {
         Mockito.when(accountTokensRepository.getByToken(token.getToken()))
                 .thenReturn(Uni.createFrom().item(Optional.of(token)));
 
-        assertThatThrownBy(() -> openIdConnectService.getRequestFromToken(token.getToken(), requestContext, "other").join())
+        assertThatThrownBy(() -> openIdConnectService.getRequestFromToken(token.getToken(), requestContext, "other").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceNotFoundException.class)
                 .cause()
                 .extracting(e -> ((ServiceException) e).getErrorCode())
@@ -173,12 +173,12 @@ class OpenIdConnectServiceTest {
                 .build();
 
         Mockito.when(clientsService.getById(1, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
+                .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
         Mockito.when(exchangeService.exchange(expectedRequest, "basic", "authorizationCode", context))
-                .thenReturn(CompletableFuture.completedFuture(expectedResponse));
+                .thenReturn(Uni.createFrom().item(expectedResponse));
 
-        assertThat(openIdConnectService.processAuth(request, context, "main").join())
+        assertThat(openIdConnectService.processAuth(request, context, "main").subscribeAsCompletionStage().join())
                 .isEqualTo(expectedResponse);
     }
 
@@ -195,9 +195,9 @@ class OpenIdConnectServiceTest {
         RequestContextBO context = RequestContextBO.builder().build();
 
         Mockito.when(clientsService.getById(1, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        assertThatThrownBy(() -> openIdConnectService.processAuth(request, context, "main").join())
+        assertThatThrownBy(() -> openIdConnectService.processAuth(request, context, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause()
                 .extracting(e -> ((ServiceException) e).getErrorCode())
@@ -222,9 +222,9 @@ class OpenIdConnectServiceTest {
         RequestContextBO context = RequestContextBO.builder().build();
 
         Mockito.when(clientsService.getById(1, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
+                .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
-        assertThatThrownBy(() -> openIdConnectService.processAuth(request, context, "main").join())
+        assertThatThrownBy(() -> openIdConnectService.processAuth(request, context, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause()
                 .extracting(e -> ((ServiceException) e).getErrorCode())
@@ -249,9 +249,9 @@ class OpenIdConnectServiceTest {
         RequestContextBO context = RequestContextBO.builder().build();
 
         Mockito.when(clientsService.getById(1, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
+                .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
-        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(request, context, "main").join())
+        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(request, context, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause();
 
@@ -281,9 +281,9 @@ class OpenIdConnectServiceTest {
         RequestContextBO context = RequestContextBO.builder().build();
 
         Mockito.when(clientsService.getById(1, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
+                .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
-        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(request, context, "main").join())
+        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(request, context, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause();
 
@@ -313,10 +313,10 @@ class OpenIdConnectServiceTest {
         RequestContextBO context = RequestContextBO.builder().build();
 
         Mockito.when(clientsService.getById(1, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
+                .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
         AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(
-                () -> openIdConnectService.processAuth(request, context, "main").join()
+                () -> openIdConnectService.processAuth(request, context, "main").subscribeAsCompletionStage().join()
         ).hasCauseInstanceOf(ServiceException.class).cause();
 
         cause.extracting(e -> ((ServiceException) e).getErrorCode())
@@ -374,12 +374,12 @@ class OpenIdConnectServiceTest {
                 .build();
 
         Mockito.when(clientsService.getById(1, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
+                .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
         Mockito.when(exchangeService.exchange(expectedRequest, "basic", "authorizationCode", context.withClientId("1")))
-                .thenReturn(CompletableFuture.completedFuture(expectedResponse));
+                .thenReturn(Uni.createFrom().item(expectedResponse));
 
-        assertThat(openIdConnectService.processAuth(pkceRequest, context, "main").join())
+        assertThat(openIdConnectService.processAuth(pkceRequest, context, "main").subscribeAsCompletionStage().join())
                 .isEqualTo(expectedResponse);
     }
     @Test
@@ -388,10 +388,10 @@ class OpenIdConnectServiceTest {
                 .withCodeChallengeMethod("S256");
 
         Mockito.when(clientsService.getById(1, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
+                .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
         AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(
-                () -> openIdConnectService.processAuth(invalidRequest, context, "main").join()
+                () -> openIdConnectService.processAuth(invalidRequest, context, "main").subscribeAsCompletionStage().join()
         ).hasCauseInstanceOf(ServiceException.class).cause();
 
         cause.extracting(e -> ((ServiceException) e).getErrorCode())
@@ -407,10 +407,10 @@ class OpenIdConnectServiceTest {
                 .withCodeChallenge("random-code-challenge");
 
         Mockito.when(clientsService.getById(1, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
+                .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
         AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(
-                () -> openIdConnectService.processAuth(invalidRequest, context, "main").join()
+                () -> openIdConnectService.processAuth(invalidRequest, context, "main").subscribeAsCompletionStage().join()
         ).hasCauseInstanceOf(ServiceException.class).cause();
 
         cause.extracting(e -> ((ServiceException) e).getErrorCode())
@@ -427,10 +427,10 @@ class OpenIdConnectServiceTest {
                 .withCodeChallengeMethod("invalid");
 
         Mockito.when(clientsService.getById(1, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(client)));
+                .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
         AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(
-                () -> openIdConnectService.processAuth(invalidRequest, context, "main").join()
+                () -> openIdConnectService.processAuth(invalidRequest, context, "main").subscribeAsCompletionStage().join()
         ).hasCauseInstanceOf(ServiceException.class).cause();
 
         cause.extracting(e -> ((ServiceException) e).getErrorCode())

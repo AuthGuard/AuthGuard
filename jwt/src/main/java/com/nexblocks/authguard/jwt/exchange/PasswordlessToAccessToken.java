@@ -13,7 +13,7 @@ import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @TokenExchange(from = "passwordless", to = "accessToken")
 public class PasswordlessToAccessToken implements Exchange {
@@ -31,12 +31,12 @@ public class PasswordlessToAccessToken implements Exchange {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+    public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
         return passwordlessVerifier.verifyAccountTokenAsync(request)
-                .thenCompose(id -> accountsService.getById(id, request.getDomain()))
-                .thenCompose(opt -> {
+                .flatMap(id -> accountsService.getById(id, request.getDomain()))
+                .flatMap(opt -> {
                     if (opt.isEmpty()) {
-                        return CompletableFuture.failedFuture(
+                        return Uni.createFrom().failure(
                                 new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "The account associated with that token does not exist"));
                     }
 
@@ -44,7 +44,7 @@ public class PasswordlessToAccessToken implements Exchange {
                 });
     }
 
-    private CompletableFuture<AuthResponseBO> generate(final AccountBO account, final AuthRequestBO request) {
+    private Uni<AuthResponseBO> generate(final AccountBO account, final AuthRequestBO request) {
         TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("passwordless")
                 .userAgent(request.getUserAgent())

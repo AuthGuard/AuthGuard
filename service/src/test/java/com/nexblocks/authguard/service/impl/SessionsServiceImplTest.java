@@ -15,7 +15,7 @@ import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,7 +46,7 @@ class SessionsServiceImplTest {
         Mockito.when(repository.save(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, SessionDO.class)));
 
-        SessionBO created = service.create(sessionBO).join();
+        SessionBO created = service.create(sessionBO).subscribeAsCompletionStage().join();
 
         assertThat(created).usingRecursiveComparison()
                 .ignoringFields("id", "sessionToken")
@@ -69,7 +69,7 @@ class SessionsServiceImplTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(sessionDO)));
 
         SessionBO expected = serviceMapper.toBO(sessionDO);
-        Optional<SessionBO> actual = service.getById(sessionDO.getId()).join();
+        Optional<SessionBO> actual = service.getById(sessionDO.getId()).subscribeAsCompletionStage().join();
 
         assertThat(actual).contains(expected);
     }
@@ -87,7 +87,7 @@ class SessionsServiceImplTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(sessionDO)));
 
         SessionBO expected = serviceMapper.toBO(sessionDO);
-        Optional<SessionBO> actual = service.getByToken(sessionDO.getSessionToken()).join();
+        Optional<SessionBO> actual = service.getByToken(sessionDO.getSessionToken()).subscribeAsCompletionStage().join();
 
         assertThat(actual).contains(expected);
     }
@@ -105,7 +105,7 @@ class SessionsServiceImplTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(sessionDO)));
 
         SessionBO expected = serviceMapper.toBO(sessionDO);
-        Optional<SessionBO> actual = service.deleteByToken(sessionDO.getSessionToken()).join();
+        Optional<SessionBO> actual = service.deleteByToken(sessionDO.getSessionToken()).subscribeAsCompletionStage().join();
 
         assertThat(actual).contains(expected);
     }

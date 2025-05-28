@@ -13,7 +13,7 @@ import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.google.inject.Inject;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @TokenExchange(from = "otp", to = "accessToken")
 public class OtpToAccessToken implements Exchange {
@@ -30,12 +30,12 @@ public class OtpToAccessToken implements Exchange {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+    public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
         return otpVerifier.verifyAccountTokenAsync(request)
-                .thenCompose(id -> accountsService.getById(id, request.getDomain()))
-                .thenCompose(opt -> {
+                .flatMap(id -> accountsService.getById(id, request.getDomain()))
+                .flatMap(opt -> {
                     if (opt.isEmpty()) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
+                        return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
                                 "Failed to generate access token"));
                     }
 
@@ -43,7 +43,7 @@ public class OtpToAccessToken implements Exchange {
                 });
     }
 
-    private CompletableFuture<AuthResponseBO> generate(final AccountBO account, final AuthRequestBO request) {
+    private Uni<AuthResponseBO> generate(final AccountBO account, final AuthRequestBO request) {
         TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("otp")
                 .userAgent(request.getUserAgent())

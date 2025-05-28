@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public class AuthenticationServiceImpl implements AuthenticationService {
     private static final Logger LOG = LoggerFactory.getLogger(AuthenticationServiceImpl.class);
@@ -51,11 +51,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> authenticate(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
+    public Uni<AuthResponseBO> authenticate(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
         return exchangeService.exchange(authRequest, BASIC_TOKEN_TYPE, generateTokenType, requestContext)
-                .thenCompose(tokens ->
+                .flatMap(tokens ->
                         accountLocksService.getActiveLocksByAccountId(tokens.getEntityId())
-                                .thenApply(locks -> {
+                                .map(locks -> {
                                     if (locks == null || locks.isEmpty()) {
                                         return tokens;
                                     }
@@ -66,12 +66,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> logout(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
+    public Uni<AuthResponseBO> logout(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
         return exchangeService.delete(authRequest, logoutTokenType);
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> refresh(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
+    public Uni<AuthResponseBO> refresh(final AuthRequestBO authRequest, final RequestContextBO requestContext) {
         return exchangeService.exchange(authRequest, REFRESH_TOKEN_TYPE, generateTokenType, requestContext);
     }
 

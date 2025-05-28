@@ -4,13 +4,13 @@ import com.nexblocks.authguard.service.model.ClientBO;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface ClientsService extends IdempotentCrudService<ClientBO> {
-    CompletableFuture<Optional<ClientBO>> getByIdUnchecked(long id);
-    CompletableFuture<Optional<ClientBO>> getByExternalId(String externalId, String domain);
-    CompletableFuture<ClientBO> activate(long id, String domain);
-    CompletableFuture<ClientBO> deactivate(long id, String domain);
-    CompletableFuture<List<ClientBO>> getByAccountId(long accountId, String domain, Long cursor);
-    CompletableFuture<List<ClientBO>> getByDomain(String domain, Long cursor);
+    Uni<Optional<ClientBO>> getByIdUnchecked(long id);
+    Uni<Optional<ClientBO>> getByExternalId(String externalId, String domain);
+    Uni<ClientBO> activate(long id, String domain);
+    Uni<ClientBO> deactivate(long id, String domain);
+    Uni<List<ClientBO>> getByAccountId(long accountId, String domain, Long cursor);
+    Uni<List<ClientBO>> getByDomain(String domain, Long cursor);
 }

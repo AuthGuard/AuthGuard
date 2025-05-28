@@ -11,7 +11,7 @@ import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @TokenExchange(from = "totp", to = "oidc")
 public class TotpToOidc implements Exchange {
@@ -32,12 +32,12 @@ public class TotpToOidc implements Exchange {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+    public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
         return totpVerifier.verifyAndGetAccountTokenAsync(request)
-                .thenCompose(accountToken -> accountsService.getById(accountToken.getAssociatedAccountId(), request.getDomain())
-                        .thenCompose(opt -> {
+                .flatMap(accountToken -> accountsService.getById(accountToken.getAssociatedAccountId(), request.getDomain())
+                        .flatMap(opt -> {
                             if (opt.isEmpty()) {
-                                return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
+                                return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
                                         "Failed to generate access token"));
                             }
 
@@ -46,7 +46,7 @@ public class TotpToOidc implements Exchange {
                         }));
     }
 
-    private CompletableFuture<AuthResponseBO> generateTokens(final AccountBO account, final TokenRestrictionsBO restrictions) {
+    private Uni<AuthResponseBO> generateTokens(final AccountBO account, final TokenRestrictionsBO restrictions) {
         final TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("totp")
                 .build();

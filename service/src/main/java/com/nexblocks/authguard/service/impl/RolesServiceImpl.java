@@ -21,7 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.stream.Collectors;
 
 public class RolesServiceImpl implements RolesService {
@@ -45,24 +45,23 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public CompletableFuture<List<RoleBO>> getAll(final String domain, final Long cursor) {
+    public Uni<List<RoleBO>> getAll(final String domain, final Long cursor) {
         return rolesRepository.getAll(domain, LongPage.of(cursor, 20))
                 .map(list -> list.stream()
                         .map(serviceMapper::toBO)
-                        .collect(Collectors.toList()))
-                .subscribeAsCompletionStage();
+                        .collect(Collectors.toList()));
     }
 
     @Override
-    public CompletableFuture<RoleBO> create(final RoleBO role) {
+    public Uni<RoleBO> create(final RoleBO role) {
         LOG.debug("New role request. role={}, domain={}", role.getName(), role.getDomain());
 
         return getRoleByName(role.getName(), role.getDomain())
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isPresent()) {
                         LOG.info("Role already exists. role={}, domain={}", role.getName(), role.getDomain());
 
-                        return CompletableFuture.failedFuture(new ServiceConflictException(ErrorCode.ROLE_ALREADY_EXISTS,
+                        return Uni.createFrom().failure(new ServiceConflictException(ErrorCode.ROLE_ALREADY_EXISTS,
                                 "Role " + role.getName() + " already exists"));
                     }
 
@@ -71,17 +70,17 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public CompletableFuture<Optional<RoleBO>> getById(final long id, final String domain) {
+    public Uni<Optional<RoleBO>> getById(final long id, final String domain) {
         return persistenceService.getById(id)
-                .thenApply(opt -> opt.filter(account -> Objects.equals(account.getDomain(), domain)));
+                .map(opt -> opt.filter(account -> Objects.equals(account.getDomain(), domain)));
     }
 
     @Override
-    public CompletableFuture<Optional<RoleBO>> update(final RoleBO role, final String domain) {
+    public Uni<Optional<RoleBO>> update(final RoleBO role, final String domain) {
         return getById(role.getId(), domain)
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isEmpty()) {
-                        return CompletableFuture.completedFuture(opt);
+                        return Uni.createFrom().item(opt);
                     }
 
                     RoleBO newRole = RoleBO.builder()
@@ -95,17 +94,16 @@ public class RolesServiceImpl implements RolesService {
     }
 
     @Override
-    public CompletableFuture<Optional<RoleBO>> delete(final long id, String domain) {
+    public Uni<Optional<RoleBO>> delete(final long id, String domain) {
         LOG.info("Request to delete role. roleId={}", id);
 
         return persistenceService.delete(id);
     }
 
     @Override
-    public CompletableFuture<Optional<RoleBO>> getRoleByName(final String name, final String domain) {
+    public Uni<Optional<RoleBO>> getRoleByName(final String name, final String domain) {
         return rolesRepository.getByName(name, domain)
-                .map(optional -> optional.map(serviceMapper::toBO))
-                .subscribeAsCompletionStage();
+                .map(optional -> optional.map(serviceMapper::toBO));
     }
 
     @Override

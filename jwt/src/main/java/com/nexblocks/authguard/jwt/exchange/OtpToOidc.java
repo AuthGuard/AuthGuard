@@ -13,7 +13,7 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @TokenExchange(from = "otp", to = "oidc")
 public class OtpToOidc implements Exchange {
@@ -30,12 +30,12 @@ public class OtpToOidc implements Exchange {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+    public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
         return otpVerifier.verifyAccountTokenAsync(request)
-                .thenCompose(id -> accountsService.getById(id, request.getDomain()))
-                .thenCompose(opt -> {
+                .flatMap(id -> accountsService.getById(id, request.getDomain()))
+                .flatMap(opt -> {
                     if (opt.isEmpty()) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
+                        return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                                 "The account associated with that token does not exist"));
                     }
 
@@ -43,7 +43,7 @@ public class OtpToOidc implements Exchange {
                 });
     }
 
-    private CompletableFuture<AuthResponseBO> generate(final AccountBO account) {
+    private Uni<AuthResponseBO> generate(final AccountBO account) {
         TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("otp")
                 .build();

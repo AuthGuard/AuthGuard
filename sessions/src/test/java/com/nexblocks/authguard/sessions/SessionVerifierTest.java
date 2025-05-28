@@ -11,7 +11,7 @@ import org.mockito.Mockito;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -36,9 +36,9 @@ class SessionVerifierTest {
                 .build();
 
         Mockito.when(sessionsService.getByToken(session.getSessionToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(session)));
+                .thenReturn(Uni.createFrom().item(Optional.of(session)));
 
-        Long accountId = sessionVerifier.verifyAccountTokenAsync(request).join();
+        Long accountId = sessionVerifier.verifyAccountTokenAsync(request).subscribeAsCompletionStage().join();
 
         assertThat(accountId).isEqualTo(session.getAccountId());
     }
@@ -61,9 +61,9 @@ class SessionVerifierTest {
                 .build();
 
         Mockito.when(sessionsService.getByToken(session.getSessionToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(session)));
+                .thenReturn(Uni.createFrom().item(Optional.of(session)));
 
-        assertThatThrownBy(() -> sessionVerifier.verifyAccountTokenAsync(request).join())
+        assertThatThrownBy(() -> sessionVerifier.verifyAccountTokenAsync(request).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
@@ -77,9 +77,9 @@ class SessionVerifierTest {
                 .build();
 
         Mockito.when(sessionsService.getByToken(any()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        assertThatThrownBy(() -> sessionVerifier.verifyAccountTokenAsync(request).join())
+        assertThatThrownBy(() -> sessionVerifier.verifyAccountTokenAsync(request).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
@@ -100,9 +100,9 @@ class SessionVerifierTest {
                 .build();
 
         Mockito.when(sessionsService.getByToken(session.getSessionToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(session)));
+                .thenReturn(Uni.createFrom().item(Optional.of(session)));
 
-        assertThatThrownBy(() -> sessionVerifier.verifyAccountTokenAsync(request).join())
+        assertThatThrownBy(() -> sessionVerifier.verifyAccountTokenAsync(request).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 }

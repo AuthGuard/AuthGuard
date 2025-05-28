@@ -17,7 +17,7 @@ import org.mockito.Mockito;
 
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -63,7 +63,7 @@ class OtpVerifierTest {
         Mockito.when(mockOtpRepository.getById(otp.getId()))
                 .thenReturn(Uni.createFrom().item(Optional.of(otp)));
 
-        Long generated = otpVerifier.verifyAccountTokenAsync(request).join();
+        Long generated = otpVerifier.verifyAccountTokenAsync(request).subscribeAsCompletionStage().join();
 
         assertThat(generated).isEqualTo(otp.getAccountId());
     }
@@ -87,7 +87,7 @@ class OtpVerifierTest {
         Mockito.when(mockOtpRepository.getById(otp.getId()))
                 .thenReturn(Uni.createFrom().item(Optional.of(otp)));
 
-        assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync(request).join())
+        assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync(request).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
@@ -105,7 +105,7 @@ class OtpVerifierTest {
                 .token("not valid")
                 .build();
 
-        assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync(request).join())
+        assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync(request).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
@@ -128,7 +128,7 @@ class OtpVerifierTest {
         Mockito.when(mockOtpRepository.getById(otp.getId()))
                 .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync(request).join())
+        assertThatThrownBy(() -> otpVerifier.verifyAccountTokenAsync(request).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 }

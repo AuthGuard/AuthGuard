@@ -13,7 +13,7 @@ import io.smallrye.mutiny.Uni;
 import io.vavr.control.Try;
 
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public class PasswordlessVerifier implements AuthVerifier {
     private final AccountTokensRepository accountTokensRepository;
@@ -29,7 +29,7 @@ public class PasswordlessVerifier implements AuthVerifier {
     }
 
     @Override
-    public CompletableFuture<Long> verifyAccountTokenAsync(final AuthRequest request) {
+    public Uni<Long> verifyAccountTokenAsync(final AuthRequest request) {
         return accountTokensRepository.getByToken(request.getToken())
                 .flatMap(opt -> {
                     if (opt.isEmpty()) {
@@ -38,8 +38,7 @@ public class PasswordlessVerifier implements AuthVerifier {
                     }
 
                     return AsyncUtils.uniFromTry(verifyToken(opt.get()));
-                })
-                .subscribeAsCompletionStage();
+                });
     }
 
     private Try<Long> verifyToken(final AccountTokenDO accountToken) {

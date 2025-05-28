@@ -68,6 +68,6 @@ public class DefaultRolesBootstrap implements BootstrapStep {
                 .forApplications(false)
                 .build();
 
-        return Uni.createFrom().completionStage(rolesService.create(role));
+        return rolesService.create(role);
     }
 }

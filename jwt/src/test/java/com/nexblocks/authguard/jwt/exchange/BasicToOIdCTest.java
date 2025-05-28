@@ -9,7 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -55,7 +55,7 @@ class BasicToOIdCTest {
                 .build();
 
         Mockito.when(basicAuth.authenticateAndGetAccountSession(authRequest))
-                .thenReturn(CompletableFuture.completedFuture(AccountSessionBO.builder()
+                .thenReturn(Uni.createFrom().item(AccountSessionBO.builder()
                         .account(account)
                         .session(SessionBO.builder()
                                 .sessionToken("tracking-token")
@@ -63,12 +63,12 @@ class BasicToOIdCTest {
                         .build()));
 
         Mockito.when(accessTokenProvider.generateToken(account, authRequest.getRestrictions(), options))
-                .thenReturn(CompletableFuture.completedFuture(accessTokenResponse));
+                .thenReturn(Uni.createFrom().item(accessTokenResponse));
 
         Mockito.when(idTokenProvider.generateToken(account))
-                .thenReturn(CompletableFuture.completedFuture(idTokenResponse));
+                .thenReturn(Uni.createFrom().item(idTokenResponse));
 
-        AuthResponseBO actual = basicToOIdC.exchange(authRequest).join();
+        AuthResponseBO actual = basicToOIdC.exchange(authRequest).subscribeAsCompletionStage().join();
 
         AuthResponseBO expected = AuthResponseBO.builder()
                 .entityType(EntityType.ACCOUNT)

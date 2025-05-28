@@ -7,7 +7,7 @@ import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.model.*;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @TokenExchange(from = "basic", to = "oidc")
 public class BasicToOIdC implements Exchange {
@@ -22,12 +22,12 @@ public class BasicToOIdC implements Exchange {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+    public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
         return basicAuth.authenticateAndGetAccountSession(request)
-                .thenCompose(accountSession -> generateTokens(accountSession, request.getRestrictions()));
+                .flatMap(accountSession -> generateTokens(accountSession, request.getRestrictions()));
     }
 
-    private CompletableFuture<AuthResponseBO> generateTokens(final AccountSession accountSession,
+    private Uni<AuthResponseBO> generateTokens(final AccountSession accountSession,
                                                              final TokenRestrictionsBO restrictions) {
         TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("basic")

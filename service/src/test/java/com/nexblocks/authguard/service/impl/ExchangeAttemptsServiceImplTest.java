@@ -15,7 +15,7 @@ import org.mockito.Mockito;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

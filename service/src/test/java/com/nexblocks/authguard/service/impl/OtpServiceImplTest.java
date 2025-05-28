@@ -12,7 +12,7 @@ import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -51,9 +51,9 @@ class OtpServiceImplTest {
         RequestContextBO requestContext = RequestContextBO.builder().build();
 
         Mockito.when(mockExchangeService.exchange(authRequest, "otp", otpConfig.getGenerateToken(), requestContext))
-                .thenReturn(CompletableFuture.completedFuture(tokens));
+                .thenReturn(Uni.createFrom().item(tokens));
 
-        AuthResponseBO generated = otpService.authenticate(otp.getId(), otp.getPassword(), requestContext).join();
+        AuthResponseBO generated = otpService.authenticate(otp.getId(), otp.getPassword(), requestContext).subscribeAsCompletionStage().join();
 
         assertThat(generated).isEqualTo(tokens);
     }

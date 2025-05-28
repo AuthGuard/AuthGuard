@@ -18,7 +18,7 @@ import com.nexblocks.authguard.service.util.ID;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @ProvidesToken("authorizationCode")
 public class AuthorizationCodeProvider implements AuthProvider {
@@ -43,7 +43,7 @@ public class AuthorizationCodeProvider implements AuthProvider {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+    public Uni<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
                                                            final TokenOptionsBO options) {
         String code = random.base64(config.getRandomSize());
 
@@ -81,8 +81,7 @@ public class AuthorizationCodeProvider implements AuthProvider {
                         .token(code)
                         .entityType(EntityType.ACCOUNT)
                         .entityId(account.getId())
-                        .build())
-                .subscribeAsCompletionStage();
+                        .build());
     }
 
     @Override

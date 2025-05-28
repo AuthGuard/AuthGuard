@@ -12,7 +12,7 @@ import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,7 +33,7 @@ class SessionProviderTest {
         SessionsService sessionsService = Mockito.mock(SessionsService.class);
 
         Mockito.when(sessionsService.create(any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, SessionBO.class).withSessionToken("token")));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, SessionBO.class).withSessionToken("token")));
 
         SessionProvider sessionProvider = new SessionProvider(sessionsService, sessionsConfig());
 
@@ -48,7 +48,7 @@ class SessionProviderTest {
                 .validFor(Duration.ofMinutes(20).getSeconds())
                 .build();
 
-        AuthResponseBO actual = sessionProvider.generateToken(account).join();
+        AuthResponseBO actual = sessionProvider.generateToken(account).subscribeAsCompletionStage().join();
 
         assertThat(actual).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(actual.getToken()).isNotNull().isInstanceOf(String.class);
@@ -80,7 +80,7 @@ class SessionProviderTest {
         long accountId = 101;
 
         Mockito.when(sessionsService.deleteByToken(sessionToken))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(SessionBO.builder()
+                .thenReturn(Uni.createFrom().item(Optional.of(SessionBO.builder()
                         .accountId(accountId)
                         .sessionToken(sessionToken)
                         .build())));
@@ -94,7 +94,7 @@ class SessionProviderTest {
 
         AuthResponseBO actual = sessionProvider.delete(AuthRequestBO.builder()
                 .token(sessionToken)
-                .build()).join();
+                .build()).subscribeAsCompletionStage().join();
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -107,11 +107,11 @@ class SessionProviderTest {
         String sessionToken = "session-token";
 
         Mockito.when(sessionsService.deleteByToken(sessionToken))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         assertThatThrownBy(() -> sessionProvider.delete(AuthRequestBO.builder()
                         .token(sessionToken)
-                        .build()).join())
+                        .build()).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 }

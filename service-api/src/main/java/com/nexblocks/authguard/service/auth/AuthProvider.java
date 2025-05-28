@@ -3,25 +3,25 @@ package com.nexblocks.authguard.service.auth;
 import com.nexblocks.authguard.service.model.*;
 
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface AuthProvider {
     /**
      * Generate a token and (optionally) a refresh token.
      */
-    default CompletableFuture<AuthResponseBO> generateToken(AccountBO account) {
+    default Uni<AuthResponseBO> generateToken(AccountBO account) {
         return generateToken(account, null, null);
     }
 
-    default CompletableFuture<AuthResponseBO> generateToken(AccountBO account, TokenOptionsBO options) {
+    default Uni<AuthResponseBO> generateToken(AccountBO account, TokenOptionsBO options) {
         return generateToken(account, null, options);
     }
 
-    default CompletableFuture<AuthResponseBO> generateToken(AccountBO account, TokenRestrictionsBO restrictions) {
+    default Uni<AuthResponseBO> generateToken(AccountBO account, TokenRestrictionsBO restrictions) {
         return generateToken(account, restrictions, null);
     }
 
-    CompletableFuture<AuthResponseBO> generateToken(AccountBO account, TokenRestrictionsBO restrictions, TokenOptionsBO options);
+    Uni<AuthResponseBO> generateToken(AccountBO account, TokenRestrictionsBO restrictions, TokenOptionsBO options);
 
     AuthResponseBO generateToken(AppBO app);
 
@@ -37,7 +37,7 @@ public interface AuthProvider {
         throw new UnsupportedOperationException("Cannot generate token with expiry");
     }
 
-    default CompletableFuture<AuthResponseBO> delete(AuthRequestBO authRequest) {
+    default Uni<AuthResponseBO> delete(AuthRequestBO authRequest) {
         throw new UnsupportedOperationException("Token cannot be deleted");
     }
 }

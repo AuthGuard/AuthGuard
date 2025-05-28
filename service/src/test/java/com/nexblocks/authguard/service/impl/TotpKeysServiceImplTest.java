@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -70,7 +70,7 @@ class TotpKeysServiceImplTest {
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, TotpKeyDO.class)));
 
         Mockito.when(accountsService.getById(account.getId(), account.getDomain()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+                .thenReturn(Uni.createFrom().item(Optional.of(account)));
 
         ServiceMapper serviceMapper = new ServiceMapperImpl();
         totpKeysService = new TotpKeysServiceImpl(totpKeysRepository, accountsService, serviceMapper,
@@ -83,7 +83,7 @@ class TotpKeysServiceImplTest {
                 .thenReturn(Uni.createFrom().item(Collections.emptyList()));
 
         TotpKeyBO generated = totpKeysService.generate(ACCOUNT_ID, DOMAIN, "google")
-                .join();
+                .subscribeAsCompletionStage().join();
 
         assertThat(generated.getAccountId()).isEqualTo(ACCOUNT_ID);
         assertThat(generated.getDomain()).isEqualTo(DOMAIN);
@@ -112,14 +112,14 @@ class TotpKeysServiceImplTest {
                 .build();
 
         Mockito.when(accountsService.getById(account.getId(), DOMAIN))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+                .thenReturn(Uni.createFrom().item(Optional.of(account)));
 
         Mockito.when(totpKeysRepository.findByAccountId(account.getDomain(), account.getId()))
                 .thenReturn(Uni.createFrom().item(Collections.emptyList()));
 
-        CompletableFuture<TotpKeyBO> future = totpKeysService.generate(account.getId(), account.getDomain(), null);
+        Uni<TotpKeyBO> future = totpKeysService.generate(account.getId(), account.getDomain(), null);
 
-        assertThatThrownBy(future::join)
+        assertThatThrownBy(() -> future.subscribe().asCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -130,7 +130,7 @@ class TotpKeysServiceImplTest {
                 .thenReturn(Uni.createFrom().item(Collections.emptyList()));
 
         TotpKeyBO generated = totpKeysService.generate(account.getId(), account.getDomain(), "google")
-                .join();
+                .subscribeAsCompletionStage().join();
 
         // capture what was stored to get the encrypted value
         ArgumentCaptor<TotpKeyDO> keyCaptor = ArgumentCaptor.forClass(TotpKeyDO.class);
@@ -141,7 +141,7 @@ class TotpKeysServiceImplTest {
                 .thenReturn(Uni.createFrom().item(Collections.singletonList(keyCaptor.getValue())));
 
         // retrieve the key and ensure the encrypted key is what is returned
-        List<TotpKeyBO> keys = totpKeysService.getByAccountId(ACCOUNT_ID, DOMAIN).join();
+        List<TotpKeyBO> keys = totpKeysService.getByAccountId(ACCOUNT_ID, DOMAIN).subscribeAsCompletionStage().join();
 
         assertThat(keys).hasSize(1);
         assertThat(keys.get(0)).usingRecursiveComparison()
@@ -157,7 +157,7 @@ class TotpKeysServiceImplTest {
                 .thenReturn(Uni.createFrom().item(Collections.emptyList()));
 
         TotpKeyBO generated = totpKeysService.generate(ACCOUNT_ID, DOMAIN, null)
-                .join();
+                .subscribeAsCompletionStage().join();
 
         // capture what was stored to get the encrypted value
         ArgumentCaptor<TotpKeyDO> keyCaptor = ArgumentCaptor.forClass(TotpKeyDO.class);
@@ -168,7 +168,7 @@ class TotpKeysServiceImplTest {
                 .thenReturn(Uni.createFrom().item(Collections.singletonList(keyCaptor.getValue())));
 
         // retrieve the key and ensure the encrypted key is what is returned
-        Optional<TotpKeyBO> keys = totpKeysService.getByAccountIdDecrypted(ACCOUNT_ID, DOMAIN).join();
+        Optional<TotpKeyBO> keys = totpKeysService.getByAccountIdDecrypted(ACCOUNT_ID, DOMAIN).subscribeAsCompletionStage().join();
 
         assertThat(keys).isNotEmpty();
         assertThat(keys.get()).usingRecursiveComparison()

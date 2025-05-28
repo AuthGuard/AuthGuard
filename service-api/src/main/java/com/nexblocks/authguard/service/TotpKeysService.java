@@ -4,14 +4,14 @@ import com.nexblocks.authguard.service.model.TotpKeyBO;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface TotpKeysService extends CrudService<TotpKeyBO> {
-    default CompletableFuture<TotpKeyBO> create(TotpKeyBO entity) {
+    default Uni<TotpKeyBO> create(TotpKeyBO entity) {
         throw new UnsupportedOperationException("Time-based OTP keys cannot be created using 'create()'. Use 'generate()' instead.");
     }
 
-    default CompletableFuture<Optional<TotpKeyBO>> update(TotpKeyBO entity, String domain) {
+    default Uni<Optional<TotpKeyBO>> update(TotpKeyBO entity, String domain) {
         throw new UnsupportedOperationException("Time-based OTP keys cannot be updated");
     }
 
@@ -21,7 +21,7 @@ public interface TotpKeysService extends CrudService<TotpKeyBO> {
      * the default values will be used while verifying the generated
      * OTP.
      */
-    CompletableFuture<TotpKeyBO> generate(long accountId, String domain, String authenticator);
-    CompletableFuture<List<TotpKeyBO>> getByAccountId(long accountId, String domain);
-    CompletableFuture<Optional<TotpKeyBO>> getByAccountIdDecrypted(long accountId, String domain);
+    Uni<TotpKeyBO> generate(long accountId, String domain, String authenticator);
+    Uni<List<TotpKeyBO>> getByAccountId(long accountId, String domain);
+    Uni<Optional<TotpKeyBO>> getByAccountIdDecrypted(long accountId, String domain);
 }

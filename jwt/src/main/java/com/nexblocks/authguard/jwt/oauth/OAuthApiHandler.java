@@ -68,7 +68,7 @@ public class OAuthApiHandler implements VertxApiHandler {
                             new Violation("provider", ViolationType.MISSING_REQUIRED_VALUE)
                     ))));
         } else {
-            String url = oAuthService.getAuthorizationUrl(provider).join();
+            String url = oAuthService.getAuthorizationUrl(provider).subscribeAsCompletionStage().join();
             context.response().setStatusCode(302).putHeader("Location", url).end();
         }
     }

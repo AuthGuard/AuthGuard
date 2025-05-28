@@ -17,7 +17,7 @@ import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -52,7 +52,7 @@ class TotpProviderTest {
 
         TokenOptionsBO tokenOptions = TokenOptionsBO.builder().build();
 
-        AuthResponseBO generated = totpProvider.generateToken(account, tokenOptions).join();
+        AuthResponseBO generated = totpProvider.generateToken(account, tokenOptions).subscribeAsCompletionStage().join();
 
         AuthResponseBO expected = AuthResponseBO.builder()
                 .type("totp")

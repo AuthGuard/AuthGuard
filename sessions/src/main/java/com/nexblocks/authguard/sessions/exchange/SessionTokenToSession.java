@@ -12,7 +12,7 @@ import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.SessionBO;
 
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @TokenExchange(from = "sessionToken", to = "session")
 public class SessionTokenToSession implements Exchange {
@@ -26,20 +26,20 @@ public class SessionTokenToSession implements Exchange {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+    public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
         return sessionsService.getByToken(request.getToken())
-                .thenCompose(sessionOpt -> {
+                .flatMap(sessionOpt -> {
                     if (sessionOpt.isEmpty()) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Session token does not exist"));
+                        return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Session token does not exist"));
                     }
 
                     SessionBO session = sessionOpt.get();
 
                     if (session.getExpiresAt().isBefore(Instant.now())) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Session token has expired"));
+                        return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Session token has expired"));
                     }
 
-                    return CompletableFuture.completedFuture(AuthResponseBO.builder()
+                    return Uni.createFrom().item(AuthResponseBO.builder()
                             .type(TOKEN_TYPE)
                             .token(session)
                             .entityType(EntityType.ACCOUNT)

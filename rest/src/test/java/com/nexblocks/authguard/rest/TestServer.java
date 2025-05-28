@@ -13,6 +13,7 @@ import com.nexblocks.authguard.rest.config.ImmutableServerConfig;
 import com.nexblocks.authguard.rest.server.AuthGuardServer;
 import com.nexblocks.authguard.rest.vertx.RoutesBindings;
 import io.javalin.Javalin;
+import io.vertx.core.Vertx;
 
 import java.util.Collections;
 import java.util.List;
@@ -40,6 +41,8 @@ class TestServer {
 
         List<Binding<ApiRoute>> routeBindings =
                 injector.findBindingsByType(TypeLiteral.get(ApiRoute.class));
+
+        Vertx vertx = Vertx.vertx();
 
         app = Javalin.create(config -> {
             config.router.apiBuilder(() -> {

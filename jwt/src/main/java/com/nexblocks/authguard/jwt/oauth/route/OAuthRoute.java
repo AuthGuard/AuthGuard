@@ -1,24 +1,23 @@
 package com.nexblocks.authguard.jwt.oauth.route;
 
 import com.google.inject.Inject;
-import com.nexblocks.authguard.api.access.ActorRoles;
+import com.nexblocks.authguard.api.access.VertxRolesAccessHandler;
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.RequestValidationError;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
-import com.nexblocks.authguard.api.routes.ApiRoute;
+import com.nexblocks.authguard.api.routes.VertxApiHandler;
 import com.nexblocks.authguard.jwt.oauth.service.OAuthService;
-import io.javalin.http.Context;
 import io.vavr.control.Either;
+import io.vertx.core.json.Json;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
 
 import java.util.Collections;
 
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.post;
-
 @DependsOnConfiguration("oauth")
-public class OAuthRoute implements ApiRoute {
+public class OAuthRoute implements VertxApiHandler {
     private final OAuthService oAuthService;
 
     @Inject
@@ -26,71 +25,75 @@ public class OAuthRoute implements ApiRoute {
         this.oAuthService = oAuthService;
     }
 
-    @Override
-    public String getPath() {
-        return "oauth";
+    public void register(final Router router) {
+        router.get("/oauth/oidc/auth").handler(this::openIdConnectAuthFlows);
+        router.post("/oauth/oidc/token").handler(this::openIdConnectAuthFlows);
+        router.get("/oauth/auth_url")
+                .handler(VertxRolesAccessHandler.adminOrAuthClient())
+                .handler(this::getAuthUrl);
+        router.post("/oauth/authorize")
+                .handler(VertxRolesAccessHandler.adminOrAuthClient())
+                .handler(this::authorize);
     }
 
-    @Override
-    public void addEndpoints() {
-        get("/oidc/auth", this::openIdConnectAuthFlows);
-        post("/oidc/token", this::openIdConnectAuthFlows);
-        get("/auth_url", this::getAuthUrl, ActorRoles.adminOrAuthClient());
-        post("/authorize", this::authorize, ActorRoles.adminOrAuthClient());
-    }
-
-    void openIdConnectAuthFlows(final Context context) {
+    void openIdConnectAuthFlows(final RoutingContext context) {
         Either<RequestValidationError, ImmutableOpenIdConnectRequest> request
                 = OpenIdConnectRequestParser.authRequestFromQueryParams(context, "code");
 
         if (request.isLeft()) {
-            context.status(400).json(request.getLeft());
+            context.response().setStatusCode(400)
+                    .end(Json.encode(request.getLeft()));
         } else {
-            context.json(501).json(new Error("501", "Feature not currently supported"));
+            context.response().setStatusCode(501)
+                    .end(Json.encode(new Error("501", "Feature not currently supported")));
         }
     }
 
-    void openIdConnectToken(final Context context) {
+    void openIdConnectToken(final RoutingContext context) {
 
     }
 
-    void getAuthUrl(final Context context) {
-        String provider = context.queryParam("provider");
+    void getAuthUrl(final RoutingContext context) {
+        String provider = context.request().getFormAttribute("provider");
 
         if (provider == null) {
-            context.status(400).json(new RequestValidationError(Collections.singletonList(
-                    new Violation("provider", ViolationType.MISSING_REQUIRED_VALUE)
-            )));
+            context.response().setStatusCode(400)
+                    .end(Json.encode(new RequestValidationError(Collections.singletonList(
+                            new Violation("provider", ViolationType.MISSING_REQUIRED_VALUE)
+                    ))));
         } else {
-            String url = oAuthService.getAuthorizationUrl(provider).join();
-
-            context.redirect(url);
+            oAuthService.getAuthorizationUrl(provider)
+                    .subscribe()
+                    .with(context::redirect);
         }
     }
 
-    void authorize(final Context context) {
-        String provider = context.queryParam("provider");
-        String state = context.queryParam("state");
-        String code = context.queryParam("code");
+    void authorize(final RoutingContext context) {
+        String provider = context.queryParam("provider").get(0);
+        String state = context.queryParam("state").get(0);
+        String code = context.queryParam("code").get(0);
 
         if (provider == null) {
-            context.status(400).json(new RequestValidationError(Collections.singletonList(
-                    new Violation("provider", ViolationType.MISSING_REQUIRED_VALUE)
-            )));
+            context.response().setStatusCode(400)
+                    .end(Json.encode(new RequestValidationError(Collections.singletonList(
+                            new Violation("provider", ViolationType.MISSING_REQUIRED_VALUE)
+                    ))));
             return;
         }
 
         if (state == null) {
-            context.status(400).json(new RequestValidationError(Collections.singletonList(
-                    new Violation("state", ViolationType.MISSING_REQUIRED_VALUE)
-            )));
+            context.response().setStatusCode(400)
+                    .end(Json.encode(new RequestValidationError(Collections.singletonList(
+                            new Violation("state", ViolationType.MISSING_REQUIRED_VALUE)
+                    ))));
             return;
         }
 
         if (code == null) {
-            context.status(400).json(new RequestValidationError(Collections.singletonList(
-                    new Violation("code", ViolationType.MISSING_REQUIRED_VALUE)
-            )));
+            context.response().setStatusCode(400)
+                    .end(Json.encode(new RequestValidationError(Collections.singletonList(
+                            new Violation("code", ViolationType.MISSING_REQUIRED_VALUE)
+                    ))));
             return;
         }
 

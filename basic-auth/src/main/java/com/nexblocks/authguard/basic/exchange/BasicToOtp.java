@@ -10,7 +10,7 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @TokenExchange(from = "basic", to = "otp")
 public class BasicToOtp implements Exchange {
@@ -24,9 +24,9 @@ public class BasicToOtp implements Exchange {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+    public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
         return basicAuth.authenticateAndGetAccountSession(request)
-                .thenCompose(accountSession -> {
+                .flatMap(accountSession -> {
                     TokenOptionsBO tokenOptions = TokenOptionsMapper.fromAuthRequest(request)
                             .source("basic")
                             .trackingSession(accountSession.getSession().getSessionToken())

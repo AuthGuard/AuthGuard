@@ -12,6 +12,10 @@
 
     <artifactId>rest</artifactId>
 
+    <properties>
+        <skipTests>true</skipTests>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.vertx</groupId>

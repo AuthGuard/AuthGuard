@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -69,12 +69,12 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<AccountBO> create(final AccountBO account, final RequestContextBO requestContext) {
+    public Uni<AccountBO> create(final AccountBO account, final RequestContextBO requestContext) {
         return idempotencyService
                 .performOperationAsync(() -> doCreate(account), requestContext.getIdempotentKey(), account.getEntityType());
     }
 
-    private CompletableFuture<AccountBO> doCreate(final AccountBO account) {
+    private Uni<AccountBO> doCreate(final AccountBO account) {
         AccountBO withHashedPasswords = credentialsManager.verifyAndHashPlainPassword(account);
         AccountBO preProcessed = AccountPreProcessor.preProcess(withHashedPasswords, accountConfig);
 
@@ -83,9 +83,8 @@ public class AccountsServiceImpl implements AccountsService {
 
         return Uni.combine().all().unis(roleValidationUni, permissionsValidationUni)
                 .with(ignored -> null)
-                .subscribeAsCompletionStage()
-                .thenCompose(ignored -> persistenceService.create(preProcessed))
-                .thenApply(created -> {
+                .flatMap(ignored -> persistenceService.create(preProcessed))
+                .map(created -> {
                     if (accountConfig.verifyEmail()) {
                         final List<AccountEmailBO> toVerify = new ArrayList<>(2);
 
@@ -118,94 +117,89 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> getById(final long accountId, final String domain) {
+    public Uni<Optional<AccountBO>> getById(final long accountId, final String domain) {
         return persistenceService.getById(accountId)
-                .thenApply(opt -> opt
+                .map(opt -> opt
                         .filter(account -> Objects.equals(account.getDomain(), domain))
                         .map(credentialsManager::removeSensitiveInformation));
     }
 
     @Override
-    public CompletableFuture<AccountBO> getByIdUnsafe(final long id, final String domain) {
+    public Uni<AccountBO> getByIdUnsafe(final long id, final String domain) {
         return persistenceService.getById(id)
-                .thenCompose(opt -> opt
+                .flatMap(opt -> opt
                         .filter(account -> Objects.equals(account.getDomain(), domain))
-                        .map(CompletableFuture::completedFuture)
-                        .orElseGet(() -> CompletableFuture.failedFuture(new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "Account does not exist"))));
+                        .map(item -> Uni.createFrom().item(item))
+                        .orElseGet(() -> Uni.createFrom().failure(new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "Account does not exist"))));
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> getByIdUnchecked(final long id) {
+    public Uni<Optional<AccountBO>> getByIdUnchecked(final long id) {
         return persistenceService.getById(id);
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> getByExternalId(final String externalId, String domain) {
+    public Uni<Optional<AccountBO>> getByExternalId(final String externalId, String domain) {
         return accountsRepository.getByExternalId(externalId)
                 .map(opt -> opt
                         .filter(account -> Objects.equals(account.getDomain(), domain))
-                        .map(serviceMapper::toBO)
-                        .map(credentialsManager::removeSensitiveInformation))
-                .subscribeAsCompletionStage();
-    }
-
-    @Override
-    public CompletableFuture<Optional<AccountBO>> getByExternalIdUnchecked(String externalId) {
-        return accountsRepository.getByExternalId(externalId)
-                .map(opt -> opt
-                        .map(serviceMapper::toBO)
-                        .map(credentialsManager::removeSensitiveInformation))
-                .subscribeAsCompletionStage();
-    }
-
-    @Override
-    public CompletableFuture<Optional<AccountBO>> getByEmail(final String email, final String domain) {
-        return accountsRepository.getByEmail(email, domain)
-                .map(opt -> opt
-                        .map(serviceMapper::toBO)
-                        .map(credentialsManager::removeSensitiveInformation))
-                .subscribeAsCompletionStage();
-    }
-
-    @Override
-    public CompletableFuture<Optional<AccountBO>> getByIdentifier(final String identifier, final String domain) {
-        return accountsRepository.findByIdentifier(identifier, domain)
-                .subscribeAsCompletionStage()
-                .thenApply(opt -> opt
                         .map(serviceMapper::toBO)
                         .map(credentialsManager::removeSensitiveInformation));
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> getByIdentifierUnsafe(final String identifier, final String domain) {
-        return accountsRepository.findByIdentifier(identifier, domain)
-                .subscribeAsCompletionStage()
-                .thenApply(opt -> opt.map(serviceMapper::toBO));
+    public Uni<Optional<AccountBO>> getByExternalIdUnchecked(String externalId) {
+        return accountsRepository.getByExternalId(externalId)
+                .map(opt -> opt
+                        .map(serviceMapper::toBO)
+                        .map(credentialsManager::removeSensitiveInformation));
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> update(final AccountBO account, String domain) {
+    public Uni<Optional<AccountBO>> getByEmail(final String email, final String domain) {
+        return accountsRepository.getByEmail(email, domain)
+                .map(opt -> opt
+                        .map(serviceMapper::toBO)
+                        .map(credentialsManager::removeSensitiveInformation));
+    }
+
+    @Override
+    public Uni<Optional<AccountBO>> getByIdentifier(final String identifier, final String domain) {
+        return accountsRepository.findByIdentifier(identifier, domain)
+                .map(opt -> opt
+                        .map(serviceMapper::toBO)
+                        .map(credentialsManager::removeSensitiveInformation));
+    }
+
+    @Override
+    public Uni<Optional<AccountBO>> getByIdentifierUnsafe(final String identifier, final String domain) {
+        return accountsRepository.findByIdentifier(identifier, domain)
+                .map(opt -> opt.map(serviceMapper::toBO));
+    }
+
+    @Override
+    public Uni<Optional<AccountBO>> update(final AccountBO account, String domain) {
         LOG.info("Account update request. accountId={}, domain={}", account.getId(), account.getDomain());
 
         return persistenceService.update(account);
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> delete(final long accountId, String domain) {
+    public Uni<Optional<AccountBO>> delete(final long accountId, String domain) {
         LOG.info("Account delete request. accountId={}", accountId);
 
         return persistenceService.delete(accountId);
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> activate(final long accountId, String domain) {
+    public Uni<Optional<AccountBO>> activate(final long accountId, String domain) {
         return getByIdUnsafe(accountId, domain)
-                .thenCompose(account -> {
+                .flatMap(account -> {
                     AccountBO activated = account.withActive(true);
                     LOG.info("Activate account request. accountId={}, domain={}", activated.getId(), activated.getDomain());
 
                     return this.update(activated, account.getDomain());
-                }).thenApply(persisted -> {
+                }).map(persisted -> {
                     if (persisted.isPresent()) {
                         LOG.info("Account activated. accountId={}, domain={}", accountId, persisted.get().getDomain());
                     } else {
@@ -217,14 +211,14 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> deactivate(final long accountId, String domain) {
+    public Uni<Optional<AccountBO>> deactivate(final long accountId, String domain) {
         return getByIdUnsafe(accountId, domain)
-                .thenCompose(account -> {
+                .flatMap(account -> {
                     AccountBO deactivated = account.withActive(false);
                     LOG.info("Deactivate account request. accountId={}, domain={}", deactivated.getId(), deactivated.getDomain());
 
                     return this.update(deactivated, account.getDomain());
-                }).thenApply(persisted -> {
+                }).map(persisted -> {
                     if (persisted.isPresent()) {
                         LOG.info("Account deactivated. accountId={}, domain={}", persisted.get().getId(), persisted.get().getDomain());
                     } else {
@@ -236,9 +230,9 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> patch(final long accountId, final AccountBO account, String domain) {
+    public Uni<Optional<AccountBO>> patch(final long accountId, final AccountBO account, String domain) {
         return getByIdUnsafe(accountId, domain)
-                .thenCompose(existing -> {
+                .flatMap(existing -> {
                     AccountBO merged = AccountUpdateMerger.merge(existing, account);
 
                     boolean emailUpdated = !ValueComparator.emailsEqual(existing.getEmail(), merged.getEmail());
@@ -274,7 +268,7 @@ public class AccountsServiceImpl implements AccountsService {
 
                     AccountBO accountUpdate = merged;
                     return update(accountUpdate, existing.getDomain())
-                            .thenApply(updated -> {
+                            .map(updated -> {
                                 updated.ifPresent(updatedAccount -> {
                                     // we could merge both email and backup email messages, but we kept them separate for now
                                     if (emailUpdated) {
@@ -307,20 +301,19 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> grantPermissions(final long accountId, final List<PermissionBO> permissions, String domain) {
+    public Uni<Optional<AccountBO>> grantPermissions(final long accountId, final List<PermissionBO> permissions, String domain) {
         return getByIdUnsafe(accountId, domain)
-                .thenCompose(account -> verifyPermissionsOrFail(permissions, account.getDomain())
-                        .subscribeAsCompletionStage()
-                        .thenApply(ignored -> account))
-                .thenCompose(account -> {
+                .flatMap(account -> verifyPermissionsOrFail(permissions, account.getDomain())
+                        .map(ignored -> account))
+                .flatMap(account -> {
                     List<PermissionBO> combinedPermissions = Stream.concat(account.getPermissions().stream(), permissions.stream())
                             .distinct()
                             .collect(Collectors.toList());
 
                     AccountBO withNewPermissions = account.withPermissions(combinedPermissions);
 
-                    return accountsRepository.update(serviceMapper.toDO(withNewPermissions)).subscribe().asCompletionStage()
-                            .thenApply(updated -> updated.map(accountDO -> {
+                    return accountsRepository.update(serviceMapper.toDO(withNewPermissions))
+                            .map(updated -> updated.map(accountDO -> {
                                 LOG.info("Granted account permissions. accountId={}, domain={}, permissions={}",
                                         account.getId(), account.getDomain(), permissions);
 
@@ -330,9 +323,9 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> revokePermissions(final long accountId, final List<PermissionBO> permissions, String domain) {
+    public Uni<Optional<AccountBO>> revokePermissions(final long accountId, final List<PermissionBO> permissions, String domain) {
         return getByIdUnsafe(accountId, domain)
-                .thenCompose(account -> {
+                .flatMap(account -> {
                     Set<String> permissionsFullNames = permissions.stream()
                             .map(Permission::getFullName)
                             .collect(Collectors.toSet());
@@ -346,8 +339,8 @@ public class AccountsServiceImpl implements AccountsService {
 
                     AccountBO withNewPermissions = account.withPermissions(filteredPermissions);
 
-                    return accountsRepository.update(serviceMapper.toDO(withNewPermissions)).subscribe().asCompletionStage()
-                            .thenApply(updated -> updated.map(accountDO -> {
+                    return accountsRepository.update(serviceMapper.toDO(withNewPermissions))
+                            .map(updated -> updated.map(accountDO -> {
                                         LOG.info("Revoked account permissions. accountId={}, domain={}, permissions={}",
                                                 account.getId(), account.getDomain(), permissionsFullNames);
 
@@ -357,12 +350,11 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> grantRoles(final long accountId, final List<String> roles, String domain) {
+    public Uni<Optional<AccountBO>> grantRoles(final long accountId, final List<String> roles, String domain) {
         return getByIdUnsafe(accountId, domain)
-                .thenCompose(account -> verifyRolesOrFail(roles, account.getDomain())
-                        .subscribeAsCompletionStage()
-                        .thenApply(ignored -> account))
-                .thenCompose(account -> {
+                .flatMap(account -> verifyRolesOrFail(roles, account.getDomain())
+                        .map(ignored -> account))
+                .flatMap(account -> {
                     LOG.info("Grant account roles request. accountId={}, domain={}, permissions={}",
                             account.getId(), account.getDomain(), roles);
 
@@ -372,8 +364,8 @@ public class AccountsServiceImpl implements AccountsService {
 
                     AccountBO withNewRoles = account.withRoles(combinedRoles);
 
-                    return accountsRepository.update(serviceMapper.toDO(withNewRoles)).subscribe().asCompletionStage()
-                            .thenApply(updated -> updated.map(accountDO -> {
+                    return accountsRepository.update(serviceMapper.toDO(withNewRoles))
+                            .map(updated -> updated.map(accountDO -> {
                                         LOG.info("Granted account roles request. accountId={}, domain={}, permissions={}",
                                                 account.getId(), account.getDomain(), roles);
 
@@ -383,9 +375,9 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AccountBO>> revokeRoles(final long accountId, final List<String> roles, String domain) {
+    public Uni<Optional<AccountBO>> revokeRoles(final long accountId, final List<String> roles, String domain) {
         return getByIdUnsafe(accountId, domain)
-                .thenCompose(account -> {
+                .flatMap(account -> {
                     LOG.info("Revoke account roles request. accountId={}, domain={}, permissions={}",
                             account.getId(), account.getDomain(), roles);
 
@@ -395,8 +387,8 @@ public class AccountsServiceImpl implements AccountsService {
 
                     AccountBO withNewRoles = account.withRoles(filteredRoles);
 
-                    return accountsRepository.update(serviceMapper.toDO(withNewRoles)).subscribe().asCompletionStage()
-                            .thenApply(updated -> updated.map(accountDO -> {
+                    return accountsRepository.update(serviceMapper.toDO(withNewRoles))
+                            .map(updated -> updated.map(accountDO -> {
                                 LOG.info("Revoked account roles. accountId={}, domain={}, permissions={}",
                                         account.getId(), account.getDomain(), roles);
 
@@ -424,7 +416,7 @@ public class AccountsServiceImpl implements AccountsService {
                     if (verifiedRoles.size() != roles.size()) {
                         List<String> difference = roles.stream()
                                 .filter(role -> !verifiedRoles.contains(role))
-                                .collect(Collectors.toList());
+                                .toList();
 
                         return Uni.createFrom().failure(new ServiceException(ErrorCode.ROLE_DOES_NOT_EXIST,
                                 "The following roles are not valid " + difference));
@@ -444,10 +436,10 @@ public class AccountsServiceImpl implements AccountsService {
                         List<String> difference = permissions.stream()
                                 .map(Permission::getFullName)
                                 .filter(permission -> !verifiedPermissionNames.contains(permission))
-                                .collect(Collectors.toList());
+                                .toList();
 
-                        throw new ServiceException(ErrorCode.PERMISSION_DOES_NOT_EXIST,
-                                "The following permissions are not valid " + difference);
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.PERMISSION_DOES_NOT_EXIST,
+                                "The following permissions are not valid " + difference));
                     }
 
                     return Uni.createFrom().voidItem();

@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.stream.Collectors;
 
 public class PermissionsServiceImpl implements PermissionsService {
@@ -43,11 +43,10 @@ public class PermissionsServiceImpl implements PermissionsService {
     }
 
     @Override
-    public CompletableFuture<PermissionBO> create(final PermissionBO permission) {
+    public Uni<PermissionBO> create(final PermissionBO permission) {
         LOG.debug("New permission request. permission={}, domain={}", permission.getFullName(), permission.getDomain());
 
-        if (permissionsRepository.search(permission.getGroup(), permission.getName(), permission.getDomain())
-                .subscribeAsCompletionStage().join().isPresent()) {
+        if (permissionsRepository.search(permission.getGroup(), permission.getName(), permission.getDomain()).subscribeAsCompletionStage().join().isPresent()) {
             throw new ServiceConflictException(ErrorCode.PERMISSION_ALREADY_EXIST,
                     "Permission " + permission.getFullName() + " already exists");
         }
@@ -56,16 +55,16 @@ public class PermissionsServiceImpl implements PermissionsService {
     }
 
     @Override
-    public CompletableFuture<Optional<PermissionBO>> getById(final long id, String domain) {
+    public Uni<Optional<PermissionBO>> getById(final long id, String domain) {
         return persistenceService.getById(id);
     }
 
     @Override
-    public CompletableFuture<Optional<PermissionBO>> update(final PermissionBO permission, final String domain) {
+    public Uni<Optional<PermissionBO>> update(final PermissionBO permission, final String domain) {
         return getById(permission.getId(), domain)
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isEmpty()) {
-                        return CompletableFuture.completedFuture(opt);
+                        return Uni.createFrom().item(opt);
                     }
 
                     PermissionBO newPermission = PermissionBO.builder()
@@ -83,15 +82,10 @@ public class PermissionsServiceImpl implements PermissionsService {
         List<Uni<PermissionBO>> unis = permissions.stream()
                 .map(permission -> permissionsRepository.search(permission.getGroup(), permission.getName(), domain)
                         .map(opt -> opt
-                                .filter(perm -> {
-                                    switch (entityType) {
-                                        case ACCOUNT:
-                                            return perm.isForAccounts();
-                                        case APPLICATION:
-                                            return perm.isForApplications();
-                                        default:
-                                            return false;
-                                    }
+                                .filter(perm -> switch (entityType) {
+                                    case ACCOUNT -> perm.isForAccounts();
+                                    case APPLICATION -> perm.isForApplications();
+                                    default -> false;
                                 })
                                 .map(serviceMapper::toBO)
                                 .orElse(null)))
@@ -109,33 +103,30 @@ public class PermissionsServiceImpl implements PermissionsService {
     }
 
     @Override
-    public CompletableFuture<List<PermissionBO>> getAll(final String domain, final Long cursor) {
+    public Uni<List<PermissionBO>> getAll(final String domain, final Long cursor) {
         return permissionsRepository.getAll(domain, LongPage.of(cursor, 20))
                 .map(list -> list.stream()
                         .map(serviceMapper::toBO)
-                        .collect(Collectors.toList()))
-                .subscribeAsCompletionStage();
+                        .collect(Collectors.toList()));
     }
 
     @Override
-    public CompletableFuture<List<PermissionBO>> getAllForGroup(final String group, final String domain,
+    public Uni<List<PermissionBO>> getAllForGroup(final String group, final String domain,
                                                                 final Long cursor) {
         return permissionsRepository.getAllForGroup(group, domain, LongPage.of(cursor, 20))
                 .map(list -> list.stream()
                         .map(serviceMapper::toBO)
-                        .collect(Collectors.toList()))
-                .subscribeAsCompletionStage();
+                        .collect(Collectors.toList()));
     }
 
     @Override
-    public CompletableFuture<Optional<PermissionBO>> get(final String domain, final String group, final String name) {
+    public Uni<Optional<PermissionBO>> get(final String domain, final String group, final String name) {
         return permissionsRepository.search(group, name, domain)
-                .map(opt -> opt.map(serviceMapper::toBO))
-                .subscribeAsCompletionStage();
+                .map(opt -> opt.map(serviceMapper::toBO));
     }
 
     @Override
-    public CompletableFuture<Optional<PermissionBO>> delete(final long id, String domain) {
+    public Uni<Optional<PermissionBO>> delete(final long id, String domain) {
         LOG.info("Request to delete permission. permissionId={}", id);
 
         return persistenceService.delete(id);

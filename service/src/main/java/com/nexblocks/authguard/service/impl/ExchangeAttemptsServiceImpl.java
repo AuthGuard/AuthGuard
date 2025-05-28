@@ -12,7 +12,7 @@ import io.smallrye.mutiny.Uni;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -35,22 +35,22 @@ public class ExchangeAttemptsServiceImpl implements ExchangeAttemptsService {
     }
 
     @Override
-    public CompletableFuture<ExchangeAttemptBO> create(final ExchangeAttemptBO entity) {
+    public Uni<ExchangeAttemptBO> create(final ExchangeAttemptBO entity) {
         return persistenceService.create(entity);
     }
 
     @Override
-    public CompletableFuture<Optional<ExchangeAttemptBO>> getById(final long id, String domain) {
+    public Uni<Optional<ExchangeAttemptBO>> getById(final long id, String domain) {
         return persistenceService.getById(id);
     }
 
     @Override
-    public CompletableFuture<Optional<ExchangeAttemptBO>> update(final ExchangeAttemptBO entity, String domain) {
+    public Uni<Optional<ExchangeAttemptBO>> update(final ExchangeAttemptBO entity, String domain) {
         throw new UnsupportedOperationException("Exchange attempts cannot be updated");
     }
 
     @Override
-    public CompletableFuture<Optional<ExchangeAttemptBO>> delete(final long id, String domain) {
+    public Uni<Optional<ExchangeAttemptBO>> delete(final long id, String domain) {
         throw new UnsupportedOperationException("Exchange attempts cannot be deleted");
     }
 
@@ -60,8 +60,7 @@ public class ExchangeAttemptsServiceImpl implements ExchangeAttemptsService {
                 .map(collection -> collection.stream()
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList())
-                )
-                .subscribeAsCompletionStage().join();
+                ).subscribeAsCompletionStage().join();
     }
 
     @Override
@@ -91,7 +90,6 @@ public class ExchangeAttemptsServiceImpl implements ExchangeAttemptsService {
                 .map(collection -> collection.stream()
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList())
-                )
-                .subscribeAsCompletionStage().join();
+                ).subscribeAsCompletionStage().join();
     }
 }

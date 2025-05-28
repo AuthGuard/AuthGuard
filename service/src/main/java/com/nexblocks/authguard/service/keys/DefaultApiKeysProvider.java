@@ -9,7 +9,7 @@ import com.nexblocks.authguard.service.config.ApiKeysConfig;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @ProvidesToken("apiKey")
 public class DefaultApiKeysProvider implements AuthProvider {
@@ -33,7 +33,7 @@ public class DefaultApiKeysProvider implements AuthProvider {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+    public Uni<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
                                                            final TokenOptionsBO options) {
         throw new UnsupportedOperationException("API keys cannot be generated for an account");
     }

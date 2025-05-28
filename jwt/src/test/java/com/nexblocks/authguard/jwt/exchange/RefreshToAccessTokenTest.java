@@ -18,7 +18,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -83,13 +83,13 @@ class RefreshToAccessTokenTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         Mockito.when(accountsService.getByIdUnchecked(accountId))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+                .thenReturn(Uni.createFrom().item(Optional.of(account)));
 
         Mockito.when(accessTokenProvider.generateToken(account, null, options))
-                .thenReturn(CompletableFuture.completedFuture(newTokens));
+                .thenReturn(Uni.createFrom().item(newTokens));
 
         // do
-        AuthResponseBO actual = refreshToAccessToken.exchange(authRequest).join();
+        AuthResponseBO actual = refreshToAccessToken.exchange(authRequest).subscribeAsCompletionStage().join();
 
         // assert
         assertThat(actual).isEqualTo(newTokens);
@@ -148,13 +148,13 @@ class RefreshToAccessTokenTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         Mockito.when(accountsService.getByIdUnchecked(accountId))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+                .thenReturn(Uni.createFrom().item(Optional.of(account)));
 
         Mockito.when(accessTokenProvider.generateToken(account, restrictions, options))
-                .thenReturn(CompletableFuture.completedFuture(newTokens));
+                .thenReturn(Uni.createFrom().item(newTokens));
 
         // do
-        AuthResponseBO actual = refreshToAccessToken.exchange(authRequest).join();
+        AuthResponseBO actual = refreshToAccessToken.exchange(authRequest).subscribeAsCompletionStage().join();
 
         // assert
         assertThat(actual).isEqualTo(newTokens);
@@ -184,7 +184,7 @@ class RefreshToAccessTokenTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         // do
-        assertThatThrownBy(() -> refreshToAccessToken.exchange(authRequest).join())
+        assertThatThrownBy(() -> refreshToAccessToken.exchange(authRequest).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
 
         Thread.sleep(50L); // triggering deleting happens in the background so give it some time
@@ -212,10 +212,10 @@ class RefreshToAccessTokenTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         Mockito.when(accountsService.getByIdUnchecked(accountId))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         // do
-        assertThatThrownBy(() -> refreshToAccessToken.exchange(authRequest).join())
+        assertThatThrownBy(() -> refreshToAccessToken.exchange(authRequest).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
@@ -233,7 +233,7 @@ class RefreshToAccessTokenTest {
                 .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         // do
-        assertThatThrownBy(() -> refreshToAccessToken.exchange(authRequest).join())
+        assertThatThrownBy(() -> refreshToAccessToken.exchange(authRequest).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
@@ -287,13 +287,13 @@ class RefreshToAccessTokenTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         Mockito.when(accountsService.getByIdUnchecked(accountId))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+                .thenReturn(Uni.createFrom().item(Optional.of(account)));
 
         Mockito.when(accessTokenProvider.generateToken(account, null, tokenOptions))
-                .thenReturn(CompletableFuture.completedFuture(newTokens));
+                .thenReturn(Uni.createFrom().item(newTokens));
 
         // do
-        final AuthResponseBO actual = refreshToAccessToken.exchange(authRequest).join();
+        final AuthResponseBO actual = refreshToAccessToken.exchange(authRequest).subscribeAsCompletionStage().join();
 
         // assert
         assertThat(actual).isEqualTo(newTokens);
@@ -328,7 +328,7 @@ class RefreshToAccessTokenTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         // do
-        assertThatThrownBy(() -> refreshToAccessToken.exchange(authRequest).join())
+        assertThatThrownBy(() -> refreshToAccessToken.exchange(authRequest).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
 
         Mockito.verify(accountTokensRepository, Mockito.never()).deleteToken(refreshToken);

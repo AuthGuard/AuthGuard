@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -74,7 +74,7 @@ class ApplicationsServiceImplTest {
                 .build();
 
         Mockito.when(accountsService.getById(app.getParentAccountId(), "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(random.nextObject(AccountBO.class))));
+                .thenReturn(Uni.createFrom().item(Optional.of(random.nextObject(AccountBO.class))));
 
         Mockito.when(applicationsRepository.save(any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AppDO.class)));
@@ -88,7 +88,7 @@ class ApplicationsServiceImplTest {
         Mockito.when(permissionsService.validate(app.getPermissions(), "main", EntityType.APPLICATION))
                 .thenReturn(Uni.createFrom().item(new ArrayList<>(app.getPermissions())));
 
-        AppBO created = applicationsService.create(app, requestContext).join();
+        AppBO created = applicationsService.create(app, requestContext).subscribeAsCompletionStage().join();
         List<PermissionBO> expectedPermissions = app.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
                 .collect(Collectors.toList());
@@ -111,7 +111,7 @@ class ApplicationsServiceImplTest {
         Mockito.when(applicationsRepository.getById(Mockito.anyLong()))
                 .thenReturn(Uni.createFrom().item(Optional.of(serviceMapper.toDO(app))));
 
-        Optional<AppBO> retrieved = applicationsService.getById(1, "main").join();
+        Optional<AppBO> retrieved = applicationsService.getById(1, "main").subscribeAsCompletionStage().join();
         List<PermissionBO> expectedPermissions = app.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
                 .collect(Collectors.toList());
@@ -148,7 +148,7 @@ class ApplicationsServiceImplTest {
         Mockito.when(applicationsRepository.update(any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AppDO.class))));
 
-        AppBO updated = applicationsService.activate(app.getId(), "main").join();
+        AppBO updated = applicationsService.activate(app.getId(), "main").subscribeAsCompletionStage().join();
 
         assertThat(updated).isNotNull();
         assertThat(updated.isActive()).isTrue();
@@ -166,7 +166,7 @@ class ApplicationsServiceImplTest {
         Mockito.when(applicationsRepository.update(any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AppDO.class))));
 
-        AppBO updated = applicationsService.deactivate(app.getId(), "main").join();
+        AppBO updated = applicationsService.deactivate(app.getId(), "main").subscribeAsCompletionStage().join();
 
         assertThat(updated).isNotNull();
         assertThat(updated.isActive()).isFalse();
@@ -188,7 +188,7 @@ class ApplicationsServiceImplTest {
                 random.nextObject(PermissionBO.class).withEntityType(null)
         );
 
-        Optional<AppBO> updated = applicationsService.grantPermissions(account.getId(), permissions, "main").join();
+        Optional<AppBO> updated = applicationsService.grantPermissions(account.getId(), permissions, "main").subscribeAsCompletionStage().join();
 
         assertThat(updated).isPresent();
         assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(account);
@@ -213,7 +213,7 @@ class ApplicationsServiceImplTest {
                 random.nextObject(PermissionBO.class)
         );
 
-        assertThatThrownBy(() -> applicationsService.grantPermissions(account.getId(), permissions, "main").join())
+        assertThatThrownBy(() -> applicationsService.grantPermissions(account.getId(), permissions, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -233,7 +233,7 @@ class ApplicationsServiceImplTest {
                 random.nextObject(PermissionBO.class)
         );
 
-        assertThatThrownBy(() -> applicationsService.grantPermissions(account.getId(), permissions, "main").join())
+        assertThatThrownBy(() -> applicationsService.grantPermissions(account.getId(), permissions, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -257,7 +257,7 @@ class ApplicationsServiceImplTest {
                 currentPermissions.get(1)
         );
 
-        Optional<AppBO> updated = applicationsService.revokePermissions(account.getId(), permissionsToRevoke, "main").join();
+        Optional<AppBO> updated = applicationsService.revokePermissions(account.getId(), permissionsToRevoke, "main").subscribeAsCompletionStage().join();
 
         assertThat(updated).isPresent();
         assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(account);
@@ -281,7 +281,7 @@ class ApplicationsServiceImplTest {
         Mockito.when(rolesService.verifyRoles(roles, "main", EntityType.APPLICATION))
                 .thenReturn(Uni.createFrom().item(roles));
 
-        Optional<AppBO> updated = applicationsService.grantRoles(app.getId(), roles, "main").join();
+        Optional<AppBO> updated = applicationsService.grantRoles(app.getId(), roles, "main").subscribeAsCompletionStage().join();
 
         assertThat(updated).isPresent();
         assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(app);
@@ -307,7 +307,7 @@ class ApplicationsServiceImplTest {
         Mockito.when(rolesService.verifyRoles(roles, "main", EntityType.APPLICATION))
                 .thenReturn(Uni.createFrom().item(validRoles));
 
-        assertThatThrownBy(() -> applicationsService.grantRoles(app.getId(), roles, "main").join())
+        assertThatThrownBy(() -> applicationsService.grantRoles(app.getId(), roles, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -334,7 +334,7 @@ class ApplicationsServiceImplTest {
         Mockito.when(permissionsService.validate(Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(Uni.createFrom().item(Collections.emptyList()));
 
-        assertThatThrownBy(() -> applicationsService.grantRoles(app.getId(), roles, "main").join())
+        assertThatThrownBy(() -> applicationsService.grantRoles(app.getId(), roles, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -353,7 +353,7 @@ class ApplicationsServiceImplTest {
                 currentRoles.get(1)
         );
 
-        Optional<AppBO> updated = applicationsService.revokeRoles(app.getId(), rolesToRevoke, "main").join();
+        Optional<AppBO> updated = applicationsService.revokeRoles(app.getId(), rolesToRevoke, "main").subscribeAsCompletionStage().join();
 
         assertThat(updated).isPresent();
         assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(app);

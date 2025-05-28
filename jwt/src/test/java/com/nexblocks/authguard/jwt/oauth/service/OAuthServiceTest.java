@@ -19,7 +19,7 @@ import org.mockito.Mockito;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -87,9 +87,9 @@ class OAuthServiceTest {
     @Test
     void getAuthorizationUrl() {
         Mockito.when(sessionsService.create(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, SessionBO.class).withSessionToken("state_token")));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, SessionBO.class).withSessionToken("state_token")));
 
-         HttpUrl actual = HttpUrl.get(oAuthService.getAuthorizationUrl("test").join());
+         HttpUrl actual = HttpUrl.get(oAuthService.getAuthorizationUrl("test").subscribeAsCompletionStage().join());
 
          HttpUrl expected = new HttpUrl.Builder()
                 .scheme("http")
@@ -110,7 +110,7 @@ class OAuthServiceTest {
 
     @Test
     void getAuthorizationUrlInvalidProvider() {
-        assertThatThrownBy(() -> oAuthService.getAuthorizationUrl("invalid").join())
+        assertThatThrownBy(() -> oAuthService.getAuthorizationUrl("invalid").subscribeAsCompletionStage().join())
                 .isInstanceOf(ServiceException.class);
     }
 
@@ -123,11 +123,11 @@ class OAuthServiceTest {
                             .expiresAt(Instant.now().plus(Duration.ofMinutes(2)))
                             .build();
 
-                    return CompletableFuture.completedFuture(Optional.of(session));
+                    return Uni.createFrom().item(Optional.of(session));
                 });
 
          TokensResponse actual = oAuthService.exchangeAuthorizationCode("test", "random", "code")
-                .join();
+                .subscribeAsCompletionStage().join();
          TokensResponse expected = testIdentityServer.getSuccessResponse();
 
         assertThat(actual).isEqualTo(expected);
@@ -136,10 +136,10 @@ class OAuthServiceTest {
     @Test
     void exchangeAuthorizationCodeInvalidState() {
         Mockito.when(sessionsService.getByToken(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.empty()));
+                .thenAnswer(invocation -> Uni.createFrom().item(Optional.empty()));
 
         assertThatThrownBy(() -> oAuthService.exchangeAuthorizationCode("test", "random", "code")
-                .join()).hasCauseInstanceOf(ServiceAuthorizationException.class);
+                .subscribeAsCompletionStage().join()).hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
@@ -151,16 +151,16 @@ class OAuthServiceTest {
                             .expiresAt(Instant.now().minus(Duration.ofMinutes(2)))
                             .build();
 
-                    return CompletableFuture.completedFuture(Optional.of(session));
+                    return Uni.createFrom().item(Optional.of(session));
                 });
 
         assertThatThrownBy(() -> oAuthService.exchangeAuthorizationCode("test", "random", "code")
-                .join()).hasCauseInstanceOf(ServiceAuthorizationException.class);
+                .subscribeAsCompletionStage().join()).hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 
     @Test
     void exchangeAuthorizationCodeInvalidProvider() {
-        assertThatThrownBy(() -> oAuthService.getAuthorizationUrl("invalid").join())
+        assertThatThrownBy(() -> oAuthService.getAuthorizationUrl("invalid").subscribeAsCompletionStage().join())
                 .isInstanceOf(ServiceException.class);
     }
 
@@ -177,20 +177,20 @@ class OAuthServiceTest {
                             .expiresAt(Instant.now().plus(Duration.ofMinutes(2)))
                             .build();
 
-                    return CompletableFuture.completedFuture(Optional.of(session));
+                    return Uni.createFrom().item(Optional.of(session));
                 });
 
         Mockito.when(accountsService.create(Mockito.any(), Mockito.eq(expectedContext)))
                 .thenAnswer(invocation -> {
                     AccountBO argWithId = invocation.getArgument(0, AccountBO.class).withId(1);
-                    return CompletableFuture.completedFuture(argWithId);
+                    return Uni.createFrom().item(argWithId);
                 });
 
         Mockito.when(accountsService.getByExternalIdUnchecked(Mockito.any()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
          TokensResponse actual = oAuthService.exchangeAuthorizationCode("account_test", "random", "code")
-                .join();
+                .subscribeAsCompletionStage().join();
          TokensResponse expected = testIdentityServer.getSuccessResponse();
 
         expected.setAccountId(1);
@@ -207,14 +207,14 @@ class OAuthServiceTest {
                             .expiresAt(Instant.now().plus(Duration.ofMinutes(2)))
                             .build();
 
-                    return CompletableFuture.completedFuture(Optional.of(session));
+                    return Uni.createFrom().item(Optional.of(session));
                 });
 
         Mockito.when(accountsService.getByExternalIdUnchecked("1"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(AccountBO.builder().id(1).build())));
+                .thenReturn(Uni.createFrom().item(Optional.of(AccountBO.builder().id(1).build())));
 
          TokensResponse actual = oAuthService.exchangeAuthorizationCode("account_test", "random", "code")
-                .join();
+                .subscribeAsCompletionStage().join();
          TokensResponse expected = testIdentityServer.getSuccessResponse();
 
         expected.setAccountId(1);

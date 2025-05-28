@@ -14,7 +14,7 @@ import com.nexblocks.authguard.service.model.ClientBO;
 
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @KeyExchange(keyType = "default")
 public class DefaultApiKeyExchange implements ApiKeyExchange {
@@ -41,15 +41,15 @@ public class DefaultApiKeyExchange implements ApiKeyExchange {
     }
 
     @Override
-    public CompletableFuture<Optional<Long>> verifyAndGetAppId(final String apiKey) {
-        return repository.getByKey(apiKeyHash.hash(apiKey)).subscribe().asCompletionStage()
-                .thenApply(optional -> optional
+    public Uni<Optional<Long>> verifyAndGetAppId(final String apiKey) {
+        return repository.getByKey(apiKeyHash.hash(apiKey))
+                .map(optional -> optional
                         .filter(this::isValid)
                         .map(ApiKeyDO::getAppId));
     }
 
     @Override
-    public CompletableFuture<Optional<Long>> verifyAndGetClientId(String apiKey) {
+    public Uni<Optional<Long>> verifyAndGetClientId(String apiKey) {
         return verifyAndGetAppId(apiKey);
     }
 

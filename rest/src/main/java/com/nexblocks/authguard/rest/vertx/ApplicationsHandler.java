@@ -23,7 +23,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.stream.Collectors;
 
 public class ApplicationsHandler implements VertxApiHandler {
@@ -75,83 +75,55 @@ public class ApplicationsHandler implements VertxApiHandler {
                 .build();
 
         applicationsService.create(restMapper.toBO(request), requestContext)
-                .thenApply(restMapper::toDTO)
-                .thenAccept(dto -> jsonResponse(context, 201, dto))
-                .exceptionally(e -> {
-                    context.fail(e);
-                    return null;
-                });;
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context, 201));
     }
 
     private void getById(RoutingContext context) {
         long id = parseIdOrFail(context);
         applicationsService.getById(id, Domain.fromContext(context))
-                .thenCompose(AsyncUtils::fromAppOptional)
-                .thenApply(restMapper::toDTO)
-                .thenAccept(dto -> jsonResponse(context, dto))
-                .exceptionally(e -> {
-                    context.fail(e);
-                    return null;
-                });
+                .flatMap(AsyncUtils::uniFromAppOptional)
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void getByExternalId(RoutingContext context) {
         long id = parseIdOrFail(context);
         applicationsService.getByExternalId(id, Domain.fromContext(context))
-                .thenCompose(AsyncUtils::fromAppOptional)
-                .thenApply(restMapper::toDTO)
-                .thenAccept(dto -> jsonResponse(context, dto))
-                .exceptionally(e -> {
-                    context.fail(e);
-                    return null;
-                });;
+                .flatMap(AsyncUtils::uniFromAppOptional)
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));;
     }
 
     private void update(RoutingContext context) {
         AppDTO request = context.body().asPojo(AppDTO.class);
 
         applicationsService.update(restMapper.toBO(request), Domain.fromContext(context))
-                .thenCompose(AsyncUtils::fromAppOptional)
-                .thenApply(restMapper::toDTO)
-                .thenAccept(dto -> jsonResponse(context, dto))
-                .exceptionally(e -> {
-                    context.fail(e);
-                    return null;
-                });;
+                .flatMap(AsyncUtils::uniFromAppOptional)
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));;
     }
 
     private void delete(RoutingContext context) {
         long id = parseIdOrFail(context);
         applicationsService.delete(id, Domain.fromContext(context))
-                .thenCompose(AsyncUtils::fromAppOptional)
-                .thenApply(restMapper::toDTO)
-                .thenAccept(dto -> jsonResponse(context, dto))
-                .exceptionally(e -> {
-                    context.fail(e);
-                    return null;
-                });;
+                .flatMap(AsyncUtils::uniFromAppOptional)
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));;
     }
 
     private void activate(RoutingContext context) {
         long id = parseIdOrFail(context);
         applicationsService.activate(id, Domain.fromContext(context))
-                .thenApply(restMapper::toDTO)
-                .thenAccept(dto -> jsonResponse(context, dto))
-                .exceptionally(e -> {
-                    context.fail(e);
-                    return null;
-                });;
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));;
     }
 
     private void deactivate(RoutingContext context) {
         long id = parseIdOrFail(context);
         applicationsService.deactivate(id, Domain.fromContext(context))
-                .thenApply(restMapper::toDTO)
-                .thenAccept(dto -> jsonResponse(context, dto))
-                .exceptionally(e -> {
-                    context.fail(e);
-                    return null;
-                });;
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));;
     }
 
     private void updatePermissions(RoutingContext context) {
@@ -162,45 +134,33 @@ public class ApplicationsHandler implements VertxApiHandler {
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
 
-        CompletableFuture<Optional<AppBO>> future = request.getAction() == PermissionsRequest.Action.GRANT ?
+        Uni<Optional<AppBO>> future = request.getAction() == PermissionsRequest.Action.GRANT ?
                 applicationsService.grantPermissions(id, permissions, Domain.fromContext(context)) :
                 applicationsService.revokePermissions(id, permissions, Domain.fromContext(context));
 
-        future.thenCompose(AsyncUtils::fromAppOptional)
-                .thenApply(restMapper::toDTO)
-                .thenAccept(dto -> jsonResponse(context, dto))
-                .exceptionally(e -> {
-                    context.fail(e);
-                    return null;
-                });;
+        future.flatMap(AsyncUtils::uniFromAppOptional)
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));;
     }
 
     private void updateRoles(RoutingContext context) {
         long id = parseIdOrFail(context);
         RolesRequestDTO request = rolesBodyHandler.getValidated(context);
 
-        CompletableFuture<Optional<AppBO>> future = request.getAction() == RolesRequest.Action.GRANT ?
+        Uni<Optional<AppBO>> future = request.getAction() == RolesRequest.Action.GRANT ?
                 applicationsService.grantRoles(id, request.getRoles(), Domain.fromContext(context)) :
                 applicationsService.revokeRoles(id, request.getRoles(), Domain.fromContext(context));
 
-        future.thenCompose(AsyncUtils::fromAppOptional)
-                .thenApply(restMapper::toDTO)
-                .thenAccept(dto -> jsonResponse(context, dto))
-                .exceptionally(e -> {
-                    context.fail(e);
-                    return null;
-                });;
+        future.flatMap(AsyncUtils::uniFromAppOptional)
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));;
     }
 
     private void getApiKeys(RoutingContext context) {
         long id = parseIdOrFail(context);
         apiKeysService.getByAppId(id, Domain.fromContext(context))
-                .thenApply(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
-                .thenAccept(dto -> jsonResponse(context, dto))
-                .exceptionally(e -> {
-                    context.fail(e);
-                    return null;
-                });;
+                .map(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));;
     }
 
     private void getCryptoKeys(RoutingContext context) {
@@ -209,12 +169,8 @@ public class ApplicationsHandler implements VertxApiHandler {
         Instant instantCursor = Cursors.parseInstantCursor(cursor);
 
         keyManagementService.getByAccountId(Domain.fromContext(context), id, instantCursor)
-                .thenApply(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
-                .thenAccept(dto -> jsonResponse(context, dto))
-                .exceptionally(e -> {
-                    context.fail(e);
-                    return null;
-                });;
+                .map(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));;
     }
 
     private long parseIdOrFail(RoutingContext context) {

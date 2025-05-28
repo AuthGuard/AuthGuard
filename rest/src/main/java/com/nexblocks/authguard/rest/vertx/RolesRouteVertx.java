@@ -47,11 +47,8 @@ public class RolesRouteVertx implements VertxApiHandler {
             CreateRoleRequestDTO role = createRoleRequestBodyHandler.getValidated(context);
 
             rolesService.create(restMapper.toBO(role))
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().setStatusCode(201).putHeader("Content-Type", "application/json").end(Json.encode(res));
-                    });
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context, 201));
         } catch (Exception e) {
             context.fail(e);
         }
@@ -63,12 +60,9 @@ public class RolesRouteVertx implements VertxApiHandler {
             String domain = context.pathParam("domain");
 
             rolesService.getById(id, domain)
-                    .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.ROLE_DOES_NOT_EXIST, "Role does not exist"))
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                    });
+                    .flatMap(opt -> AsyncUtils.uniFromOptional(opt, ErrorCode.ROLE_DOES_NOT_EXIST, "Role does not exist"))
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (NumberFormatException e) {
             context.fail(new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE))));
         }
@@ -80,12 +74,9 @@ public class RolesRouteVertx implements VertxApiHandler {
             String domain = context.pathParam("domain");
 
             rolesService.delete(id, domain)
-                    .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.ROLE_DOES_NOT_EXIST, "Role does not exist"))
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                    });
+                    .flatMap(opt -> AsyncUtils.uniFromOptional(opt, ErrorCode.ROLE_DOES_NOT_EXIST, "Role does not exist"))
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (NumberFormatException e) {
             context.fail(new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE))));
         }
@@ -96,12 +87,9 @@ public class RolesRouteVertx implements VertxApiHandler {
         String domain = context.pathParam("domain");
 
         rolesService.getRoleByName(name, domain)
-                .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.ROLE_DOES_NOT_EXIST, "Role does not exist"))
-                .thenApply(restMapper::toDTO)
-                .whenComplete((res, ex) -> {
-                    if (ex != null) context.fail(ex);
-                    else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                });
+                .flatMap(opt -> AsyncUtils.uniFromOptional(opt, ErrorCode.ROLE_DOES_NOT_EXIST, "Role does not exist"))
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void getAll(final RoutingContext context) {
@@ -109,11 +97,8 @@ public class RolesRouteVertx implements VertxApiHandler {
         Long cursor = Cursors.getLongCursor(context);
 
         rolesService.getAll(domain, cursor)
-                .thenApply(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
-                .whenComplete((res, ex) -> {
-                    if (ex != null) context.fail(ex);
-                    else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                });
+                .map(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void update(final RoutingContext context) {
@@ -124,12 +109,9 @@ public class RolesRouteVertx implements VertxApiHandler {
             UpdateRoleRequestDTO role = context.body().asPojo(UpdateRoleRequestDTO.class);
 
             rolesService.update(restMapper.toBO(role).withId(id), domain)
-                    .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.ROLE_DOES_NOT_EXIST, "Role does not exist"))
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                    });
+                    .flatMap(opt -> AsyncUtils.uniFromOptional(opt, ErrorCode.ROLE_DOES_NOT_EXIST, "Role does not exist"))
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (NumberFormatException e) {
             context.fail(new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE))));
         } catch (Exception e) {
