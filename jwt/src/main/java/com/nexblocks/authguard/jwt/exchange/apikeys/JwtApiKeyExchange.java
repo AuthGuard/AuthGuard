@@ -41,7 +41,7 @@ public class JwtApiKeyExchange implements ApiKeyExchange {
 
     @Override
     public Uni<Optional<Long>> verifyAndGetAppId(final String apiKey) {
-        return Uni.createFrom().item(Optional.of(tokenVerifier.verifyAccountToken(apiKey)));
+        return tokenVerifier.verifyAccountToken(apiKey).map(Optional::of);
     }
 
     @Override

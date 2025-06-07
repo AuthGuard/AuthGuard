@@ -16,7 +16,6 @@ import io.vavr.control.Either;
 import io.vavr.control.Try;
 
 import java.time.Instant;
-import io.smallrye.mutiny.Uni;
 
 public class AuthorizationCodeVerifier implements AuthVerifier {
     private final AccountTokensRepository accountTokensRepository;
@@ -27,10 +26,9 @@ public class AuthorizationCodeVerifier implements AuthVerifier {
     }
 
     @Override
-    public Long verifyAccountToken(final String token) {
-        return verifyAndGetAccountToken(AuthRequestBO.builder().token(token).build())
-                .map(AccountTokenDO::getAssociatedAccountId)
-                .getOrElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid authorization code"));
+    public Uni<Long> verifyAccountToken(final String token) {
+        return verifyAndGetAccountTokenAsync(AuthRequestBO.builder().token(token).build())
+                .map(AccountTokenDO::getAssociatedAccountId);
     }
 
     @Override

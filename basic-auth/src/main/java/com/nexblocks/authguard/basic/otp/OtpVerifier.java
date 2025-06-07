@@ -27,7 +27,7 @@ public class OtpVerifier implements AuthVerifier {
     }
 
     @Override
-    public Long verifyAccountToken(String token) {
+    public Uni<Long> verifyAccountToken(String token) {
         throw new UnsupportedOperationException("Use the async function");
     }
 

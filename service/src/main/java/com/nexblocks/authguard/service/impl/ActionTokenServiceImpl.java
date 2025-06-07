@@ -64,9 +64,7 @@ public class ActionTokenServiceImpl implements ActionTokenService {
     @Override
     public Uni<ActionTokenBO> generateFromBasicAuth(final AuthRequestBO authRequest, final String action) {
         return basicAuthProvider.getAccount(authRequest)
-                .map(account -> {
-                    AccountTokenDO token = generateToken(account, action);
-
+                .flatMap(account -> generateToken(account, action).map(token -> {
                     LOG.info("Action token from credentials request. accountId={}, domain={}, tokenId={}, expiresAt={}",
                             account.getId(), account.getDomain(), token.getId(), token.getExpiresAt());
 
@@ -75,7 +73,7 @@ public class ActionTokenServiceImpl implements ActionTokenService {
                             .token(token.getToken())
                             .validFor(TOKEN_LIFETIME.toSeconds())
                             .build();
-                });
+                }));
     }
 
     @Override
@@ -96,8 +94,7 @@ public class ActionTokenServiceImpl implements ActionTokenService {
 
                     return Uni.createFrom().item(result.get());
                 })
-                .map(account -> {
-                    AccountTokenDO token = generateToken(account, action);
+                .flatMap(account -> generateToken(account, action).map(token -> {
                     LOG.info("Generated action token from OTP request. passwordId={}, tokenId={}, expiresAt={}",
                             passwordId, token.getId(), token.getExpiresAt());
 
@@ -106,7 +103,7 @@ public class ActionTokenServiceImpl implements ActionTokenService {
                             .token(token.getToken())
                             .validFor(TOKEN_LIFETIME.toSeconds())
                             .build();
-                });
+                }));
     }
 
     @Override
@@ -140,7 +137,7 @@ public class ActionTokenServiceImpl implements ActionTokenService {
                 });
     }
 
-    private AccountTokenDO generateToken(final AccountBO account, final String action) {
+    private Uni<AccountTokenDO> generateToken(final AccountBO account, final String action) {
         Instant now = Instant.now();
 
         AccountTokenDO accountToken = AccountTokenDO
@@ -153,7 +150,6 @@ public class ActionTokenServiceImpl implements ActionTokenService {
                 .expiresAt(now.plus(TOKEN_LIFETIME))
                 .build();
 
-        return accountTokensRepository.save(accountToken)
-                .subscribeAsCompletionStage().join();
+        return accountTokensRepository.save(accountToken);
     }
 }

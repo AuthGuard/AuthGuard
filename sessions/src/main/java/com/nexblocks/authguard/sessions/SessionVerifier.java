@@ -21,7 +21,7 @@ public class SessionVerifier implements AuthVerifier {
     }
 
     @Override
-    public Long verifyAccountToken(final String sessionToken) {
+    public Uni<Long> verifyAccountToken(final String sessionToken) {
         throw new UnsupportedOperationException("Use the async variant");
     }
 

@@ -6,6 +6,7 @@ import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
+import io.smallrye.mutiny.Uni;
 
 public class IdTokenVerifier {
     private final JwtTokenVerifier jwtTokenVerifier;
@@ -26,8 +27,8 @@ public class IdTokenVerifier {
         this.jwtTokenVerifier = new JwtTokenVerifier(strategy, jti, algorithm);
     }
 
-    public String verify(final String token) {
-        jwtTokenVerifier.verifyAccountToken(token);
-        return token;
+    public Uni<String> verify(final String token) {
+        return jwtTokenVerifier.verifyAccountToken(token)
+                .map(ignored -> token);
     }
 }

@@ -13,7 +13,6 @@ import io.smallrye.mutiny.Uni;
 import io.vavr.control.Try;
 
 import java.time.Instant;
-import io.smallrye.mutiny.Uni;
 
 public class PasswordlessVerifier implements AuthVerifier {
     private final AccountTokensRepository accountTokensRepository;
@@ -24,7 +23,7 @@ public class PasswordlessVerifier implements AuthVerifier {
     }
 
     @Override
-    public Long verifyAccountToken(final String passwordlessToken) {
+    public Uni<Long> verifyAccountToken(final String passwordlessToken) {
         throw new UnsupportedOperationException("Use the async variant");
     }
 

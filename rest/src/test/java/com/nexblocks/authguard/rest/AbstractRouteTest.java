@@ -42,7 +42,7 @@ abstract class AbstractRouteTest {
      */
     @AfterAll
     void stopServer() {
-        server.stop();
+//        server.stop();
     }
 
     <T> T randomObject(final Class<T> clazz) {

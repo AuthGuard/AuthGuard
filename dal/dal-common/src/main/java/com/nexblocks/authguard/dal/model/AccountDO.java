@@ -76,7 +76,7 @@ public class AccountDO extends AbstractDO {
     @JoinTable(name = "account_roles")
     private Set<String> roles;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "account_permissions")
     private Set<PermissionDO> permissions;
 

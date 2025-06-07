@@ -8,4 +8,7 @@
     <root level="info">
         <appender-ref ref="STDOUT" />
     </root>
+
+    <logger name="io.vertx.core" level="DEBUG"/>
+    <logger name="io.vertx" level="DEBUG"/>
 </configuration>

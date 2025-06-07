@@ -3,6 +3,7 @@ package com.nexblocks.authguard.jwt.oauth;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
+import com.nexblocks.authguard.service.exceptions.ServiceException;
 import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -34,7 +35,8 @@ class AuthorizationCodeVerifierTest {
         Mockito.when(accountTokensRepository.getByToken(authorizationCode))
                 .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
-        assertThat(authorizationCodeVerifier.verifyAccountToken(authorizationCode)).isEqualTo(accountId);
+        assertThat(authorizationCodeVerifier.verifyAccountToken(authorizationCode).subscribeAsCompletionStage()
+                .join()).isEqualTo(accountId);
     }
 
     @Test
@@ -47,8 +49,9 @@ class AuthorizationCodeVerifierTest {
         Mockito.when(accountTokensRepository.getByToken(authorizationCode))
                 .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        assertThatThrownBy(() -> authorizationCodeVerifier.verifyAccountToken(authorizationCode))
-                .isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> authorizationCodeVerifier.verifyAccountToken(authorizationCode)
+                .subscribeAsCompletionStage().join())
+                .hasCauseInstanceOf(ServiceException.class);
     }
 
     @Test
@@ -68,7 +71,7 @@ class AuthorizationCodeVerifierTest {
         Mockito.when(accountTokensRepository.getByToken(authorizationCode))
                 .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
-        assertThatThrownBy(() -> authorizationCodeVerifier.verifyAccountToken(authorizationCode))
-                .isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> authorizationCodeVerifier.verifyAccountToken(authorizationCode).subscribeAsCompletionStage().join())
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 }

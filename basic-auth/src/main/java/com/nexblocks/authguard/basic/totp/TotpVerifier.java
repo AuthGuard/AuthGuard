@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
-import io.smallrye.mutiny.Uni;
 import java.util.stream.Collectors;
 
 public class TotpVerifier implements AuthVerifier {
@@ -66,7 +65,7 @@ public class TotpVerifier implements AuthVerifier {
     }
 
     @Override
-    public Long verifyAccountToken(final String token) {
+    public Uni<Long> verifyAccountToken(final String token) {
         throw new UnsupportedOperationException("Use verifyAndGetAccountTokenAsync instead");
     }
 

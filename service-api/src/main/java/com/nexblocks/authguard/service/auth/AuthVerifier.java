@@ -7,7 +7,7 @@ import io.vavr.control.Either;
 import io.smallrye.mutiny.Uni;
 
 public interface AuthVerifier {
-    Long verifyAccountToken(final String token);
+    Uni<Long> verifyAccountToken(final String token);
 
     default Uni<Long> verifyAccountTokenAsync(final AuthRequest request) {
         throw new UnsupportedOperationException();

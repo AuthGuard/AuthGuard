@@ -163,7 +163,6 @@ public class AccountsHandler implements VertxApiHandler {
         String domain = context.pathParam("domain");
 
         if (!ActorDomainVerifier.verifyActorDomain(context, domain)) {
-            context.response().setStatusCode(403).end();
             return;
         }
 
@@ -284,7 +283,6 @@ public class AccountsHandler implements VertxApiHandler {
         final String email = context.pathParam("email");
 
         if (!ActorDomainVerifier.verifyActorDomain(context, domain)) {
-            context.response().setStatusCode(403).end();
             return;
         }
 

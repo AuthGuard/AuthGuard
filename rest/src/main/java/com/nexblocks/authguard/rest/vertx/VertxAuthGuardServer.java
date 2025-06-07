@@ -8,6 +8,7 @@ import com.nexblocks.authguard.emb.AutoSubscribers;
 import com.nexblocks.authguard.rest.ServerRunner;
 import com.nexblocks.authguard.rest.config.ServerConfig;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.Json;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
@@ -17,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class VertxAuthGuardServer {
     private final static Logger log = LoggerFactory.getLogger(ServerRunner.class);
@@ -32,7 +34,7 @@ public class VertxAuthGuardServer {
     public void start(final Vertx vertx) {
         // Step 2: Get the main router
         Router router = Router.router(vertx);
-
+        ;
         router.route().handler(LoggerHandler.create(LoggerFormat.DEFAULT));
         router.route().handler(BodyHandler.create());
         router.route().failureHandler(new GlobalExceptionHandler());
@@ -43,13 +45,13 @@ public class VertxAuthGuardServer {
 //        router.route("/domains/:domain/*").handler(authorizationHandler::domainAuthorization);
 
         // Step 3: Global error handling
-        router.errorHandler(500, ctx -> {
-            Throwable failure = ctx.failure();
-            ctx.response()
-                    .setStatusCode(500)
-                    .putHeader("Content-Type", "application/json")
-                    .end(Json.encode(new MainVerticle.ErrorResponse("Internal server error", failure.getMessage())));
-        });
+//        router.errorHandler(500, ctx -> {
+//            Throwable failure = ctx.failure();
+//            ctx.response()
+//                    .setStatusCode(500)
+//                    .putHeader("Content-Type", "application/json")
+//                    .end(Json.encode(new MainVerticle.ErrorResponse("Internal server error", failure.getMessage())));
+//        });
 
         router.errorHandler(404, ctx -> {
             ctx.response()
@@ -74,7 +76,11 @@ public class VertxAuthGuardServer {
         });
 
         // Step 5: Start server
-        vertx.createHttpServer()
+        HttpServerOptions serverOptions = new HttpServerOptions()
+                .setIdleTimeout(5) // seconds
+                .setIdleTimeoutUnit(TimeUnit.SECONDS);
+
+        vertx.createHttpServer(serverOptions)
                 .requestHandler(router)
                 .listen(serverConfig.getPort());
     }

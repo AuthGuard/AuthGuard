@@ -7,9 +7,8 @@ import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
-import io.vavr.control.Either;
-
 import io.smallrye.mutiny.Uni;
+import io.vavr.control.Either;
 
 @TokenExchange(from = "encryptedToken", to = "idToken")
 public class EncryptedToIdToken implements Exchange {
@@ -27,14 +26,14 @@ public class EncryptedToIdToken implements Exchange {
     @Override
     public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
         String encrypted = request.getToken();
-        Either<Exception, String> decrypted = tokenEncryptor.decryptEncoded(encrypted)
-                .map(idTokenVerifier::verify);
+        Either<Exception, String> decrypted = tokenEncryptor.decryptEncoded(encrypted);
 
         if (decrypted.isLeft()) {
             return Uni.createFrom().failure(decrypted.getLeft());
         }
 
-        return Uni.createFrom().item(AuthResponseBO.builder()
+        return idTokenVerifier.verify(decrypted.get())
+                .map(ignored -> AuthResponseBO.builder()
                         .type(TOKEN_TYPE)
                         .token(decrypted.get())
                         .build());

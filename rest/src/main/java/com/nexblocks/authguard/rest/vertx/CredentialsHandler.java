@@ -124,7 +124,6 @@ public class CredentialsHandler implements VertxApiHandler {
             PasswordResetTokenRequestDTO request = passwordResetTokenRequestBodyHandler.getValidated(context);
 
             if (!ActorDomainVerifier.verifyActorDomain(context, request.getDomain())) {
-                context.response().setStatusCode(403).end();
                 return;
             }
 
@@ -143,9 +142,10 @@ public class CredentialsHandler implements VertxApiHandler {
         try {
             PasswordResetRequestDTO request = passwordResetRequestBodyHandler.getValidated(context);
 
-            if (request.getIdentifier() != null && !ActorDomainVerifier.verifyActorDomain(context, request.getDomain())) {
-                context.response().setStatusCode(403).end();
-                return;
+            if (request.getIdentifier() != null) {
+                if (!ActorDomainVerifier.verifyActorDomain(context, request.getDomain())) {
+                    return;
+                }
             }
 
             Uni<AccountBO> result;

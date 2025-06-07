@@ -46,12 +46,15 @@ public class PermissionsServiceImpl implements PermissionsService {
     public Uni<PermissionBO> create(final PermissionBO permission) {
         LOG.debug("New permission request. permission={}, domain={}", permission.getFullName(), permission.getDomain());
 
-        if (permissionsRepository.search(permission.getGroup(), permission.getName(), permission.getDomain()).subscribeAsCompletionStage().join().isPresent()) {
-            throw new ServiceConflictException(ErrorCode.PERMISSION_ALREADY_EXIST,
-                    "Permission " + permission.getFullName() + " already exists");
-        }
+        return permissionsRepository.search(permission.getGroup(), permission.getName(), permission.getDomain())
+                .flatMap(opt -> {
+                    if (opt.isEmpty()) {
+                        return persistenceService.create(permission);
+                    }
 
-        return persistenceService.create(permission);
+                    return Uni.createFrom().failure(new ServiceConflictException(ErrorCode.PERMISSION_ALREADY_EXIST,
+                                    "Permission " + permission.getFullName() + " already exists"));
+                });
     }
 
     @Override

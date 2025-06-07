@@ -76,7 +76,8 @@ class PermissionsServiceImplTest {
         Mockito.when(permissionsRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, PermissionDO.class)));
 
-        assertThatThrownBy(() -> permissionsService.create(request)).isInstanceOf(ServiceConflictException.class);
+        assertThatThrownBy(() -> permissionsService.create(request).subscribeAsCompletionStage().join())
+                .hasCauseInstanceOf(ServiceConflictException.class);
     }
 
     @Test

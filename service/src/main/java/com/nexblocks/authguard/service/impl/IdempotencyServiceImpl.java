@@ -8,11 +8,9 @@ import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.Entity;
 import com.nexblocks.authguard.service.model.IdempotentRecordBO;
 import com.nexblocks.authguard.service.util.ID;
-
-import java.util.Optional;
 import io.smallrye.mutiny.Uni;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 public class IdempotencyServiceImpl implements IdempotencyService {
@@ -34,7 +32,7 @@ public class IdempotencyServiceImpl implements IdempotencyService {
 
     @Override
     public Uni<Optional<IdempotentRecordBO>> findByKeyAndEntityType(final String idempotentKey,
-                                                                                  final String entityType) {
+                                                                    final String entityType) {
         return repository.findByKeyAndEntityType(idempotentKey, entityType)
                 .map(recordOptional -> recordOptional.map(serviceMapper::toBO));
     }
@@ -60,7 +58,8 @@ public class IdempotencyServiceImpl implements IdempotencyService {
                             .build();
 
                     // we don't have to wait for this to finish
-                    CompletableFuture.runAsync(() -> create(record));
+                    create(record).subscribe()
+                            .with(ignored -> {});
 
                     return result;
                 });
@@ -85,7 +84,8 @@ public class IdempotencyServiceImpl implements IdempotencyService {
                             .build();
 
                     // we don't have to wait for this to finish
-                    CompletableFuture.runAsync(() -> create(record));
+                    create(record).subscribe()
+                            .with(ignored -> {});
 
                     return result;
                 });
