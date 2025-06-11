@@ -135,10 +135,10 @@ class AccountsServiceImplTest {
         Mockito.when(idempotencyService.performOperationAsync(Mockito.any(), Mockito.eq(idempotentKey), Mockito.eq(account.getEntityType())))
                 .thenAnswer(invocation -> invocation.getArgument(0, Supplier.class).get());
 
-        Mockito.when(securePassword.hash(any())).thenReturn(HashedPasswordBO.builder()
+        Mockito.when(securePassword.hash(any())).thenReturn(Uni.createFrom().item(HashedPasswordBO.builder()
                 .password("hashed")
                 .salt("salted")
-                .build());
+                .build()));
 
         Mockito.when(rolesService.verifyRoles(account.getRoles(), "main", EntityType.ACCOUNT))
                 .thenReturn(Uni.createFrom().item(new ArrayList<>(account.getRoles())));
@@ -223,6 +223,12 @@ class AccountsServiceImplTest {
 
         Mockito.when(permissionsService.validate(Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(Uni.createFrom().item(Collections.emptyList()));
+
+        Mockito.when(securePassword.hash(Mockito.any()))
+                .thenReturn(Uni.createFrom().item(HashedPasswordBO.builder()
+                        .password("hashed")
+                        .salt("salted")
+                        .build()));
 
 
         AccountBO expectedAccount = AccountBO.builder()

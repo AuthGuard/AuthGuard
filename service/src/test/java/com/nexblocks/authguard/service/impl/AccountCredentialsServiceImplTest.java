@@ -110,9 +110,9 @@ class AccountCredentialsServiceImplTest {
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CredentialsAuditDO.class)));
 
         Mockito.when(securePassword.hash(newPassword))
-                .thenReturn(HashedPasswordBO.builder()
+                .thenReturn(Uni.createFrom().item(HashedPasswordBO.builder()
                         .password("hashed_new_password")
-                        .build());
+                        .build()));
 
         AccountBO result = accountCredentialsService.updatePassword(accountId, newPassword, "main").subscribeAsCompletionStage().join();
 
@@ -269,9 +269,9 @@ class AccountCredentialsServiceImplTest {
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CredentialsAuditDO.class)));
 
         Mockito.when(securePassword.hash(newPassword))
-                .thenReturn(HashedPasswordBO.builder()
+                .thenReturn(Uni.createFrom().item(HashedPasswordBO.builder()
                         .password("hashed_new_password")
-                        .build());
+                        .build()));
 
         // action
         AccountBO result = accountCredentialsService.resetPasswordByToken(resetToken, newPassword, "main").subscribeAsCompletionStage().join();
@@ -345,12 +345,12 @@ class AccountCredentialsServiceImplTest {
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CredentialsAuditDO.class)));
 
         Mockito.when(securePassword.hash(newPassword))
-                .thenReturn(HashedPasswordBO.builder()
+                .thenReturn(Uni.createFrom().item(HashedPasswordBO.builder()
                         .password("hashed_new_password")
-                        .build());
+                        .build()));
 
         Mockito.when(securePassword.verify(oldPassword, accountBO.getHashedPassword()))
-                .thenReturn(true);
+                .thenReturn(Uni.createFrom().item(true));
 
         // action
         AccountBO result =
@@ -392,11 +392,11 @@ class AccountCredentialsServiceImplTest {
         Mockito.when(accountAuditRepository.save(any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CredentialsAuditDO.class)));
         Mockito.when(securePassword.hash(newPassword))
-                .thenReturn(HashedPasswordBO.builder()
+                .thenReturn(Uni.createFrom().item(HashedPasswordBO.builder()
                         .password("hashed_new_password")
-                        .build());
+                        .build()));
         Mockito.when(securePassword.verify(oldPassword, accountBO.getHashedPassword()))
-                .thenReturn(false);
+                .thenReturn(Uni.createFrom().item(false));
 
         // action
         assertThatThrownBy(() -> accountCredentialsService.replacePassword(identifier, oldPassword, newPassword, "main").subscribeAsCompletionStage().join())
@@ -429,11 +429,11 @@ class AccountCredentialsServiceImplTest {
         Mockito.when(accountAuditRepository.save(any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CredentialsAuditDO.class)));
         Mockito.when(securePassword.hash(newPassword))
-                .thenReturn(HashedPasswordBO.builder()
+                .thenReturn(Uni.createFrom().item(HashedPasswordBO.builder()
                         .password("hashed_new_password")
-                        .build());
+                        .build()));
         Mockito.when(securePassword.verify(oldPassword, accountBO.getHashedPassword()))
-                .thenReturn(true);
+                .thenReturn(Uni.createFrom().item(true));
 
         // action
         assertThatThrownBy(() -> accountCredentialsService.replacePassword(identifier, oldPassword, newPassword, "main").subscribeAsCompletionStage().join())

@@ -31,7 +31,7 @@ public class CryptoKeyTests {
                 .accountId(101L)
                 .appId(201L)
                 .nonce(new byte[] { 1, 2, 3 })
-                .createdAt(Instant.now().minusMillis(1))
+                .createdAt(Instant.now().minusSeconds(1))
                 .build();
 
         second = CryptoKeyDO.builder()
@@ -57,7 +57,7 @@ public class CryptoKeyTests {
                         CryptoKeyDO.class)
                 .setParameter("domain", first.getDomain())
                 .setParameter("id", first.getAccountId())
-                .setParameter("cursor", Instant.now().plusSeconds(1))
+                .setParameter("cursor", Instant.now().plusSeconds(10))
                 .setMaxResults(1);
 
         List<CryptoKeyDO> firstPage = firstPageQuery.getResultList();
@@ -67,7 +67,7 @@ public class CryptoKeyTests {
                         CryptoKeyDO.class)
                 .setParameter("domain", first.getDomain())
                 .setParameter("id", first.getAccountId())
-                .setParameter("cursor", second.getCreatedAt().plusMillis(1))
+                .setParameter("cursor", second.getCreatedAt().minusMillis(1))
                 .setMaxResults(1);
 
         List<CryptoKeyDO> secondPage = secondPageQuery.getResultList();
@@ -90,7 +90,7 @@ public class CryptoKeyTests {
                         CryptoKeyDO.class)
                 .setParameter("domain", first.getDomain())
                 .setParameter("id", first.getAppId())
-                .setParameter("cursor", second.getCreatedAt().plusMillis(1))
+                .setParameter("cursor", second.getCreatedAt().minusSeconds(1))
                 .setMaxResults(1);
 
         List<CryptoKeyDO> secondPage = secondPageQuery.getResultList();

@@ -10,6 +10,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.AsyncUtils;
+import io.smallrye.mutiny.Uni;
 import io.vavr.control.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Optional;
-import io.smallrye.mutiny.Uni;
 
 public class BasicAuthProvider {
     public static final String RESERVED_DOMAIN = "global";
@@ -100,22 +100,22 @@ public class BasicAuthProvider {
                                 "Identifier does not exist"));
                     }
 
-                    return AsyncUtils.uniFromTry(tryVerifyCredentials(opt.get(), username, password));
+                    return tryVerifyCredentials(opt.get(), username, password);
                 });
     }
 
-    private Try<AccountBO> tryVerifyCredentials(final AccountBO account, final String identifier, final String password) {
+    private Uni<AccountBO> tryVerifyCredentials(final AccountBO account, final String identifier, final String password) {
         if (!account.isActive()) {
-            return Try.failure(new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Inactive account"));
+            return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Inactive account"));
         }
 
         final Optional<Exception> validationError = checkIdentifier(account, identifier);
 
         if (validationError.isPresent()) {
-            return Try.failure(validationError.get());
+            return Uni.createFrom().failure(validationError.get());
         }
 
-        return checkIfExpired(account)
+        return AsyncUtils.uniFromTry(checkIfExpired(account))
                 .flatMap(valid -> checkPasswordsMatch(valid, password));
     }
 
@@ -144,20 +144,23 @@ public class BasicAuthProvider {
         return Try.success(credentials);
     }
 
-    private Try<AccountBO> checkPasswordsMatch(final AccountBO credentials, final String password) {
+    private Uni<AccountBO> checkPasswordsMatch(final AccountBO credentials, final String password) {
         final SecurePassword securePasswordImplementation = getPasswordImplementation(credentials);
 
         if (securePasswordImplementation == null) {
-            return Try.failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
+            return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
                     "Unable to map password version", EntityType.ACCOUNT, credentials.getId()));
         }
 
-        if (securePasswordImplementation.verify(password, credentials.getHashedPassword())) {
-            return Try.success(credentials);
-        } else {
-            return Try.failure(new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH,
-                    "Passwords do not match", EntityType.ACCOUNT, credentials.getId()));
-        }
+        return securePasswordImplementation.verify(password, credentials.getHashedPassword())
+                .map(success -> {
+                    if (success) {
+                        return credentials;
+                    }
+
+                    throw new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH,
+                            "Passwords do not match", EntityType.ACCOUNT, credentials.getId());
+                });
     }
 
     private SecurePassword getPasswordImplementation(final AccountBO credentials) {

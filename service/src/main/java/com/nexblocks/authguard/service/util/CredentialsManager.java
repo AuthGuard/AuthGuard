@@ -8,6 +8,7 @@ import com.nexblocks.authguard.service.model.HashedPasswordBO;
 import com.nexblocks.authguard.service.model.UserIdentifier;
 import com.nexblocks.authguard.service.model.UserIdentifierBO;
 import com.google.inject.Inject;
+import io.smallrye.mutiny.Uni;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -33,16 +34,15 @@ public class CredentialsManager {
                 .withHashedPassword(null);
     }
 
-    public AccountBO verifyAndHashPlainPassword(final AccountBO account) {
-        final HashedPasswordBO hashedPassword = verifyAndHashPassword(account.getPlainPassword());
-
-        return AccountBO.builder()
-                .from(account)
-                .hashedPassword(hashedPassword)
-                .passwordUpdatedAt(Instant.now())
-                .passwordVersion(passwordVersion)
-                .plainPassword(null)
-                .build();
+    public Uni<AccountBO> verifyAndHashPlainPassword(final AccountBO account) {
+        return verifyAndHashPassword(account.getPlainPassword())
+                .map(hashedPassword -> AccountBO.builder()
+                        .from(account)
+                        .hashedPassword(hashedPassword)
+                        .passwordUpdatedAt(Instant.now())
+                        .passwordVersion(passwordVersion)
+                        .plainPassword(null)
+                        .build());
     }
 
     public AccountBO addOrReplaceIdentifier(final AccountBO account, final String oldValue, final String newValue,
@@ -60,7 +60,7 @@ public class CredentialsManager {
                 .build());
     }
 
-    public HashedPasswordBO verifyAndHashPassword(final String plain) {
+    public Uni<HashedPasswordBO> verifyAndHashPassword(final String plain) {
         final List<Violation> passwordViolations = passwordValidator.findViolations(plain);
 
         if (!passwordViolations.isEmpty()) {

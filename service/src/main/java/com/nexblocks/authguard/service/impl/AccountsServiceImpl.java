@@ -75,44 +75,46 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     private Uni<AccountBO> doCreate(final AccountBO account) {
-        AccountBO withHashedPasswords = credentialsManager.verifyAndHashPlainPassword(account);
-        AccountBO preProcessed = AccountPreProcessor.preProcess(withHashedPasswords, accountConfig);
+        return credentialsManager.verifyAndHashPlainPassword(account)
+                .flatMap(withHashedPasswords -> {
+                    AccountBO preProcessed = AccountPreProcessor.preProcess(withHashedPasswords, accountConfig);
 
-        Uni<Void> roleValidationUni = verifyRolesOrFail(preProcessed.getRoles(), preProcessed.getDomain());
-        Uni<Void> permissionsValidationUni = verifyPermissionsOrFail(preProcessed.getPermissions(), preProcessed.getDomain());
+                    Uni<Void> roleValidationUni = verifyRolesOrFail(preProcessed.getRoles(), preProcessed.getDomain());
+                    Uni<Void> permissionsValidationUni = verifyPermissionsOrFail(preProcessed.getPermissions(), preProcessed.getDomain());
 
-        return Uni.combine().all().unis(roleValidationUni, permissionsValidationUni)
-                .with(ignored -> null)
-                .flatMap(ignored -> persistenceService.create(preProcessed))
-                .map(created -> {
-                    if (accountConfig.verifyEmail()) {
-                        final List<AccountEmailBO> toVerify = new ArrayList<>(2);
+                    return Uni.combine().all().unis(roleValidationUni, permissionsValidationUni)
+                            .with(ignored -> null)
+                            .flatMap(ignored -> persistenceService.create(preProcessed))
+                            .map(created -> {
+                                if (accountConfig.verifyEmail()) {
+                                    final List<AccountEmailBO> toVerify = new ArrayList<>(2);
 
-                        if (preProcessed.getEmail() != null) {
-                            toVerify.add(preProcessed.getEmail());
-                        }
+                                    if (preProcessed.getEmail() != null) {
+                                        toVerify.add(preProcessed.getEmail());
+                                    }
 
-                        if (preProcessed.getBackupEmail() != null) {
-                            toVerify.add(preProcessed.getBackupEmail());
-                        }
+                                    if (preProcessed.getBackupEmail() != null) {
+                                        toVerify.add(preProcessed.getBackupEmail());
+                                    }
 
-                        messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(VerificationRequestBO.builder()
-                                .account(created)
-                                .emails(toVerify)
-                                .build(), account.getDomain()));
-                    }
+                                    messageBus.publish(VERIFICATION_CHANNEL, Messages.emailVerification(VerificationRequestBO.builder()
+                                            .account(created)
+                                            .emails(toVerify)
+                                            .build(), account.getDomain()));
+                                }
 
-                    if (accountConfig.verifyPhoneNumber()) {
-                        /*
-                         * Unlike emails, we only have a single phone number. Therefore, we don't
-                         * need to specify which ones to verify.
-                         */
-                        messageBus.publish(VERIFICATION_CHANNEL, Messages.phoneNumberVerification(VerificationRequestBO.builder()
-                                .account(created)
-                                .build(), account.getDomain()));
-                    }
+                                if (accountConfig.verifyPhoneNumber()) {
+                                    /*
+                                     * Unlike emails, we only have a single phone number. Therefore, we don't
+                                     * need to specify which ones to verify.
+                                     */
+                                    messageBus.publish(VERIFICATION_CHANNEL, Messages.phoneNumberVerification(VerificationRequestBO.builder()
+                                            .account(created)
+                                            .build(), account.getDomain()));
+                                }
 
-                    return credentialsManager.removeSensitiveInformation(created);
+                                return credentialsManager.removeSensitiveInformation(created);
+                            });
                 });
     }
 

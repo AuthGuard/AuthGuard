@@ -73,21 +73,21 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     @Override
     public Uni<AccountBO> updatePassword(final long id, final String plainPassword, final String domain) {
         return accountsService.getByIdUnsafe(id, domain)
-                .flatMap(existing -> {
-                    HashedPasswordBO newPassword = credentialsManager.verifyAndHashPassword(plainPassword);
-                    AccountBO update = existing
-                            .withHashedPassword(newPassword)
-                            .withPasswordUpdatedAt(Instant.now());
+                .flatMap(existing -> credentialsManager.verifyAndHashPassword(plainPassword)
+                        .flatMap(newPassword -> {
+                            AccountBO update = existing
+                                    .withHashedPassword(newPassword)
+                                    .withPasswordUpdatedAt(Instant.now());
 
-                    return doUpdate(existing, update, domain)
-                            .map(result -> {
-                                storePasswordUpdateRecord(existing);
+                            return doUpdate(existing, update, domain)
+                                    .map(result -> {
+                                        storePasswordUpdateRecord(existing);
 
-                                LOG.info("Password updated. accountId={}, domain={}", id, existing.getDomain());
+                                        LOG.info("Password updated. accountId={}, domain={}", id, existing.getDomain());
 
-                                return result;
-                            });
-                });
+                                        return result;
+                                    });
+                        }));
     }
 
     @Override
@@ -257,22 +257,30 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                 .flatMap(credentials -> {
                     LOG.info("Password replace request. accountId={}, domain={}", credentials.getId(), domain);
 
-                    if (!securePassword.verify(oldPassword, credentials.getHashedPassword())) {
-                        LOG.info("Password mismatch in replace request. accountId={}, domain={}", credentials.getId(), domain);
+                    return securePassword.verify(oldPassword, credentials.getHashedPassword())
+                            .map(success -> {
+                                if (success) {
+                                    return credentials;
+                                }
 
-                        throw new ServiceException(ErrorCode.PASSWORDS_DO_NOT_MATCH, "Passwords do not match");
-                    }
+                                LOG.info("Password mismatch in replace request. accountId={}, domain={}", credentials.getId(), domain);
 
-                    final HashedPasswordBO newHashedPassword = credentialsManager.verifyAndHashPassword(newPassword);
-                    final AccountBO update = credentials
-                            .withHashedPassword(newHashedPassword)
-                            .withPasswordUpdatedAt(Instant.now());
+                                throw new ServiceException(ErrorCode.PASSWORDS_DO_NOT_MATCH, "Passwords do not match");
+                            });
+                })
+                .flatMap(credentials -> {
+                    return credentialsManager.verifyAndHashPassword(newPassword)
+                            .flatMap(newHashedPassword -> {
+                                AccountBO update = credentials
+                                        .withHashedPassword(newHashedPassword)
+                                        .withPasswordUpdatedAt(Instant.now());
 
-                    return doUpdate(credentials, update, domain)
-                            .map(result -> {
-                                storePasswordUpdateRecord(credentials);
+                                return doUpdate(credentials, update, domain)
+                                        .map(result -> {
+                                            storePasswordUpdateRecord(credentials);
 
-                                return result;
+                                            return result;
+                                        });
                             });
                 });
     }

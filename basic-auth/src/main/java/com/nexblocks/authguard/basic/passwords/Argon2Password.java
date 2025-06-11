@@ -1,6 +1,7 @@
 package com.nexblocks.authguard.basic.passwords;
 
 import com.nexblocks.authguard.basic.config.ArgonConfig;
+import io.smallrye.mutiny.Uni;
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.bouncycastle.crypto.params.Argon2Parameters;
 
@@ -20,16 +21,18 @@ public class Argon2Password extends AbstractSecurePassword {
     }
 
     @Override
-    protected byte[] hashWithSalt(final String plain, final byte[] saltBytes) {
-        Argon2Parameters builder = createParameters(saltBytes);
-        int hashLength = 32;
+    protected Uni<byte[]> hashWithSalt(final String plain, final byte[] saltBytes) {
+        return Uni.createFrom().item(() -> {
+            Argon2Parameters builder = createParameters(saltBytes);
+            int hashLength = 32;
 
-        Argon2BytesGenerator generate = new Argon2BytesGenerator();
-        generate.init(builder);
-        byte[] result = new byte[hashLength];
-        generate.generateBytes(plain.getBytes(StandardCharsets.UTF_8), result, 0, result.length);
+            Argon2BytesGenerator generate = new Argon2BytesGenerator();
+            generate.init(builder);
+            byte[] result = new byte[hashLength];
+            generate.generateBytes(plain.getBytes(StandardCharsets.UTF_8), result, 0, result.length);
 
-        return result;
+            return result;
+        });
     }
 
     private Argon2Parameters createParameters(final byte[] saltBytes) {

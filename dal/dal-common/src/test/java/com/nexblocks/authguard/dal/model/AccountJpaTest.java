@@ -174,8 +174,7 @@ class AccountJpaTest {
                 .build());
 
         Assertions.assertThatThrownBy(() -> entityManager.getTransaction().commit())
-                .isInstanceOf(PersistenceException.class)
-                .hasCauseInstanceOf(ConstraintViolationException.class);
+                .isInstanceOf(ConstraintViolationException.class);
     }
 
     @Test
@@ -247,15 +246,9 @@ class AccountJpaTest {
         try {
             entityManager.persist(duplicate);
             entityManager.getTransaction().commit();
-        } catch (final PersistenceException persistenceException) {
-            final Throwable cause = persistenceException.getCause();
-
-            if (cause instanceof ConstraintViolationException) {
-                assertThat(((ConstraintViolationException) cause).getConstraintName())
-                        .contains("IDENTIFIER_DUP");
-            } else {
-                throw persistenceException;
-            }
+        } catch (final ConstraintViolationException persistenceException) {
+            assertThat(persistenceException.getConstraintName())
+                    .contains("IDENTIFIER_DUP");
         } finally {
             entityManager.getTransaction().rollback();
         }

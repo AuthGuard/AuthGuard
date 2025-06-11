@@ -11,7 +11,7 @@ public class Argon2PasswordTest {
     void hash() {
         final Argon2Password argon = new Argon2Password();
         final String password = RandomStringUtils.randomAlphanumeric(12);
-        final HashedPasswordBO hashedPassword = argon.hash(password);
+        final HashedPasswordBO hashedPassword = argon.hash(password).subscribeAsCompletionStage().join();
 
         assertThat(hashedPassword).isNotNull();
         assertThat(hashedPassword.getPassword()).isNotEqualTo(password);
@@ -22,17 +22,19 @@ public class Argon2PasswordTest {
     void verify() {
         final Argon2Password argon = new Argon2Password();
         final String password = RandomStringUtils.randomAlphanumeric(12);
-        final HashedPasswordBO hashedPassword = argon.hash(password);
+        final HashedPasswordBO hashedPassword = argon.hash(password).subscribeAsCompletionStage().join();
 
-        assertThat(argon.verify(password, hashedPassword)).isTrue();
+        assertThat(argon.verify(password, hashedPassword).subscribeAsCompletionStage().join())
+                .isTrue();
     }
 
     @Test
     void verifyMismatch() {
         final Argon2Password argon = new Argon2Password();
         final String password = RandomStringUtils.randomAlphanumeric(12);
-        final HashedPasswordBO hashedPassword = argon.hash(password);
+        final HashedPasswordBO hashedPassword = argon.hash(password).subscribeAsCompletionStage().join();
 
-        assertThat(argon.verify("should not match", hashedPassword)).isFalse();
+        assertThat(argon.verify("should not match", hashedPassword).subscribeAsCompletionStage().join())
+                .isFalse();
     }
 }
