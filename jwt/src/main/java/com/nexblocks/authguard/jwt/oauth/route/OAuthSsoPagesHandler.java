@@ -19,17 +19,17 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
+import io.smallrye.mutiny.Uni;
+import io.vavr.control.Either;
 import io.vertx.core.json.Json;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vavr.control.Either;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
-import io.smallrye.mutiny.Uni;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -143,29 +143,25 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
                             .build();
 
                     return openIdConnectService.processAuth(realRequest, requestContext, domain)
-                            .map(response -> {
-                                String location = realRequest.getRedirectUri() + "?code=" + response.getToken()
-                                        + "&state=" + request.getState();
-                                context.response().setStatusCode(302)
-                                        .putHeader("Location", location)
-                                        .end();
-                                return "";
-                            });
+                            .map(response -> realRequest.getRedirectUri() + "?code=" + response.getToken()
+                                    + "&state=" + request.getState());
                 })
-                .onFailure()
-                .invoke(e -> {
+                .subscribe()
+                .with(location -> {
+                    context.response().setStatusCode(302)
+                            .putHeader("Location", location)
+                            .end();
+                }, e -> {
                     String location;
                     Throwable effectiveException = e instanceof CompletionException ? e.getCause() : e;
 
-                    if (effectiveException instanceof ServiceAuthorizationException) {
-                        ServiceAuthorizationException ex = (ServiceAuthorizationException) effectiveException;
+                    if (effectiveException instanceof ServiceAuthorizationException ex) {
                         String error = Objects.equals(ex.getErrorCode(), ErrorCode.GENERIC_AUTH_FAILURE.getCode()) ?
                                 OAuthConst.ErrorsMessages.UnsupportedResponseType :
                                 OAuthConst.ErrorsMessages.UnauthorizedClient;
 
                         location = request.getRedirectUri() + "?error=" + error;
-                    } else if (effectiveException instanceof ServiceException) {
-                        ServiceException ex = (ServiceException) effectiveException;
+                    } else if (effectiveException instanceof ServiceException ex) {
                         location = request.getRedirectUri() + "?error=" + ex.getMessage();
                     } else {
                         location = request.getRedirectUri() + "?error=unknown_error";
@@ -174,9 +170,7 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
                     context.response().setStatusCode(302)
                             .putHeader("Location", location)
                             .end();
-                })
-                .subscribe()
-                .asCompletionStage();
+                });
     }
 
     private void authFlowTokenApi(final RoutingContext context) {

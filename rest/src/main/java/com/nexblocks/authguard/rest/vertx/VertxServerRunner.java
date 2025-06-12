@@ -8,7 +8,6 @@ import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.injection.ClassSearch;
 import com.nexblocks.authguard.rest.bindings.MappersBinder;
 import com.nexblocks.authguard.rest.config.ImmutableServerConfig;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +61,7 @@ public class VertxServerRunner {
                         .port(3000)
                         .build());
 
-        Vertx vertx = Vertx.vertx();
+        Vertx vertx = Vertx.vertx(); // TODO add a config section for vertx
 
         new VertxAuthGuardServer(injector, serverConfig).start(vertx);
     }

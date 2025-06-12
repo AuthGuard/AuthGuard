@@ -34,7 +34,7 @@ public class VertxAuthGuardServer {
     public void start(final Vertx vertx) {
         // Step 2: Get the main router
         Router router = Router.router(vertx);
-        ;
+
         router.route().handler(LoggerHandler.create(LoggerFormat.DEFAULT));
         router.route().handler(BodyHandler.create());
         router.route().failureHandler(new GlobalExceptionHandler());
@@ -76,9 +76,12 @@ public class VertxAuthGuardServer {
         });
 
         // Step 5: Start server
-        HttpServerOptions serverOptions = new HttpServerOptions()
-                .setIdleTimeout(5) // seconds
-                .setIdleTimeoutUnit(TimeUnit.SECONDS);
+        HttpServerOptions serverOptions = new HttpServerOptions();
+
+        if (serverConfig.getIdleConnectionTimeoutSeconds() != null) {
+            serverOptions.setIdleTimeout(5)
+                    .setIdleTimeoutUnit(TimeUnit.SECONDS);
+        }
 
         vertx.createHttpServer(serverOptions)
                 .requestHandler(router)

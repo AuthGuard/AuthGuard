@@ -38,7 +38,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @DependsOnConfiguration("oauthSso")
-public class OAuthSsoPagesRoute implements VertxApiHandler {
+@Deprecated
+public class OAuthSsoPagesRoute {
     private final OpenIdConnectService openIdConnectService;
     private final ApiKeysService apiKeysService;
     private final ClientsService clientsService;
