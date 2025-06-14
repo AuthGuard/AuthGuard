@@ -14,7 +14,7 @@ import io.vavr.control.Try;
 
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public class OtpVerifier implements AuthVerifier {
     private final OtpRepository otpRepository;
@@ -27,17 +27,17 @@ public class OtpVerifier implements AuthVerifier {
     }
 
     @Override
-    public Long verifyAccountToken(String token) {
+    public Uni<Long> verifyAccountToken(String token) {
         throw new UnsupportedOperationException("Use the async function");
     }
 
     @Override
-    public CompletableFuture<Long> verifyAccountTokenAsync(final AuthRequest request) {
+    public Uni<Long> verifyAccountTokenAsync(final AuthRequest request) {
         // TODO: no need to have a special format for the token, just receive the two parts in the request
         String[] parts = request.getToken().split(":");
 
         if (parts.length != 2) {
-            return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.INVALID_AUTHORIZATION_FORMAT,
+            return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.INVALID_AUTHORIZATION_FORMAT,
                     "Invalid OTP token format"));
         }
 
@@ -46,21 +46,20 @@ public class OtpVerifier implements AuthVerifier {
         try {
             passwordId = Long.parseLong(parts[0]);
         } catch (Exception e) {
-            return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.INVALID_AUTHORIZATION_FORMAT,
+            return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.INVALID_AUTHORIZATION_FORMAT,
                     "Invalid OTP ID"));
         }
         String otp = parts[1];
 
         return otpRepository.getById(passwordId)
-                .subscribeAsCompletionStage()
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     Optional<OneTimePasswordBO> generatedOpt = opt.map(serviceMapper::toBO);
 
                     if (generatedOpt.isEmpty()) {
                         throw new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid OTP ID");
                     }
 
-                    return AsyncUtils.fromTry(verifyOtp(generatedOpt.get(), otp));
+                    return AsyncUtils.uniFromTry(verifyOtp(generatedOpt.get(), otp));
                 });
     }
 

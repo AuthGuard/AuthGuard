@@ -3,13 +3,15 @@ package com.nexblocks.authguard.jwt.oauth;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
+import com.nexblocks.authguard.service.exceptions.ServiceException;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,9 +33,10 @@ class AuthorizationCodeVerifierTest {
                 .build();
 
         Mockito.when(accountTokensRepository.getByToken(authorizationCode))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
-        assertThat(authorizationCodeVerifier.verifyAccountToken(authorizationCode)).isEqualTo(accountId);
+        assertThat(authorizationCodeVerifier.verifyAccountToken(authorizationCode).subscribeAsCompletionStage()
+                .join()).isEqualTo(accountId);
     }
 
     @Test
@@ -44,10 +47,11 @@ class AuthorizationCodeVerifierTest {
         String authorizationCode = "authorization-code";
 
         Mockito.when(accountTokensRepository.getByToken(authorizationCode))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        assertThatThrownBy(() -> authorizationCodeVerifier.verifyAccountToken(authorizationCode))
-                .isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> authorizationCodeVerifier.verifyAccountToken(authorizationCode)
+                .subscribeAsCompletionStage().join())
+                .hasCauseInstanceOf(ServiceException.class);
     }
 
     @Test
@@ -65,9 +69,9 @@ class AuthorizationCodeVerifierTest {
                 .build();
 
         Mockito.when(accountTokensRepository.getByToken(authorizationCode))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
-        assertThatThrownBy(() -> authorizationCodeVerifier.verifyAccountToken(authorizationCode))
-                .isInstanceOf(ServiceAuthorizationException.class);
+        assertThatThrownBy(() -> authorizationCodeVerifier.verifyAccountToken(authorizationCode).subscribeAsCompletionStage().join())
+                .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 }

@@ -6,15 +6,15 @@ import com.nexblocks.authguard.dal.repository.IndelibleRecordRepository;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface ExchangeAttemptsRepository
         extends ImmutableRecordRepository<ExchangeAttemptDO>, IndelibleRecordRepository<ExchangeAttemptDO> {
-    CompletableFuture<Collection<ExchangeAttemptDO>> findByEntity(long entityId);
+    Uni<Collection<ExchangeAttemptDO>> findByEntity(long entityId);
 
-    CompletableFuture<Collection<ExchangeAttemptDO>> findByEntityAndTimestamp(long entityId, Instant fromTimestamp);
+    Uni<Collection<ExchangeAttemptDO>> findByEntityAndTimestamp(long entityId, Instant fromTimestamp);
 
-    CompletableFuture<Collection<ExchangeAttemptDO>> findByEntityAndTimestampAndExchange(long entityId,
+    Uni<Collection<ExchangeAttemptDO>> findByEntityAndTimestampAndExchange(long entityId,
                                                                                          Instant fromTimestamp,
                                                                                          String fromExchange);
 }

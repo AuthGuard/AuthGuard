@@ -17,7 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -54,12 +54,12 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public CompletableFuture<AppBO> create(final AppBO app, final RequestContextBO requestContext) {
+    public Uni<AppBO> create(final AppBO app, final RequestContextBO requestContext) {
         return idempotencyService.performOperationAsync(() -> doCreate(app),
                 requestContext.getIdempotentKey(), app.getEntityType());
     }
 
-    private CompletableFuture<AppBO> doCreate(final AppBO app) {
+    private Uni<AppBO> doCreate(final AppBO app) {
         Uni<Void> roleValidationUni = verifyRolesOrFail(app.getRoles(), app.getDomain());
         Uni<Void> permissionsValidationUni = verifyPermissionsOrFail(app.getPermissions(), app.getDomain());
 
@@ -72,9 +72,9 @@ public class ApplicationsServiceImpl implements ApplicationsService {
          * account exists if it's set.
          */
         if (app.getParentAccountId() != null) {
-            return combined.subscribeAsCompletionStage()
-                    .thenCompose(ignored -> accountsService.getById(app.getParentAccountId(), app.getDomain()))
-                    .thenCompose(opt -> {
+            return combined
+                    .flatMap(ignored -> accountsService.getById(app.getParentAccountId(), app.getDomain()))
+                    .flatMap(opt -> {
                         if (opt.isEmpty()) {
                             throw new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "No account with ID " + app.getParentAccountId() + " exists");
                         }
@@ -83,49 +83,49 @@ public class ApplicationsServiceImpl implements ApplicationsService {
                     });
         }
 
-        return combined.subscribeAsCompletionStage()
-                .thenCompose(ignored -> persistenceService.create(app));
+        return combined
+                .flatMap(ignored -> persistenceService.create(app));
     }
 
     @Override
-    public CompletableFuture<Optional<AppBO>> getById(final long id, String domain) {
+    public Uni<Optional<AppBO>> getById(final long id, String domain) {
         return persistenceService.getById(id)
-                .thenApply(opt -> opt.filter(app -> Objects.equals(app.getDomain(), domain)));
+                .map(opt -> opt.filter(app -> Objects.equals(app.getDomain(), domain)));
     }
 
     @Override
-    public CompletableFuture<Optional<AppBO>> getByExternalId(final long externalId, String domain) {
-        return applicationsRepository.getById(externalId).subscribe().asCompletionStage()
-                .thenApply(optional -> optional
+    public Uni<Optional<AppBO>> getByExternalId(final long externalId, String domain) {
+        return applicationsRepository.getById(externalId)
+                .map(optional -> optional
                         .filter(app -> Objects.equals(app.getDomain(), domain))
                         .map(serviceMapper::toBO));
     }
 
     @Override
-    public CompletableFuture<Optional<AppBO>> update(final AppBO app, final String domain) {
+    public Uni<Optional<AppBO>> update(final AppBO app, final String domain) {
         LOG.info("Application update request. accountId={}", app.getId());
 
         // FIXME accountId cannot be updated
-        return getById(app.getId(), domain).thenCompose(ignored -> persistenceService.update(app));
+        return getById(app.getId(), domain).flatMap(ignored -> persistenceService.update(app));
     }
 
     @Override
-    public CompletableFuture<Optional<AppBO>> delete(final long id, final String domain) {
+    public Uni<Optional<AppBO>> delete(final long id, final String domain) {
         LOG.info("Application delete request. accountId={}", id);
 
         return persistenceService.delete(id);
     }
 
     @Override
-    public CompletableFuture<AppBO> activate(final long id, final String domain) {
+    public Uni<AppBO> activate(final long id, final String domain) {
         return getById(id, domain)
-                .thenCompose(AsyncUtils::fromAppOptional)
-                .thenCompose(app -> {
+                .flatMap(AsyncUtils::uniFromAppOptional)
+                .flatMap(app -> {
                     LOG.info("Activate application request. appId={}, domain={}", app.getId(), app.getDomain());
 
                     AppBO activated = app.withActive(true);
                     return update(activated, domain)
-                            .thenApply(persisted -> {
+                            .map(persisted -> {
                                 if (persisted.isPresent()) {
                                     LOG.info("Application activated. appId={}, domain={}", app.getId(), app.getDomain());
                                     return persisted.get();
@@ -138,15 +138,15 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public CompletableFuture<AppBO> deactivate(final long id, final String domain) {
+    public Uni<AppBO> deactivate(final long id, final String domain) {
         return getById(id, domain)
-                .thenCompose(AsyncUtils::fromAppOptional)
-                .thenCompose(app -> {
+                .flatMap(AsyncUtils::uniFromAppOptional)
+                .flatMap(app -> {
                     LOG.info("Activate application request. appId={}, domain={}", app.getId(), app.getDomain());
 
                     AppBO deactivated = app.withActive(false);
                     return update(deactivated, domain)
-                            .thenApply(persisted -> {
+                            .map(persisted -> {
                                 if (persisted.isPresent()) {
                                     LOG.info("Application deactivated. appId={}, domain={}", app.getId(), app.getDomain());
                                     return persisted.get();
@@ -159,28 +159,27 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public CompletableFuture<List<AppBO>> getByAccountId(final long accountId, final String domain,
+    public Uni<List<AppBO>> getByAccountId(final long accountId, final String domain,
                                                          final Long cursor) {
         return applicationsRepository.getAllForAccount(accountId, LongPage.of(cursor, 20))
-                .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()));
+                .map(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()));
     }
 
     @Override
-    public CompletableFuture<Optional<AppBO>> grantPermissions(long id, List<PermissionBO> permissions, String domain) {
+    public Uni<Optional<AppBO>> grantPermissions(long id, List<PermissionBO> permissions, String domain) {
         return getById(id, domain)
-                .thenCompose(AsyncUtils::fromAppOptional)
-                .thenCompose(app -> verifyPermissionsOrFail(permissions, domain)
-                        .subscribeAsCompletionStage()
-                        .thenApply(ignored -> app))
-                .thenCompose(app -> {
+                .flatMap(AsyncUtils::uniFromAppOptional)
+                .flatMap(app -> verifyPermissionsOrFail(permissions, domain)
+                        .map(ignored -> app))
+                .flatMap(app -> {
                     List<PermissionBO> combinedPermissions = Stream.concat(app.getPermissions().stream(), permissions.stream())
                             .distinct()
                             .collect(Collectors.toList());
 
                     AppBO withNewPermissions = app.withPermissions(combinedPermissions);
 
-                    return applicationsRepository.update(serviceMapper.toDO(withNewPermissions)).subscribe().asCompletionStage()
-                            .thenApply(updated -> updated.map(appDO -> {
+                    return applicationsRepository.update(serviceMapper.toDO(withNewPermissions))
+                            .map(updated -> updated.map(appDO -> {
                                 LOG.info("Granted app permissions. accountId={}, domain={}, permissions={}",
                                         app.getId(), app.getDomain(), permissions);
 
@@ -190,10 +189,10 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AppBO>> revokePermissions(long id, List<PermissionBO> permissions, String domain) {
+    public Uni<Optional<AppBO>> revokePermissions(long id, List<PermissionBO> permissions, String domain) {
         return getById(id, domain)
-                .thenCompose(AsyncUtils::fromAppOptional)
-                .thenCompose(app -> {
+                .flatMap(AsyncUtils::uniFromAppOptional)
+                .flatMap(app -> {
                     Set<String> permissionsFullNames = permissions.stream()
                             .map(Permission::getFullName)
                             .collect(Collectors.toSet());
@@ -207,8 +206,8 @@ public class ApplicationsServiceImpl implements ApplicationsService {
 
                     AppBO withNewPermissions = app.withPermissions(filteredPermissions);
 
-                    return applicationsRepository.update(serviceMapper.toDO(withNewPermissions)).subscribe().asCompletionStage()
-                            .thenApply(updated -> updated.map(appDO -> {
+                    return applicationsRepository.update(serviceMapper.toDO(withNewPermissions))
+                            .map(updated -> updated.map(appDO -> {
                                 LOG.info("Revoked app permissions. accountId={}, domain={}, permissions={}",
                                         app.getId(), app.getDomain(), permissionsFullNames);
 
@@ -218,13 +217,12 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AppBO>> grantRoles(long id, List<String> roles, String domain) {
+    public Uni<Optional<AppBO>> grantRoles(long id, List<String> roles, String domain) {
         return getById(id, domain)
-                .thenCompose(AsyncUtils::fromAppOptional)
-                .thenCompose(app -> verifyRolesOrFail(roles, app.getDomain())
-                        .subscribeAsCompletionStage()
-                        .thenApply(ignored -> app))
-                .thenCompose(app -> {
+                .flatMap(AsyncUtils::uniFromAppOptional)
+                .flatMap(app -> verifyRolesOrFail(roles, app.getDomain())
+                        .map(ignored -> app))
+                .flatMap(app -> {
                     LOG.info("Grant app roles request. accountId={}, domain={}, permissions={}",
                             app.getId(), app.getDomain(), roles);
 
@@ -234,8 +232,8 @@ public class ApplicationsServiceImpl implements ApplicationsService {
 
                     AppBO withNewRoles = app.withRoles(combinedRoles);
 
-                    return applicationsRepository.update(serviceMapper.toDO(withNewRoles)).subscribe().asCompletionStage()
-                            .thenApply(updated -> updated.map(appDO -> {
+                    return applicationsRepository.update(serviceMapper.toDO(withNewRoles))
+                            .map(updated -> updated.map(appDO -> {
                                 LOG.info("Granted app roles request. accountId={}, domain={}, permissions={}",
                                         app.getId(), app.getDomain(), roles);
 
@@ -245,10 +243,10 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public CompletableFuture<Optional<AppBO>> revokeRoles(long id, List<String> roles, String domain) {
+    public Uni<Optional<AppBO>> revokeRoles(long id, List<String> roles, String domain) {
         return getById(id, domain)
-                .thenCompose(AsyncUtils::fromAppOptional)
-                .thenCompose(app -> {
+                .flatMap(AsyncUtils::uniFromAppOptional)
+                .flatMap(app -> {
                     LOG.info("Revoke app roles request. accountId={}, domain={}, permissions={}",
                             app.getId(), app.getDomain(), roles);
 
@@ -258,8 +256,8 @@ public class ApplicationsServiceImpl implements ApplicationsService {
 
                     AppBO withNewRoles = app.withRoles(filteredRoles);
 
-                    return applicationsRepository.update(serviceMapper.toDO(withNewRoles)).subscribe().asCompletionStage()
-                            .thenApply(updated -> updated.map(appDO -> {
+                    return applicationsRepository.update(serviceMapper.toDO(withNewRoles))
+                            .map(updated -> updated.map(appDO -> {
                                 LOG.info("Revoked app roles. accountId={}, domain={}, permissions={}",
                                         app.getId(), app.getDomain(), roles);
 

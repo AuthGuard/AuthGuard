@@ -6,6 +6,7 @@ import com.nexblocks.authguard.service.IdempotencyService;
 import com.nexblocks.authguard.service.exceptions.IdempotencyException;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
 import com.nexblocks.authguard.service.model.Entity;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -13,7 +14,7 @@ import org.mockito.Mockito;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 
@@ -74,11 +75,11 @@ class IdempotencyServiceImplTest {
         final Supplier<TestEntity> operation = () -> entity;
 
         Mockito.when(repository.findByKeyAndEntityType(idempotentKey, ENTITY_TYPE))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         Mockito.when(repository.save(Mockito.any())).thenAnswer(Mockito.RETURNS_DEEP_STUBS);
 
-        final TestEntity result = service.performOperation(operation, idempotentKey, ENTITY_TYPE).join();
+        final TestEntity result = service.performOperation(operation, idempotentKey, ENTITY_TYPE).subscribeAsCompletionStage().join();
         final IdempotentRecordDO expectedRecord = IdempotentRecordDO.builder()
                 .idempotentKey(idempotentKey)
                 .entityId(entity.getId())
@@ -106,11 +107,11 @@ class IdempotencyServiceImplTest {
         final Supplier<TestEntity> operation = () -> entity;
 
         Mockito.when(repository.findByKeyAndEntityType(idempotentKey, ENTITY_TYPE))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(idempotentRecord)));
+                .thenReturn(Uni.createFrom().item(Optional.of(idempotentRecord)));
 
         Mockito.when(repository.save(Mockito.any())).thenAnswer(Mockito.RETURNS_DEEP_STUBS);
 
-        assertThatThrownBy(() -> service.performOperation(operation, idempotentKey, ENTITY_TYPE).join())
+        assertThatThrownBy(() -> service.performOperation(operation, idempotentKey, ENTITY_TYPE).subscribeAsCompletionStage().join())
                 .isInstanceOf(CompletionException.class)
                 .hasCauseInstanceOf(IdempotencyException.class);
     }

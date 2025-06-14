@@ -27,4 +27,5 @@ public interface ServerConfig {
     Integer getPort();
     Integer getSecurePort();
     Set<String> getUnprotectedPaths();
+    Integer getIdleConnectionTimeoutSeconds();
 }

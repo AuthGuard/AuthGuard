@@ -10,7 +10,7 @@ import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.service.model.Session;
 import com.nexblocks.authguard.service.model.TokenOptionsBO;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @TokenExchange(from = "basic", to = "accessToken")
 public class BasicToAccessToken implements Exchange {
@@ -24,9 +24,9 @@ public class BasicToAccessToken implements Exchange {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+    public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
         return basicAuth.authenticateAndGetAccountSession(request)
-                .thenCompose(accountSession -> {
+                .flatMap(accountSession -> {
                     TokenOptionsBO options = getOptions(request, accountSession.getSession());
 
                     if (request.getRestrictions() == null) {

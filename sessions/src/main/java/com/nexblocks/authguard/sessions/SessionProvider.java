@@ -16,7 +16,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.stream.Collectors;
 
 @ProvidesToken("sessionToken")
@@ -38,7 +38,7 @@ public class SessionProvider implements AuthProvider {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+    public Uni<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
                                                            final TokenOptionsBO options) {
         if (!account.isActive()) {
             throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
@@ -69,7 +69,7 @@ public class SessionProvider implements AuthProvider {
                 .build();
 
         return sessionsService.create(session)
-                .thenApply(created -> AuthResponseBO.builder()
+                .map(created -> AuthResponseBO.builder()
                         .type(TOKEN_TYPE)
                         .token(created.getSessionToken())
                         .entityType(EntityType.ACCOUNT)
@@ -84,9 +84,9 @@ public class SessionProvider implements AuthProvider {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> delete(final AuthRequestBO authRequest) {
+    public Uni<AuthResponseBO> delete(final AuthRequestBO authRequest) {
         return sessionsService.deleteByToken(authRequest.getToken())
-                .thenApply(opt -> opt
+                .map(opt -> opt
                         .map(session -> AuthResponseBO.builder()
                                 .type(TOKEN_TYPE)
                                 .entityType(EntityType.ACCOUNT)

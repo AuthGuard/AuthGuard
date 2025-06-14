@@ -63,13 +63,8 @@ public class PermissionsHandler implements VertxApiHandler {
         CreatePermissionRequestDTO request = createPermissionRequestBodyHandler.getValidated(context);
 
         permissionsService.create(restMapper.toBO(request))
-                .thenApply(restMapper::toDTO)
-                .whenComplete((res, ex) -> {
-                    if (ex != null) context.fail(ex);
-                    else context.response().setStatusCode(201)
-                            .putHeader("Content-Type", "application/json")
-                            .end(Json.encode(res));
-                });
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context, 201));
     }
 
     private void getById(final RoutingContext context) {
@@ -78,12 +73,9 @@ public class PermissionsHandler implements VertxApiHandler {
             String domain = context.pathParam("domain");
 
             permissionsService.getById(id, domain)
-                    .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.PERMISSION_DOES_NOT_EXIST, "Permission does not exist"))
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                    });
+                    .flatMap(opt -> AsyncUtils.uniFromOptional(opt, ErrorCode.PERMISSION_DOES_NOT_EXIST, "Permission does not exist"))
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (NumberFormatException e) {
             context.fail(new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE))));
         }
@@ -95,12 +87,9 @@ public class PermissionsHandler implements VertxApiHandler {
             String domain = context.pathParam("domain");
 
             permissionsService.delete(id, domain)
-                    .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.PERMISSION_DOES_NOT_EXIST, "Permission does not exist"))
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                    });
+                    .flatMap(opt -> AsyncUtils.uniFromOptional(opt, ErrorCode.PERMISSION_DOES_NOT_EXIST, "Permission does not exist"))
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (NumberFormatException e) {
             context.fail(new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE))));
         }
@@ -112,11 +101,8 @@ public class PermissionsHandler implements VertxApiHandler {
         Long cursor = Cursors.getLongCursor(context);
 
         permissionsService.getAllForGroup(group, domain, cursor)
-                .thenApply(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
-                .whenComplete((res, ex) -> {
-                    if (ex != null) context.fail(ex);
-                    else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                });
+                .map(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void getAll(final RoutingContext context) {
@@ -124,11 +110,8 @@ public class PermissionsHandler implements VertxApiHandler {
         Long cursor = Cursors.getLongCursor(context);
 
         permissionsService.getAll(domain, cursor)
-                .thenApply(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
-                .whenComplete((res, ex) -> {
-                    if (ex != null) context.fail(ex);
-                    else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                });
+                .map(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void update(final RoutingContext context) {
@@ -139,12 +122,9 @@ public class PermissionsHandler implements VertxApiHandler {
             UpdatePermissionRequestDTO request = Json.decodeValue(context.body().asString(), UpdatePermissionRequestDTO.class);
 
             permissionsService.update(restMapper.toBO(request).withId(id), domain)
-                    .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.PERMISSION_DOES_NOT_EXIST, "Permission does not exist"))
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                    });
+                    .flatMap(opt -> AsyncUtils.uniFromOptional(opt, ErrorCode.PERMISSION_DOES_NOT_EXIST, "Permission does not exist"))
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (NumberFormatException e) {
             context.fail(new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE))));
         }

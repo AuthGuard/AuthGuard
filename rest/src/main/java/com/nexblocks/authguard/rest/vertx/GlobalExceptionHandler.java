@@ -39,6 +39,8 @@ public class GlobalExceptionHandler implements Handler<RoutingContext> {
             ExceptionHandlers.serviceException(e, context.response());
         } else if (failure instanceof TimeoutException e) {
             ExceptionHandlers.timeoutException(e, context.response());
+        } else if (failure instanceof IdempotencyException e) {
+            ExceptionHandlers.idempotencyException(e, context.response());
         } else if (failure instanceof CompletionException e) {
             ExceptionHandlers.completionException(e, context.response());
         } else {

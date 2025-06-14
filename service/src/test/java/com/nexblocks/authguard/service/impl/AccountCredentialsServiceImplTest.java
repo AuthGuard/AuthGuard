@@ -35,7 +35,7 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -101,20 +101,20 @@ class AccountCredentialsServiceImplTest {
         AccountDO accountDO = serviceMapper.toDO(accountBO);
 
         Mockito.when(accountsService.getByIdUnsafe(accountId, "main"))
-                .thenReturn(CompletableFuture.completedFuture(accountBO));
+                .thenReturn(Uni.createFrom().item(accountBO));
 
         Mockito.when(accountsService.update(Mockito.any(), Mockito.eq("main")))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountBO.class))));
+                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AccountBO.class))));
 
         Mockito.when(accountAuditRepository.save(any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CredentialsAuditDO.class)));
 
         Mockito.when(securePassword.hash(newPassword))
-                .thenReturn(HashedPasswordBO.builder()
+                .thenReturn(Uni.createFrom().item(HashedPasswordBO.builder()
                         .password("hashed_new_password")
-                        .build());
+                        .build()));
 
-        AccountBO result = accountCredentialsService.updatePassword(accountId, newPassword, "main").join();
+        AccountBO result = accountCredentialsService.updatePassword(accountId, newPassword, "main").subscribeAsCompletionStage().join();
 
         assertThat(result).usingRecursiveComparison()
                 .ignoringFields(SKIPPED_FIELDS)
@@ -155,12 +155,12 @@ class AccountCredentialsServiceImplTest {
 
         // mocks
         Mockito.when(accountsService.getByIdentifier(identifier, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+                .thenReturn(Uni.createFrom().item(Optional.of(account)));
         Mockito.when(accountTokensRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
         // action
-        PasswordResetTokenBO resetToken = accountCredentialsService.generateResetToken(identifier, true, "main").join();
+        PasswordResetTokenBO resetToken = accountCredentialsService.generateResetToken(identifier, true, "main").subscribeAsCompletionStage().join();
 
         // verify
         ArgumentCaptor<AccountTokenDO> accountTokenCaptor = ArgumentCaptor.forClass(AccountTokenDO.class);
@@ -188,12 +188,12 @@ class AccountCredentialsServiceImplTest {
 
         // mocks
         Mockito.when(accountsService.getByIdentifier(identifier, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+                .thenReturn(Uni.createFrom().item(Optional.of(account)));
         Mockito.when(accountTokensRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
         // action
-        PasswordResetTokenBO resetToken = accountCredentialsService.generateResetToken(identifier, false, "main").join();
+        PasswordResetTokenBO resetToken = accountCredentialsService.generateResetToken(identifier, false, "main").subscribeAsCompletionStage().join();
 
         // verify
         ArgumentCaptor<AccountTokenDO> accountTokenCaptor = ArgumentCaptor.forClass(AccountTokenDO.class);
@@ -213,9 +213,9 @@ class AccountCredentialsServiceImplTest {
         String identifier = "identifier";
 
         Mockito.when(accountsService.getByIdentifier(identifier, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        assertThatThrownBy(() -> accountCredentialsService.generateResetToken(identifier, true, "main").join())
+        assertThatThrownBy(() -> accountCredentialsService.generateResetToken(identifier, true, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceNotFoundException.class);
     }
 
@@ -224,9 +224,9 @@ class AccountCredentialsServiceImplTest {
         String identifier = "identifier";
 
         Mockito.when(accountsService.getByIdentifier(identifier, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        assertThatThrownBy(() -> accountCredentialsService.generateResetToken(identifier, true, "main").join())
+        assertThatThrownBy(() -> accountCredentialsService.generateResetToken(identifier, true, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -257,24 +257,24 @@ class AccountCredentialsServiceImplTest {
 
         // mocks
         Mockito.when(accountTokensRepository.getByToken(resetToken))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(persistedToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(persistedToken)));
 
         Mockito.when(accountsService.getByIdUnsafe(accountId, "main"))
-                .thenReturn(CompletableFuture.completedFuture(accountBO));
+                .thenReturn(Uni.createFrom().item(accountBO));
 
         Mockito.when(accountsService.update(Mockito.any(), Mockito.eq("main")))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountBO.class))));
+                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AccountBO.class))));
 
         Mockito.when(accountAuditRepository.save(any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CredentialsAuditDO.class)));
 
         Mockito.when(securePassword.hash(newPassword))
-                .thenReturn(HashedPasswordBO.builder()
+                .thenReturn(Uni.createFrom().item(HashedPasswordBO.builder()
                         .password("hashed_new_password")
-                        .build());
+                        .build()));
 
         // action
-        AccountBO result = accountCredentialsService.resetPasswordByToken(resetToken, newPassword, "main").join();
+        AccountBO result = accountCredentialsService.resetPasswordByToken(resetToken, newPassword, "main").subscribeAsCompletionStage().join();
 
         // verify
         assertThat(result).usingRecursiveComparison()
@@ -290,9 +290,9 @@ class AccountCredentialsServiceImplTest {
         String newPassword = "new_password";
 
         Mockito.when(accountTokensRepository.getByToken(resetToken))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        assertThatThrownBy(() -> accountCredentialsService.resetPasswordByToken(resetToken, newPassword, "main").join())
+        assertThatThrownBy(() -> accountCredentialsService.resetPasswordByToken(resetToken, newPassword, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceNotFoundException.class);
     }
 
@@ -309,9 +309,9 @@ class AccountCredentialsServiceImplTest {
         String newPassword = "new_password";
 
         Mockito.when(accountTokensRepository.getByToken(resetToken))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(persistedToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(persistedToken)));
 
-        assertThatThrownBy(() -> accountCredentialsService.resetPasswordByToken(resetToken, newPassword, "main").join())
+        assertThatThrownBy(() -> accountCredentialsService.resetPasswordByToken(resetToken, newPassword, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -336,25 +336,25 @@ class AccountCredentialsServiceImplTest {
 
         // mocks
         Mockito.when(accountsService.getByIdentifierUnsafe(identifier, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountBO)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountBO)));
 
         Mockito.when(accountsService.update(Mockito.any(), Mockito.eq("main")))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountBO.class))));
+                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AccountBO.class))));
 
         Mockito.when(accountAuditRepository.save(any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CredentialsAuditDO.class)));
 
         Mockito.when(securePassword.hash(newPassword))
-                .thenReturn(HashedPasswordBO.builder()
+                .thenReturn(Uni.createFrom().item(HashedPasswordBO.builder()
                         .password("hashed_new_password")
-                        .build());
+                        .build()));
 
         Mockito.when(securePassword.verify(oldPassword, accountBO.getHashedPassword()))
-                .thenReturn(true);
+                .thenReturn(Uni.createFrom().item(true));
 
         // action
         AccountBO result =
-                accountCredentialsService.replacePassword(identifier, oldPassword, newPassword, "main").join();
+                accountCredentialsService.replacePassword(identifier, oldPassword, newPassword, "main").subscribeAsCompletionStage().join();
 
         // verify
         assertThat(result).usingRecursiveComparison()
@@ -388,18 +388,18 @@ class AccountCredentialsServiceImplTest {
 
         // mocks
         Mockito.when(accountsService.getByIdentifierUnsafe(identifier, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountBO)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountBO)));
         Mockito.when(accountAuditRepository.save(any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CredentialsAuditDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CredentialsAuditDO.class)));
         Mockito.when(securePassword.hash(newPassword))
-                .thenReturn(HashedPasswordBO.builder()
+                .thenReturn(Uni.createFrom().item(HashedPasswordBO.builder()
                         .password("hashed_new_password")
-                        .build());
+                        .build()));
         Mockito.when(securePassword.verify(oldPassword, accountBO.getHashedPassword()))
-                .thenReturn(false);
+                .thenReturn(Uni.createFrom().item(false));
 
         // action
-        assertThatThrownBy(() -> accountCredentialsService.replacePassword(identifier, oldPassword, newPassword, "main").join())
+        assertThatThrownBy(() -> accountCredentialsService.replacePassword(identifier, oldPassword, newPassword, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -423,20 +423,20 @@ class AccountCredentialsServiceImplTest {
 
         // mocks
         Mockito.when(accountsService.getByIdentifierUnsafe(identifier, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountBO)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountBO)));
         Mockito.when(accountsService.update(any(), Mockito.eq("main")))
                 .thenAnswer(invocation -> Optional.of(invocation.getArgument(0, AccountBO.class)));
         Mockito.when(accountAuditRepository.save(any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CredentialsAuditDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CredentialsAuditDO.class)));
         Mockito.when(securePassword.hash(newPassword))
-                .thenReturn(HashedPasswordBO.builder()
+                .thenReturn(Uni.createFrom().item(HashedPasswordBO.builder()
                         .password("hashed_new_password")
-                        .build());
+                        .build()));
         Mockito.when(securePassword.verify(oldPassword, accountBO.getHashedPassword()))
-                .thenReturn(true);
+                .thenReturn(Uni.createFrom().item(true));
 
         // action
-        assertThatThrownBy(() -> accountCredentialsService.replacePassword(identifier, oldPassword, newPassword, "main").join())
+        assertThatThrownBy(() -> accountCredentialsService.replacePassword(identifier, oldPassword, newPassword, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceInvalidPasswordException.class);
     }
 
@@ -457,16 +457,16 @@ class AccountCredentialsServiceImplTest {
                 .build();
 
         Mockito.when(accountsService.getByIdUnsafe(accountId, "main"))
-                .thenReturn(CompletableFuture.completedFuture(accountBO));
+                .thenReturn(Uni.createFrom().item(accountBO));
         Mockito.when(accountsService.update(Mockito.any(), Mockito.eq("main")))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(Optional.of(invocation.getArgument(0, AccountBO.class))));
+                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AccountBO.class))));
 
         UserIdentifierBO newIdentifier = UserIdentifierBO.builder()
                 .identifier("new_username")
                 .active(true)
                 .build();
 
-        AccountBO actual = accountCredentialsService.replaceIdentifier(accountId, "username", newIdentifier, "main").join();
+        AccountBO actual = accountCredentialsService.replaceIdentifier(accountId, "username", newIdentifier, "main").subscribeAsCompletionStage().join();
 
         AccountBO expected = AccountBO.builder()
                 .id(accountId)
@@ -486,9 +486,9 @@ class AccountCredentialsServiceImplTest {
         long accountId = 1;
 
         Mockito.when(accountsService.getByIdUnsafe(accountId, "main"))
-                .thenReturn(CompletableFuture.failedFuture(new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "")));
+                .thenReturn(Uni.createFrom().failure(new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, "")));
 
-        assertThatThrownBy(() -> accountCredentialsService.replaceIdentifier(accountId, "username", null, "main").join())
+        assertThatThrownBy(() -> accountCredentialsService.replaceIdentifier(accountId, "username", null, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceNotFoundException.class);
     }
 
@@ -509,11 +509,11 @@ class AccountCredentialsServiceImplTest {
                 .build();
 
         Mockito.when(accountsService.getByIdUnsafe(accountId, "main"))
-                .thenReturn(CompletableFuture.completedFuture(accountBO));
+                .thenReturn(Uni.createFrom().item(accountBO));
         Mockito.when(accountsService.update(any(), Mockito.eq("main")))
                 .thenAnswer(invocation -> Optional.of(invocation.getArgument(0, AccountBO.class)));
 
-        assertThatThrownBy(() -> accountCredentialsService.replaceIdentifier(accountId, "none", null, "main").join())
+        assertThatThrownBy(() -> accountCredentialsService.replaceIdentifier(accountId, "none", null, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 }

@@ -22,7 +22,7 @@ import io.vertx.ext.web.RoutingContext;
 
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.stream.Collectors;
 
 public class KeyManagementSystemHandler implements VertxApiHandler {
@@ -82,13 +82,8 @@ public class KeyManagementSystemHandler implements VertxApiHandler {
                     .build();
 
             keyManagementService.create(toPersist)
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().setStatusCode(201)
-                                .putHeader("Content-Type", "application/json")
-                                .end(Json.encode(res));
-                    });
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context, 201));
         } catch (Exception e) {
             context.fail(e);
         }
@@ -101,12 +96,8 @@ public class KeyManagementSystemHandler implements VertxApiHandler {
             Instant instantCursor = Cursors.parseInstantCursor(cursor);
 
             keyManagementService.getByDomain(domain, instantCursor)
-                    .thenApply(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json")
-                                .end(Json.encode(res));
-                    });
+                    .map(list -> list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (Exception e) {
             context.fail(e);
         }
@@ -119,20 +110,16 @@ public class KeyManagementSystemHandler implements VertxApiHandler {
             String decrypt = context.queryParam("decrypt").stream().findFirst().orElse(null);
             String passcode = context.queryParam("passcode").stream().findFirst().orElse(null);
 
-            CompletableFuture<Optional<PersistedKeyBO>> retrieveFuture =
+            Uni<Optional<PersistedKeyBO>> retrieveFuture =
                     Objects.equals(decrypt, "1")
                             ? keyManagementService.getDecrypted(keyId, domain, passcode)
                             : keyManagementService.getById(keyId, domain);
 
             retrieveFuture
-                    .thenApply(opt -> opt.map(restMapper::toDTO)
+                    .map(opt -> opt.map(restMapper::toDTO)
                             .orElseThrow(() -> new ServiceNotFoundException(
                                     ErrorCode.CRYPTO_KEY_DOES_NOT_EXIST, "Key does not exist")))
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json")
-                                .end(Json.encode(res));
-                    });
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (NumberFormatException e) {
             context.fail(new RequestValidationException(Collections.singletonList(
                     new Violation("id", ViolationType.INVALID_VALUE))));
@@ -145,13 +132,9 @@ public class KeyManagementSystemHandler implements VertxApiHandler {
             String domain = context.pathParam("domain");
 
             keyManagementService.delete(keyId, domain)
-                    .thenCompose(opt -> AsyncUtils.fromOptional(opt, ErrorCode.CRYPTO_KEY_DOES_NOT_EXIST, "Key does not exist"))
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json")
-                                .end(Json.encode(res));
-                    });
+                    .flatMap(opt -> AsyncUtils.uniFromOptional(opt, ErrorCode.CRYPTO_KEY_DOES_NOT_EXIST, "Key does not exist"))
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (NumberFormatException e) {
             context.fail(new RequestValidationException(Collections.singletonList(
                     new Violation("id", ViolationType.INVALID_VALUE))));

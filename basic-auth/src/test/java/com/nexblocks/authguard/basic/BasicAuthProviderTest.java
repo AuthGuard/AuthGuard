@@ -17,7 +17,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.concurrent.CompletionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +48,7 @@ class BasicAuthProviderTest {
         Mockito.when(securePasswordProvider.getCurrentVersion())
                 .thenReturn(1);
         Mockito.when(trackingSessionsService.startSession(Mockito.any()))
-                .thenReturn(CompletableFuture.completedFuture(SessionBO.builder()
+                .thenReturn(Uni.createFrom().item(SessionBO.builder()
                         .id(1)
                         .sessionToken("tracking-token")
                         .build()));
@@ -84,10 +84,11 @@ class BasicAuthProviderTest {
         AccountBO credentials = createCredentials(username);
 
         Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
-        Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(true);
+                .thenReturn(Uni.createFrom().item(Optional.of(credentials)));
+        Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword())))
+                .thenReturn(Uni.createFrom().item(true));
 
-        AccountBO account = basicAuth.authenticateAndGetAccount(authorization).join();
+        AccountBO account = basicAuth.authenticateAndGetAccount(authorization).subscribeAsCompletionStage().join();
 
         assertThat(account).isEqualTo(credentials);
     }
@@ -102,10 +103,11 @@ class BasicAuthProviderTest {
                 .withActive(false);
 
         Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
-        Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(true);
+                .thenReturn(Uni.createFrom().item(Optional.of(credentials)));
+        Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword())))
+                .thenReturn(Uni.createFrom().item(true));
 
-        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).join())
+        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).subscribeAsCompletionStage().join())
                 .isInstanceOf(CompletionException.class)
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
@@ -124,9 +126,9 @@ class BasicAuthProviderTest {
                         .build());
 
         Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
+                .thenReturn(Uni.createFrom().item(Optional.of(credentials)));
 
-        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).join())
+        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).subscribeAsCompletionStage().join())
                 .isInstanceOf(CompletionException.class)
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
@@ -138,9 +140,9 @@ class BasicAuthProviderTest {
         String authorization = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
         Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).join())
+        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).subscribeAsCompletionStage().join())
                 .isInstanceOf(CompletionException.class)
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
@@ -154,10 +156,11 @@ class BasicAuthProviderTest {
         AccountBO credentials = createCredentials(username);
 
         Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
-        Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(false);
+                .thenReturn(Uni.createFrom().item(Optional.of(credentials)));
+        Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword())))
+                .thenReturn(Uni.createFrom().item(false));
 
-        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).join())
+        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).subscribeAsCompletionStage().join())
                 .isInstanceOf(CompletionException.class)
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
@@ -172,13 +175,14 @@ class BasicAuthProviderTest {
                 .withPasswordUpdatedAt(Instant.now().minus(Duration.ofMinutes(5)));
 
         Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
-        Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(true);
+                .thenReturn(Uni.createFrom().item(Optional.of(credentials)));
+        Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword())))
+                .thenReturn(Uni.createFrom().item(true));
 
         Mockito.when(securePasswordProvider.passwordsExpire()).thenReturn(true);
         Mockito.when(securePasswordProvider.getPasswordTtl()).thenReturn(Duration.ofMinutes(2));
 
-        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).join())
+        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).subscribeAsCompletionStage().join())
                 .isInstanceOf(CompletionException.class)
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
@@ -194,11 +198,11 @@ class BasicAuthProviderTest {
                 .withPasswordVersion(0);
 
         Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
+                .thenReturn(Uni.createFrom().item(Optional.of(credentials)));
         Mockito.when(previousSecurePassword.verify(eq(password), eq(credentials.getHashedPassword())))
-                .thenReturn(true);
+                .thenReturn(Uni.createFrom().item(true));
 
-        AccountBO account = basicAuth.authenticateAndGetAccount(authorization).join();
+        AccountBO account = basicAuth.authenticateAndGetAccount(authorization).subscribeAsCompletionStage().join();
 
         assertThat(account).isEqualTo(credentials);
     }
@@ -214,11 +218,13 @@ class BasicAuthProviderTest {
                 .withPasswordVersion(0);
 
         Mockito.when(accountsService.getByIdentifierUnsafe(username, "global"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(credentials)));
-        Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(true);
-        Mockito.when(previousSecurePassword.verify(eq(password), eq(credentials.getHashedPassword()))).thenReturn(false);
+                .thenReturn(Uni.createFrom().item(Optional.of(credentials)));
+        Mockito.when(securePassword.verify(eq(password), eq(credentials.getHashedPassword())))
+                .thenReturn(Uni.createFrom().item(true));
+        Mockito.when(previousSecurePassword.verify(eq(password), eq(credentials.getHashedPassword())))
+                .thenReturn(Uni.createFrom().item(false));
 
-        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).join())
+        assertThatThrownBy(() -> basicAuth.authenticateAndGetAccount(authorization).subscribeAsCompletionStage().join())
                 .isInstanceOf(CompletionException.class)
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }

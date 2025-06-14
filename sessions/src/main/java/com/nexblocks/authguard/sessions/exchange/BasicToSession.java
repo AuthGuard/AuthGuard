@@ -9,7 +9,7 @@ import com.nexblocks.authguard.service.model.TokenOptionsBO;
 import com.nexblocks.authguard.sessions.SessionProvider;
 import com.google.inject.Inject;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @TokenExchange(from = "basic", to = "sessionToken")
 public class BasicToSession implements Exchange {
@@ -23,7 +23,7 @@ public class BasicToSession implements Exchange {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+    public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
         final TokenOptionsBO options = TokenOptionsBO.builder()
                 .source("basic")
                 .sourceIp(request.getSourceIp())
@@ -31,6 +31,6 @@ public class BasicToSession implements Exchange {
                 .build();
 
         return basicAuth.authenticateAndGetAccount(request)
-                .thenCompose(account -> sessionProvider.generateToken(account, options));
+                .flatMap(account -> sessionProvider.generateToken(account, options));
     }
 }

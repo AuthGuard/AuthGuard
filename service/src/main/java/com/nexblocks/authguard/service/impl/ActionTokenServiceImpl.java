@@ -15,12 +15,13 @@ import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.AsyncUtils;
 import com.nexblocks.authguard.service.util.ID;
+import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public class ActionTokenServiceImpl implements ActionTokenService {
     private static final Logger LOG = LoggerFactory.getLogger(ActionTokenServiceImpl.class);
@@ -50,10 +51,10 @@ public class ActionTokenServiceImpl implements ActionTokenService {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> generateOtp(final long accountId, final String domain) {
+    public Uni<AuthResponseBO> generateOtp(final long accountId, final String domain) {
         return accountsService.getById(accountId, domain)
-                .thenCompose(AsyncUtils::fromAccountOptional)
-                .thenCompose(account -> {
+                .flatMap(AsyncUtils::uniFromAccountOptional)
+                .flatMap(account -> {
                     LOG.info("Generate OTP for action token request. accountId={}, domain={}", account.getId(), account.getDomain());
 
                     return otpProvider.generateToken(account);
@@ -61,11 +62,9 @@ public class ActionTokenServiceImpl implements ActionTokenService {
     }
 
     @Override
-    public CompletableFuture<ActionTokenBO> generateFromBasicAuth(final AuthRequestBO authRequest, final String action) {
+    public Uni<ActionTokenBO> generateFromBasicAuth(final AuthRequestBO authRequest, final String action) {
         return basicAuthProvider.getAccount(authRequest)
-                .thenApply(account -> {
-                    AccountTokenDO token = generateToken(account, action);
-
+                .flatMap(account -> generateToken(account, action).map(token -> {
                     LOG.info("Action token from credentials request. accountId={}, domain={}, tokenId={}, expiresAt={}",
                             account.getId(), account.getDomain(), token.getId(), token.getExpiresAt());
 
@@ -74,29 +73,28 @@ public class ActionTokenServiceImpl implements ActionTokenService {
                             .token(token.getToken())
                             .validFor(TOKEN_LIFETIME.toSeconds())
                             .build();
-                });
+                }));
     }
 
     @Override
-    public CompletableFuture<ActionTokenBO> generateFromOtp(final long passwordId, String domain, final String otp, final String action) {
+    public Uni<ActionTokenBO> generateFromOtp(final long passwordId, String domain, final String otp, final String action) {
         String otpToken = passwordId + ":" + otp;
         AuthRequest request = AuthRequestBO.builder()
                 .token(otpToken)
                 .build();
 
         return otpVerifier.verifyAccountTokenAsync(request)
-                .thenCompose(id -> accountsService.getById(id, domain))
-                .thenCompose(result -> {
+                .flatMap(id -> accountsService.getById(id, domain))
+                .flatMap(result -> {
                     if (result.isEmpty()) {
                         LOG.warn("Verified OTP request but the account doesn't exist. passwordId={}", passwordId);
-                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                                 "The account associated with that OTP no longer exists"));
                     }
 
-                    return CompletableFuture.completedFuture(result.get());
+                    return Uni.createFrom().item(result.get());
                 })
-                .thenApply(account -> {
-                    AccountTokenDO token = generateToken(account, action);
+                .flatMap(account -> generateToken(account, action).map(token -> {
                     LOG.info("Generated action token from OTP request. passwordId={}, tokenId={}, expiresAt={}",
                             passwordId, token.getId(), token.getExpiresAt());
 
@@ -105,33 +103,33 @@ public class ActionTokenServiceImpl implements ActionTokenService {
                             .token(token.getToken())
                             .validFor(TOKEN_LIFETIME.toSeconds())
                             .build();
-                });
+                }));
     }
 
     @Override
-    public CompletableFuture<ActionTokenBO> verifyToken(final String token, final String action) {
+    public Uni<ActionTokenBO> verifyToken(final String token, final String action) {
         return accountTokensRepository.getByToken(token)
-                .thenCompose(persisted -> {
+                .flatMap(persisted -> {
                     if (persisted.isEmpty()) {
-                        return CompletableFuture.failedFuture(
+                        return Uni.createFrom().failure(
                                 new ServiceException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST, "Token does not exist"));
                     }
 
                     Instant now = Instant.now();
 
                     if (persisted.get().getExpiresAt().isBefore(now)) {
-                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token has expired"));
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.EXPIRED_TOKEN, "Token has expired"));
                     }
 
                     String allowedAction = persisted.get().getAdditionalInformation().get("action");
 
                     if (allowedAction == null || !allowedAction.equals(action)) {
-                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.INVALID_TOKEN, "Token was created for a different action"));
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.INVALID_TOKEN, "Token was created for a different action"));
                     }
 
                     LOG.info("Action token verified. tokenId={}, action={}", persisted.get().getId(), action);
 
-                    return CompletableFuture.completedFuture(ActionTokenBO.builder()
+                    return Uni.createFrom().item(ActionTokenBO.builder()
                             .accountId(persisted.get().getAssociatedAccountId())
                             .token(token)
                             .action(action)
@@ -139,7 +137,7 @@ public class ActionTokenServiceImpl implements ActionTokenService {
                 });
     }
 
-    private AccountTokenDO generateToken(final AccountBO account, final String action) {
+    private Uni<AccountTokenDO> generateToken(final AccountBO account, final String action) {
         Instant now = Instant.now();
 
         AccountTokenDO accountToken = AccountTokenDO
@@ -152,8 +150,6 @@ public class ActionTokenServiceImpl implements ActionTokenService {
                 .expiresAt(now.plus(TOKEN_LIFETIME))
                 .build();
 
-        return accountTokensRepository.save(accountToken)
-                .subscribeAsCompletionStage()
-                .join();
+        return accountTokensRepository.save(accountToken);
     }
 }

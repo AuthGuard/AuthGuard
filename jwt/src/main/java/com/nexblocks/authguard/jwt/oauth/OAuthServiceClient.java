@@ -15,6 +15,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Map;
+import io.smallrye.mutiny.Uni;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -77,7 +79,7 @@ public class OAuthServiceClient {
      * Sends a request to exchange the authorization code with ID, access,
      * and refresh tokens.
      */
-    public CompletableFuture<TokensResponse> authorize(final String code) {
+    public Uni<TokensResponse> authorize(final String code) {
         final MultiMap form = MultiMap.caseInsensitiveMultiMap()
                 .set("code", code)
                 .set("client_id", clientConfiguration.getClientId())
@@ -117,7 +119,7 @@ public class OAuthServiceClient {
                     }
                 });
 
-        return future;
+        return Uni.createFrom().completionStage(future);
     }
 
     private void processResponse(final HttpResponse<Buffer> httpResponse, final String url,

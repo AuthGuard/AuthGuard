@@ -5,7 +5,7 @@ import com.nexblocks.authguard.service.auth.AuthProvider;
 import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.model.*;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @ProvidesToken("oidc")
 public class OpenIdConnectTokenProvider implements AuthProvider {
@@ -20,16 +20,16 @@ public class OpenIdConnectTokenProvider implements AuthProvider {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account) {
+    public Uni<AuthResponseBO> generateToken(final AccountBO account) {
         return generateToken(account, null, null);
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+    public Uni<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
                                                            final TokenOptionsBO options) {
         return accessTokenProvider.generateToken(account, restrictions, options)
-                .thenCompose(accessToken -> idTokenProvider.generateToken(account)
-                        .thenApply(idToken -> AuthResponseBO.builder()
+                .flatMap(accessToken -> idTokenProvider.generateToken(account)
+                        .map(idToken -> AuthResponseBO.builder()
                                 .type("oidc")
                                 .entityId(account.getId())
                                 .entityType(EntityType.ACCOUNT)

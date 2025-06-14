@@ -6,6 +6,11 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
+import org.hibernate.type.SqlTypes;
+import org.hibernate.usertype.UserType;
+
 import java.util.Map;
 
 @Data
@@ -57,10 +62,13 @@ public class CryptoKeyDO extends AbstractDO {
     private String passcodeCheckEncrypted;
 
     @Lob
+    @JdbcTypeCode(SqlTypes.VARBINARY)
     private byte[] nonce;
     @Lob
+    @JdbcTypeCode(SqlTypes.VARBINARY)
     private byte[] privateKey;
     @Lob
+    @JdbcTypeCode(SqlTypes.VARBINARY)
     private byte[] publicKey;
 
     @ElementCollection(fetch = FetchType.EAGER)

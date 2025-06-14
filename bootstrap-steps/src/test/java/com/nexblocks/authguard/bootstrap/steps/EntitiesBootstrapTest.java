@@ -60,21 +60,21 @@ class EntitiesBootstrapTest {
     @Test
     void run() {
         Mockito.when(rolesService.getRoleByName("existing", "test"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(RoleBO.builder()
+                .thenReturn(Uni.createFrom().item(Optional.of(RoleBO.builder()
                         .domain("test")
                         .name("existing")
                         .build())));
 
         Mockito.when(rolesService.getRoleByName(Mockito.anyString(), Mockito.anyString()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         Mockito.when(rolesService.create(Mockito.any()))
-                        .thenAnswer(invocation -> CompletableFuture.completedFuture(
+                        .thenAnswer(invocation -> Uni.createFrom().item(
                                 invocation.getArgument(0, RoleBO.class)
                         ));
 
         Mockito.when(permissionsService.get("test", "tests", "existing"))
-                        .thenReturn(CompletableFuture.completedFuture(Optional.of(
+                        .thenReturn(Uni.createFrom().item(Optional.of(
                                 PermissionBO.builder()
                                         .group("tests")
                                         .name("existing")
@@ -83,7 +83,7 @@ class EntitiesBootstrapTest {
                         )));
 
         Mockito.when(permissionsService.get("test", "tests", "read"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
         Mockito.when(permissionsService.validate(Mockito.anyList(), Mockito.anyString(), Mockito.any()))
                 .thenReturn(Uni.createFrom().item(Collections.singletonList(PermissionBO.builder()
@@ -93,11 +93,11 @@ class EntitiesBootstrapTest {
                         .build())));
 
         Mockito.when(permissionsService.create(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(
+                .thenAnswer(invocation -> Uni.createFrom().item(
                         invocation.getArgument(0, PermissionBO.class)
                 ));
 
-        entitiesBootstrap.run();
+        entitiesBootstrap.run().subscribeAsCompletionStage().join();
 
         Mockito.verify(rolesService, Mockito.times(1))
                 .create(RoleBO.builder()

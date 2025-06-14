@@ -22,7 +22,7 @@ import io.vertx.ext.web.RoutingContext;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.stream.Collectors;
 
 public class CredentialsHandler implements VertxApiHandler {
@@ -66,11 +66,8 @@ public class CredentialsHandler implements VertxApiHandler {
             CredentialsDTO credentials = Json.decodeValue(context.body().asString(), CredentialsDTO.class);
 
             credentialsService.updatePassword(credentialsId, credentials.getPlainPassword(), context.pathParam("domain"))
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                    });
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (NumberFormatException e) {
             context.fail(new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE))));
         }
@@ -90,7 +87,7 @@ public class CredentialsHandler implements VertxApiHandler {
                     .map(restMapper::toBO)
                     .collect(Collectors.toList());
 
-            CompletableFuture<AccountBO> result;
+            Uni<AccountBO> result;
 
             if (request.getOldIdentifier() != null) {
                 result = credentialsService.replaceIdentifier(credentialsId, request.getOldIdentifier(),
@@ -99,11 +96,8 @@ public class CredentialsHandler implements VertxApiHandler {
                 result = credentialsService.addIdentifiers(credentialsId, identifiers, context.pathParam("domain"));
             }
 
-            result.thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                    });
+            result.map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (NumberFormatException e) {
             context.fail(new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE))));
         }
@@ -118,11 +112,8 @@ public class CredentialsHandler implements VertxApiHandler {
                     .collect(Collectors.toList());
 
             credentialsService.removeIdentifiers(credentialsId, identifiers, context.pathParam("domain"))
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                    });
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (NumberFormatException e) {
             context.fail(new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE))));
         }
@@ -133,7 +124,6 @@ public class CredentialsHandler implements VertxApiHandler {
             PasswordResetTokenRequestDTO request = passwordResetTokenRequestBodyHandler.getValidated(context);
 
             if (!ActorDomainVerifier.verifyActorDomain(context, request.getDomain())) {
-                context.response().setStatusCode(403).end();
                 return;
             }
 
@@ -141,11 +131,8 @@ public class CredentialsHandler implements VertxApiHandler {
             boolean isAuthClient = actor.getClientType() == Client.ClientType.AUTH;
 
             credentialsService.generateResetToken(request.getIdentifier(), !isAuthClient, request.getDomain())
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                    });
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (Exception e) {
             context.fail(e);
         }
@@ -155,12 +142,13 @@ public class CredentialsHandler implements VertxApiHandler {
         try {
             PasswordResetRequestDTO request = passwordResetRequestBodyHandler.getValidated(context);
 
-            if (request.getIdentifier() != null && !ActorDomainVerifier.verifyActorDomain(context, request.getDomain())) {
-                context.response().setStatusCode(403).end();
-                return;
+            if (request.getIdentifier() != null) {
+                if (!ActorDomainVerifier.verifyActorDomain(context, request.getDomain())) {
+                    return;
+                }
             }
 
-            CompletableFuture<AccountBO> result;
+            Uni<AccountBO> result;
 
             if (request.isByToken()) {
                 result = credentialsService.resetPasswordByToken(request.getResetToken(), request.getNewPassword(), request.getDomain());
@@ -168,11 +156,8 @@ public class CredentialsHandler implements VertxApiHandler {
                 result = credentialsService.replacePassword(request.getIdentifier(), request.getOldPassword(), request.getNewPassword(), request.getDomain());
             }
 
-            result.thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                    });
+            result.map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (Exception e) {
             context.fail(e);
         }

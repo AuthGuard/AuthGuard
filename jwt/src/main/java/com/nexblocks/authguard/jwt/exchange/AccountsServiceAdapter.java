@@ -6,7 +6,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AccountBO;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 /**
  * An adapter class to wrap {@link AccountsService} to
@@ -21,10 +21,10 @@ public class AccountsServiceAdapter {
         this.accountsService = accountsService;
     }
 
-    public CompletableFuture<AccountBO> getAccount(final long accountId) {
+    public Uni<AccountBO> getAccount(final long accountId) {
         return accountsService.getByIdUnchecked(accountId)
-                .thenCompose(opt -> opt.map(CompletableFuture::completedFuture)
-                        .orElseGet(() -> CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
+                .flatMap(opt -> opt.map(item -> Uni.createFrom().item(item))
+                        .orElseGet(() -> Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                                 "Account does not exist"))));
     }
 }

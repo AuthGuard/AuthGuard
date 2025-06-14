@@ -5,7 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,12 +42,12 @@ class OpenIdConnectTokenProviderTest {
                 .build();
 
         Mockito.when(accessTokenProvider.generateToken(account, null, options))
-                .thenReturn(CompletableFuture.completedFuture(accessTokenResponse));
+                .thenReturn(Uni.createFrom().item(accessTokenResponse));
 
         Mockito.when(idTokenProvider.generateToken(account))
-                .thenReturn(CompletableFuture.completedFuture(idTokenResponse));
+                .thenReturn(Uni.createFrom().item(idTokenResponse));
 
-        AuthResponseBO actual = openIdConnectTokenProvider.generateToken(account, options).join();
+        AuthResponseBO actual = openIdConnectTokenProvider.generateToken(account, options).subscribeAsCompletionStage().join();
 
         AuthResponseBO expected = AuthResponseBO.builder()
                 .entityType(EntityType.ACCOUNT)
@@ -86,12 +86,12 @@ class OpenIdConnectTokenProviderTest {
                 .build();
 
         Mockito.when(accessTokenProvider.generateToken(account, restrictions, options))
-                .thenReturn(CompletableFuture.completedFuture(accessTokenResponse));
+                .thenReturn(Uni.createFrom().item(accessTokenResponse));
 
         Mockito.when(idTokenProvider.generateToken(account))
-                .thenReturn(CompletableFuture.completedFuture(idTokenResponse));
+                .thenReturn(Uni.createFrom().item(idTokenResponse));
 
-        AuthResponseBO actual = openIdConnectTokenProvider.generateToken(account, restrictions, options).join();
+        AuthResponseBO actual = openIdConnectTokenProvider.generateToken(account, restrictions, options).subscribeAsCompletionStage().join();
 
         AuthResponseBO expected = AuthResponseBO.builder()
                 .entityType(EntityType.ACCOUNT)

@@ -63,7 +63,9 @@ public class AuthorizationHandler implements Handler {
 
     private void populateBasicActor(final Context context, final String base64Credentials) {
         try {
-            AccountBO account = basicAuth.authenticateAndGetAccount(base64Credentials).join();
+            AccountBO account = basicAuth.authenticateAndGetAccount(base64Credentials)
+                    .subscribeAsCompletionStage()
+                    .join();
             LOG.info("Authenticated actor {} with basic credentials", account.getId());
             context.attribute("actor", account);
         } catch (Exception e) {
@@ -74,7 +76,9 @@ public class AuthorizationHandler implements Handler {
 
     private void populateBearerActor(final Context context, final String apiKey) {
         try {
-            ClientBO actorClient = apiKeysService.validateClientApiKey(apiKey, API_KEY_TYPE).join();
+            ClientBO actorClient = apiKeysService.validateClientApiKey(apiKey, API_KEY_TYPE)
+                    .subscribeAsCompletionStage()
+                    .join();
             LOG.info("Authenticated actor {} with bearer token", actorClient.getId());
             context.attribute("actor", actorClient);
         } catch (CompletionException e) {

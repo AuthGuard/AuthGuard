@@ -10,13 +10,15 @@ import com.nexblocks.authguard.service.model.Session;
 import com.nexblocks.authguard.service.model.SessionBO;
 import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.ID;
+import io.smallrye.mutiny.Uni;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class TrackingSessionsServiceImpl implements TrackingSessionsService {
@@ -36,15 +38,16 @@ public class TrackingSessionsServiceImpl implements TrackingSessionsService {
     }
 
     @Override
-    public CompletableFuture<Optional<Session>> getByToken(final String token) {
+    public Uni<Optional<Session>> getByToken(final String token) {
         return sessionsRepository.getByToken(token)
-                .thenApply(opt -> opt.map(serviceMapper::toBO));
+                .map(opt -> opt.map(serviceMapper::toBO)
+                        .map(Session.class::cast));
     }
 
     @Override
-    public CompletableFuture<Boolean> isSessionActive(final String token, final String domain) {
+    public Uni<Boolean> isSessionActive(final String token, final String domain) {
         return sessionsRepository.getByToken(token)
-                .thenApply(opt -> {
+                .map(opt -> {
                     if (opt.isEmpty()) {
                         return false;
                     }
@@ -56,13 +59,16 @@ public class TrackingSessionsServiceImpl implements TrackingSessionsService {
     }
 
     @Override
-    public CompletableFuture<List<Session>> getByAccountId(final long accountId, final String domain) {
+    public Uni<List<Session>> getByAccountId(final long accountId, final String domain) {
         return sessionsRepository.findByAccountId(accountId, domain)
-                .thenApply(list -> list.stream().map(serviceMapper::toBO).collect(Collectors.toList()));
+                .map(list -> list.stream()
+                        .map(serviceMapper::toBO)
+                        .map(Session.class::cast)
+                        .collect(Collectors.toList()));
     }
 
     @Override
-    public CompletableFuture<Session> startSession(Account account) {
+    public Uni<Session> startSession(Account account) {
         SessionBO session = SessionBO.builder()
                 .domain(account.getDomain())
                 .id(ID.generate())
@@ -74,12 +80,11 @@ public class TrackingSessionsServiceImpl implements TrackingSessionsService {
                 .build();
 
         return sessionsRepository.save(serviceMapper.toDO(session))
-                .subscribeAsCompletionStage()
-                .thenApply(serviceMapper::toBO);
+                .map(serviceMapper::toBO);
     }
 
     @Override
-    public CompletableFuture<Session> startAnonymous(final String domain) {
+    public Uni<Session> startAnonymous(final String domain) {
         SessionBO session = SessionBO.builder()
                 .domain(domain)
                 .id(ID.generate())
@@ -90,25 +95,26 @@ public class TrackingSessionsServiceImpl implements TrackingSessionsService {
                 .build();
 
         return sessionsRepository.save(serviceMapper.toDO(session))
-                .subscribeAsCompletionStage()
-                .thenApply(serviceMapper::toBO);
+                .map(serviceMapper::toBO);
     }
 
     @Override
-    public CompletableFuture<Optional<Session>> terminateSession(final String sessionToken, final String domain) {
+    public Uni<Optional<Session>> terminateSession(final String sessionToken, final String domain) {
         return sessionsRepository.getByToken(sessionToken)
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isPresent() && Objects.equals(opt.get().getDomain(), domain)) {
                         SessionDO session = opt.get();
                         session.setActive(false);
 
                         return sessionsRepository.save(session)
-                                .subscribeAsCompletionStage()
-                                .thenApply(serviceMapper::toBO)
-                                .thenApply(Optional::of);
+                                .map(serviceMapper::toBO)
+                                .map(Session.class::cast)
+                                .map(Optional::of);
                     }
 
-                    return CompletableFuture.completedFuture(Optional.empty());
+                    Uni<Optional<Session>> em = Uni.createFrom().item(Optional.empty());
+
+                    return em;
                 });
     }
 }

@@ -65,7 +65,7 @@ class OAuthServiceClientTest {
     @Test
     void authorizeSuccessful() {
         final TokensResponse expected = testIdentityServer.getSuccessResponse();
-        final TokensResponse actual = serviceClient.authorize("code").join();
+        final TokensResponse actual = serviceClient.authorize("code").subscribeAsCompletionStage().join();
 
         assertThat(actual).isEqualTo(expected);
     }

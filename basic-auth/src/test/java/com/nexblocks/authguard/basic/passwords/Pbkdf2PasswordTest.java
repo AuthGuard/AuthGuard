@@ -24,7 +24,7 @@ class Pbkdf2PasswordTest {
                 .hashingAlgorithm(Pbkdf2ConfigInterface.Pkdf2HashingAlgorithm.SHA_256)
                 .build());
         final String password = RandomStringUtils.randomAlphanumeric(12);
-        final HashedPasswordBO hashedPassword = pbkdf.hash(password);
+        final HashedPasswordBO hashedPassword = pbkdf.hash(password).subscribeAsCompletionStage().join();
 
         assertThat(hashedPassword).isNotNull();
         assertThat(hashedPassword.getPassword()).isNotEqualTo(password);
@@ -37,9 +37,10 @@ class Pbkdf2PasswordTest {
                 .hashingAlgorithm(Pbkdf2ConfigInterface.Pkdf2HashingAlgorithm.SHA_256)
                 .build());
         final String password = RandomStringUtils.randomAlphanumeric(12);
-        final HashedPasswordBO hashedPassword = pbkdf.hash(password);
+        final HashedPasswordBO hashedPassword = pbkdf.hash(password).subscribeAsCompletionStage().join();
 
-        assertThat(pbkdf.verify(password, hashedPassword)).isTrue();
+        assertThat(pbkdf.verify(password, hashedPassword).subscribeAsCompletionStage().join())
+                .isTrue();
     }
 
     @Test
@@ -48,9 +49,10 @@ class Pbkdf2PasswordTest {
                 .hashingAlgorithm(Pbkdf2ConfigInterface.Pkdf2HashingAlgorithm.SHA_256)
                 .build());
         final String password = RandomStringUtils.randomAlphanumeric(12);
-        final HashedPasswordBO hashedPassword = pbkdf.hash(password);
+        final HashedPasswordBO hashedPassword = pbkdf.hash(password).subscribeAsCompletionStage().join();
 
-        assertThat(pbkdf.verify("should not match", hashedPassword)).isFalse();
+        assertThat(pbkdf.verify("should not match", hashedPassword).subscribeAsCompletionStage().join())
+                .isFalse();
     }
 
     @Test
@@ -59,7 +61,7 @@ class Pbkdf2PasswordTest {
                 .hashingAlgorithm(Pbkdf2ConfigInterface.Pkdf2HashingAlgorithm.SHA_512)
                 .build());
         final String password = RandomStringUtils.randomAlphanumeric(12);
-        final HashedPasswordBO hashedPassword = pbkdf.hash(password);
+        final HashedPasswordBO hashedPassword = pbkdf.hash(password).subscribeAsCompletionStage().join();
 
         assertThat(hashedPassword).isNotNull();
         assertThat(hashedPassword.getPassword()).isNotEqualTo(password);
@@ -72,9 +74,10 @@ class Pbkdf2PasswordTest {
                 .hashingAlgorithm(Pbkdf2ConfigInterface.Pkdf2HashingAlgorithm.SHA_512)
                 .build());
         final String password = RandomStringUtils.randomAlphanumeric(12);
-        final HashedPasswordBO hashedPassword = pbkdf.hash(password);
+        final HashedPasswordBO hashedPassword = pbkdf.hash(password).subscribeAsCompletionStage().join();
 
-        assertThat(pbkdf.verify(password, hashedPassword)).isTrue();
+        assertThat(pbkdf.verify(password, hashedPassword).subscribeAsCompletionStage().join())
+                .isTrue();
     }
 
     @Test
@@ -83,8 +86,9 @@ class Pbkdf2PasswordTest {
                 .hashingAlgorithm(Pbkdf2ConfigInterface.Pkdf2HashingAlgorithm.SHA_512)
                 .build());
         final String password = RandomStringUtils.randomAlphanumeric(12);
-        final HashedPasswordBO hashedPassword = pbkdf.hash(password);
+        final HashedPasswordBO hashedPassword = pbkdf.hash(password).subscribeAsCompletionStage().join();
 
-        assertThat(pbkdf.verify("should not match", hashedPassword)).isFalse();
+        assertThat(pbkdf.verify("should not match", hashedPassword).subscribeAsCompletionStage().join())
+                .isFalse();
     }
 }

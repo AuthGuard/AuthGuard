@@ -8,7 +8,7 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.google.inject.Inject;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @TokenExchange(from = "basic", to = "idToken")
 public class BasicToIdToken implements Exchange {
@@ -22,8 +22,8 @@ public class BasicToIdToken implements Exchange {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+    public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
         return basicAuth.authenticateAndGetAccount(request)
-                .thenCompose(idTokenProvider::generateToken);
+                .flatMap(idTokenProvider::generateToken);
     }
 }

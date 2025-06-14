@@ -17,7 +17,7 @@ import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -65,7 +65,7 @@ class PasswordlessProviderTest {
                 .entityId(account.getId())
                 .build();
 
-        AuthResponseBO generated = passwordlessProvider.generateToken(account, tokenOptions).join();
+        AuthResponseBO generated = passwordlessProvider.generateToken(account, tokenOptions).subscribeAsCompletionStage().join();
 
         assertThat(generated).isEqualToIgnoringGivenFields(expected, "token");
         assertThat(generated.getToken()).isNotNull();

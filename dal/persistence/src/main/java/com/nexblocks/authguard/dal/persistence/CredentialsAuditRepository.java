@@ -5,9 +5,9 @@ import com.nexblocks.authguard.dal.repository.ImmutableRecordRepository;
 import com.nexblocks.authguard.dal.repository.IndelibleRecordRepository;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface CredentialsAuditRepository
         extends IndelibleRecordRepository<CredentialsAuditDO>, ImmutableRecordRepository<CredentialsAuditDO> {
-    CompletableFuture<List<CredentialsAuditDO>> findByCredentialsId(long credentialsId);
+    Uni<List<CredentialsAuditDO>> findByCredentialsId(long credentialsId);
 }

@@ -68,7 +68,7 @@ class IdTokenProviderTest {
         IdTokenProvider idTokenProvider = newProviderInstance(jwtConfig());
 
         AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(true);
-        AuthResponseBO tokens = idTokenProvider.generateToken(account).join();
+        AuthResponseBO tokens = idTokenProvider.generateToken(account).subscribeAsCompletionStage().join();
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
@@ -86,7 +86,7 @@ class IdTokenProviderTest {
                 .thenAnswer(invocation -> Either.right("encrypted"));
 
         AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(true);
-        AuthResponseBO tokens = idTokenProvider.generateToken(account).join();
+        AuthResponseBO tokens = idTokenProvider.generateToken(account).subscribeAsCompletionStage().join();
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isEqualTo("encrypted");

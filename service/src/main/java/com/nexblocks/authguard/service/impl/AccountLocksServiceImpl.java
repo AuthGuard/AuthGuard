@@ -12,7 +12,8 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class AccountLocksServiceImpl implements AccountLocksService {
@@ -29,32 +30,31 @@ public class AccountLocksServiceImpl implements AccountLocksService {
     }
 
     @Override
-    public CompletableFuture<AccountLockBO> create(final AccountLockBO accountLock) {
+    public Uni<AccountLockBO> create(final AccountLockBO accountLock) {
         final AccountLockDO accountLockDO = serviceMapper.toDO(accountLock);
 
         LOG.info("Locking an account. accountId={}, expiresAt={}", accountLock.getAccountId(), accountLock.getExpiresAt());
 
         return accountLocksRepository.save(accountLockDO)
-                .subscribeAsCompletionStage()
-                .thenApply(serviceMapper::toBO);
+                .map(serviceMapper::toBO);
     }
 
     @Override
-    public CompletableFuture<Collection<AccountLockBO>> getActiveLocksByAccountId(final long accountId) {
+    public Uni<Collection<AccountLockBO>> getActiveLocksByAccountId(final long accountId) {
         final Instant now = Instant.now();
 
         return accountLocksRepository.findByAccountId(accountId)
-                .thenApply(locks -> locks.stream()
+                .map(locks -> locks.stream()
                         .filter(lock -> lock.getExpiresAt().isAfter(now))
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList())
-                );
+                )
+                .map(Function.identity());
     }
 
     @Override
-    public CompletableFuture<Optional<AccountLockBO>> delete(final long lockId) {
+    public Uni<Optional<AccountLockBO>> delete(final long lockId) {
         return accountLocksRepository.delete(lockId)
-                .subscribeAsCompletionStage()
-                .thenApply(lock -> lock.map(serviceMapper::toBO));
+                .map(lock -> lock.map(serviceMapper::toBO));
     }
 }

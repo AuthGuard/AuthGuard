@@ -32,6 +32,8 @@ public class BasicJtiProvider implements JtiProvider {
 
     @Override
     public boolean validate(final String jti) {
-        return accountTokensRepository.getByToken(jti).join().isPresent();
+        return accountTokensRepository.getByToken(jti)
+                .subscribeAsCompletionStage()
+                .join().isPresent();
     }
 }

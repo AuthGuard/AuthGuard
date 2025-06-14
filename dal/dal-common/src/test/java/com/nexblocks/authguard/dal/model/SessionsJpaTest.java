@@ -64,6 +64,6 @@ public class SessionsJpaTest {
                 .build());
 
         assertThatThrownBy(() -> entityManager.getTransaction().commit())
-                .hasCauseInstanceOf(ConstraintViolationException.class);
+                .isInstanceOf(ConstraintViolationException.class);
     }
 }

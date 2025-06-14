@@ -7,6 +7,7 @@ import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import io.smallrye.mutiny.Uni;
 
 public class ApiTokenVerifier implements AuthVerifier {
     private final JwtTokenVerifier jwtVerifier;
@@ -22,7 +23,7 @@ public class ApiTokenVerifier implements AuthVerifier {
     }
 
     @Override
-    public Long verifyAccountToken(final String token) {
+    public Uni<Long> verifyAccountToken(final String token) {
         return jwtVerifier.verifyAccountToken(token);
     }
 }

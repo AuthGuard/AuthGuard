@@ -5,9 +5,8 @@ import com.google.inject.name.Named;
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
 import com.nexblocks.authguard.api.common.Domain;
 import com.nexblocks.authguard.api.common.RequestContextExtractor;
-import com.nexblocks.authguard.api.common.RestJsonMapper;
 import com.nexblocks.authguard.api.dto.entities.RequestValidationError;
-import com.nexblocks.authguard.api.routes.ApiRoute;
+import com.nexblocks.authguard.api.routes.VertxApiHandler;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.jwt.exchange.PkceParameters;
 import com.nexblocks.authguard.jwt.oauth.config.ImmutableOAuthSsoConfiguration;
@@ -22,24 +21,25 @@ import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
 import io.javalin.http.Header;
-import io.javalin.http.Context;
+import io.smallrye.mutiny.Uni;
 import io.vavr.control.Either;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.json.Json;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.post;
-
 @DependsOnConfiguration("oauthSso")
-public class OAuthSsoPagesRoute implements ApiRoute {
+@Deprecated
+public class OAuthSsoPagesRoute {
     private final OpenIdConnectService openIdConnectService;
     private final ApiKeysService apiKeysService;
     private final ClientsService clientsService;
@@ -67,25 +67,21 @@ public class OAuthSsoPagesRoute implements ApiRoute {
         this.otpPage = readHtmlPage(configuration.getOtpPage());
     }
 
-    @Override
-    public String getPath() {
-        return "oidc";
+    public void register(final Router router) {
+        router.get("/oidc/:domain/auth").handler(this::authFlowPage);
+        router.get("/oidc/:domain/login").handler(this::loginPage);
+        router.post("/oidc/:domain/auth").handler(this::authFlowAuthApi);
+        router.post("/oidc/:domain/token").handler(this::authFlowTokenApi);
+        router.get("/oidc/:domain/otp").handler(this::otpPage);
     }
 
-    @Override
-    public void addEndpoints() {
-        get("/{domain}/auth", this::authFlowPage);
-        get("/{domain}/login", this::loginPage);
-        post("/{domain}/auth", this::authFlowAuthApi);
-        post("/{domain}/token", this::authFlowTokenApi);
-        get("/{domain}/otp", this::otpPage);
-    }
-
-    private void authFlowPage(Context context) {
+    private void authFlowPage(RoutingContext context) {
         String domain = Domain.fromContext(context);
 
         if (!configuration.getDomains().contains(domain)) {
-            context.status(404);
+            context.response()
+                    .setStatusCode(404)
+                    .end();
             return;
         }
 
@@ -93,51 +89,51 @@ public class OAuthSsoPagesRoute implements ApiRoute {
                 = OpenIdConnectRequestParser.authRequestFromQueryParams(context, "code");
 
         if (request.isLeft()) {
-            context.status(400).json(request.getLeft());
+            context.response()
+                    .setStatusCode(400)
+                    .end(Json.encode(request.getLeft()));
+
             return;
         }
 
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        CompletableFuture<String> requestToken = openIdConnectService.createRequestToken(requestContext, request.get(), domain)
-                .thenApply(token -> {
-                    context.redirect("/oidc/" + domain + "/login?redirect_uri=" + request.get().getRedirectUri() + "&token=" + token.getToken());
-
-                    return "";
-                })
-                .exceptionally(e -> {
+        openIdConnectService.createRequestToken(requestContext, request.get(), domain)
+                .onFailure().invoke(e -> {
                     context.redirect("/oidc/login?error=failed");
-
-                    return "";
+                })
+                .subscribe().with(token -> {
+                    context.redirect("/oidc/" + domain + "/login?redirect_uri=" + request.get().getRedirectUri() + "&token=" + token.getToken());
                 });
-
-        context.future(() -> requestToken);
     }
 
-    private void loginPage(Context context) {
+    private void loginPage(RoutingContext context) {
         String domain = Domain.fromContext(context);
 
         if (!configuration.getDomains().contains(domain)) {
-            context.status(404);
+            context.response().setStatusCode(404)
+                    .end();
             return;
         }
 
         Either<RequestValidationError, ImmutableOpenIdConnectRequest> request = OpenIdConnectRequestParser.loginPageRequestFromQueryParams(context);
 
         if (request.isLeft()) {
-            context.status(400).json(request.getLeft());
+            context.response().setStatusCode(400).end(Json.encode(request.getLeft()));
         } else {
-            context.html(loginPage);
+            context.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "text/html")
+                    .end( loginPage);
         }
     }
 
-    private void authFlowAuthApi(Context context) {
+    private void authFlowAuthApi(RoutingContext context) {
         String domain = Domain.fromContext(context);
-        OpenIdConnectRequest request = RestJsonMapper.asClass(context.body(), ImmutableOpenIdConnectRequest.class);
+        OpenIdConnectRequest request = context.body().asPojo(ImmutableOpenIdConnectRequest.class);
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        CompletableFuture<String> redirectUrl = openIdConnectService.getRequestFromToken(request.getRequestToken(), requestContext, domain)
-                .thenCompose(originalRequest -> {
+        openIdConnectService.getRequestFromToken(request.getRequestToken(), requestContext, domain)
+                .flatMap(originalRequest -> {
                     OpenIdConnectRequest realRequest = ImmutableOpenIdConnectRequest.builder()
                             .from(originalRequest)
                             .identifier(request.getIdentifier())
@@ -145,16 +141,12 @@ public class OAuthSsoPagesRoute implements ApiRoute {
                             .build();
 
                     return openIdConnectService.processAuth(realRequest, requestContext, domain)
-                            .thenApply(response -> {
-                                String location = realRequest.getRedirectUri() + "?code=" + response.getToken()
+                            .map(response -> {
+                                return realRequest.getRedirectUri() + "?code=" + response.getToken()
                                         + "&state=" + request.getState();
-                                context.status(302)
-                                        .header(Header.LOCATION, location);
-
-                                return "";
                             });
                 })
-                .exceptionally(e -> {
+                .onFailure().invoke(e -> {
                     String location;
                     Throwable effectiveException = e instanceof CompletionException ? e.getCause() : e;
 
@@ -174,112 +166,116 @@ public class OAuthSsoPagesRoute implements ApiRoute {
                         location = request.getRedirectUri() + "?error=unknown_error";
                     }
 
-                    context.status(302)
-                            .header(Header.LOCATION, location);
-                    return "";
+                    context.response().setStatusCode(302)
+                            .putHeader(Header.LOCATION, location)
+                            .end();
+                })
+                .subscribe().with(location -> {
+                    context.response().setStatusCode(302)
+                            .putHeader(Header.LOCATION, location)
+                            .end();
                 });
-
-        context.future(() -> redirectUrl);
     }
 
-    private void authFlowTokenApi(Context context) {
+    private void authFlowTokenApi(RoutingContext context) {
         String domain = Domain.fromContext(context);
 
         if (!configuration.getDomains().contains(domain)) {
-            context.status(404);
+            context.response().setStatusCode(404)
+                    .end();
             return;
         }
 
-        String grantType = context.formParam(OAuthConst.Params.GrantType);
-        String clientId = context.formParam(OAuthConst.Params.ClientId);
-        String clientSecret = context.formParam(OAuthConst.Params.ClientSecret);
-        String codeVerifier = context.formParam(OAuthConst.Params.CodeVerifier);
+        String grantType = context.request().getFormAttribute(OAuthConst.Params.GrantType);
+        String clientId = context.request().getFormAttribute(OAuthConst.Params.ClientId);
+        String clientSecret = context.request().getFormAttribute(OAuthConst.Params.ClientSecret);
+        String codeVerifier = context.request().getFormAttribute(OAuthConst.Params.CodeVerifier);
 
         if (grantType == null) {
-            context.status(400)
-                    .json(new OpenIdConnectError(OAuthConst.ErrorsMessages.InvalidGrant,
-                            "Invalid grant type"));
+            context.response().setStatusCode(400)
+                    .end(Json.encode(new OpenIdConnectError(OAuthConst.ErrorsMessages.InvalidGrant,
+                            "Invalid grant type")));
             return;
         }
 
-        CompletableFuture<ClientBO> verifiedClient;
+        Uni<ClientBO> verifiedClient;
 
         if (clientSecret != null && codeVerifier == null) {
             verifiedClient = verifyNonPkceTokenFlow(clientId, clientSecret, domain);
         } else if (codeVerifier != null && clientSecret == null) {
             verifiedClient = verifyPkceTokenFlow(clientId, domain);
         } else {
-            context.status(400)
-                    .json(new OpenIdConnectError(OAuthConst.ErrorsMessages.InvalidRequest,
-                            "Either client_secret or code_verifier must be set. Not both or neither."));
+            context.response().setStatusCode(400)
+                    .end(Json.encode(new OpenIdConnectError(OAuthConst.ErrorsMessages.InvalidRequest,
+                            "Either client_secret or code_verifier must be set. Not both or neither.")));
             return;
         }
 
-        CompletableFuture<Object> result = verifiedClient
-                .thenCompose(client -> {
+        Uni<Object> result = verifiedClient
+                .flatMap(client -> {
                     if (Objects.equals(grantType, OAuthConst.GrantTypes.AuthorizationCode)) {
                         return handleAuthorizationCode(context, client, codeVerifier);
                     } else if (Objects.equals(grantType, OAuthConst.GrantTypes.RefreshToken)) {
                         return handleRefreshToken(context, client);
                     } else {
-                        return CompletableFuture.failedFuture(new ServiceException("invalid_grant", "Invalid grant type"));
+                        return Uni.createFrom().failure(new ServiceException("invalid_grant", "Invalid grant type"));
                     }
                 })
-                .exceptionally(e -> {
+                .onFailure().invoke(e -> {
                     Throwable effectiveException = e instanceof CompletionException ? e.getCause() : e;
 
                     if (ServiceAuthorizationException.class.isAssignableFrom(effectiveException.getClass())) {
-                        context.status(401);
+                        ServiceAuthorizationException serviceException =
+                                (ServiceAuthorizationException) effectiveException;
 
-                        ServiceAuthorizationException serviceException = (ServiceAuthorizationException) effectiveException;
-
-                        return new OpenIdConnectError(serviceException.getErrorCode(), serviceException.getMessage());
+                        context.response().setStatusCode(401)
+                                .end(Json.encode(new OpenIdConnectError(serviceException.getErrorCode(), serviceException.getMessage())));
                     } else if (ServiceException.class.isAssignableFrom(effectiveException.getClass())) {
-                        context.status(400);
-
                         ServiceException serviceException = (ServiceException) effectiveException;
 
-                        return new OpenIdConnectError(serviceException.getErrorCode(), serviceException.getMessage());
+                        context.response().setStatusCode(400)
+                                .end(Json.encode(new OpenIdConnectError(serviceException.getErrorCode(), serviceException.getMessage())));
+
                     }
 
-                    return new OpenIdConnectError(ErrorCode.GENERIC_AUTH_FAILURE.getCode(), "Unknown error");
+                    context.response().setStatusCode(400)
+                            .end(Json.encode(new OpenIdConnectError(ErrorCode.GENERIC_AUTH_FAILURE.getCode(), "Unknown error")));
                 });
-
-        context.future(() -> result.thenAccept(context::json));
     }
 
-    private CompletableFuture<ClientBO> verifyNonPkceTokenFlow(final String clientId, final String clientSecret,
+    private Uni<ClientBO> verifyNonPkceTokenFlow(final String clientId, final String clientSecret,
                                                                final String domain) {
         return apiKeysService.validateClientApiKey(clientSecret, "default")
-                .thenCompose(client -> {
+                .flatMap(client -> {
                     if (client == null
                             || !Objects.equals(Optional.of(client.getId()).map(Objects::toString).orElse(""), clientId)
                             || client.getClientType() != Client.ClientType.SSO
                             || !Objects.equals(client.getDomain(), domain)) {
 
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException("invalid_request", "Invalid secret or unauthorized client"));
+                        return Uni.createFrom().failure(new ServiceAuthorizationException("invalid_request", "Invalid secret or unauthorized client"));
                     }
 
-                    return CompletableFuture.completedFuture(client);
+                    return Uni.createFrom().item(client);
                 });
     }
 
-    private CompletableFuture<ClientBO> verifyPkceTokenFlow(String clientId, String domain) {
+    private Uni<ClientBO> verifyPkceTokenFlow(String clientId, String domain) {
         return clientsService.getById(Long.parseLong(clientId), domain)
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isEmpty()) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException("invalid_request", "Invalid client ID or unauthorized client"));
+                        return Uni.createFrom().failure(new ServiceAuthorizationException("invalid_request", "Invalid client ID or unauthorized client"));
                     }
 
-                    return CompletableFuture.completedFuture(opt.get());
+                    return Uni.createFrom().item(opt.get());
                 });
     }
 
-    private CompletableFuture<Object> handleAuthorizationCode(Context context, Client client, String codeVerifier) {
-        String authorizationCode = context.formParam("code");
+    private Uni<Object> handleAuthorizationCode(RoutingContext context, Client client,
+                                                String codeVerifier) {
+        String authorizationCode = context.request().getFormAttribute("code");
 
         if (authorizationCode == null || authorizationCode.isBlank()) {
-            return CompletableFuture.failedFuture(new ServiceAuthorizationException("invalid_request", "Invalid authorization code"));
+            return Uni.createFrom().failure(new ServiceAuthorizationException("invalid_request", "Invalid authorization code"));
         }
 
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context, client);
@@ -292,7 +288,7 @@ public class OAuthSsoPagesRoute implements ApiRoute {
         }
 
         return openIdConnectService.processAuthCodeToken(request.build(), requestContext)
-                .thenApply(authCodeResponse -> {
+                .map(authCodeResponse -> {
                     OAuthResponseBO oAuthResponse = (OAuthResponseBO) authCodeResponse.getToken();
 
                     return new OpenIdConnectResponse(
@@ -303,11 +299,11 @@ public class OAuthSsoPagesRoute implements ApiRoute {
                 });
     }
 
-    private CompletableFuture<Object> handleRefreshToken(Context context, Client client) {
-        String refreshToken = context.formParam("refresh_token");
+    private Uni<Object> handleRefreshToken(RoutingContext context, Client client) {
+        String refreshToken = context.request().getFormAttribute("refresh_token");
 
         if (refreshToken == null || refreshToken.isBlank()) {
-            CompletableFuture.failedFuture(new ServiceException("invalid_request", "Invalid authorization code"));
+            Uni.createFrom().failure(new ServiceException("invalid_request", "Invalid authorization code"));
         }
 
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context, client);
@@ -317,22 +313,24 @@ public class OAuthSsoPagesRoute implements ApiRoute {
                 .build();
 
         return openIdConnectService.processRefreshToken(request, requestContext)
-                .thenApply(refreshResponse -> new OpenIdConnectResponse(
+                .map(refreshResponse -> new OpenIdConnectResponse(
                         (String) refreshResponse.getToken(),
                         null,
                         (String) refreshResponse.getRefreshToken(),
                         refreshResponse.getValidFor()));
     }
 
-    private void otpPage(Context context) {
+    private void otpPage(RoutingContext context) {
         String domain = Domain.fromContext(context);
 
         if (!configuration.getDomains().contains(domain)) {
-            context.status(404);
+            context.response().setStatusCode(404);
             return;
         }
 
-        context.status(200).html(otpPage);
+        context.response().setStatusCode(200)
+                .putHeader(HttpHeaders.CONTENT_TYPE, "text/html")
+                .end(otpPage);
     }
 
     private String readHtmlPage(final String path) {

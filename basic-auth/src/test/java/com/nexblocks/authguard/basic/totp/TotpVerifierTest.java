@@ -12,6 +12,7 @@ import com.nexblocks.authguard.service.model.AuthRequest;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.TotpKeyBO;
 import de.taimos.totp.TOTP;
+import io.smallrye.mutiny.Uni;
 import org.apache.commons.codec.binary.Hex;
 import org.bouncycastle.util.encoders.Base32;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +21,7 @@ import org.mockito.Mockito;
 
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -74,12 +75,12 @@ class TotpVerifierTest {
                 .build();
 
         Mockito.when(totpKeysService.getByAccountIdDecrypted(accountId, domain))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(totpKey)));
+                .thenReturn(Uni.createFrom().item(Optional.of(totpKey)));
 
         Mockito.when(accountTokensRepository.getByToken(accountToken.getToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
-        AccountTokenDO actual = totpVerifier.verifyAndGetAccountTokenAsync(request).join();
+        AccountTokenDO actual = totpVerifier.verifyAndGetAccountTokenAsync(request).subscribeAsCompletionStage().join();
 
         assertThat(actual).isEqualTo(accountToken);
     }
@@ -96,7 +97,7 @@ class TotpVerifierTest {
                 .build();
 
         Mockito.when(accountTokensRepository.getByToken(accountToken.getToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
         String totp = getTOTPCode();
 
@@ -104,10 +105,10 @@ class TotpVerifierTest {
                 .token(accountToken.getToken() + ":" + totp)
                 .build();
 
-        CompletableFuture<AccountTokenDO> future =
+        Uni<AccountTokenDO> future =
                 totpVerifier.verifyAndGetAccountTokenAsync(request);
 
-        assertThatThrownBy(future::join)
+        assertThatThrownBy(() -> future.subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause()
                 .extracting("errorCode")
@@ -120,10 +121,10 @@ class TotpVerifierTest {
                 .token("invalid")
                 .build();
 
-        CompletableFuture<AccountTokenDO> future =
+        Uni<AccountTokenDO> future =
                 totpVerifier.verifyAndGetAccountTokenAsync(request);
 
-        assertThatThrownBy(future::join)
+        assertThatThrownBy(() -> future.subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause()
                 .extracting("errorCode")
@@ -151,15 +152,15 @@ class TotpVerifierTest {
                 .build();
 
         Mockito.when(totpKeysService.getByAccountIdDecrypted(accountId, domain))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(totpKey)));
+                .thenReturn(Uni.createFrom().item(Optional.of(totpKey)));
 
         Mockito.when(accountTokensRepository.getByToken(accountToken.getToken()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
-        CompletableFuture<AccountTokenDO> future =
+        Uni<AccountTokenDO> future =
                 totpVerifier.verifyAndGetAccountTokenAsync(request);
 
-        assertThatThrownBy(future::join)
+        assertThatThrownBy(() -> future.subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause()
                 .extracting("errorCode")

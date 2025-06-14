@@ -1,5 +1,8 @@
 package com.nexblocks.authguard.rest.vertx;
 
+import com.nexblocks.authguard.api.common.BodyHandler;
+import com.nexblocks.authguard.api.common.Domain;
+import com.nexblocks.authguard.api.common.RequestValidationException;
 import com.nexblocks.authguard.api.dto.entities.ActionTokenDTO;
 import com.nexblocks.authguard.api.dto.entities.ActionTokenRequestType;
 import com.nexblocks.authguard.api.dto.entities.AuthResponseDTO;
@@ -7,21 +10,17 @@ import com.nexblocks.authguard.api.dto.requests.ActionTokenRequestDTO;
 import com.nexblocks.authguard.api.dto.validation.IdParser;
 import com.nexblocks.authguard.api.dto.validation.violations.Violation;
 import com.nexblocks.authguard.api.dto.validation.violations.ViolationType;
-import com.nexblocks.authguard.api.common.RequestValidationException;
 import com.nexblocks.authguard.api.routes.VertxApiHandler;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.service.ActionTokenService;
 import com.nexblocks.authguard.service.model.ActionTokenBO;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.api.common.BodyHandler;
-import com.nexblocks.authguard.api.common.Domain;
-import io.vertx.core.json.Json;
+import io.smallrye.mutiny.Uni;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
 import javax.inject.Inject;
 import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
 
 public class ActionTokensHandler implements VertxApiHandler {
     private final ActionTokenService actionTokenService;
@@ -59,25 +58,16 @@ public class ActionTokensHandler implements VertxApiHandler {
             ));
         }
 
-        CompletableFuture<AuthResponseDTO> result = actionTokenService.generateOtp(accountId, Domain.fromContext(context))
-                .thenApply(restMapper::toDTO);
+        Uni<AuthResponseDTO> result = actionTokenService.generateOtp(accountId, Domain.fromContext(context))
+                .map(restMapper::toDTO);
 
-        result.whenComplete((r, ex) -> {
-            if (ex != null) {
-                context.fail(ex);
-            } else {
-                context.response()
-                        .setStatusCode(201)
-                        .putHeader("Content-Type", "application/json")
-                        .end(Json.encode(r));
-            }
-        });
+        result.subscribe().withSubscriber(new VertxJsonSubscriber<>(context, 201));
     }
 
     private void createToken(final RoutingContext context) {
         ActionTokenRequestDTO request = actionTokenRequestBodyHandler.getValidated(context);
 
-        CompletableFuture<ActionTokenBO> result;
+        Uni<ActionTokenBO> result;
 
         if (request.getType() == ActionTokenRequestType.OTP) {
             result = actionTokenService.generateFromOtp(
@@ -91,16 +81,7 @@ public class ActionTokensHandler implements VertxApiHandler {
             result = actionTokenService.generateFromBasicAuth(authRequest, request.getAction());
         }
 
-        result.thenApply(restMapper::toDTO).whenComplete((dto, ex) -> {
-            if (ex != null) {
-                context.fail(ex);
-            } else {
-                context.response()
-                        .setStatusCode(201)
-                        .putHeader("Content-Type", "application/json")
-                        .end(Json.encode(dto));
-            }
-        });
+        result.map(restMapper::toDTO).subscribe().withSubscriber(new VertxJsonSubscriber<>(context, 201));
     }
 
     private void verifyToken(final RoutingContext context) {
@@ -119,19 +100,10 @@ public class ActionTokensHandler implements VertxApiHandler {
             ));
         }
 
-        CompletableFuture<ActionTokenDTO> result = actionTokenService.verifyToken(token, action)
-                .thenApply(restMapper::toDTO);
+        Uni<ActionTokenDTO> result = actionTokenService.verifyToken(token, action)
+                .map(restMapper::toDTO);
 
-        result.whenComplete((dto, ex) -> {
-            if (ex != null) {
-                context.fail(ex);
-            } else {
-                context.response()
-                        .setStatusCode(200)
-                        .putHeader("Content-Type", "application/json")
-                        .end(Json.encode(dto));
-            }
-        });
+        result.subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 }
 

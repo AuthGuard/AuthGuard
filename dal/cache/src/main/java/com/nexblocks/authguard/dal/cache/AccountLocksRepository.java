@@ -5,10 +5,10 @@ import io.smallrye.mutiny.Uni;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface AccountLocksRepository {
-    CompletableFuture<Collection<AccountLockDO>> findByAccountId(long accountId);
+    Uni<Collection<AccountLockDO>> findByAccountId(long accountId);
 
     Uni<AccountLockDO> save(AccountLockDO accountLock);
 

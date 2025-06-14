@@ -9,6 +9,8 @@ import com.nexblocks.authguard.service.auth.AuthVerifier;
 import com.nexblocks.authguard.service.config.StrategyConfig;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
+import com.nexblocks.authguard.service.util.AsyncUtils;
+import io.smallrye.mutiny.Uni;
 import io.vavr.control.Try;
 
 public class JwtTokenVerifier implements AuthVerifier {
@@ -51,15 +53,14 @@ public class JwtTokenVerifier implements AuthVerifier {
     }
 
     @Override
-    public Long verifyAccountToken(String token) {
-        return verify(token)
+    public Uni<Long> verifyAccountToken(String token) {
+        return AsyncUtils.uniFromTry(verify(token)
                 .flatMap(payload -> {
                     try {
                         return Try.success(Long.parseLong(payload.getSubject()));
                     } catch (Exception e) {
                         return Try.failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE, "Invalid JWT subject"));
                     }
-                })
-                .get();
+                }));
     }
 }

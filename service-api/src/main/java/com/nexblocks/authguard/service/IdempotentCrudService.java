@@ -3,13 +3,13 @@ package com.nexblocks.authguard.service;
 import com.nexblocks.authguard.service.model.Entity;
 import com.nexblocks.authguard.service.model.RequestContextBO;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface IdempotentCrudService<T extends Entity> extends CrudService<T> {
-    CompletableFuture<T> create(T entity, RequestContextBO requestContext);
+    Uni<T> create(T entity, RequestContextBO requestContext);
 
     @Override
-    default CompletableFuture<T> create(T entity) {
+    default Uni<T> create(T entity) {
         throw new UnsupportedOperationException();
     }
 }

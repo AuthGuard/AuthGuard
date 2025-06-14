@@ -19,17 +19,17 @@ import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
+import io.smallrye.mutiny.Uni;
+import io.vavr.control.Either;
 import io.vertx.core.json.Json;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vavr.control.Either;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -91,19 +91,22 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
         openIdConnectService.createRequestToken(requestContext, request.get(), domain)
-                .thenApply(token -> {
+                .map(token -> {
                     context.response().setStatusCode(302)
                             .putHeader("Location", "/oidc/" + domain + "/login?redirect_uri="
                                     + request.get().getRedirectUri() + "&token=" + token.getToken())
                             .end();
                     return "";
                 })
-                .exceptionally(e -> {
+                .onFailure()
+                .recoverWithItem(e -> {
                     context.response().setStatusCode(302)
                             .putHeader("Location", "/oidc/login?error=failed")
                             .end();
                     return "";
-                });
+                })
+                .subscribe()
+                .asCompletionStage();
     }
 
     private void loginPage(final RoutingContext context) {
@@ -132,7 +135,7 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
         openIdConnectService.getRequestFromToken(request.getRequestToken(), requestContext, domain)
-                .thenCompose(originalRequest -> {
+                .flatMap(originalRequest -> {
                     OpenIdConnectRequest realRequest = ImmutableOpenIdConnectRequest.builder()
                             .from(originalRequest)
                             .identifier(request.getIdentifier())
@@ -140,28 +143,25 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
                             .build();
 
                     return openIdConnectService.processAuth(realRequest, requestContext, domain)
-                            .thenApply(response -> {
-                                String location = realRequest.getRedirectUri() + "?code=" + response.getToken()
-                                        + "&state=" + request.getState();
-                                context.response().setStatusCode(302)
-                                        .putHeader("Location", location)
-                                        .end();
-                                return "";
-                            });
+                            .map(response -> realRequest.getRedirectUri() + "?code=" + response.getToken()
+                                    + "&state=" + request.getState());
                 })
-                .exceptionally(e -> {
+                .subscribe()
+                .with(location -> {
+                    context.response().setStatusCode(302)
+                            .putHeader("Location", location)
+                            .end();
+                }, e -> {
                     String location;
                     Throwable effectiveException = e instanceof CompletionException ? e.getCause() : e;
 
-                    if (effectiveException instanceof ServiceAuthorizationException) {
-                        ServiceAuthorizationException ex = (ServiceAuthorizationException) effectiveException;
+                    if (effectiveException instanceof ServiceAuthorizationException ex) {
                         String error = Objects.equals(ex.getErrorCode(), ErrorCode.GENERIC_AUTH_FAILURE.getCode()) ?
                                 OAuthConst.ErrorsMessages.UnsupportedResponseType :
                                 OAuthConst.ErrorsMessages.UnauthorizedClient;
 
                         location = request.getRedirectUri() + "?error=" + error;
-                    } else if (effectiveException instanceof ServiceException) {
-                        ServiceException ex = (ServiceException) effectiveException;
+                    } else if (effectiveException instanceof ServiceException ex) {
                         location = request.getRedirectUri() + "?error=" + ex.getMessage();
                     } else {
                         location = request.getRedirectUri() + "?error=unknown_error";
@@ -170,7 +170,6 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
                     context.response().setStatusCode(302)
                             .putHeader("Location", location)
                             .end();
-                    return "";
                 });
     }
 
@@ -193,7 +192,7 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
             return;
         }
 
-        CompletableFuture<ClientBO> verifiedClient;
+        Uni<ClientBO> verifiedClient;
 
         if (clientSecret != null && codeVerifier == null) {
             verifiedClient = verifyNonPkceTokenFlow(clientId, clientSecret, domain);
@@ -206,16 +205,17 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
             return;
         }
 
-        verifiedClient.thenCompose(client -> {
+        verifiedClient.flatMap(client -> {
                     if (Objects.equals(grantType, OAuthConst.GrantTypes.AuthorizationCode)) {
                         return handleAuthorizationCode(context, client, codeVerifier);
                     } else if (Objects.equals(grantType, OAuthConst.GrantTypes.RefreshToken)) {
                         return handleRefreshToken(context, client);
                     } else {
-                        return CompletableFuture.failedFuture(new ServiceException("invalid_grant", "Invalid grant type"));
+                        return Uni.createFrom().failure(new ServiceException("invalid_grant", "Invalid grant type"));
                     }
                 })
-                .exceptionally(e -> {
+                .onFailure()
+                .recoverWithItem(e -> {
                     Throwable cause = e instanceof CompletionException ? e.getCause() : e;
 
                     if (cause instanceof ServiceAuthorizationException) {
@@ -231,47 +231,50 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
 
                     return null;
                 })
-                .thenAccept(result -> {
+                .onItem()
+                .invoke(result -> {
                     if (result != null) {
                         context.response().putHeader("Content-Type", "application/json")
                                 .end(Json.encode(result));
                     }
-                });
+                })
+                .subscribe()
+                .asCompletionStage();
     }
 
 // ... previous content remains unchanged
 
-    private CompletableFuture<ClientBO> verifyNonPkceTokenFlow(final String clientId, final String clientSecret, final String domain) {
+    private Uni<ClientBO> verifyNonPkceTokenFlow(final String clientId, final String clientSecret, final String domain) {
         return apiKeysService.validateClientApiKey(clientSecret, "default")
-                .thenCompose(client -> {
+                .flatMap(client -> {
                     if (client == null
                             || !Objects.equals(Optional.of(client.getId()).map(Objects::toString).orElse(""), clientId)
                             || client.getClientType() != Client.ClientType.SSO
                             || !Objects.equals(client.getDomain(), domain)) {
 
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException("invalid_request", "Invalid secret or unauthorized client"));
+                        return Uni.createFrom().failure(new ServiceAuthorizationException("invalid_request", "Invalid secret or unauthorized client"));
                     }
 
-                    return CompletableFuture.completedFuture(client);
+                    return Uni.createFrom().item(client);
                 });
     }
 
-    private CompletableFuture<ClientBO> verifyPkceTokenFlow(String clientId, String domain) {
+    private Uni<ClientBO> verifyPkceTokenFlow(String clientId, String domain) {
         return clientsService.getById(Long.parseLong(clientId), domain)
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isEmpty()) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException("invalid_request", "Invalid client ID or unauthorized client"));
+                        return Uni.createFrom().failure(new ServiceAuthorizationException("invalid_request", "Invalid client ID or unauthorized client"));
                     }
 
-                    return CompletableFuture.completedFuture(opt.get());
+                    return Uni.createFrom().item(opt.get());
                 });
     }
 
-    private CompletableFuture<Object> handleAuthorizationCode(RoutingContext context, Client client, String codeVerifier) {
+    private Uni<Object> handleAuthorizationCode(RoutingContext context, Client client, String codeVerifier) {
         String authorizationCode = context.request().getFormAttribute("code");
 
         if (authorizationCode == null || authorizationCode.isBlank()) {
-            return CompletableFuture.failedFuture(new ServiceAuthorizationException("invalid_request", "Invalid authorization code"));
+            return Uni.createFrom().failure(new ServiceAuthorizationException("invalid_request", "Invalid authorization code"));
         }
 
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context, client);
@@ -283,7 +286,7 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
         }
 
         return openIdConnectService.processAuthCodeToken(request.build(), requestContext)
-                .thenApply(authCodeResponse -> {
+                .map(authCodeResponse -> {
                     OAuthResponseBO oAuthResponse = (OAuthResponseBO) authCodeResponse.getToken();
 
                     return new OpenIdConnectResponse(
@@ -295,11 +298,11 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
                 });
     }
 
-    private CompletableFuture<Object> handleRefreshToken(RoutingContext context, Client client) {
+    private Uni<Object> handleRefreshToken(RoutingContext context, Client client) {
         String refreshToken = context.request().getFormAttribute("refresh_token");
 
         if (refreshToken == null || refreshToken.isBlank()) {
-            return CompletableFuture.failedFuture(new ServiceException("invalid_request", "Invalid refresh token"));
+            return Uni.createFrom().failure(new ServiceException("invalid_request", "Invalid refresh token"));
         }
 
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context, client);
@@ -307,7 +310,7 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
         AuthRequestBO request = AuthRequestBO.builder().token(refreshToken).build();
 
         return openIdConnectService.processRefreshToken(request, requestContext)
-                .thenApply(refreshResponse -> new OpenIdConnectResponse(
+                .map(refreshResponse -> new OpenIdConnectResponse(
                         (String) refreshResponse.getToken(),
                         null,
                         (String) refreshResponse.getRefreshToken(),

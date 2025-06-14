@@ -10,7 +10,7 @@ import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.model.SessionBO;
 
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public class SessionVerifier implements AuthVerifier {
     private final SessionsService sessionsService;
@@ -21,31 +21,31 @@ public class SessionVerifier implements AuthVerifier {
     }
 
     @Override
-    public Long verifyAccountToken(final String sessionToken) {
+    public Uni<Long> verifyAccountToken(final String sessionToken) {
         throw new UnsupportedOperationException("Use the async variant");
     }
 
     @Override
-    public CompletableFuture<Long> verifyAccountTokenAsync(final AuthRequest request) {
+    public Uni<Long> verifyAccountTokenAsync(final AuthRequest request) {
         return sessionsService.getByToken(request.getToken())
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isEmpty()) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid session token"));
+                        return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid session token"));
                     }
 
                     SessionBO session = opt.get();
 
                     // tracking sessions cannot be used for auth
                     if (session.isForTracking()) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid session token"));
+                        return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid session token"));
                     }
 
                     if (session.getExpiresAt().isBefore(Instant.now())) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Session has expired",
+                        return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.EXPIRED_TOKEN, "Session has expired",
                                 EntityType.ACCOUNT, session.getAccountId()));
                     }
 
-                    return CompletableFuture.completedFuture(session.getAccountId());
+                    return Uni.createFrom().item(session.getAccountId());
                 });
     }
 }

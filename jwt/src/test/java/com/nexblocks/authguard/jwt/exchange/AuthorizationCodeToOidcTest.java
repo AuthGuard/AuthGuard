@@ -16,7 +16,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -77,15 +77,15 @@ class AuthorizationCodeToOidcTest {
                 .build();
 
         Mockito.when(authorizationCodeVerifier.verifyAndGetAccountTokenAsync(authRequest))
-                .thenReturn(CompletableFuture.completedFuture(accountToken));
+                .thenReturn(Uni.createFrom().item(accountToken));
 
         Mockito.when(accountsService.getByIdUnchecked(accountToken.getAssociatedAccountId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+                .thenReturn(Uni.createFrom().item(Optional.of(account)));
 
         Mockito.when(openIdConnectTokenProvider.generateToken(account, null, options))
-                .thenReturn(CompletableFuture.completedFuture(authResponse));
+                .thenReturn(Uni.createFrom().item(authResponse));
 
-        AuthResponseBO actual = authorizationCodeToOidc.exchange(authRequest).join();
+        AuthResponseBO actual = authorizationCodeToOidc.exchange(authRequest).subscribeAsCompletionStage().join();
 
         assertThat(actual).isEqualTo(authResponse);
     }
@@ -130,15 +130,15 @@ class AuthorizationCodeToOidcTest {
                 .build();
 
         Mockito.when(authorizationCodeVerifier.verifyAndGetAccountTokenAsync(authRequest))
-                .thenReturn(CompletableFuture.completedFuture(accountToken));
+                .thenReturn(Uni.createFrom().item(accountToken));
 
         Mockito.when(accountsService.getByIdUnchecked(accountToken.getAssociatedAccountId()))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+                .thenReturn(Uni.createFrom().item(Optional.of(account)));
 
         Mockito.when(openIdConnectTokenProvider.generateToken(account, serviceMapper.toBO(accountToken.getTokenRestrictions()), options))
-                .thenReturn(CompletableFuture.completedFuture(authResponse));
+                .thenReturn(Uni.createFrom().item(authResponse));
 
-        AuthResponseBO actual = authorizationCodeToOidc.exchange(authRequest).join();
+        AuthResponseBO actual = authorizationCodeToOidc.exchange(authRequest).subscribeAsCompletionStage().join();
 
         assertThat(actual).isEqualTo(authResponse);
     }

@@ -10,13 +10,13 @@ import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,16 +34,16 @@ class ExchangesBinderTest {
     @TokenExchange(from = "basic", to = "random")
     public static class FirstExchange implements Exchange {
         @Override
-        public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request)  {
-            return CompletableFuture.completedFuture(null);
+        public Uni<AuthResponseBO> exchange(final AuthRequestBO request)  {
+            return Uni.createFrom().item(null);
         }
     }
 
     @TokenExchange(from = "random", to = "chaos")
     public static class SecondExchange implements Exchange {
         @Override
-        public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
-            return CompletableFuture.completedFuture(null);
+        public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
+            return Uni.createFrom().item(null);
         }
     }
 

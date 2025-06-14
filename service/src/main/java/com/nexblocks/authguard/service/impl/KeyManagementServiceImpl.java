@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.stream.Collectors;
 
 public class KeyManagementServiceImpl implements KeyManagementService {
@@ -67,12 +67,12 @@ public class KeyManagementServiceImpl implements KeyManagementService {
     }
 
     @Override
-    public CompletableFuture<PersistedKeyBO> create(final PersistedKeyBO key) {
-        CompletableFuture<PersistedKeyBO> createFuture;
+    public Uni<PersistedKeyBO> create(final PersistedKeyBO key) {
+        Uni<PersistedKeyBO> createFuture;
 
         if (key.getAccountId() != null) {
             createFuture = accountsService.getById(key.getAccountId(), key.getDomain())
-                    .thenCompose(opt -> {
+                    .flatMap(opt -> {
                         if (opt.isEmpty()) {
                             throw new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                                     "No account with ID " + key.getAccountId() + " exists");
@@ -82,7 +82,7 @@ public class KeyManagementServiceImpl implements KeyManagementService {
                     });
         } else if (key.getAppId() != null) {
             createFuture = applicationsService.getById(key.getAppId(), key.getDomain())
-                    .thenCompose(opt -> {
+                    .flatMap(opt -> {
                         if (opt.isEmpty()) {
                             throw new ServiceNotFoundException(ErrorCode.APP_DOES_NOT_EXIST,
                                     "No application with ID " + key.getAccountId() + " exists");
@@ -95,24 +95,24 @@ public class KeyManagementServiceImpl implements KeyManagementService {
         }
 
         return createFuture
-                .thenApply(persisted -> PersistedKeyBO.builder()
+                .map(persisted -> PersistedKeyBO.builder()
                         .from(persisted)
                         .privateKey(key.getPrivateKey())
                         .build()); // store encrypted, return plain
     }
 
     @Override
-    public CompletableFuture<Optional<PersistedKeyBO>> getById(final long id, final String domain) {
+    public Uni<Optional<PersistedKeyBO>> getById(final long id, final String domain) {
         return persistenceService.getById(id, domain);
     }
 
     @Override
-    public CompletableFuture<Optional<PersistedKeyBO>> update(final PersistedKeyBO entity, final String domain) {
+    public Uni<Optional<PersistedKeyBO>> update(final PersistedKeyBO entity, final String domain) {
         throw new UnsupportedOperationException("Cryptographic keys cannot be updated");
     }
 
     @Override
-    public CompletableFuture<Optional<PersistedKeyBO>> delete(final long id, final String domain) {
+    public Uni<Optional<PersistedKeyBO>> delete(final long id, final String domain) {
         LOG.info("Key delete request. accountId={}", id);
 
         return persistenceService.delete(id);
@@ -143,9 +143,9 @@ public class KeyManagementServiceImpl implements KeyManagementService {
     }
 
     @Override
-    public CompletableFuture<Optional<PersistedKeyBO>> getDecrypted(final long id, final String domain, final String passcode) {
+    public Uni<Optional<PersistedKeyBO>> getDecrypted(final long id, final String domain, final String passcode) {
         return getById(id, domain)
-                .thenApply(opt -> opt.map(key -> {
+                .map(opt -> opt.map(key -> {
                     byte[] nonce;
 
                     if (key.isPasscodeProtected()) {
@@ -178,29 +178,28 @@ public class KeyManagementServiceImpl implements KeyManagementService {
     }
 
     @Override
-    public CompletableFuture<List<PersistedKeyBO>> getByDomain(final String domain, final Instant cursor) {
+    public Uni<List<PersistedKeyBO>> getByDomain(final String domain, final Instant cursor) {
         return repository.findByDomain(domain, Page.of(cursor, PAGE_SIZE, DEFAULT_CURSOR))
-                .thenApply(list -> list.stream()
+                .map(list -> list.stream()
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList()));
     }
 
     @Override
-    public CompletableFuture<List<PersistedKeyBO>> getByAccountId(final String domain, final long accountId,
+    public Uni<List<PersistedKeyBO>> getByAccountId(final String domain, final long accountId,
                                                                   final Instant cursor) {
         return repository.findByAccountId(domain, accountId, Page.of(cursor, PAGE_SIZE, DEFAULT_CURSOR))
-                .thenApply(list -> list.stream()
+                .map(list -> list.stream()
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList()));
     }
 
     @Override
-    public CompletableFuture<List<PersistedKeyBO>> getByAppId(final String domain, final long appId, final Instant cursor) {
+    public Uni<List<PersistedKeyBO>> getByAppId(final String domain, final long appId, final Instant cursor) {
         return repository.findByAppId(domain, appId, Page.of(cursor, PAGE_SIZE, DEFAULT_CURSOR))
-                .thenApply(list -> list.stream()
+                .map(list -> list.stream()
                         .map(serviceMapper::toBO)
                         .collect(Collectors.toList()));
-
     }
 
     private void verifySize(final AlgorithmDetails<?> algorithmDetails, final int size) {

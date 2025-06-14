@@ -5,15 +5,15 @@ import com.nexblocks.authguard.service.model.PasswordResetTokenBO;
 import com.nexblocks.authguard.service.model.UserIdentifierBO;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface AccountCredentialsService {
-    CompletableFuture<AccountBO> updatePassword(long id, String plainPassword, String domain);
-    CompletableFuture<AccountBO> addIdentifiers(long id, List<UserIdentifierBO> identifiers, String domain);
-    CompletableFuture<AccountBO> removeIdentifiers(long id, List<String> identifiers, String domain);
-    CompletableFuture<AccountBO> replaceIdentifier(long id, String oldIdentifier, UserIdentifierBO newIdentifier, String domain);
+    Uni<AccountBO> updatePassword(long id, String plainPassword, String domain);
+    Uni<AccountBO> addIdentifiers(long id, List<UserIdentifierBO> identifiers, String domain);
+    Uni<AccountBO> removeIdentifiers(long id, List<String> identifiers, String domain);
+    Uni<AccountBO> replaceIdentifier(long id, String oldIdentifier, UserIdentifierBO newIdentifier, String domain);
 
-    CompletableFuture<PasswordResetTokenBO> generateResetToken(String identifier, boolean returnToken, String domain);
-    CompletableFuture<AccountBO> resetPasswordByToken(String token, String plainPassword, String domain);
-    CompletableFuture<AccountBO> replacePassword(String identifier, String oldPassword, String newPassword, String domain);
+    Uni<PasswordResetTokenBO> generateResetToken(String identifier, boolean returnToken, String domain);
+    Uni<AccountBO> resetPasswordByToken(String token, String plainPassword, String domain);
+    Uni<AccountBO> replacePassword(String identifier, String oldPassword, String newPassword, String domain);
 }

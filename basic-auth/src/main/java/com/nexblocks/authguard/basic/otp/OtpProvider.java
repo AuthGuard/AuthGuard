@@ -20,7 +20,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @ProvidesToken("otp")
 public class OtpProvider implements AuthProvider {
@@ -45,7 +45,7 @@ public class OtpProvider implements AuthProvider {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+    public Uni<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
                                                            final TokenOptionsBO options) {
         if (!account.isActive()) {
             throw new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Account was deactivated");
@@ -78,12 +78,11 @@ public class OtpProvider implements AuthProvider {
                     messageBus.publish(OTP_CHANNEL, Messages.otpGenerated(messageBody, account.getDomain()));
 
                     return token;
-                })
-                .subscribeAsCompletionStage();
+                });
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account) {
+    public Uni<AuthResponseBO> generateToken(final AccountBO account) {
         throw new UnsupportedOperationException("Use the method which accepts TokenOptionsBO");
     }
 

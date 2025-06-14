@@ -25,7 +25,7 @@ import org.mockito.Mockito;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -73,7 +73,7 @@ class KeyManagementServiceImplTest {
         Mockito.when(cryptoKeysRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CryptoKeyDO.class)));
 
-        PersistedKeyBO persisted = keyManagementService.create(key).join();
+        PersistedKeyBO persisted = keyManagementService.create(key).subscribeAsCompletionStage().join();
 
         assertThat(Arrays.equals(Base64.getDecoder().decode(persisted.getPrivateKey()), generatedKeys.getPrivateKey()))
                 .isTrue();
@@ -90,7 +90,7 @@ class KeyManagementServiceImplTest {
         Mockito.when(cryptoKeysRepository.getById(Mockito.anyLong()))
                 .thenReturn(Uni.createFrom().item(Optional.of(keyCaptor.getValue())));
 
-        Optional<PersistedKeyBO> retrieved = keyManagementService.getDecrypted(1, "main", null).join();
+        Optional<PersistedKeyBO> retrieved = keyManagementService.getDecrypted(1, "main", null).subscribeAsCompletionStage().join();
 
         assertThat(retrieved).isPresent();
         assertThat(retrieved.get().getPrivateKey())
@@ -114,7 +114,7 @@ class KeyManagementServiceImplTest {
         Mockito.when(cryptoKeysRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CryptoKeyDO.class)));
 
-        PersistedKeyBO persisted = keyManagementService.create(key).join();
+        PersistedKeyBO persisted = keyManagementService.create(key).subscribeAsCompletionStage().join();
 
         assertThat(Arrays.equals(Base64.getDecoder().decode(persisted.getPrivateKey()), generatedKeys.getPrivateKey()))
                 .isTrue();
@@ -131,7 +131,7 @@ class KeyManagementServiceImplTest {
         Mockito.when(cryptoKeysRepository.getById(Mockito.anyLong()))
                 .thenReturn(Uni.createFrom().item(Optional.of(keyCaptor.getValue())));
 
-        Optional<PersistedKeyBO> retrieved = keyManagementService.getDecrypted(1, "main", "pass").join();
+        Optional<PersistedKeyBO> retrieved = keyManagementService.getDecrypted(1, "main", "pass").subscribeAsCompletionStage().join();
 
         assertThat(retrieved).isPresent();
         assertThat(retrieved.get().getPrivateKey())
@@ -155,7 +155,7 @@ class KeyManagementServiceImplTest {
         Mockito.when(cryptoKeysRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CryptoKeyDO.class)));
 
-        keyManagementService.create(key).join();
+        keyManagementService.create(key).subscribeAsCompletionStage().join();
 
         ArgumentCaptor<CryptoKeyDO> keyCaptor = ArgumentCaptor.forClass(CryptoKeyDO.class);
         Mockito.verify(cryptoKeysRepository, Mockito.times(1))
@@ -165,7 +165,7 @@ class KeyManagementServiceImplTest {
         Mockito.when(cryptoKeysRepository.getById(Mockito.anyLong()))
                 .thenReturn(Uni.createFrom().item(Optional.of(keyCaptor.getValue())));
 
-        assertThatThrownBy(() -> keyManagementService.getDecrypted(1, "main", "pas").join())
+        assertThatThrownBy(() -> keyManagementService.getDecrypted(1, "main", "pas").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -186,9 +186,9 @@ class KeyManagementServiceImplTest {
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CryptoKeyDO.class)));
 
         Mockito.when(accountsService.getById(100L, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(AccountBO.builder().build())));
+                .thenReturn(Uni.createFrom().item(Optional.of(AccountBO.builder().build())));
 
-        PersistedKeyBO persisted = keyManagementService.create(key).join();
+        PersistedKeyBO persisted = keyManagementService.create(key).subscribeAsCompletionStage().join();
 
         assertThat(persisted.getAccountId()).isEqualTo(key.getAccountId());
     }
@@ -210,9 +210,9 @@ class KeyManagementServiceImplTest {
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CryptoKeyDO.class)));
 
         Mockito.when(applicationsService.getById(100L, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(AppBO.builder().build())));
+                .thenReturn(Uni.createFrom().item(Optional.of(AppBO.builder().build())));
 
-        PersistedKeyBO persisted = keyManagementService.create(key).join();
+        PersistedKeyBO persisted = keyManagementService.create(key).subscribeAsCompletionStage().join();
 
         assertThat(persisted.getAppId()).isEqualTo(key.getAppId());
     }
@@ -231,12 +231,12 @@ class KeyManagementServiceImplTest {
                 .build();
 
         Mockito.when(cryptoKeysRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CryptoKeyDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CryptoKeyDO.class)));
 
         Mockito.when(accountsService.getById(100L, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        assertThatThrownBy(() -> keyManagementService.create(key).join())
+        assertThatThrownBy(() -> keyManagementService.create(key).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -254,12 +254,12 @@ class KeyManagementServiceImplTest {
                 .build();
 
         Mockito.when(cryptoKeysRepository.save(Mockito.any()))
-                .thenAnswer(invocation -> CompletableFuture.completedFuture(invocation.getArgument(0, CryptoKeyDO.class)));
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CryptoKeyDO.class)));
 
         Mockito.when(applicationsService.getById(100L, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        assertThatThrownBy(() -> keyManagementService.create(key).join())
+        assertThatThrownBy(() -> keyManagementService.create(key).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 }

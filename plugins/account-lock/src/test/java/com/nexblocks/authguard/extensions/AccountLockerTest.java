@@ -9,6 +9,7 @@ import com.nexblocks.authguard.service.AccountLocksService;
 import com.nexblocks.authguard.service.messaging.AuthMessage;
 import com.nexblocks.authguard.service.model.AccountLockBO;
 import com.nexblocks.authguard.service.model.EntityType;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -54,7 +55,7 @@ class AccountLockerTest {
 
         // mocks
         Mockito.when(exchangeAttemptsRepository.findByEntityAndTimestamp(Mockito.anyLong(), Mockito.any()))
-                .thenReturn(CompletableFuture.completedFuture(Collections.emptyList()));
+                .thenReturn(Uni.createFrom().item(Collections.emptyList()));
 
         // call
         accountLocker.onMessage(message);
@@ -92,7 +93,7 @@ class AccountLockerTest {
 
         // mocks
         Mockito.when(exchangeAttemptsRepository.findByEntityAndTimestamp(Mockito.anyLong(), Mockito.any()))
-                .thenReturn(CompletableFuture.completedFuture(Arrays.asList(
+                .thenReturn(Uni.createFrom().item(Arrays.asList(
                         ExchangeAttemptDO.builder().build(),
                         ExchangeAttemptDO.builder().build(),
                         ExchangeAttemptDO.builder().build()

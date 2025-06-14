@@ -8,9 +8,9 @@ import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.Entity;
 import com.nexblocks.authguard.service.model.IdempotentRecordBO;
 import com.nexblocks.authguard.service.util.ID;
+import io.smallrye.mutiny.Uni;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 public class IdempotencyServiceImpl implements IdempotencyService {
@@ -25,31 +25,31 @@ public class IdempotencyServiceImpl implements IdempotencyService {
     }
 
     @Override
-    public CompletableFuture<IdempotentRecordBO> create(final IdempotentRecordBO record) {
-        return repository.save(serviceMapper.toDO(record)).subscribe().asCompletionStage()
-                .thenApply(serviceMapper::toBO);
+    public Uni<IdempotentRecordBO> create(final IdempotentRecordBO record) {
+        return repository.save(serviceMapper.toDO(record))
+                .map(serviceMapper::toBO);
     }
 
     @Override
-    public CompletableFuture<Optional<IdempotentRecordBO>> findByKeyAndEntityType(final String idempotentKey,
-                                                                                  final String entityType) {
+    public Uni<Optional<IdempotentRecordBO>> findByKeyAndEntityType(final String idempotentKey,
+                                                                    final String entityType) {
         return repository.findByKeyAndEntityType(idempotentKey, entityType)
-                .thenApply(recordOptional -> recordOptional.map(serviceMapper::toBO));
+                .map(recordOptional -> recordOptional.map(serviceMapper::toBO));
     }
 
     @Override
-    public <T extends Entity> CompletableFuture<T> performOperation(final Supplier<T> operation,
+    public <T extends Entity> Uni<T> performOperation(final Supplier<T> operation,
                                                                     final String idempotentKey,
                                                                     final String entityType) {
         return findByKeyAndEntityType(idempotentKey, entityType)
-                .thenApplyAsync(record -> {
+                .map(record -> {
                     if (record.isPresent()) {
                         throw new IdempotencyException(record.get());
                     }
 
                     return operation.get();
                 })
-                .thenApply(result -> {
+                .map(result -> {
                     final IdempotentRecordBO record = IdempotentRecordBO.builder()
                             .id(ID.generate())
                             .entityId(result.getId())
@@ -58,23 +58,24 @@ public class IdempotencyServiceImpl implements IdempotencyService {
                             .build();
 
                     // we don't have to wait for this to finish
-                    CompletableFuture.runAsync(() -> create(record));
+                    create(record).subscribe()
+                            .with(ignored -> {});
 
                     return result;
                 });
     }
 
     @Override
-    public <T extends Entity> CompletableFuture<T> performOperationAsync(Supplier<CompletableFuture<T>> operation, String idempotentKey, String entityType) {
+    public <T extends Entity> Uni<T> performOperationAsync(Supplier<Uni<T>> operation, String idempotentKey, String entityType) {
         return findByKeyAndEntityType(idempotentKey, entityType)
-                .thenCompose(record -> {
+                .flatMap(record -> {
                     if (record.isPresent()) {
                         throw new IdempotencyException(record.get());
                     }
 
                     return operation.get();
                 })
-                .thenApply(result -> {
+                .map(result -> {
                     final IdempotentRecordBO record = IdempotentRecordBO.builder()
                             .id(ID.generate())
                             .entityId(result.getId())
@@ -83,7 +84,8 @@ public class IdempotencyServiceImpl implements IdempotencyService {
                             .build();
 
                     // we don't have to wait for this to finish
-                    CompletableFuture.runAsync(() -> create(record));
+                    create(record).subscribe()
+                            .with(ignored -> {});
 
                     return result;
                 });

@@ -21,6 +21,7 @@ import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.AsyncUtils;
 import com.nexblocks.authguard.service.util.CredentialsManager;
 import com.nexblocks.authguard.service.util.ID;
+import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.stream.Collectors;
 
 public class AccountCredentialsServiceImpl implements AccountCredentialsService {
@@ -70,30 +71,30 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     }
 
     @Override
-    public CompletableFuture<AccountBO> updatePassword(final long id, final String plainPassword, final String domain) {
+    public Uni<AccountBO> updatePassword(final long id, final String plainPassword, final String domain) {
         return accountsService.getByIdUnsafe(id, domain)
-                .thenCompose(existing -> {
-                    HashedPasswordBO newPassword = credentialsManager.verifyAndHashPassword(plainPassword);
-                    AccountBO update = existing
-                            .withHashedPassword(newPassword)
-                            .withPasswordUpdatedAt(Instant.now());
+                .flatMap(existing -> credentialsManager.verifyAndHashPassword(plainPassword)
+                        .flatMap(newPassword -> {
+                            AccountBO update = existing
+                                    .withHashedPassword(newPassword)
+                                    .withPasswordUpdatedAt(Instant.now());
 
-                    return doUpdate(existing, update, domain)
-                            .thenApply(result -> {
-                                storePasswordUpdateRecord(existing);
+                            return doUpdate(existing, update, domain)
+                                    .map(result -> {
+                                        storePasswordUpdateRecord(existing);
 
-                                LOG.info("Password updated. accountId={}, domain={}", id, existing.getDomain());
+                                        LOG.info("Password updated. accountId={}, domain={}", id, existing.getDomain());
 
-                                return result;
-                            });
-                });
+                                        return result;
+                                    });
+                        }));
     }
 
     @Override
-    public CompletableFuture<AccountBO> addIdentifiers(final long id, final List<UserIdentifierBO> identifiers,
+    public Uni<AccountBO> addIdentifiers(final long id, final List<UserIdentifierBO> identifiers,
                                                        final String domain) {
         return accountsService.getByIdUnsafe(id, domain)
-                .thenCompose(existing -> {
+                .flatMap(existing -> {
                     LOG.info("Add identifiers request. accountId={}, domain={}", id, existing.getDomain());
 
                     final Set<String> existingIdentifiers = existing.getIdentifiers().stream()
@@ -122,9 +123,9 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     }
 
     @Override
-    public CompletableFuture<AccountBO> removeIdentifiers(final long id, final List<String> identifiers, final String domain) {
+    public Uni<AccountBO> removeIdentifiers(final long id, final List<String> identifiers, final String domain) {
         return accountsService.getByIdUnsafe(id, domain)
-                .thenCompose(existing -> {
+                .flatMap(existing -> {
                     LOG.info("Remove identifiers request. accountId={}, domain={}", id, existing.getDomain());
 
                     final List<UserIdentifierBO> updatedIdentifiers = existing.getIdentifiers().stream()
@@ -142,7 +143,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                             .build();
 
                     return doUpdate(existing, updated, domain)
-                            .thenApply(result -> {
+                            .map(result -> {
                                 updatedIdentifiers.forEach(oldIdentifier ->
                                         storeIdentifierUpdateRecord(existing, oldIdentifier, CredentialsAudit.Action.DEACTIVATED));
 
@@ -152,10 +153,10 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     }
 
     @Override
-    public CompletableFuture<AccountBO> replaceIdentifier(final long id, final String oldIdentifier,
+    public Uni<AccountBO> replaceIdentifier(final long id, final String oldIdentifier,
                                                           final UserIdentifierBO newIdentifier, final String domain) {
         return accountsService.getByIdUnsafe(id, domain)
-                .thenCompose(existing -> {
+                .flatMap(existing -> {
                     LOG.info("Replace identifiers request. accountId={}, domain={}", id, existing.getDomain());
 
                     final Optional<UserIdentifierBO> matchedIdentifier = existing.getIdentifiers()
@@ -186,7 +187,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                     final AccountBO update = existing.withIdentifiers(newIdentifiers);
 
                     return doUpdate(existing, update, domain)
-                            .thenApply(result -> {
+                            .map(result -> {
                                 storeIdentifierUpdateRecord(existing, matchedIdentifier.get(), CredentialsAudit.Action.UPDATED);
 
                                 return result;
@@ -195,11 +196,11 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     }
 
     @Override
-    public CompletableFuture<PasswordResetTokenBO> generateResetToken(final String identifier, final boolean returnToken,
+    public Uni<PasswordResetTokenBO> generateResetToken(final String identifier, final boolean returnToken,
                                                                       final String domain) {
         return accountsService.getByIdentifier(identifier, domain)
-                .thenCompose(AsyncUtils::fromAccountOptional)
-                .thenCompose(account -> {
+                .flatMap(AsyncUtils::uniFromAccountOptional)
+                .flatMap(account -> {
                     LOG.info("Generate password reset token request. accountId={}, domain={}", account.getId(), account.getDomain());
 
                     final Instant now = Instant.now();
@@ -214,8 +215,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                             .build();
 
                     return accountTokensRepository.save(accountToken)
-                            .subscribeAsCompletionStage()
-                            .thenApply(persistedToken -> {
+                            .map(persistedToken -> {
                                 LOG.info("Password reset token persisted. accountId={}, domain={}, tokenId={}, expiresAt={}",
                                         account.getId(), account.getDomain(), accountToken.getId(), accountToken.getExpiresAt());
 
@@ -232,9 +232,9 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     }
 
     @Override
-    public CompletableFuture<AccountBO> resetPasswordByToken(final String token, final String plainPassword, final String domain) {
+    public Uni<AccountBO> resetPasswordByToken(final String token, final String plainPassword, final String domain) {
         return accountTokensRepository.getByToken(token)
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     AccountTokenDO accountToken = opt.orElseThrow(() -> new ServiceNotFoundException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
                                     "AccountDO token " + token + " does not exist"));
 
@@ -249,40 +249,48 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     }
 
     @Override
-    public CompletableFuture<AccountBO> replacePassword(final String identifier,
+    public Uni<AccountBO> replacePassword(final String identifier,
                                                         final String oldPassword,
                                                         final String newPassword, final String domain) {
         return accountsService.getByIdentifierUnsafe(identifier, domain)
-                .thenCompose(AsyncUtils::fromAccountOptional)
-                .thenCompose(credentials -> {
+                .flatMap(AsyncUtils::uniFromAccountOptional)
+                .flatMap(credentials -> {
                     LOG.info("Password replace request. accountId={}, domain={}", credentials.getId(), domain);
 
-                    if (!securePassword.verify(oldPassword, credentials.getHashedPassword())) {
-                        LOG.info("Password mismatch in replace request. accountId={}, domain={}", credentials.getId(), domain);
+                    return securePassword.verify(oldPassword, credentials.getHashedPassword())
+                            .map(success -> {
+                                if (success) {
+                                    return credentials;
+                                }
 
-                        throw new ServiceException(ErrorCode.PASSWORDS_DO_NOT_MATCH, "Passwords do not match");
-                    }
+                                LOG.info("Password mismatch in replace request. accountId={}, domain={}", credentials.getId(), domain);
 
-                    final HashedPasswordBO newHashedPassword = credentialsManager.verifyAndHashPassword(newPassword);
-                    final AccountBO update = credentials
-                            .withHashedPassword(newHashedPassword)
-                            .withPasswordUpdatedAt(Instant.now());
+                                throw new ServiceException(ErrorCode.PASSWORDS_DO_NOT_MATCH, "Passwords do not match");
+                            });
+                })
+                .flatMap(credentials -> {
+                    return credentialsManager.verifyAndHashPassword(newPassword)
+                            .flatMap(newHashedPassword -> {
+                                AccountBO update = credentials
+                                        .withHashedPassword(newHashedPassword)
+                                        .withPasswordUpdatedAt(Instant.now());
 
-                    return doUpdate(credentials, update, domain)
-                            .thenApply(result -> {
-                                storePasswordUpdateRecord(credentials);
+                                return doUpdate(credentials, update, domain)
+                                        .map(result -> {
+                                            storePasswordUpdateRecord(credentials);
 
-                                return result;
+                                            return result;
+                                        });
                             });
                 });
     }
 
-    private CompletableFuture<AccountBO> doUpdate(final AccountBO existing, final AccountBO updated, final String domain) {
+    private Uni<AccountBO> doUpdate(final AccountBO existing, final AccountBO updated, final String domain) {
         LOG.info("Account credentials update. accountId={}, domain={}", existing.getId(), existing.getDomain());
         storeAuditAttempt(existing);
 
         return accountsService.update(updated, domain)
-                .thenApply(persisted -> persisted.map(c -> {
+                .map(persisted -> persisted.map(c -> {
                             messageBus.publish(CREDENTIALS_CHANNEL, Messages.updated(c, domain));
 
                             return c;

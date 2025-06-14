@@ -2,7 +2,7 @@ package com.nexblocks.authguard.basic.passwords;
 
 import com.nexblocks.authguard.basic.config.Pbkdf2Config;
 import com.nexblocks.authguard.service.exceptions.ConfigurationException;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import io.smallrye.mutiny.Uni;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
@@ -39,17 +39,19 @@ public class Pbkdf2Password extends AbstractSecurePassword {
     }
 
     @Override
-    protected byte[] hashWithSalt(String plain, byte[] saltBytes) {
+    protected Uni<byte[]> hashWithSalt(String plain, byte[] saltBytes) {
         KeySpec spec = new PBEKeySpec(plain.toCharArray(), saltBytes,
                 iterations, derivedKeySize);
 
-        try {
-            return getSecretKeyFactory().generateSecret(spec).getEncoded();
-        } catch (InvalidKeySpecException e) {
-            throw new RuntimeException("Credential could not be encoded", e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return Uni.createFrom().item(() -> {
+            try {
+                return getSecretKeyFactory().generateSecret(spec).getEncoded();
+            } catch (InvalidKeySpecException e) {
+                throw new RuntimeException("Credential could not be encoded", e);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private SecretKeyFactory getSecretKeyFactory() {

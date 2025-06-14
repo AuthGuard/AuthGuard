@@ -43,15 +43,9 @@ public class EventsHandler implements VertxApiHandler {
                 : eventsService.getByDomain(domain, instantCursor);
 
         eventsFuture
-                .thenApply(events -> events.stream().map(restMapper::toDTO).collect(Collectors.toList()))
-                .thenApply(this::collectionResponse)
-                .whenComplete((res, ex) -> {
-                    if (ex != null) {
-                        context.fail(ex);
-                    } else {
-                        context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                    }
-                });
+                .map(events -> events.stream().map(restMapper::toDTO).collect(Collectors.toList()))
+                .map(this::collectionResponse)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private CollectionResponseDTO<EventDTO> collectionResponse(List<EventDTO> list) {

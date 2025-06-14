@@ -39,7 +39,9 @@ public class EventsRecorder implements MessageSubscriber {
             populateEntity(message, event);
         }
 
-        eventsService.create(event.build()).join();
+        eventsService.create(event.build())
+                .subscribe()
+                .with(ignored -> {});
     }
 
     private void populateEntity(final Message message, final EventBO.Builder event) {

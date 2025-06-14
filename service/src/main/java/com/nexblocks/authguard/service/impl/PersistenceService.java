@@ -10,7 +10,7 @@ import com.nexblocks.authguard.service.util.ID;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 import java.util.function.Function;
 
 public class PersistenceService<BO extends Entity, DO extends AbstractDO, R extends Repository<DO>> {
@@ -32,7 +32,7 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
         this.channel = channel;
     }
 
-    public CompletableFuture<BO> create(final BO entity) {
+    public Uni<BO> create(final BO entity) {
         final Instant now = Instant.now();
         final DO mappedDo = boToDo.apply(entity);
 
@@ -41,8 +41,8 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
         mappedDo.setCreatedAt(now);
         mappedDo.setLastModified(now);
 
-        return repository.save(mappedDo).subscribe().asCompletionStage()
-                .thenApply(persisted -> {
+        return repository.save(mappedDo)
+                .map(persisted -> {
                     final BO persistedBo = doToBo.apply(persisted);
 
                     if (channel != null) {
@@ -53,25 +53,25 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
                 });
     }
 
-    public CompletableFuture<Optional<BO>> getById(final long id) {
-        return repository.getById(id).subscribe().asCompletionStage()
-                .thenApply(opt -> opt.map(doToBo));
+    public Uni<Optional<BO>> getById(final long id) {
+        return repository.getById(id)
+                .map(opt -> opt.map(doToBo));
     }
 
-    public CompletableFuture<Optional<BO>> getById(final long id, final String domain) {
-        return repository.getById(id).subscribe().asCompletionStage()
-                .thenApply(opt -> opt.map(doToBo)
+    public Uni<Optional<BO>> getById(final long id, final String domain) {
+        return repository.getById(id)
+                .map(opt -> opt.map(doToBo)
                         .filter(bo -> Objects.equals(bo.getDomain(), domain)));
     }
 
-    public CompletableFuture<Optional<BO>> update(final BO entity) {
+    public Uni<Optional<BO>> update(final BO entity) {
         final Instant now = Instant.now();
         final DO mappedDo = boToDo.apply(entity);
 
         mappedDo.setLastModified(now);
 
-        return repository.update(mappedDo).subscribe().asCompletionStage()
-                .thenApply(opt -> {
+        return repository.update(mappedDo)
+                .map(opt -> {
                     final Optional<BO> boOpt = opt.map(doToBo);
 
                     if (channel != null) {
@@ -82,9 +82,9 @@ public class PersistenceService<BO extends Entity, DO extends AbstractDO, R exte
                 });
     }
 
-    public CompletableFuture<Optional<BO>> delete(final long id) {
-        return repository.delete(id).subscribe().asCompletionStage()
-                .thenApply(opt -> {
+    public Uni<Optional<BO>> delete(final long id) {
+        return repository.delete(id)
+                .map(opt -> {
                     final Optional<BO> boOpt = opt.map(doToBo);
 
                     if (channel != null) {

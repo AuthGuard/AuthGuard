@@ -15,7 +15,7 @@ import com.nexblocks.authguard.service.random.CryptographicRandom;
 import com.nexblocks.authguard.service.util.ID;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public class SessionsServiceImpl implements SessionsService {
     private final String CHANNEL = "sessions";
@@ -47,36 +47,34 @@ public class SessionsServiceImpl implements SessionsService {
     }
 
     @Override
-    public CompletableFuture<SessionBO> create(final SessionBO session) {
+    public Uni<SessionBO> create(final SessionBO session) {
         final SessionDO sessionDO = serviceMapper.toDO(session);
 
         sessionDO.setId(ID.generate());
         sessionDO.setSessionToken(cryptographicRandom.base64Url(config.getRandomSize()));
 
         return sessionsRepository.save(sessionDO)
-                .subscribeAsCompletionStage()
-                .thenApply(created -> {
+                .map(created -> {
                     emb.publish(CHANNEL, Messages.created(created, null));
                     return serviceMapper.toBO(created);
                 });
     }
 
     @Override
-    public CompletableFuture<Optional<SessionBO>> getById(final long id) {
+    public Uni<Optional<SessionBO>> getById(final long id) {
         return sessionsRepository.getById(id)
-                .subscribeAsCompletionStage()
-                .thenApply(opt -> opt.map(serviceMapper::toBO));
+                .map(opt -> opt.map(serviceMapper::toBO));
     }
 
     @Override
-    public CompletableFuture<Optional<SessionBO>> getByToken(final String token) {
+    public Uni<Optional<SessionBO>> getByToken(final String token) {
         return sessionsRepository.getByToken(token)
-                .thenApply(opt -> opt.map(serviceMapper::toBO));
+                .map(opt -> opt.map(serviceMapper::toBO));
     }
 
     @Override
-    public CompletableFuture<Optional<SessionBO>> deleteByToken(final String token) {
+    public Uni<Optional<SessionBO>> deleteByToken(final String token) {
         return sessionsRepository.deleteByToken(token)
-                .thenApply(opt -> opt.map(serviceMapper::toBO));
+                .map(opt -> opt.map(serviceMapper::toBO));
     }
 }

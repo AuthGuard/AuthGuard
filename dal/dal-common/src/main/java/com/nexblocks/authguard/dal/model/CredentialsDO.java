@@ -32,6 +32,7 @@ import java.util.Set;
                 "JOIN credentials.identifiers identifier " +
                 "WHERE identifier.identifier = :identifier AND identifier.domain = :domain AND credentials.deleted = false"
 )
+@Deprecated
 public class CredentialsDO extends AbstractDO {
     private long accountId;
 

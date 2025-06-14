@@ -11,11 +11,11 @@ import com.nexblocks.authguard.service.model.AuthRequest;
 import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.EntityType;
 import com.nexblocks.authguard.service.util.AsyncUtils;
+import io.smallrye.mutiny.Uni;
 import io.vavr.control.Either;
 import io.vavr.control.Try;
 
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
 
 public class AuthorizationCodeVerifier implements AuthVerifier {
     private final AccountTokensRepository accountTokensRepository;
@@ -26,35 +26,35 @@ public class AuthorizationCodeVerifier implements AuthVerifier {
     }
 
     @Override
-    public Long verifyAccountToken(final String token) {
-        return verifyAndGetAccountToken(AuthRequestBO.builder().token(token).build())
-                .map(AccountTokenDO::getAssociatedAccountId)
-                .getOrElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid authorization code"));
+    public Uni<Long> verifyAccountToken(final String token) {
+        return verifyAndGetAccountTokenAsync(AuthRequestBO.builder().token(token).build())
+                .map(AccountTokenDO::getAssociatedAccountId);
     }
 
     @Override
     public Either<Exception, AccountTokenDO> verifyAndGetAccountToken(final AuthRequest request) {
         return accountTokensRepository.getByToken(request.getToken())
+                .subscribeAsCompletionStage()
                 .join()
                 .map(this::verifyToken)
                 .orElseGet(() -> Either.left(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid authorization code")));
     }
 
     @Override
-    public CompletableFuture<Long> verifyAccountTokenAsync(final AuthRequest request) {
+    public Uni<Long> verifyAccountTokenAsync(final AuthRequest request) {
         return verifyAndGetAccountTokenAsync(request)
-                .thenApply(AccountTokenDO::getAssociatedAccountId);
+                .map(AccountTokenDO::getAssociatedAccountId);
     }
 
     @Override
-    public CompletableFuture<AccountTokenDO> verifyAndGetAccountTokenAsync(final AuthRequest request) {
+    public Uni<AccountTokenDO> verifyAndGetAccountTokenAsync(final AuthRequest request) {
         return accountTokensRepository.getByToken(request.getToken())
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isPresent()) {
-                        return AsyncUtils.fromTry(tryVerifyToken(opt.get()));
+                        return AsyncUtils.uniFromTry(tryVerifyToken(opt.get()));
                     }
 
-                    return CompletableFuture.failedFuture(new ServiceException(ErrorCode.INVALID_TOKEN, "Invalid expired or invalid"));
+                    return Uni.createFrom().failure(new ServiceException(ErrorCode.INVALID_TOKEN, "Invalid expired or invalid"));
                 });
     }
 

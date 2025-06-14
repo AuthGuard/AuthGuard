@@ -5,13 +5,13 @@ import com.nexblocks.authguard.service.model.Session;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface TrackingSessionsService {
-    CompletableFuture<Optional<Session>> getByToken(String token);
-    CompletableFuture<Boolean> isSessionActive(String token, String domain);
-    CompletableFuture<List<Session>> getByAccountId(long accountId, String domain);
-    CompletableFuture<Session> startSession(Account account);
-    CompletableFuture<Session> startAnonymous(String domain);
-    CompletableFuture<Optional<Session>> terminateSession(String sessionToken, String domain);
+    Uni<Optional<Session>> getByToken(String token);
+    Uni<Boolean> isSessionActive(String token, String domain);
+    Uni<List<Session>> getByAccountId(long accountId, String domain);
+    Uni<Session> startSession(Account account);
+    Uni<Session> startAnonymous(String domain);
+    Uni<Optional<Session>> terminateSession(String sessionToken, String domain);
 }

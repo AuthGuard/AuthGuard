@@ -10,6 +10,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.AsyncUtils;
+import io.smallrye.mutiny.Uni;
 import io.vavr.control.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 public class BasicAuthProvider {
     public static final String RESERVED_DOMAIN = "global";
@@ -41,13 +41,13 @@ public class BasicAuthProvider {
         LOG.debug("Initialized with password implementation {}", this.securePassword.getClass());
     }
 
-    public CompletableFuture<AccountSession> authenticateAndGetAccountSession(final AuthRequestBO authRequest) {
+    public Uni<AccountSession> authenticateAndGetAccountSession(final AuthRequestBO authRequest) {
         return verifyCredentialsAndGetAccount(authRequest.getIdentifier(), authRequest.getPassword(),
                 authRequest.getDomain())
-                .thenCompose(this::createTrackingSession);
+                .flatMap(this::createTrackingSession);
     }
 
-    public CompletableFuture<AccountBO> authenticateAndGetAccount(final AuthRequestBO authRequest) {
+    public Uni<AccountBO> authenticateAndGetAccount(final AuthRequestBO authRequest) {
         return verifyCredentialsAndGetAccount(authRequest.getIdentifier(), authRequest.getPassword(),
                 authRequest.getDomain());
     }
@@ -58,28 +58,28 @@ public class BasicAuthProvider {
      * 'Authorization' headers made to AuthGuard. For any other scenario, use
      * authenticateAndGetAccount(AuthRequest);
      */
-    public CompletableFuture<AccountBO> authenticateAndGetAccount(final String basicToken) {
+    public Uni<AccountBO> authenticateAndGetAccount(final String basicToken) {
         return handleBasicAuthentication(basicToken);
     }
 
-    public CompletableFuture<AccountBO> getAccount(final AuthRequestBO request) {
+    public Uni<AccountBO> getAccount(final AuthRequestBO request) {
         return verifyCredentialsAndGetAccount(request.getIdentifier(), request.getDomain());
     }
 
-    public CompletableFuture<AccountSession> getAccountSessionAsync(final AuthRequestBO request) {
+    public Uni<AccountSession> getAccountSessionAsync(final AuthRequestBO request) {
         return verifyCredentialsAndGetAccount(request.getIdentifier(), request.getDomain())
-                .thenCompose(this::createTrackingSession);
+                .flatMap(this::createTrackingSession);
     }
 
-    private CompletableFuture<AccountSession> createTrackingSession(AccountBO account) {
+    private Uni<AccountSession> createTrackingSession(AccountBO account) {
         return trackingSessionsService.startSession(account)
-                .thenApply(session -> AccountSessionBO.builder()
+                .map(session -> AccountSessionBO.builder()
                         .account(account)
                         .session(session)
                         .build());
     }
 
-    private CompletableFuture<AccountBO> handleBasicAuthentication(final String base64Credentials) {
+    private Uni<AccountBO> handleBasicAuthentication(final String base64Credentials) {
         final String[] decoded = new String(Base64.getDecoder().decode(base64Credentials)).split(":");
 
         if (decoded.length != 2) {
@@ -92,30 +92,30 @@ public class BasicAuthProvider {
         return verifyCredentialsAndGetAccount(username, password, RESERVED_DOMAIN);
     }
 
-    private CompletableFuture<AccountBO> verifyCredentialsAndGetAccount(final String username, final String password, final String domain) {
+    private Uni<AccountBO> verifyCredentialsAndGetAccount(final String username, final String password, final String domain) {
         return accountsService.getByIdentifierUnsafe(username, domain)
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isEmpty()) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
+                        return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
                                 "Identifier does not exist"));
                     }
 
-                    return AsyncUtils.fromTry(tryVerifyCredentials(opt.get(), username, password));
+                    return tryVerifyCredentials(opt.get(), username, password);
                 });
     }
 
-    private Try<AccountBO> tryVerifyCredentials(final AccountBO account, final String identifier, final String password) {
+    private Uni<AccountBO> tryVerifyCredentials(final AccountBO account, final String identifier, final String password) {
         if (!account.isActive()) {
-            return Try.failure(new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Inactive account"));
+            return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.ACCOUNT_INACTIVE, "Inactive account"));
         }
 
         final Optional<Exception> validationError = checkIdentifier(account, identifier);
 
         if (validationError.isPresent()) {
-            return Try.failure(validationError.get());
+            return Uni.createFrom().failure(validationError.get());
         }
 
-        return checkIfExpired(account)
+        return AsyncUtils.uniFromTry(checkIfExpired(account))
                 .flatMap(valid -> checkPasswordsMatch(valid, password));
     }
 
@@ -144,20 +144,23 @@ public class BasicAuthProvider {
         return Try.success(credentials);
     }
 
-    private Try<AccountBO> checkPasswordsMatch(final AccountBO credentials, final String password) {
+    private Uni<AccountBO> checkPasswordsMatch(final AccountBO credentials, final String password) {
         final SecurePassword securePasswordImplementation = getPasswordImplementation(credentials);
 
         if (securePasswordImplementation == null) {
-            return Try.failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
+            return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
                     "Unable to map password version", EntityType.ACCOUNT, credentials.getId()));
         }
 
-        if (securePasswordImplementation.verify(password, credentials.getHashedPassword())) {
-            return Try.success(credentials);
-        } else {
-            return Try.failure(new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH,
-                    "Passwords do not match", EntityType.ACCOUNT, credentials.getId()));
-        }
+        return securePasswordImplementation.verify(password, credentials.getHashedPassword())
+                .map(success -> {
+                    if (success) {
+                        return credentials;
+                    }
+
+                    throw new ServiceAuthorizationException(ErrorCode.PASSWORDS_DO_NOT_MATCH,
+                            "Passwords do not match", EntityType.ACCOUNT, credentials.getId());
+                });
     }
 
     private SecurePassword getPasswordImplementation(final AccountBO credentials) {
@@ -169,21 +172,21 @@ public class BasicAuthProvider {
         return securePasswordProvider.getPreviousVersions().get(credentials.getPasswordVersion());
     }
 
-    private CompletableFuture<AccountBO> verifyCredentialsAndGetAccount(final String username, final String domain) {
+    private Uni<AccountBO> verifyCredentialsAndGetAccount(final String username, final String domain) {
         return accountsService.getByIdentifierUnsafe(username, domain)
-                .thenCompose(credentials -> {
+                .flatMap(credentials -> {
                     if (credentials.isEmpty()) {
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
+                        return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.CREDENTIALS_DOES_NOT_EXIST,
                                 "Identifier does not exist"));
                     }
 
                     Optional<Exception> validationError = checkIdentifier(credentials.get(), username);
 
                     if (validationError.isPresent()) {
-                        return CompletableFuture.failedFuture(validationError.get());
+                        return Uni.createFrom().failure(validationError.get());
                     }
 
-                    return CompletableFuture.completedFuture(credentials.get());
+                    return Uni.createFrom().item(credentials.get());
                 });
     }
 

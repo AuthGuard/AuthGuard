@@ -5,11 +5,11 @@ import com.nexblocks.authguard.dal.repository.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface ClientsRepository extends Repository<ClientDO> {
-    CompletableFuture<Optional<ClientDO>> getByExternalId(String externalId);
-    CompletableFuture<List<ClientDO>> getAllForAccount(long accountId, Page<Long> page);
-    CompletableFuture<List<ClientDO>> getByType(String type, Page<Long> page);
-    CompletableFuture<List<ClientDO>> getByDomain(String domain, Page<Long> page);
+    Uni<Optional<ClientDO>> getByExternalId(String externalId);
+    Uni<List<ClientDO>> getAllForAccount(long accountId, Page<Long> page);
+    Uni<List<ClientDO>> getByType(String type, Page<Long> page);
+    Uni<List<ClientDO>> getByDomain(String domain, Page<Long> page);
 }

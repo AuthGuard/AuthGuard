@@ -14,13 +14,14 @@ import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.model.*;
+import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @TokenExchange(from = "refresh", to = "accessToken")
 public class RefreshToAccessToken implements Exchange {
@@ -55,29 +56,28 @@ public class RefreshToAccessToken implements Exchange {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+    public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
         return accountTokensRepository.getByToken(request.getToken())
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isPresent()) {
                         return this.generateAndClear(opt.get(), request);
                     }
 
-                    return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN,
+                    return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN,
                             "Invalid token"));
                 });
     }
 
-    private CompletableFuture<AuthResponseBO> generateAndClear(final AccountTokenDO accountToken,
+    private Uni<AuthResponseBO> generateAndClear(final AccountTokenDO accountToken,
                                                                final AuthRequest request) {
         return generate(accountToken, request)
-                .whenComplete((result, e) -> {
-                    if (e == null) {
-                        deleteRefreshToken(accountToken);
-                    }
+                .map(response -> {
+                    deleteRefreshToken(accountToken);
+                    return response;
                 });
     }
 
-    private CompletableFuture<AuthResponseBO> generate(final AccountTokenDO accountToken,
+    private Uni<AuthResponseBO> generate(final AccountTokenDO accountToken,
                                                        final AuthRequest authRequest) {
         if (!validateExpirationDateTime(accountToken)) {
             ServiceAuthorizationException error =
@@ -86,7 +86,7 @@ public class RefreshToAccessToken implements Exchange {
 
             deleteRefreshToken(accountToken);
 
-            return CompletableFuture.failedFuture(error);
+            return Uni.createFrom().failure(error);
         }
 
         Optional<String> invalidTokenValues = getInvalidTokenValues(accountToken, authRequest);
@@ -96,13 +96,13 @@ public class RefreshToAccessToken implements Exchange {
                     new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, invalidTokenValues.get(),
                             EntityType.ACCOUNT, accountToken.getAssociatedAccountId());
 
-            return CompletableFuture.failedFuture(error);
+            return Uni.createFrom().failure(error);
         }
 
         return generateNewTokens(accountToken);
     }
 
-    private CompletableFuture<AuthResponseBO> generateNewTokens(final AccountTokenDO accountToken) {
+    private Uni<AuthResponseBO> generateNewTokens(final AccountTokenDO accountToken) {
         long accountId = accountToken.getAssociatedAccountId();
         TokenRestrictionsBO tokenRestrictions = serviceMapper.toBO(accountToken.getTokenRestrictions());
 
@@ -117,20 +117,20 @@ public class RefreshToAccessToken implements Exchange {
                 .build();
 
         return getAccount(accountId, accountToken)
-                .thenCompose(account -> accessTokenProvider.generateToken(account, tokenRestrictions, options));
+                .flatMap(account -> accessTokenProvider.generateToken(account, tokenRestrictions, options));
     }
 
-    private CompletableFuture<AccountBO> getAccount(final long accountId, final AccountTokenDO accountToken) {
+    private Uni<AccountBO> getAccount(final long accountId, final AccountTokenDO accountToken) {
         return accountsService.getByIdUnchecked(accountId)
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isEmpty()) {
                         deleteRefreshToken(accountToken);
 
-                        return CompletableFuture.failedFuture(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
+                        return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                                 "Could not find account " + accountId));
                     }
 
-                    return CompletableFuture.completedFuture(opt.get());
+                    return Uni.createFrom().item(opt.get());
                 });
     }
 
@@ -183,14 +183,12 @@ public class RefreshToAccessToken implements Exchange {
                 accountToken.getId(), accountToken.getAssociatedAccountId());
 
         accountTokensRepository.deleteToken(accountToken.getToken())
-                .whenComplete((deletedToken, e) -> {
-                    if (e == null) {
-                        LOG.info("Deleted refresh token. tokenId={}, accountId={}",
-                                accountToken.getId(), accountToken.getAssociatedAccountId());
-                    } else {
-                        LOG.error("Failed to delete refresh token. tokenId={}, accountId={}",
-                                accountToken.getId(), accountToken.getAssociatedAccountId(), e);
-                    }
+                .onFailure()
+                .invoke(e -> LOG.error("Failed to delete refresh token. tokenId={}, accountId={}",
+                        accountToken.getId(), accountToken.getAssociatedAccountId(), e))
+                .subscribe().with(deletedToken -> {
+                    LOG.info("Deleted refresh token. tokenId={}, accountId={}",
+                            accountToken.getId(), accountToken.getAssociatedAccountId());
                 });
     }
 }

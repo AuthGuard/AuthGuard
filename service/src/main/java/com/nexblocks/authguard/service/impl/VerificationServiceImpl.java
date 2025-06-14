@@ -48,7 +48,7 @@ public class VerificationServiceImpl implements VerificationService {
     @Override
     public void verifyEmail(final String verificationToken, String domain) {
         final AccountTokenDO accountToken = accountTokensRepository.getByToken(verificationToken)
-                .join()
+                .subscribeAsCompletionStage().join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.TOKEN_EXPIRED_OR_DOES_NOT_EXIST,
                         "AccountDO token " + verificationToken + " does not exist"));
 
@@ -66,7 +66,8 @@ public class VerificationServiceImpl implements VerificationService {
                 .map(additional -> additional.get(TARGET_EMAIL_PROPERTY))
                 .orElseThrow(() -> new ServiceException(ErrorCode.INVALID_TOKEN, "Invalid account token: no valid additional information"));
 
-        AccountBO account = accountsService.getById(accountToken.getAssociatedAccountId(), domain).join()
+        AccountBO account = accountsService.getById(accountToken.getAssociatedAccountId(), domain)
+                .subscribeAsCompletionStage().join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                         "Account " + accountToken.getAssociatedAccountId() + " does not exist"));
 
@@ -90,7 +91,7 @@ public class VerificationServiceImpl implements VerificationService {
 
     @Override
     public AuthResponseBO sendPhoneNumberVerification(final long accountId, String domain) {
-        AccountBO account = accountsService.getById(accountId, domain).join()
+        AccountBO account = accountsService.getById(accountId, domain).subscribeAsCompletionStage().join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                         "Account " + accountId + " does not exist"));
 
@@ -99,7 +100,7 @@ public class VerificationServiceImpl implements VerificationService {
 
     @Override
     public AuthResponseBO sendPhoneNumberVerificationByIdentifier(final String identifier, final String domain) {
-        AccountBO account = accountsService.getByIdentifier(identifier, domain).join()
+        AccountBO account = accountsService.getByIdentifier(identifier, domain).subscribeAsCompletionStage().join()
                 .orElseThrow(() -> new ServiceNotFoundException(ErrorCode.ACCOUNT_DOES_NOT_EXIST,
                         "No account with that identifier exists"));
 
@@ -112,9 +113,9 @@ public class VerificationServiceImpl implements VerificationService {
         AuthRequest request = AuthRequestBO.builder()
                 .token(token)
                 .build();
-        Long accountId = otpVerifier.verifyAccountTokenAsync(request).join();
+        Long accountId = otpVerifier.verifyAccountTokenAsync(request).subscribeAsCompletionStage().join();
 
-        Optional<AccountBO> account = accountsService.getById(accountId, domain).join();
+        Optional<AccountBO> account = accountsService.getById(accountId, domain).subscribeAsCompletionStage().join();
 
         if (account.isEmpty()) {
             LOG.info("Phone number verification request for deleted account. passwordId={}, accountId={}", passwordId, accountId);
@@ -146,7 +147,7 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     private AuthResponseBO sendVerificationSms(final AccountBO account) {
-        AuthResponseBO otp = otpProvider.generateToken(account).join();
+        AuthResponseBO otp = otpProvider.generateToken(account).subscribeAsCompletionStage().join();
         ImmutableTextMessage message = ImmutableTextMessage.builder()
                 .template(SMS_TEMPLATE)
                 .to(account.getPhoneNumber().getNumber())

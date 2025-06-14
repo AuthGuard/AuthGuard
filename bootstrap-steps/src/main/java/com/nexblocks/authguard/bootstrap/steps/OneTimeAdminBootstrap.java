@@ -65,7 +65,7 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
     }
 
     private Uni<AccountBO> createOneTimeAdmin() {
-        return Uni.createFrom().completionStage(rolesService.getRoleByName(OTA_ROLE, RESERVED_DOMAIN))
+        return rolesService.getRoleByName(OTA_ROLE, RESERVED_DOMAIN)
                 .flatMap(opt -> {
                     if (opt.isEmpty()) {
                         log.info("Default role {} wasn't found and will be created", OTA_ROLE);
@@ -80,7 +80,7 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
                             .idempotentKey(UUID.randomUUID().toString())
                             .build();
 
-                    return Uni.createFrom().completionStage(accountsService.create(oneTimeAccount(), requestContext));
+                    return accountsService.create(oneTimeAccount(), requestContext);
                 });
     }
 
@@ -123,7 +123,7 @@ public class OneTimeAdminBootstrap implements BootstrapStep {
                 .forAccounts(true)
                 .build();
 
-        return Uni.createFrom().completionStage(rolesService.create(role));
+        return rolesService.create(role);
     }
 
 }

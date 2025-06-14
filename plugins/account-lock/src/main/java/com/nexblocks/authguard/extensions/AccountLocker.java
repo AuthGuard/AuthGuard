@@ -65,7 +65,8 @@ public class AccountLocker implements MessageSubscriber {
             final Instant from = now.minus(Duration.ofMinutes(config.getCheckPeriod()));
 
             exchangeAttemptsRepository.findByEntityAndTimestamp(authMessage.getEntityId(), from)
-                    .thenAccept(attempts -> {
+                    .subscribe()
+                    .with(attempts -> {
                         final long failedCount = attempts.stream()
                                 .filter(attempt -> !attempt.isSuccessful())
                                 .count();

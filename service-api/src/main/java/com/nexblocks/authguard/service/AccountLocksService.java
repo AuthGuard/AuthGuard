@@ -4,12 +4,12 @@ import com.nexblocks.authguard.service.model.AccountLockBO;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 public interface AccountLocksService {
-    CompletableFuture<AccountLockBO> create(AccountLockBO accountLock);
+    Uni<AccountLockBO> create(AccountLockBO accountLock);
 
-    CompletableFuture<Collection<AccountLockBO>> getActiveLocksByAccountId(long accountId);
+    Uni<Collection<AccountLockBO>> getActiveLocksByAccountId(long accountId);
 
-    CompletableFuture<Optional<AccountLockBO>> delete(long lockId);
+    Uni<Optional<AccountLockBO>> delete(long lockId);
 }

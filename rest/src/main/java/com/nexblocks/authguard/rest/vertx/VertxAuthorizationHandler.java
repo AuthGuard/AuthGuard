@@ -50,20 +50,19 @@ public class VertxAuthorizationHandler {
     private void populateBasicActor(final RoutingContext ctx, final String base64Credentials) {
         try {
             basicAuth.authenticateAndGetAccount(base64Credentials)
-                    .thenAccept(account -> {
+                    .subscribe().with(account -> {
                         if (!isActorAllowedInDomain(ctx, account)) {
                             respondForbidden(ctx);
+                            return;
                         }
 
                         ctx.put("actor", account);
                         LOG.info("Authenticated account {} with basic credentials", account.getId());
 
                         ctx.next();
-                    })
-                    .exceptionally(e -> {
+                    }, e -> {
                         LOG.info("Failed to authenticate with basic credentials", e);
                         respondUnauthorized(ctx, "Failed to authenticate with basic scheme");
-                        return null;
                     });
         } catch (Exception e) {
             LOG.info("Failed to authenticate with basic credentials", e);
@@ -74,20 +73,19 @@ public class VertxAuthorizationHandler {
     private void populateBearerActor(final RoutingContext ctx, final String token) {
         try {
             apiKeysService.validateClientApiKey(token, API_KEY_TYPE)
-                    .thenAccept(client -> {
+                    .subscribe().with(client -> {
                         if (!isActorAllowedInDomain(ctx, client)) {
                             respondForbidden(ctx);
+                            return;
                         }
 
                         ctx.put("actor", client);
                         LOG.info("Authenticated client {} with bearer token", client.getId());
 
                         ctx.next();
-                    })
-                    .exceptionally(e -> {
+                    }, e -> {
                         LOG.info("Failed to authenticate with basic credentials", e);
                         respondUnauthorized(ctx, "Failed to authenticate with basic scheme");
-                        return null;
                     });
         } catch (CompletionException e) {
             LOG.warn("Failed bearer token auth", e.getCause());

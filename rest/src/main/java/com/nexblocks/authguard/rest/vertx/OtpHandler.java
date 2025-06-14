@@ -40,11 +40,8 @@ public class OtpHandler implements VertxApiHandler {
             RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
             otpService.authenticate(IdParser.from(body.getPasswordId()), body.getPassword(), requestContext)
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                    });
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (Exception e) {
             context.fail(e);
         }

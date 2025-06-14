@@ -53,13 +53,8 @@ public class TotpHandler implements VertxApiHandler {
             TotpKeyRequestDTO request = requestBodyHandler.getValidated(context);
 
             totpKeysService.generate(request.getAccountId(), domain, request.getAuthenticator())
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().setStatusCode(201)
-                                .putHeader("Content-Type", "application/json")
-                                .end(Json.encode(res));
-                    });
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context, 201));
         } catch (Exception e) {
             context.fail(e);
         }
@@ -71,14 +66,10 @@ public class TotpHandler implements VertxApiHandler {
             String domain = context.pathParam("domain");
 
             totpKeysService.getByAccountId(accountId, domain)
-                    .thenApply(list -> CollectionResponseDTO.<TotpKeyDTO>builder()
+                    .map(list -> CollectionResponseDTO.<TotpKeyDTO>builder()
                             .items(list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
                             .build())
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json")
-                                .end(Json.encode(res));
-                    });
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (NumberFormatException e) {
             context.fail(new RequestValidationException(Collections.singletonList(new Violation("accountId", ViolationType.INVALID_VALUE))));
         }
@@ -90,14 +81,10 @@ public class TotpHandler implements VertxApiHandler {
             String domain = context.pathParam("domain");
 
             totpKeysService.delete(id, domain)
-                    .thenApply(list -> CollectionResponseDTO.<TotpKeyDTO>builder()
+                    .map(list -> CollectionResponseDTO.<TotpKeyDTO>builder()
                             .items(list.stream().map(restMapper::toDTO).collect(Collectors.toList()))
                             .build())
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json")
-                                .end(Json.encode(res));
-                    });
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         } catch (NumberFormatException e) {
             context.fail(new RequestValidationException(Collections.singletonList(new Violation("id", ViolationType.INVALID_VALUE))));
         }

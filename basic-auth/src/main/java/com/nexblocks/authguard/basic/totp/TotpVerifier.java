@@ -22,6 +22,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.AuthRequest;
 import com.nexblocks.authguard.service.util.AsyncUtils;
+import io.smallrye.mutiny.Uni;
 import io.vavr.control.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class TotpVerifier implements AuthVerifier {
@@ -65,32 +65,32 @@ public class TotpVerifier implements AuthVerifier {
     }
 
     @Override
-    public Long verifyAccountToken(final String token) {
+    public Uni<Long> verifyAccountToken(final String token) {
         throw new UnsupportedOperationException("Use verifyAndGetAccountTokenAsync instead");
     }
 
     @Override
-    public CompletableFuture<AccountTokenDO> verifyAndGetAccountTokenAsync(final AuthRequest request) {
+    public Uni<AccountTokenDO> verifyAndGetAccountTokenAsync(final AuthRequest request) {
         String token = request.getToken();
         String[] parts = token.split(":");
 
         if (parts.length != 2) {
-            return CompletableFuture.failedFuture(new ServiceException(ErrorCode.INVALID_TOKEN,
+            return Uni.createFrom().failure(new ServiceException(ErrorCode.INVALID_TOKEN,
                     "Token must follow the format linker:totp"));
         }
         String accountToken = parts[0];
         String totp = parts[1];
 
         return accountTokensRepository.getByToken(accountToken)
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isPresent()) {
-                        return AsyncUtils.fromTry(checkIfExpired(opt.get()));
+                        return AsyncUtils.uniFromTry(checkIfExpired(opt.get()));
                     }
 
-                    return CompletableFuture.failedFuture(new ServiceException(ErrorCode.INVALID_TOKEN,
+                    return Uni.createFrom().failure(new ServiceException(ErrorCode.INVALID_TOKEN,
                             "Invalid or expired token"));
                 })
-                .thenCompose(retrievedToken -> verifyTotp(retrievedToken, totp));
+                .flatMap(retrievedToken -> verifyTotp(retrievedToken, totp));
     }
 
     private Try<AccountTokenDO> checkIfExpired(final AccountTokenDO accountToken) {
@@ -102,15 +102,15 @@ public class TotpVerifier implements AuthVerifier {
         return Try.success(accountToken);
     }
 
-    private CompletableFuture<AccountTokenDO> verifyTotp(final AccountTokenDO accountToken,
+    private Uni<AccountTokenDO> verifyTotp(final AccountTokenDO accountToken,
                                                          final String totp) {
         long accountId = accountToken.getAssociatedAccountId();
         String domain = accountToken.getDomain();
 
         return totpKeysService.getByAccountIdDecrypted(accountId, domain)
-                .thenCompose(opt -> {
+                .flatMap(opt -> {
                     if (opt.isEmpty()) {
-                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.TOTO_NO_KEY,
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.TOTO_NO_KEY,
                                 "Account has no active TOTP keys"));
                     }
 
@@ -126,11 +126,11 @@ public class TotpVerifier implements AuthVerifier {
                     byte[] key = opt.get().getKey();
 
                     if (!verifyTotp(key, totp, totpService)) {
-                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.TOTP_INVALID,
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.TOTP_INVALID,
                                 "TOTP is incorrect"));
                     }
 
-                    return CompletableFuture.completedFuture(accountToken);
+                    return Uni.createFrom().item(accountToken);
                 });
     }
 

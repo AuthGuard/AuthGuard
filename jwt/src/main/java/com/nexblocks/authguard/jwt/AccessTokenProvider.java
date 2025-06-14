@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @ProvidesToken("accessToken")
 public class AccessTokenProvider implements AuthProvider {
@@ -84,7 +84,7 @@ public class AccessTokenProvider implements AuthProvider {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
+    public Uni<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
                                                            final TokenOptionsBO options) {
         if (!account.isActive()) {
             LOG.warn("Access token request for an inactive account. accountId={}, domain={}",
@@ -104,15 +104,15 @@ public class AccessTokenProvider implements AuthProvider {
         String refreshToken = jwtGenerator.generateRandomRefreshToken();
 
         return trackingSessionsService.isSessionActive(options.getTrackingSession(), account.getDomain())
-                .thenCompose(isActive -> {
+                .flatMap(isActive -> {
                     if (!isActive) {
-                        return CompletableFuture.failedFuture(new ServiceException(ErrorCode.SESSION_TERMINATED,
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.SESSION_TERMINATED,
                                 "Session is no longer active"));
                     }
 
                     return storeRefreshToken(account.getId(), refreshToken, restrictions, options);
                 })
-                .thenApply(persisted -> {
+                .map(persisted -> {
                     LOG.info("Generated refresh token. accountId={}, domain={}, tokenId={}, expiresAt={}",
                             account.getId(), account.getDomain(), persisted.getId(), persisted.getExpiresAt());
 
@@ -135,9 +135,9 @@ public class AccessTokenProvider implements AuthProvider {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> delete(final AuthRequestBO authRequest) {
+    public Uni<AuthResponseBO> delete(final AuthRequestBO authRequest) {
         return deleteRefreshToken(authRequest.getToken())
-                .thenApply(opt -> opt
+                .map(opt -> opt
                         .map(accountToken -> AuthResponseBO.builder()
                                 .type(TOKEN_TYPE)
                                 .entityId(accountToken.getAssociatedAccountId())
@@ -147,7 +147,7 @@ public class AccessTokenProvider implements AuthProvider {
                         .orElseThrow(() -> new ServiceAuthorizationException(ErrorCode.INVALID_TOKEN, "Invalid refresh token")));
     }
 
-    private CompletableFuture<AccountTokenDO> storeRefreshToken(final long accountId, final String refreshToken,
+    private Uni<AccountTokenDO> storeRefreshToken(final long accountId, final String refreshToken,
                                                                 final TokenRestrictionsBO tokenRestrictions,
                                                                 final TokenOptions tokenOptions) {
         AccountTokenDO.AccountTokenDOBuilder<?, ?> accountToken = AccountTokenDO.builder()
@@ -169,11 +169,10 @@ public class AccessTokenProvider implements AuthProvider {
                     .userAgent(tokenOptions.getUserAgent());
         }
 
-        return accountTokensRepository.save(accountToken.build())
-                .subscribeAsCompletionStage();
+        return accountTokensRepository.save(accountToken.build());
     }
 
-    private CompletableFuture<Optional<AccountTokenDO>> deleteRefreshToken(final String refreshToken) {
+    private Uni<Optional<AccountTokenDO>> deleteRefreshToken(final String refreshToken) {
         return accountTokensRepository.deleteToken(refreshToken);
     }
 

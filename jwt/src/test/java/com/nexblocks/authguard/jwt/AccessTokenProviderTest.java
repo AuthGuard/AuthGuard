@@ -26,7 +26,7 @@ import org.mockito.Mockito;
 
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -93,10 +93,10 @@ class AccessTokenProviderTest {
         tokenEncryptor = Mockito.mock(TokenEncryptorAdapter.class);
 
         Mockito.when(trackingSessionsService.isSessionActive(Mockito.eq("tracking-session"), Mockito.any()))
-                .thenReturn(CompletableFuture.completedFuture(true));
+                .thenReturn(Uni.createFrom().item(true));
 
         Mockito.when(trackingSessionsService.isSessionActive(Mockito.eq("terminated"), Mockito.any()))
-                .thenReturn(CompletableFuture.completedFuture(false));
+                .thenReturn(Uni.createFrom().item(false));
 
         Mockito.when(accountTokensRepository.save(Mockito.any())).thenAnswer(invocation -> {
             AccountTokenDO arg = invocation.getArgument(0);
@@ -116,7 +116,7 @@ class AccessTokenProviderTest {
                 .trackingSession("tracking-session")
                 .build();
 
-        AuthResponseBO tokens = accessTokenProvider.generateToken(account, options).join();
+        AuthResponseBO tokens = accessTokenProvider.generateToken(account, options).subscribeAsCompletionStage().join();
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
@@ -144,7 +144,7 @@ class AccessTokenProviderTest {
 
         AccountBO account = RANDOM.nextObject(AccountBO.class).withActive(true);
 
-        assertThatThrownBy(() -> accessTokenProvider.generateToken(account, options).join())
+        assertThatThrownBy(() -> accessTokenProvider.generateToken(account, options).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
@@ -171,7 +171,7 @@ class AccessTokenProviderTest {
                 .trackingSession("tracking-session")
                 .build();
 
-        AuthResponseBO tokens = accessTokenProvider.generateToken(account, options).join();
+        AuthResponseBO tokens = accessTokenProvider.generateToken(account, options).subscribeAsCompletionStage().join();
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isEqualTo("encrypted");
@@ -209,7 +209,7 @@ class AccessTokenProviderTest {
                 .trackingSession("tracking-session")
                 .build();
 
-        AuthResponseBO tokens = accessTokenProvider.generateToken(account, restrictions, options).join();
+        AuthResponseBO tokens = accessTokenProvider.generateToken(account, restrictions, options).subscribeAsCompletionStage().join();
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
@@ -252,7 +252,7 @@ class AccessTokenProviderTest {
                 .trackingSession("tracking-session")
                 .build();
 
-        AuthResponseBO tokens = accessTokenProvider.generateToken(account, tokenOptions).join();
+        AuthResponseBO tokens = accessTokenProvider.generateToken(account, tokenOptions).subscribeAsCompletionStage().join();
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
@@ -295,7 +295,7 @@ class AccessTokenProviderTest {
         TokenOptionsBO options = TokenOptionsBO.builder()
                 .trackingSession("tracking-session")
                 .build();
-        AuthResponseBO tokens = accessTokenProvider.generateToken(account, options).join();
+        AuthResponseBO tokens = accessTokenProvider.generateToken(account, options).subscribeAsCompletionStage().join();
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
@@ -314,7 +314,7 @@ class AccessTokenProviderTest {
         AuthRequestBO deleteRequest = AuthRequestBO.builder().token(refreshToken).build();
 
         Mockito.when(accountTokensRepository.deleteToken(refreshToken))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(
+                .thenReturn(Uni.createFrom().item(Optional.of(
                         AccountTokenDO.builder()
                                 .associatedAccountId(accountId)
                                 .token(refreshToken)
@@ -328,7 +328,7 @@ class AccessTokenProviderTest {
                 .refreshToken(refreshToken)
                 .build();
 
-        AuthResponseBO actual = accessTokenProvider.delete(deleteRequest).join();
+        AuthResponseBO actual = accessTokenProvider.delete(deleteRequest).subscribeAsCompletionStage().join();
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -341,9 +341,9 @@ class AccessTokenProviderTest {
         AuthRequestBO deleteRequest = AuthRequestBO.builder().token(refreshToken).build();
 
         Mockito.when(accountTokensRepository.deleteToken(refreshToken))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        assertThatThrownBy(() -> accessTokenProvider.delete(deleteRequest).join())
+        assertThatThrownBy(() -> accessTokenProvider.delete(deleteRequest).subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceAuthorizationException.class);
     }
 

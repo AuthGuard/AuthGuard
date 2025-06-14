@@ -5,6 +5,7 @@ import com.nexblocks.authguard.api.access.VertxRolesAccessHandler;
 import com.nexblocks.authguard.api.common.BodyHandler;
 import com.nexblocks.authguard.api.common.RequestContextExtractor;
 import com.nexblocks.authguard.api.common.RequestValidationException;
+import com.nexblocks.authguard.api.dto.entities.AuthResponseDTO;
 import com.nexblocks.authguard.api.dto.entities.Error;
 import com.nexblocks.authguard.api.dto.entities.ExchangeAttemptDTO;
 import com.nexblocks.authguard.api.dto.requests.AuthRequestDTO;
@@ -22,6 +23,8 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.ClientBO;
 import com.nexblocks.authguard.service.model.ExchangeAttemptsQueryBO;
 import com.nexblocks.authguard.service.model.RequestContextBO;
+import io.smallrye.mutiny.subscription.UniSubscriber;
+import io.smallrye.mutiny.subscription.UniSubscription;
 import io.vertx.core.json.Json;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -78,11 +81,8 @@ public class AuthHandler implements VertxApiHandler {
         AuthRequestBO bo = restMapper.toBO(authRequest.get());
 
         authenticationService.authenticate(bo, requestContext)
-                .thenApply(restMapper::toDTO)
-                .whenComplete((res, ex) -> {
-                    if (ex != null) context.fail(ex);
-                    else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                });
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void logout(final RoutingContext context) {
@@ -90,10 +90,7 @@ public class AuthHandler implements VertxApiHandler {
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
         authenticationService.logout(restMapper.toBO(authRequest), requestContext)
-                .whenComplete((res, ex) -> {
-                    if (ex != null) context.fail(ex);
-                    else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                });
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void refresh(final RoutingContext context) {
@@ -106,11 +103,8 @@ public class AuthHandler implements VertxApiHandler {
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
         authenticationService.refresh(restMapper.toBO(authRequest.get()), requestContext)
-                .thenApply(restMapper::toDTO)
-                .whenComplete((res, ex) -> {
-                    if (ex != null) context.fail(ex);
-                    else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                });
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void exchange(final RoutingContext context) {
@@ -126,11 +120,8 @@ public class AuthHandler implements VertxApiHandler {
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
         exchangeService.exchange(restMapper.toBO(authRequest.get()), from, to, requestContext)
-                .thenApply(restMapper::toDTO)
-                .whenComplete((res, ex) -> {
-                    if (ex != null) context.fail(ex);
-                    else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                });
+                .map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void clearToken(final RoutingContext context) {
@@ -141,11 +132,8 @@ public class AuthHandler implements VertxApiHandler {
             context.response().setStatusCode(400).end(Json.encode(new Error("400", "Missing 'tokenType' query parameter")));
         } else {
             exchangeService.delete(restMapper.toBO(authRequest), tokenType)
-                    .thenApply(restMapper::toDTO)
-                    .whenComplete((res, ex) -> {
-                        if (ex != null) context.fail(ex);
-                        else context.response().putHeader("Content-Type", "application/json").end(Json.encode(res));
-                    });
+                    .map(restMapper::toDTO)
+                    .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
         }
     }
 

@@ -11,7 +11,7 @@ class BCryptPasswordTest {
     void hash() {
         final BCryptPassword bcrypt = new BCryptPassword();
         final String password = RandomStringUtils.randomAlphanumeric(12);
-        final HashedPasswordBO hashedPassword = bcrypt.hash(password);
+        final HashedPasswordBO hashedPassword = bcrypt.hash(password).subscribeAsCompletionStage().join();
 
         assertThat(hashedPassword).isNotNull();
         assertThat(hashedPassword.getPassword()).isNotEqualTo(password);
@@ -22,17 +22,19 @@ class BCryptPasswordTest {
     void verify() {
         final BCryptPassword scrypt = new BCryptPassword();
         final String password = RandomStringUtils.randomAlphanumeric(12);
-        final HashedPasswordBO hashedPassword = scrypt.hash(password);
+        final HashedPasswordBO hashedPassword = scrypt.hash(password).subscribeAsCompletionStage().join();
 
-        assertThat(scrypt.verify(password, hashedPassword)).isTrue();
+        assertThat(scrypt.verify(password, hashedPassword).subscribeAsCompletionStage().join())
+                .isTrue();
     }
 
     @Test
     void verifyMismatch() {
         final BCryptPassword scrypt = new BCryptPassword();
         final String password = RandomStringUtils.randomAlphanumeric(12);
-        final HashedPasswordBO hashedPassword = scrypt.hash(password);
+        final HashedPasswordBO hashedPassword = scrypt.hash(password).subscribeAsCompletionStage().join();
 
-        assertThat(scrypt.verify("should not match", hashedPassword)).isFalse();
+        assertThat(scrypt.verify("should not match", hashedPassword).subscribeAsCompletionStage().join())
+                .isFalse();
     }
 }

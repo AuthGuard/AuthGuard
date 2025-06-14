@@ -7,7 +7,7 @@ import com.nexblocks.authguard.service.model.AuthRequestBO;
 import com.nexblocks.authguard.service.model.AuthResponseBO;
 import com.nexblocks.authguard.sessions.SessionVerifier;
 
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 @TokenExchange(from = "sessionToken", to = "accountId")
 public class SessionToAccountId implements Exchange {
@@ -21,9 +21,9 @@ public class SessionToAccountId implements Exchange {
     }
 
     @Override
-    public CompletableFuture<AuthResponseBO> exchange(final AuthRequestBO request) {
+    public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
         return sessionVerifier.verifyAccountTokenAsync(request)
-                .thenApply(token -> AuthResponseBO.builder()
+                .map(token -> AuthResponseBO.builder()
                         .type(TOKEN_TYPE)
                         .token(token)
                         .build());

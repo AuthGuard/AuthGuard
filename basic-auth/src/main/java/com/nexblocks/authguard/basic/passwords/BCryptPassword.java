@@ -5,6 +5,7 @@ import com.nexblocks.authguard.basic.config.PasswordsConfig;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import io.smallrye.mutiny.Uni;
 import org.bouncycastle.crypto.generators.BCrypt;
 
 public class BCryptPassword extends AbstractSecurePassword {
@@ -28,7 +29,7 @@ public class BCryptPassword extends AbstractSecurePassword {
     }
 
     @Override
-    protected byte[] hashWithSalt(final String plain, final byte[] saltBytes) {
-        return BCrypt.generate(plain.getBytes(), saltBytes, COST);
+    protected Uni<byte[]> hashWithSalt(final String plain, final byte[] saltBytes) {
+        return Uni.createFrom().item(() -> BCrypt.generate(plain.getBytes(), saltBytes, COST));
     }
 }

@@ -34,18 +34,21 @@ public class AdminRolesBootstrap implements BootstrapStep {
             throw new IllegalStateException("Admin role name cannot be null in accounts configuration");
         }
 
-        if (rolesService.getRoleByName(adminRoleName, RESERVED_DOMAIN).join().isEmpty()) {
-            log.info("Admin role {} wasn't found and will be created", adminRoleName);
+        return rolesService.getRoleByName(adminRoleName, RESERVED_DOMAIN)
+                .flatMap(opt -> {
+                    if (opt.isEmpty()) {
+                        log.info("Admin role {} wasn't found and will be created", adminRoleName);
 
-            return createRole(adminRoleName)
-                    .map(role -> {
-                        log.info("Created admin client role {}", role);
+                        return createRole(adminRoleName)
+                                .map(role -> {
+                                    log.info("Created admin client role {}", role);
 
-                        return BootstrapStepResult.success();
-                    });
-        }
+                                    return BootstrapStepResult.success();
+                                });
+                    }
 
-        return Uni.createFrom().item(BootstrapStepResult.success());
+                    return Uni.createFrom().item(BootstrapStepResult.success());
+                });
     }
 
     private Uni<RoleBO> createRole(final String roleName) {
@@ -55,6 +58,6 @@ public class AdminRolesBootstrap implements BootstrapStep {
                 .forAccounts(true)
                 .build();
 
-        return Uni.createFrom().completionStage(rolesService.create(role));
+        return rolesService.create(role);
     }
 }

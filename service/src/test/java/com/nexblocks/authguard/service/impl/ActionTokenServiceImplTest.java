@@ -19,7 +19,7 @@ import org.mockito.Mockito;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -58,10 +58,10 @@ class ActionTokenServiceImplTest {
                 .build();
 
         Mockito.when(accountsService.getById(101, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountBO)));
-        Mockito.when(otpProvider.generateToken(accountBO)).thenReturn(CompletableFuture.completedFuture(otpResponse));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountBO)));
+        Mockito.when(otpProvider.generateToken(accountBO)).thenReturn(Uni.createFrom().item(otpResponse));
 
-        AuthResponseBO response = actionTokenService.generateOtp(101, "main").join();
+        AuthResponseBO response = actionTokenService.generateOtp(101, "main").subscribeAsCompletionStage().join();
 
         assertThat(response).isEqualTo(otpResponse);
     }
@@ -76,11 +76,11 @@ class ActionTokenServiceImplTest {
                 .id(101)
                 .build();
 
-        Mockito.when(basicAuthProvider.getAccount(authRequest)).thenReturn(CompletableFuture.completedFuture(account));
+        Mockito.when(basicAuthProvider.getAccount(authRequest)).thenReturn(Uni.createFrom().item(account));
         Mockito.when(accountTokensRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
-        ActionTokenBO actual = actionTokenService.generateFromBasicAuth(authRequest, "something").join();
+        ActionTokenBO actual = actionTokenService.generateFromBasicAuth(authRequest, "something").subscribeAsCompletionStage().join();
         ActionTokenBO expected = ActionTokenBO.builder()
                 .accountId(account.getId())
                 .validFor(Duration.ofMinutes(5).toSeconds())
@@ -102,13 +102,13 @@ class ActionTokenServiceImplTest {
                 .token("1:otp")
                 .build();
 
-        Mockito.when(otpVerifier.verifyAccountTokenAsync(request)).thenReturn(CompletableFuture.completedFuture(account.getId()));
+        Mockito.when(otpVerifier.verifyAccountTokenAsync(request)).thenReturn(Uni.createFrom().item(account.getId()));
         Mockito.when(accountsService.getById(101, "main"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(account)));
+                .thenReturn(Uni.createFrom().item(Optional.of(account)));
         Mockito.when(accountTokensRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
-        ActionTokenBO actual = actionTokenService.generateFromOtp(1, "main", "otp", "something").join();
+        ActionTokenBO actual = actionTokenService.generateFromOtp(1, "main", "otp", "something").subscribeAsCompletionStage().join();
         ActionTokenBO expected = ActionTokenBO.builder()
                 .accountId(account.getId())
                 .validFor(Duration.ofMinutes(5).toSeconds())
@@ -128,9 +128,9 @@ class ActionTokenServiceImplTest {
                 .build();
 
         Mockito.when(accountTokensRepository.getByToken("action-token"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
-        ActionTokenBO actual = actionTokenService.verifyToken("action-token", "something").join();
+        ActionTokenBO actual = actionTokenService.verifyToken("action-token", "something").subscribeAsCompletionStage().join();
 
         assertThat(actual).isNotNull();
     }
@@ -143,9 +143,9 @@ class ActionTokenServiceImplTest {
                 .build();
 
         Mockito.when(accountTokensRepository.getByToken("action-token"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
-        assertThatThrownBy(() -> actionTokenService.verifyToken("action-token", "else").join())
+        assertThatThrownBy(() -> actionTokenService.verifyToken("action-token", "else").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause()
                 .extracting(cause -> ((ServiceException) cause).getErrorCode())
@@ -160,9 +160,9 @@ class ActionTokenServiceImplTest {
                 .build();
 
         Mockito.when(accountTokensRepository.getByToken("action-token"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.of(accountToken)));
+                .thenReturn(Uni.createFrom().item(Optional.of(accountToken)));
 
-        assertThatThrownBy(() -> actionTokenService.verifyToken("action-token", "something").join())
+        assertThatThrownBy(() -> actionTokenService.verifyToken("action-token", "something").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause()
                 .extracting(cause -> ((ServiceException) cause).getErrorCode())
@@ -172,9 +172,9 @@ class ActionTokenServiceImplTest {
     @Test
     void verifyTokenWrongToken() {
         Mockito.when(accountTokensRepository.getByToken("action-token"))
-                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        assertThatThrownBy(() -> actionTokenService.verifyToken("action-token", "something").join())
+        assertThatThrownBy(() -> actionTokenService.verifyToken("action-token", "something").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause()
                 .extracting(cause -> ((ServiceException) cause).getErrorCode())

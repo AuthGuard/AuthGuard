@@ -25,13 +25,13 @@ public class CryptoKeyTests {
 
         entityManager = h2.getEntityManager();
 
-        // create credentials
         first = CryptoKeyDO.builder()
                 .id(1)
                 .domain("main")
                 .accountId(101L)
                 .appId(201L)
-                .createdAt(Instant.now().minusMillis(1))
+                .nonce(new byte[] { 1, 2, 3 })
+                .createdAt(Instant.now().minusSeconds(1))
                 .build();
 
         second = CryptoKeyDO.builder()
@@ -39,6 +39,7 @@ public class CryptoKeyTests {
                 .domain("main")
                 .accountId(101L)
                 .appId(201L)
+                .nonce(new byte[] { 4, 5, 6 })
                 .createdAt(Instant.now())
                 .build();
 
@@ -56,7 +57,7 @@ public class CryptoKeyTests {
                         CryptoKeyDO.class)
                 .setParameter("domain", first.getDomain())
                 .setParameter("id", first.getAccountId())
-                .setParameter("cursor", Instant.now().plusMillis(1))
+                .setParameter("cursor", Instant.now().plusSeconds(10))
                 .setMaxResults(1);
 
         List<CryptoKeyDO> firstPage = firstPageQuery.getResultList();
@@ -66,10 +67,10 @@ public class CryptoKeyTests {
                         CryptoKeyDO.class)
                 .setParameter("domain", first.getDomain())
                 .setParameter("id", first.getAccountId())
-                .setParameter("cursor", second.getCreatedAt())
+                .setParameter("cursor", second.getCreatedAt().minusMillis(1))
                 .setMaxResults(1);
 
-        List<CryptoKeyDO> secondPage = firstPageQuery.getResultList();
+        List<CryptoKeyDO> secondPage = secondPageQuery.getResultList();
         assertThat(secondPage).containsExactly(first);
     }
 
@@ -79,7 +80,7 @@ public class CryptoKeyTests {
                         CryptoKeyDO.class)
                 .setParameter("domain", first.getDomain())
                 .setParameter("id", first.getAppId())
-                .setParameter("cursor", Instant.now().plusMillis(1))
+                .setParameter("cursor", Instant.now().plusSeconds(1))
                 .setMaxResults(1);
 
         List<CryptoKeyDO> firstPage = firstPageQuery.getResultList();
@@ -89,10 +90,10 @@ public class CryptoKeyTests {
                         CryptoKeyDO.class)
                 .setParameter("domain", first.getDomain())
                 .setParameter("id", first.getAppId())
-                .setParameter("cursor", second.getCreatedAt())
+                .setParameter("cursor", second.getCreatedAt().minusSeconds(1))
                 .setMaxResults(1);
 
-        List<CryptoKeyDO> secondPage = firstPageQuery.getResultList();
+        List<CryptoKeyDO> secondPage = secondPageQuery.getResultList();
         assertThat(secondPage).containsExactly(first);
     }
 }

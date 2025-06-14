@@ -16,7 +16,7 @@ import org.mockito.Mockito;
 
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -75,7 +75,7 @@ class DefaultApiKeyExchangeTest {
         Mockito.when(repository.getByKey(hashedKey))
                 .thenReturn(Uni.createFrom().item(Optional.of(apiKeyDO)));
 
-        final Optional<Long> retrieved = exchange.verifyAndGetAppId(key).join();
+        final Optional<Long> retrieved = exchange.verifyAndGetAppId(key).subscribeAsCompletionStage().join();
 
         assertThat(retrieved).contains(appId);
     }
@@ -88,7 +88,7 @@ class DefaultApiKeyExchangeTest {
         Mockito.when(repository.getByKey(hashedKey))
                 .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        final Optional<Long> retrieved = exchange.verifyAndGetAppId(key).join();
+        final Optional<Long> retrieved = exchange.verifyAndGetAppId(key).subscribeAsCompletionStage().join();
 
         assertThat(retrieved).isEmpty();
     }
@@ -108,7 +108,7 @@ class DefaultApiKeyExchangeTest {
         Mockito.when(repository.getByKey(hashedKey))
                 .thenReturn(Uni.createFrom().item(Optional.of(apiKeyDO)));
 
-        final Optional<Long> retrieved = exchange.verifyAndGetAppId(key).join();
+        final Optional<Long> retrieved = exchange.verifyAndGetAppId(key).subscribeAsCompletionStage().join();
 
         assertThat(retrieved).contains(appId);
     }
@@ -128,7 +128,7 @@ class DefaultApiKeyExchangeTest {
         Mockito.when(repository.getByKey(hashedKey))
                 .thenReturn(Uni.createFrom().item(Optional.of(apiKeyDO)));
 
-        final Optional<Long> retrieved = exchange.verifyAndGetAppId(key).join();
+        final Optional<Long> retrieved = exchange.verifyAndGetAppId(key).subscribeAsCompletionStage().join();
 
         assertThat(retrieved).isEmpty();
     }
