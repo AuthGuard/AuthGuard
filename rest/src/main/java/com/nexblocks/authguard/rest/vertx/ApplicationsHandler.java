@@ -134,12 +134,11 @@ public class ApplicationsHandler implements VertxApiHandler {
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
 
-        Uni<Optional<AppBO>> future = request.getAction() == PermissionsRequest.Action.GRANT ?
+        Uni<AppBO> future = request.getAction() == PermissionsRequest.Action.GRANT ?
                 applicationsService.grantPermissions(id, permissions, Domain.fromContext(context)) :
                 applicationsService.revokePermissions(id, permissions, Domain.fromContext(context));
 
-        future.flatMap(AsyncUtils::uniFromAppOptional)
-                .map(restMapper::toDTO)
+        future.map(restMapper::toDTO)
                 .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));;
     }
 

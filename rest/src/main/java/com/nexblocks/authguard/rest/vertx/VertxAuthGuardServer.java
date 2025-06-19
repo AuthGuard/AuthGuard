@@ -79,7 +79,7 @@ public class VertxAuthGuardServer {
         HttpServerOptions serverOptions = new HttpServerOptions();
 
         if (serverConfig.getIdleConnectionTimeoutSeconds() != null) {
-            serverOptions.setIdleTimeout(5)
+            serverOptions.setIdleTimeout(serverConfig.getIdleConnectionTimeoutSeconds())
                     .setIdleTimeoutUnit(TimeUnit.SECONDS);
         }
 

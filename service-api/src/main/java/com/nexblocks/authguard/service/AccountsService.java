@@ -35,7 +35,7 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
      *
      * @throws ServiceNotFoundException if no account was found.
      */
-    Uni<Optional<AccountBO>> grantPermissions(long accountId, List<PermissionBO> permissions, String domain);
+    Uni<AccountBO> grantPermissions(long accountId, List<PermissionBO> permissions, String domain);
 
     /**
      * Revoke permissions of an account. This should only updatePatch
@@ -43,7 +43,7 @@ public interface AccountsService extends IdempotentCrudService<AccountBO> {
      *
      * @throws ServiceNotFoundException if no account was found.
      */
-    Uni<Optional<AccountBO>> revokePermissions(long accountId, List<PermissionBO> permissions, String domain);
+    Uni<AccountBO> revokePermissions(long accountId, List<PermissionBO> permissions, String domain);
 
     /**
      * Grant roles to an account. This should only updatePatch the roles

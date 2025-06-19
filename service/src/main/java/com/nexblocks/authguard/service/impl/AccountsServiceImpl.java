@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.model.AccountDO;
+import com.nexblocks.authguard.dal.model.PermissionDO;
 import com.nexblocks.authguard.dal.persistence.AccountsRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.emb.Messages;
@@ -26,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import io.smallrye.mutiny.Uni;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -80,7 +80,7 @@ public class AccountsServiceImpl implements AccountsService {
                     AccountBO preProcessed = AccountPreProcessor.preProcess(withHashedPasswords, accountConfig);
 
                     Uni<Void> roleValidationUni = verifyRolesOrFail(preProcessed.getRoles(), preProcessed.getDomain());
-                    Uni<Void> permissionsValidationUni = verifyPermissionsOrFail(preProcessed.getPermissions(), preProcessed.getDomain());
+                    Uni<Void> permissionsValidationUni = verifyPermissionsOrFail(preProcessed.getPermissions(), preProcessed.getDomain()).replaceWithVoid();
 
                     return Uni.combine().all().unis(roleValidationUni, permissionsValidationUni)
                             .with(ignored -> null)
@@ -303,29 +303,26 @@ public class AccountsServiceImpl implements AccountsService {
     }
 
     @Override
-    public Uni<Optional<AccountBO>> grantPermissions(final long accountId, final List<PermissionBO> permissions, String domain) {
+    public Uni<AccountBO> grantPermissions(final long accountId, final List<PermissionBO> permissions, String domain) {
         return getByIdUnsafe(accountId, domain)
                 .flatMap(account -> verifyPermissionsOrFail(permissions, account.getDomain())
-                        .map(ignored -> account))
-                .flatMap(account -> {
-                    List<PermissionBO> combinedPermissions = Stream.concat(account.getPermissions().stream(), permissions.stream())
-                            .distinct()
-                            .collect(Collectors.toList());
+                        .flatMap(validPermissions -> {
+                            List<PermissionDO> permissionsToAdd = validPermissions.stream()
+                                    .map(serviceMapper::toDO)
+                                    .toList();
 
-                    AccountBO withNewPermissions = account.withPermissions(combinedPermissions);
+                            return accountsRepository.addAccountPermissions(serviceMapper.toDO(account), permissionsToAdd)
+                                    .map(updated -> {
+                                        LOG.info("Granted account permissions. accountId={}, domain={}, permissions={}",
+                                                account.getId(), account.getDomain(), permissions);
 
-                    return accountsRepository.update(serviceMapper.toDO(withNewPermissions))
-                            .map(updated -> updated.map(accountDO -> {
-                                LOG.info("Granted account permissions. accountId={}, domain={}, permissions={}",
-                                        account.getId(), account.getDomain(), permissions);
-
-                                return serviceMapper.toBO(accountDO);
-                            }));
-                });
+                                        return serviceMapper.toBO(updated);
+                                    });
+                        }));
     }
 
     @Override
-    public Uni<Optional<AccountBO>> revokePermissions(final long accountId, final List<PermissionBO> permissions, String domain) {
+    public Uni<AccountBO> revokePermissions(final long accountId, final List<PermissionBO> permissions, String domain) {
         return getByIdUnsafe(accountId, domain)
                 .flatMap(account -> {
                     Set<String> permissionsFullNames = permissions.stream()
@@ -335,19 +332,18 @@ public class AccountsServiceImpl implements AccountsService {
                     LOG.info("Revoke account permissions request. accountId={}, domain={}, permissions={}",
                             account.getId(), account.getDomain(), permissionsFullNames);
 
-                    List<PermissionBO> filteredPermissions = account.getPermissions().stream()
-                            .filter(permission -> !permissionsFullNames.contains(permission.getFullName()))
-                            .collect(Collectors.toList());
+                    List<PermissionDO> permissionsToRemove = account.getPermissions().stream()
+                            .filter(permission -> permissionsFullNames.contains(permission.getFullName()))
+                            .map(serviceMapper::toDO)
+                            .toList();
 
-                    AccountBO withNewPermissions = account.withPermissions(filteredPermissions);
+                    return accountsRepository.removeAccountPermissions(serviceMapper.toDO(account), permissionsToRemove)
+                            .map(updated -> {
+                                LOG.info("Revoked account permissions. accountId={}, domain={}, permissions={}",
+                                        account.getId(), account.getDomain(), permissionsFullNames);
 
-                    return accountsRepository.update(serviceMapper.toDO(withNewPermissions))
-                            .map(updated -> updated.map(accountDO -> {
-                                        LOG.info("Revoked account permissions. accountId={}, domain={}, permissions={}",
-                                                account.getId(), account.getDomain(), permissionsFullNames);
-
-                                        return serviceMapper.toBO(accountDO);
-                                    }));
+                                return serviceMapper.toBO(updated);
+                            });
                 });
     }
 
@@ -428,7 +424,7 @@ public class AccountsServiceImpl implements AccountsService {
                 });
     }
 
-    private Uni<Void> verifyPermissionsOrFail(final Collection<PermissionBO> permissions, final String domain) {
+    private Uni<List<PermissionBO>> verifyPermissionsOrFail(final Collection<PermissionBO> permissions, final String domain) {
         return permissionsService.validate(permissions, domain, EntityType.ACCOUNT)
                 .flatMap(verifiedPermissions -> {
                     if (verifiedPermissions.size() != permissions.size()) {
@@ -444,7 +440,7 @@ public class AccountsServiceImpl implements AccountsService {
                                 "The following permissions are not valid " + difference));
                     }
 
-                    return Uni.createFrom().voidItem();
+                    return Uni.createFrom().item(verifiedPermissions);
                 });
     }
 }

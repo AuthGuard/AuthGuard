@@ -9,6 +9,7 @@ import com.nexblocks.authguard.basic.passwords.SecurePassword;
 import com.nexblocks.authguard.basic.passwords.SecurePasswordProvider;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.model.AccountDO;
+import com.nexblocks.authguard.dal.model.PermissionDO;
 import com.nexblocks.authguard.dal.persistence.AccountsRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.emb.model.EventType;
@@ -150,7 +151,7 @@ class AccountsServiceImplTest {
 
         List<PermissionBO> expectedPermissions = account.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
-                .collect(Collectors.toList());
+                .toList();
 
         AccountBO expectedAccount = AccountBO.builder()
                 .from(account)
@@ -171,7 +172,7 @@ class AccountsServiceImplTest {
                                                 .type(UserIdentifier.Type.PHONE_NUMBER)
                                                 .build()
                                 )
-                        ).collect(Collectors.toList())
+                        ).toList()
                 )
                 .permissions(expectedPermissions)
                 .passwordVersion(1)
@@ -193,7 +194,7 @@ class AccountsServiceImplTest {
 
         assertThat(messageCaptor.getAllValues().stream()
                 .map(Message::getEventType)
-                .collect(Collectors.toList()))
+                .toList())
                 .containsExactly(EventType.EMAIL_VERIFICATION, EventType.PHONE_NUMBER_VERIFICATION);
     }
 
@@ -250,7 +251,7 @@ class AccountsServiceImplTest {
                                                 .type(UserIdentifier.Type.PHONE_NUMBER)
                                                 .build()
                                 )
-                        ).collect(Collectors.toList())
+                        ).toList()
                 )
                 .roles(Collections.singleton("def-role"))
                 .passwordVersion(1)
@@ -272,7 +273,7 @@ class AccountsServiceImplTest {
 
         assertThat(messageCaptor.getAllValues().stream()
                 .map(Message::getEventType)
-                .collect(Collectors.toList()))
+                .toList())
                 .containsExactly(EventType.EMAIL_VERIFICATION, EventType.PHONE_NUMBER_VERIFICATION);
     }
 
@@ -287,7 +288,7 @@ class AccountsServiceImplTest {
         Optional<AccountBO> retrieved = accountService.getById(0, "main").subscribeAsCompletionStage().join();
         List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
-                .collect(Collectors.toList());
+                .toList();
 
         assertThat(retrieved).isPresent();
         compareAccounts(retrieved.get(), accountBO.withPermissions(expectedPermissions));
@@ -304,12 +305,13 @@ class AccountsServiceImplTest {
         Optional<AccountBO> retrieved = accountService.getByEmail(accountBO.getEmail().getEmail(), accountBO.getDomain()).subscribeAsCompletionStage().join();
         List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
-                .collect(Collectors.toList());
+                .toList();
 
         assertThat(retrieved).isPresent();
         compareAccounts(retrieved.get(), accountBO.withPermissions(expectedPermissions));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void grantPermissions() {
         AccountDO account = createAccountDO();
@@ -318,19 +320,27 @@ class AccountsServiceImplTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(account)));
         Mockito.when(permissionsService.validate(any(), eq("main"), eq(EntityType.ACCOUNT)))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, List.class)));
-        Mockito.when(accountsRepository.update(any()))
-                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AccountDO.class))));
+        Mockito.when(accountsRepository.addAccountPermissions(any(), any()))
+                .thenAnswer(invocation -> {
+                    AccountDO toUpdate = invocation.getArgument(0, AccountDO.class);
+                    Stream<PermissionDO> toAdd = invocation.getArgument(1, List.class)
+                            .stream()
+                            .map(PermissionDO.class::cast);
+
+                    toUpdate.setPermissions(Stream.concat(toUpdate.getPermissions().stream(), toAdd)
+                            .collect(Collectors.toSet()));
+                    return Uni.createFrom().item(toUpdate);
+                });
 
         List<PermissionBO> permissions = Arrays.asList(
                 RANDOM.nextObject(PermissionBO.class).withEntityType(null),
                 RANDOM.nextObject(PermissionBO.class).withEntityType(null)
         );
 
-        Optional<AccountBO> updated = accountService.grantPermissions(account.getId(), permissions, "main").subscribeAsCompletionStage().join();
+        AccountBO updated = accountService.grantPermissions(account.getId(), permissions, "main").subscribeAsCompletionStage().join();
 
-        assertThat(updated).isPresent();
-        assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(account);
-        assertThat(updated.get().getPermissions()).contains(permissions.toArray(new PermissionBO[0]));
+        assertThat(serviceMapper.toDO(updated)).isNotEqualTo(account);
+        assertThat(updated.getPermissions()).contains(permissions.toArray(new PermissionBO[0]));
     }
 
     @Test
@@ -380,23 +390,22 @@ class AccountsServiceImplTest {
                         .group(permissionDO.getPermissionGroup())
                         .name(permissionDO.getName())
                         .build()
-                ).collect(Collectors.toList());
+                ).toList();
 
         Mockito.when(accountsRepository.getById(account.getId()))
                 .thenReturn(Uni.createFrom().item(Optional.of(account)));
-        Mockito.when(accountsRepository.update(any()))
-                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AccountDO.class))));
+        Mockito.when(accountsRepository.removeAccountPermissions(any(), any()))
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountDO.class)));
 
         List<PermissionBO> permissionsToRevoke = Arrays.asList(
                 currentPermissions.get(0),
                 currentPermissions.get(1)
         );
 
-        Optional<AccountBO> updated = accountService.revokePermissions(account.getId(), permissionsToRevoke, "main").subscribeAsCompletionStage().join();
+        AccountBO updated = accountService.revokePermissions(account.getId(), permissionsToRevoke, "main").subscribeAsCompletionStage().join();
 
-        assertThat(updated).isPresent();
-        assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(account);
-        assertThat(updated.get().getPermissions()).doesNotContain(permissionsToRevoke.toArray(new PermissionBO[0]));
+        assertThat(serviceMapper.toDO(updated)).isNotEqualTo(account);
+        assertThat(updated.getPermissions()).doesNotContain(permissionsToRevoke.toArray(new PermissionBO[0]));
     }
 
     @Test
@@ -545,7 +554,7 @@ class AccountsServiceImplTest {
                 .withBackupEmail(update.getBackupEmail());
         List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
-                .collect(Collectors.toList());
+                .toList();
 
         assertThat(updated).isPresent();
         compareAccounts(updated.get(), expected.withPermissions(expectedPermissions));
@@ -617,7 +626,7 @@ class AccountsServiceImplTest {
                 .withBackupEmail(update.getBackupEmail());
         List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
-                .collect(Collectors.toList());
+                .toList();
 
         assertThat(updated).isPresent();
         compareAccounts(updated.get(), expected.withPermissions(expectedPermissions));
@@ -654,7 +663,7 @@ class AccountsServiceImplTest {
 
         List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
-                .collect(Collectors.toList());
+                .toList();
 
         AccountBO expected = accountBO
                 .withIdentifiers(Arrays.asList(
@@ -695,7 +704,7 @@ class AccountsServiceImplTest {
 
         List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
-                .collect(Collectors.toList());
+                .toList();
 
         AccountBO expected = accountBO
                 .withBackupEmail(update.getBackupEmail())
@@ -728,7 +737,7 @@ class AccountsServiceImplTest {
 
         List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
-                .collect(Collectors.toList());
+                .toList();
 
         AccountBO expected = accountBO
                 .withIdentifiers(Arrays.asList(
@@ -826,7 +835,7 @@ class AccountsServiceImplTest {
 
         List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
-                .collect(Collectors.toList());
+                .toList();
 
         assertThat(updated).isPresent();
         compareAccounts(updated.get(), expected.withPermissions(expectedPermissions));
@@ -853,7 +862,7 @@ class AccountsServiceImplTest {
         AccountBO updated = accountService.activate(accountDO.getId(), "main").subscribeAsCompletionStage().join().orElse(null);
         List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
-                .collect(Collectors.toList());
+                .toList();
 
         assertThat(updated).isNotNull();
         compareAccounts(updated, accountBO.withPermissions(expectedPermissions));
@@ -866,7 +875,7 @@ class AccountsServiceImplTest {
         AccountDO accountDO = serviceMapper.toDO(accountBO);
         List<PermissionBO> expectedPermissions = accountBO.getPermissions().stream()
                 .map(permission -> permission.withEntityType(null))
-                .collect(Collectors.toList());
+                .toList();
 
         Mockito.when(accountsRepository.getById(accountDO.getId()))
                 .thenReturn(Uni.createFrom().item(Optional.of(accountDO)));

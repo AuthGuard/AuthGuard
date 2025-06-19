@@ -12,6 +12,7 @@ import com.nexblocks.authguard.api.routes.VertxApiHandler;
 import com.nexblocks.authguard.rest.access.ActorDomainVerifier;
 import com.nexblocks.authguard.rest.mappers.RestMapper;
 import com.nexblocks.authguard.service.AccountCredentialsService;
+import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.model.AccountBO;
 import com.nexblocks.authguard.service.model.Client;
 import com.nexblocks.authguard.service.model.ClientBO;
@@ -83,17 +84,18 @@ public class CredentialsHandler implements VertxApiHandler {
                         new Violation("identifier", ViolationType.EXCEEDS_LENGTH_BOUNDARIES)));
             }
 
-            List<UserIdentifierBO> identifiers = request.getIdentifiers().stream()
+            UserIdentifierBO identifier = request.getIdentifiers().stream()
                     .map(restMapper::toBO)
-                    .collect(Collectors.toList());
+                    .findFirst()
+                    .orElseThrow(() -> new ServiceException("", ""));
 
             Uni<AccountBO> result;
 
             if (request.getOldIdentifier() != null) {
                 result = credentialsService.replaceIdentifier(credentialsId, request.getOldIdentifier(),
-                        identifiers.get(0), context.pathParam("domain"));
+                        identifier, context.pathParam("domain"));
             } else {
-                result = credentialsService.addIdentifiers(credentialsId, identifiers, context.pathParam("domain"));
+                result = credentialsService.addIdentifiers(credentialsId, identifier, context.pathParam("domain"));
             }
 
             result.map(restMapper::toDTO)
@@ -107,9 +109,10 @@ public class CredentialsHandler implements VertxApiHandler {
         try {
             long credentialsId = Long.parseLong(context.pathParam("id"));
             UserIdentifiersRequestDTO request = userIdentifiersRequestBodyHandler.getValidated(context);
-            List<String> identifiers = request.getIdentifiers().stream()
+            String identifiers = request.getIdentifiers().stream()
                     .map(UserIdentifierDTO::getIdentifier)
-                    .collect(Collectors.toList());
+                    .findFirst()
+                    .orElseThrow(() -> new ServiceException("", ""));
 
             credentialsService.removeIdentifiers(credentialsId, identifiers, context.pathParam("domain"))
                     .map(restMapper::toDTO)

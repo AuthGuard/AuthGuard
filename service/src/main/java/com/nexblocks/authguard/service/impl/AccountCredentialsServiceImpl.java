@@ -5,12 +5,14 @@ import com.nexblocks.authguard.basic.passwords.SecurePassword;
 import com.nexblocks.authguard.basic.passwords.SecurePasswordProvider;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
+import com.nexblocks.authguard.dal.model.PasswordDO;
+import com.nexblocks.authguard.dal.model.UserIdentifierDO;
+import com.nexblocks.authguard.dal.persistence.AccountsRepository;
 import com.nexblocks.authguard.dal.persistence.CredentialsAuditRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.emb.Messages;
 import com.nexblocks.authguard.service.AccountCredentialsService;
 import com.nexblocks.authguard.service.AccountsService;
-import com.nexblocks.authguard.service.exceptions.ServiceConflictException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
@@ -27,12 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import io.smallrye.mutiny.Uni;
-import java.util.stream.Collectors;
 
 public class AccountCredentialsServiceImpl implements AccountCredentialsService {
     private static final Logger LOG = LoggerFactory.getLogger(AccountCredentialsServiceImpl.class);
@@ -42,6 +39,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     private static final Duration TOKEN_LIFETIME = Duration.ofMinutes(30);
 
     private final AccountsService accountsService;
+    private final AccountsRepository accountsRepository;
     private final CredentialsAuditRepository credentialsAuditRepository;
     private final AccountTokensRepository accountTokensRepository;
     private final SecurePassword securePassword;
@@ -52,7 +50,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     private final CryptographicRandom cryptographicRandom;
 
     @Inject
-    public AccountCredentialsServiceImpl(final AccountsService accountsService,
+    public AccountCredentialsServiceImpl(final AccountsService accountsService, final AccountsRepository accountsRepository,
                                          final CredentialsAuditRepository credentialsAuditRepository,
                                          final AccountTokensRepository accountTokensRepository,
                                          final SecurePasswordProvider securePasswordProvider,
@@ -60,6 +58,7 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
                                          final MessageBus messageBus,
                                          final ServiceMapper serviceMapper) {
         this.accountsService = accountsService;
+        this.accountsRepository = accountsRepository;
         this.credentialsManager = credentialsManager;
         this.credentialsAuditRepository = credentialsAuditRepository;
         this.accountTokensRepository = accountTokensRepository;
@@ -73,126 +72,112 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
     @Override
     public Uni<AccountBO> updatePassword(final long id, final String plainPassword, final String domain) {
         return accountsService.getByIdUnsafe(id, domain)
-                .flatMap(existing -> credentialsManager.verifyAndHashPassword(plainPassword)
-                        .flatMap(newPassword -> {
-                            AccountBO update = existing
-                                    .withHashedPassword(newPassword)
-                                    .withPasswordUpdatedAt(Instant.now());
+                .flatMap(existing -> {
+                    storeAuditAttempt(existing);
 
-                            return doUpdate(existing, update, domain)
+                    return credentialsManager.verifyAndHashPassword(plainPassword)
+                            .flatMap(newPassword -> accountsRepository.updateUserPassword(serviceMapper.toDO(existing),
+                                            PasswordDO.builder()
+                                                    .password(newPassword.getPassword())
+                                                    .salt(newPassword.getSalt())
+                                                    .build())
                                     .map(result -> {
                                         storePasswordUpdateRecord(existing);
 
                                         LOG.info("Password updated. accountId={}, domain={}", id, existing.getDomain());
 
                                         return result;
-                                    });
+                                    }));
+                })
+                .flatMap(ignored -> accountsService.getById(id, domain)
+                        .flatMap(AsyncUtils::uniFromAccountOptional)
+                        .map(result -> {
+                            messageBus.publish(CREDENTIALS_CHANNEL, Messages.updated(result, domain));
+
+                            return result;
                         }));
     }
 
     @Override
-    public Uni<AccountBO> addIdentifiers(final long id, final List<UserIdentifierBO> identifiers,
-                                                       final String domain) {
+    public Uni<AccountBO> addIdentifiers(final long id, final UserIdentifierBO identifiers,
+                                         final String domain) {
         return accountsService.getByIdUnsafe(id, domain)
                 .flatMap(existing -> {
                     LOG.info("Add identifiers request. accountId={}, domain={}", id, existing.getDomain());
 
-                    final Set<String> existingIdentifiers = existing.getIdentifiers().stream()
-                            .map(UserIdentifierBO::getIdentifier)
-                            .collect(Collectors.toSet());
-
-                    final List<UserIdentifierBO> combined = new ArrayList<>(existing.getIdentifiers());
-
-                    for (final UserIdentifierBO identifier : identifiers) {
-                        if (existingIdentifiers.contains(identifier.getIdentifier())) {
-                            throw new ServiceConflictException(ErrorCode.IDENTIFIER_ALREADY_EXISTS, "Duplicate identifier for " + id);
-                        }
-
-                        combined.add(UserIdentifierBO.builder().from(identifier)
-                                .active(true)
-                                .domain(existing.getDomain())
-                                .build());
-                    }
-
-                    final AccountBO updated = AccountBO.builder().from(existing)
-                            .identifiers(combined)
-                            .build();
-
-                    return doUpdate(existing, updated, domain);
-                });
+                    return accountsRepository.addUserIdentifier(serviceMapper.toDO(existing),
+                            UserIdentifierDO.builder()
+                                    .domain(domain)
+                                    .identifier(identifiers.getIdentifier())
+                                    .accountId(id)
+                                    .type(UserIdentifierDO.Type.valueOf(identifiers.getType().name()))
+                                    .active(true)
+                                    .build());
+                })
+                .flatMap(ignored -> accountsService.getById(id, domain)
+                        .flatMap(AsyncUtils::uniFromAccountOptional));
     }
 
     @Override
-    public Uni<AccountBO> removeIdentifiers(final long id, final List<String> identifiers, final String domain) {
+    public Uni<AccountBO> removeIdentifiers(final long id, final String identifier, final String domain) {
         return accountsService.getByIdUnsafe(id, domain)
                 .flatMap(existing -> {
                     LOG.info("Remove identifiers request. accountId={}, domain={}", id, existing.getDomain());
 
-                    final List<UserIdentifierBO> updatedIdentifiers = existing.getIdentifiers().stream()
-                            .map(identifier -> {
-                                if (identifiers.contains(identifier.getIdentifier())) {
-                                    return identifier.withActive(false);
-                                }
+                    Optional<UserIdentifierBO> identifierToUpdateOpt = existing.getIdentifiers().stream()
+                            .filter(userIdentifier -> userIdentifier.getIdentifier().equals(identifier))
+                            .findFirst();
 
-                                return identifier;
-                            })
-                            .collect(Collectors.toList());
+                    if (identifierToUpdateOpt.isEmpty()) {
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST,
+                                "Identifier not matched"));
+                    }
 
-                    final AccountBO updated = AccountBO.builder().from(existing)
-                            .identifiers(updatedIdentifiers)
-                            .build();
+                    UserIdentifierBO update = identifierToUpdateOpt.get()
+                            .withActive(false);
 
-                    return doUpdate(existing, updated, domain)
-                            .map(result -> {
-                                updatedIdentifiers.forEach(oldIdentifier ->
-                                        storeIdentifierUpdateRecord(existing, oldIdentifier, CredentialsAudit.Action.DEACTIVATED));
-
-                                return result;
-                            });
-                });
+                    return accountsRepository.removeUserIdentifier(serviceMapper.toDO(existing),
+                            UserIdentifierDO.builder()
+                                    .id(ID.generate())
+                                    .domain(domain)
+                                    .identifier(identifier)
+                                    .accountId(id)
+                                    .type(UserIdentifierDO.Type.valueOf(identifierToUpdateOpt.get().getType().name()))
+                                    .active(false)
+                                    .build());
+                })
+                .flatMap(ignored -> accountsService.getById(id, domain)
+                        .flatMap(AsyncUtils::uniFromAccountOptional));
     }
 
     @Override
     public Uni<AccountBO> replaceIdentifier(final long id, final String oldIdentifier,
-                                                          final UserIdentifierBO newIdentifier, final String domain) {
+                                            final UserIdentifierBO newIdentifier, final String domain) {
         return accountsService.getByIdUnsafe(id, domain)
                 .flatMap(existing -> {
                     LOG.info("Replace identifiers request. accountId={}, domain={}", id, existing.getDomain());
 
-                    final Optional<UserIdentifierBO> matchedIdentifier = existing.getIdentifiers()
+                    Optional<UserIdentifierBO> matchedIdentifier = existing.getIdentifiers()
                             .stream()
                             .filter(identifier -> identifier.getIdentifier().equals(oldIdentifier))
                             .findFirst();
 
                     if (matchedIdentifier.isEmpty()) {
-                        throw new ServiceException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "Credentials " + id + " has no identifier " + oldIdentifier);
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.IDENTIFIER_DOES_NOT_EXIST, "Credentials " + id + " has no identifier " + oldIdentifier));
                     }
 
-                    final Set<UserIdentifierBO> newIdentifiers = existing.getIdentifiers()
-                            .stream()
-                            .map(identifier -> {
-                                if (identifier.getIdentifier().equals(oldIdentifier)) {
-                                    return UserIdentifierBO.builder()
-                                            .identifier(newIdentifier.getIdentifier())
-                                            .active(newIdentifier.isActive())
-                                            .type(identifier.getType())
-                                            .domain(identifier.getDomain())
-                                            .build();
-                                }
-
-                                return identifier;
-                            })
-                            .collect(Collectors.toSet());
-
-                    final AccountBO update = existing.withIdentifiers(newIdentifiers);
-
-                    return doUpdate(existing, update, domain)
-                            .map(result -> {
-                                storeIdentifierUpdateRecord(existing, matchedIdentifier.get(), CredentialsAudit.Action.UPDATED);
-
-                                return result;
-                            });
-                });
+                    return accountsRepository.replaceIdentifierInPlace(serviceMapper.toDO(existing),
+                            oldIdentifier, UserIdentifierDO.builder()
+                                    .id(ID.generate())
+                                    .domain(domain)
+                                    .identifier(newIdentifier.getIdentifier())
+                                    .accountId(id)
+                                    .type(UserIdentifierDO.Type.valueOf(newIdentifier.getType().name()))
+                                    .active(true)
+                                    .build());
+                })
+                .flatMap(ignored -> accountsService.getById(id, domain)
+                        .flatMap(AsyncUtils::uniFromAccountOptional));
     }
 
     @Override
@@ -250,38 +235,48 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
 
     @Override
     public Uni<AccountBO> replacePassword(final String identifier,
-                                                        final String oldPassword,
-                                                        final String newPassword, final String domain) {
+                                          final String oldPassword,
+                                          final String newPassword, final String domain) {
         return accountsService.getByIdentifierUnsafe(identifier, domain)
                 .flatMap(AsyncUtils::uniFromAccountOptional)
-                .flatMap(credentials -> {
-                    LOG.info("Password replace request. accountId={}, domain={}", credentials.getId(), domain);
+                .flatMap(account -> {
+                    LOG.info("Password replace request. accountId={}, domain={}", account.getId(), domain);
 
-                    return securePassword.verify(oldPassword, credentials.getHashedPassword())
+                    storeAuditAttempt(account);
+
+                    return securePassword.verify(oldPassword, account.getHashedPassword())
                             .map(success -> {
                                 if (success) {
-                                    return credentials;
+                                    LOG.info("password replace: verified");
+                                    return account;
                                 }
 
-                                LOG.info("Password mismatch in replace request. accountId={}, domain={}", credentials.getId(), domain);
+                                LOG.info("Password mismatch in replace request. accountId={}, domain={}", account.getId(), domain);
 
                                 throw new ServiceException(ErrorCode.PASSWORDS_DO_NOT_MATCH, "Passwords do not match");
                             });
                 })
-                .flatMap(credentials -> {
+                .flatMap(account -> {
+                    LOG.info("password replace: Got credentials");
+
                     return credentialsManager.verifyAndHashPassword(newPassword)
                             .flatMap(newHashedPassword -> {
-                                AccountBO update = credentials
-                                        .withHashedPassword(newHashedPassword)
-                                        .withPasswordUpdatedAt(Instant.now());
-
-                                return doUpdate(credentials, update, domain)
+                                return accountsRepository.updateUserPassword(serviceMapper.toDO(account),
+                                                PasswordDO.builder()
+                                                        .password(newHashedPassword.getPassword())
+                                                        .salt(newHashedPassword.getSalt())
+                                                        .build())
                                         .map(result -> {
-                                            storePasswordUpdateRecord(credentials);
+                                            storePasswordUpdateRecord(account);
+
+                                            LOG.info("Password updated. accountId={}, domain={}", account.getId(),
+                                                    account.getDomain());
 
                                             return result;
                                         });
-                            });
+                            })
+                            .flatMap(ignored -> accountsService.getById(account.getId(), domain)
+                                    .flatMap(AsyncUtils::uniFromAccountOptional));
                 });
     }
 
@@ -325,7 +320,9 @@ public class AccountCredentialsServiceImpl implements AccountCredentialsService 
         LOG.info("Storing password update audit record. accountId={}, auditRecordId={}, action={}",
                 credentials.getId(), audit.getId(), audit.getAction());
 
-        credentialsAuditRepository.save(serviceMapper.toDO(audit));
+        credentialsAuditRepository.save(serviceMapper.toDO(audit))
+                .subscribe()
+                .with(ignored -> {});
     }
 
     private void storeAuditAttempt(final AccountBO credentials) {

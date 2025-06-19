@@ -76,6 +76,7 @@ class AccountJpaTest {
                         .identifier("username")
                         .type(UserIdentifierDO.Type.USERNAME)
                         .domain("main")
+                        .active(true)
                         .build()))
                 .build();
 
@@ -99,6 +100,7 @@ class AccountJpaTest {
                         .identifier("deleted-username")
                         .type(UserIdentifierDO.Type.USERNAME)
                         .domain("main")
+                        .active(true)
                         .build()))
                 .build();
 

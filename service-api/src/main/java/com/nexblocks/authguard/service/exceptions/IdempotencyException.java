@@ -6,6 +6,7 @@ public class IdempotencyException extends RuntimeException {
     private final IdempotentRecordBO idempotentRecord;
 
     public IdempotencyException(final IdempotentRecordBO idempotentRecord) {
+        super(null, null, true, false);
         this.idempotentRecord = idempotentRecord;
     }
 
