@@ -214,7 +214,7 @@ public class AccountsHandler implements VertxApiHandler {
                 .map(restMapper::toBO)
                 .collect(Collectors.toList());
 
-        Uni<Optional<AccountBO>> updated;
+        Uni<AccountBO> updated;
 
         if (request.getAction() == PermissionsRequestDTO.Action.GRANT) {
             updated = accountsService.grantPermissions(accountId, permissions, domain);
@@ -222,8 +222,8 @@ public class AccountsHandler implements VertxApiHandler {
             updated = accountsService.revokePermissions(accountId, permissions, domain);
         }
 
-        updated.map(opt -> opt.map(restMapper::toDTO))
-                .subscribe().withSubscriber(new VertxOptJsonSubscriber<>(context));
+        updated.map(restMapper::toDTO)
+                .subscribe().withSubscriber(new VertxJsonSubscriber<>(context));
     }
 
     private void updateRoles(RoutingContext context) {

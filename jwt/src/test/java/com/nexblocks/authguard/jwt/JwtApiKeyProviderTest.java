@@ -33,33 +33,28 @@ class JwtApiKeyProviderTest {
                 .build();
     }
 
-    private JwtApiKeyProvider newProviderInstance(final JtiProvider jtiProvider,
-                                                  final boolean includeAccessDetails) {
+    private JwtApiKeyProvider newProviderInstance(final boolean includeAccessDetails) {
         final StrategyConfig strategyConfig = StrategyConfig.builder()
                 .includeRoles(includeAccessDetails)
                 .includePermissions(includeAccessDetails)
                 .includeExternalId(includeAccessDetails)
                 .build();
 
-        return new JwtApiKeyProvider(jwtConfig(), jtiProvider, strategyConfig);
+        return new JwtApiKeyProvider(jwtConfig(), strategyConfig);
     }
 
     @Test
     void generateTokenAccount() {
-        final JwtApiKeyProvider tokenProvider = newProviderInstance(Mockito.mock(JtiProvider.class), false);
+        final JwtApiKeyProvider tokenProvider = newProviderInstance(false);
         assertThatThrownBy(() -> tokenProvider.generateToken(RANDOM.nextObject(AccountBO.class)))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
     void generateTokenApp() {
-        final JtiProvider jtiProvider = Mockito.mock(JtiProvider.class);
-        final JwtApiKeyProvider tokenProvider = newProviderInstance(jtiProvider, false);
+        final JwtApiKeyProvider tokenProvider = newProviderInstance(false);
 
-        final String jti = "tokenId";
         final AppBO app = RANDOM.nextObject(AppBO.class);
-
-        Mockito.when(jtiProvider.next()).thenReturn(jti);
 
         final AuthResponseBO tokens = tokenProvider.generateToken(app);
 
@@ -67,15 +62,13 @@ class JwtApiKeyProviderTest {
         assertThat(tokens.getToken()).isNotNull();
         assertThat(tokens.getRefreshToken()).isNull();
 
-        verifyToken(tokens.getToken().toString(), app.getId(), jti);
+        verifyToken(tokens.getToken().toString(), app.getId());
     }
 
     @Test
     void generateTokenAppWithAccessDetails() {
-        final JtiProvider jtiProvider = Mockito.mock(JtiProvider.class);
-        final JwtApiKeyProvider tokenProvider = newProviderInstance(jtiProvider, true);
+        final JwtApiKeyProvider tokenProvider = newProviderInstance(true);
 
-        final String jti = "tokenId";
         final AppBO app = RANDOM.nextObject(AppBO.class)
                 .withExternalId("externalId")
                 .withRoles("test-role")
@@ -84,15 +77,13 @@ class JwtApiKeyProviderTest {
                         .name("read")
                         .build());
 
-        Mockito.when(jtiProvider.next()).thenReturn(jti);
-
         final AuthResponseBO tokens = tokenProvider.generateToken(app);
 
         assertThat(tokens).isNotNull();
         assertThat(tokens.getToken()).isNotNull();
         assertThat(tokens.getRefreshToken()).isNull();
 
-        final DecodedJWT decodedJWT = verifyAndGetDecodedToken(tokens.getToken().toString(), app.getId(), jti);
+        final DecodedJWT decodedJWT = verifyAndGetDecodedToken(tokens.getToken().toString(), app.getId());
 
         assertThat(decodedJWT.getClaim("eid").asString())
                 .isEqualTo("externalId");
@@ -106,14 +97,10 @@ class JwtApiKeyProviderTest {
 
     @Test
     void generateTokenWithExpiry() {
-        final JtiProvider jtiProvider = Mockito.mock(JtiProvider.class);
-        final JwtApiKeyProvider tokenProvider = newProviderInstance(jtiProvider, false);
+        final JwtApiKeyProvider tokenProvider = newProviderInstance(false);
 
-        final String jti = "tokenId";
         final AppBO app = RANDOM.nextObject(AppBO.class);
         final Instant expiresAt = Instant.now().plusSeconds(5);
-
-        Mockito.when(jtiProvider.next()).thenReturn(jti);
 
         final AuthResponseBO tokens = tokenProvider.generateToken(app, expiresAt);
 
@@ -121,7 +108,7 @@ class JwtApiKeyProviderTest {
         assertThat(tokens.getToken()).isNotNull();
         assertThat(tokens.getRefreshToken()).isNull();
 
-        final DecodedJWT decodedJWT = verifyAndGetDecodedToken(tokens.getToken().toString(), app.getId(), jti);
+        final DecodedJWT decodedJWT = verifyAndGetDecodedToken(tokens.getToken().toString(), app.getId());
 
         assertThat(decodedJWT.getExpiresAt()).isNotNull();
         assertThat(decodedJWT.getExpiresAt()).isBetween(
@@ -129,10 +116,9 @@ class JwtApiKeyProviderTest {
                 Instant.now().plusSeconds(6));
     }
 
-    private void verifyToken(final String token, final long subject, final String jti) {
+    private void verifyToken(final String token, final long subject) {
         final JWTVerifier verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
                 .withSubject("" + subject)
-                .withJWTId(jti)
                 .build();
 
         final DecodedJWT decodedJWT = verifier.verify(token);
@@ -142,11 +128,9 @@ class JwtApiKeyProviderTest {
     }
 
     private DecodedJWT verifyAndGetDecodedToken(final String token,
-                                                final long subject,
-                                                final String jti) {
+                                                final long subject) {
         final JWTVerifier verifier = JWT.require(JwtConfigParser.parseAlgorithm(ALGORITHM, null, KEY))
                 .withSubject("" + subject)
-                .withJWTId(jti)
                 .build();
 
         final DecodedJWT decodedJWT = verifier.verify(token);

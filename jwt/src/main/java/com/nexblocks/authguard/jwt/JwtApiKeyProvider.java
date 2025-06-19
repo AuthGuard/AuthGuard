@@ -11,28 +11,27 @@ import com.nexblocks.authguard.service.auth.ProvidesToken;
 import com.nexblocks.authguard.service.config.JwtConfig;
 import com.nexblocks.authguard.service.config.StrategyConfig;
 import com.nexblocks.authguard.service.model.*;
+import com.nexblocks.authguard.service.util.ID;
+import io.smallrye.mutiny.Uni;
 
 import java.time.Instant;
 import java.util.Date;
-import io.smallrye.mutiny.Uni;
 
 @ProvidesToken("jwtApiKey")
 public class JwtApiKeyProvider implements AuthProvider {
     private final String TOKEN_TYPE = "jwt_api_key";
 
     private final Algorithm algorithm;
-    private final JtiProvider jti;
     private final StrategyConfig strategyConfig;
 
     @Inject
-    public JwtApiKeyProvider(final JwtConfig jwtConfig, final JtiProvider jti,
+    public JwtApiKeyProvider(final JwtConfig jwtConfig,
                              final @Named("jwtApiKey") ConfigContext apiKeyConfigContext) {
-        this(jwtConfig, jti, apiKeyConfigContext.asConfigBean(StrategyConfig.class));
+        this(jwtConfig, apiKeyConfigContext.asConfigBean(StrategyConfig.class));
     }
 
-    public JwtApiKeyProvider(final JwtConfig jwtConfig, final JtiProvider jti,
+    public JwtApiKeyProvider(final JwtConfig jwtConfig,
                              final StrategyConfig strategyConfig) {
-        this.jti = jti;
         this.strategyConfig = strategyConfig;
 
         this.algorithm = JwtConfigParser.parseAlgorithm(jwtConfig.getAlgorithm(), jwtConfig.getPublicKey(),
@@ -85,7 +84,7 @@ public class JwtApiKeyProvider implements AuthProvider {
     }
 
     private JwtTokenBuilder generateApiToken(final AppBO app, final Instant expiresAt) {
-        final String keyId = jti.next();
+        final String keyId = ID.generateSimplifiedUuid();
 
         final JWTCreator.Builder jwtBuilder = JWT.create()
                 .withSubject("" + app.getId())
@@ -120,7 +119,7 @@ public class JwtApiKeyProvider implements AuthProvider {
     }
 
     private JwtTokenBuilder generateApiToken(final ClientBO client, final Instant expiresAt) {
-        final String keyId = jti.next();
+        final String keyId = ID.generateSimplifiedUuid();
 
         final JWTCreator.Builder jwtBuilder = JWT.create()
                 .withSubject("" + client.getId())

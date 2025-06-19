@@ -9,6 +9,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Lob;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Data
 @NoArgsConstructor
@@ -34,7 +36,9 @@ public class TotpKeyDO extends AbstractDO {
     private String authenticator;
 
     @Lob
+    @JdbcTypeCode(SqlTypes.VARBINARY)
     private byte[] nonce;
     @Lob
+    @JdbcTypeCode(SqlTypes.VARBINARY)
     private byte[] encryptedKey;
 }

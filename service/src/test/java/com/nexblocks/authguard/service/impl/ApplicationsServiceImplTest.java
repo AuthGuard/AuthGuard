@@ -1,6 +1,7 @@
 package com.nexblocks.authguard.service.impl;
 
 import com.nexblocks.authguard.dal.model.AppDO;
+import com.nexblocks.authguard.dal.model.PermissionDO;
 import com.nexblocks.authguard.dal.persistence.ApplicationsRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.*;
@@ -16,9 +17,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.*;
-import io.smallrye.mutiny.Uni;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -180,19 +181,27 @@ class ApplicationsServiceImplTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(account)));
         Mockito.when(permissionsService.validate(any(), eq("main"), eq(EntityType.APPLICATION)))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, List.class)));
-        Mockito.when(applicationsRepository.update(any()))
-                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AppDO.class))));
+        Mockito.when(applicationsRepository.addAppPermissions(any(), any()))
+                .thenAnswer(invocation -> {
+                    AppDO toUpdate = invocation.getArgument(0, AppDO.class);
+                    Stream<PermissionDO> toAdd = invocation.getArgument(1, List.class)
+                            .stream()
+                            .map(PermissionDO.class::cast);
+
+                    toUpdate.setPermissions(Stream.concat(toUpdate.getPermissions().stream(), toAdd)
+                            .collect(Collectors.toSet()));
+                    return Uni.createFrom().item(toUpdate);
+                });
 
         List<PermissionBO> permissions = Arrays.asList(
                 random.nextObject(PermissionBO.class).withEntityType(null),
                 random.nextObject(PermissionBO.class).withEntityType(null)
         );
 
-        Optional<AppBO> updated = applicationsService.grantPermissions(account.getId(), permissions, "main").subscribeAsCompletionStage().join();
+        AppBO updated = applicationsService.grantPermissions(account.getId(), permissions, "main").subscribeAsCompletionStage().join();
 
-        assertThat(updated).isPresent();
-        assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(account);
-        assertThat(updated.get().getPermissions()).contains(permissions.toArray(new PermissionBO[0]));
+        assertThat(serviceMapper.toDO(updated)).isNotEqualTo(account);
+        assertThat(updated.getPermissions()).contains(permissions.toArray(new PermissionBO[0]));
     }
 
     @Test
@@ -237,31 +246,42 @@ class ApplicationsServiceImplTest {
                 .hasCauseInstanceOf(ServiceException.class);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void revokePermissions() {
-        AppDO account = createAppDO();
-        List<PermissionBO> currentPermissions = account.getPermissions().stream()
+        AppDO app = createAppDO();
+        List<PermissionBO> currentPermissions = app.getPermissions().stream()
                 .map(permissionDO -> PermissionBO.builder()
                         .group(permissionDO.getPermissionGroup())
                         .name(permissionDO.getName())
                         .build()
                 ).toList();
 
-        Mockito.when(applicationsRepository.getById(account.getId()))
-                .thenReturn(Uni.createFrom().item(Optional.of(account)));
-        Mockito.when(applicationsRepository.update(any()))
-                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AppDO.class))));
+        Mockito.when(applicationsRepository.getById(app.getId()))
+                .thenReturn(Uni.createFrom().item(Optional.of(app)));
+        Mockito.when(applicationsRepository.removeAppPermissions(any(), any()))
+                .thenAnswer(invocation -> {
+                    AppDO toUpdate = invocation.getArgument(0, AppDO.class);
+                    Set<String> toRemove = (Set<String>) invocation.getArgument(1, List.class)
+                            .stream()
+                            .map(permission -> (((PermissionDO) permission).getPermissionGroup()) + (((PermissionDO) permission).getName()))
+                            .collect(Collectors.toSet());
+
+                    toUpdate.setPermissions(toUpdate.getPermissions().stream()
+                            .filter(permission -> toRemove.contains(permission.getPermissionGroup() + permission.getName()))
+                            .collect(Collectors.toSet()));
+                    return Uni.createFrom().item(invocation.getArgument(0, AppDO.class));
+                });
 
         List<PermissionBO> permissionsToRevoke = Arrays.asList(
                 currentPermissions.get(0),
                 currentPermissions.get(1)
         );
 
-        Optional<AppBO> updated = applicationsService.revokePermissions(account.getId(), permissionsToRevoke, "main").subscribeAsCompletionStage().join();
+        AppBO updated = applicationsService.revokePermissions(app.getId(), permissionsToRevoke, "main").subscribeAsCompletionStage().join();
 
-        assertThat(updated).isPresent();
-        assertThat(serviceMapper.toDO(updated.get())).isNotEqualTo(account);
-        assertThat(updated.get().getPermissions()).doesNotContain(permissionsToRevoke.toArray(new PermissionBO[0]));
+        assertThat(serviceMapper.toDO(updated)).isNotEqualTo(app);
+        assertThat(updated.getPermissions()).doesNotContain(permissionsToRevoke.toArray(new PermissionBO[0]));
     }
 
     @Test

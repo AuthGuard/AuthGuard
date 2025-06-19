@@ -11,6 +11,8 @@ import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountDO;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.dal.model.CredentialsAuditDO;
+import com.nexblocks.authguard.dal.model.PasswordDO;
+import com.nexblocks.authguard.dal.persistence.AccountsRepository;
 import com.nexblocks.authguard.dal.persistence.CredentialsAuditRepository;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.AccountsService;
@@ -19,10 +21,7 @@ import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
 import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.mappers.ServiceMapper;
 import com.nexblocks.authguard.service.mappers.ServiceMapperImpl;
-import com.nexblocks.authguard.service.model.AccountBO;
-import com.nexblocks.authguard.service.model.HashedPasswordBO;
-import com.nexblocks.authguard.service.model.PasswordResetTokenBO;
-import com.nexblocks.authguard.service.model.UserIdentifierBO;
+import com.nexblocks.authguard.service.model.*;
 import com.nexblocks.authguard.service.util.CredentialsManager;
 import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +34,6 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -44,6 +42,7 @@ import static org.mockito.ArgumentMatchers.eq;
 
 class AccountCredentialsServiceImplTest {
     private AccountsService accountsService;
+    private AccountsRepository accountsRepository;
     private CredentialsAuditRepository accountAuditRepository;
     private AccountTokensRepository accountTokensRepository;
     private SecurePassword securePassword;
@@ -58,6 +57,7 @@ class AccountCredentialsServiceImplTest {
     @BeforeEach
     void setup() {
         accountsService = Mockito.mock(AccountsService.class);
+        accountsRepository = Mockito.mock(AccountsRepository.class);
         accountAuditRepository = Mockito.mock(CredentialsAuditRepository.class);
         accountTokensRepository = Mockito.mock(AccountTokensRepository.class);
         securePassword = Mockito.mock(SecurePassword.class);
@@ -76,7 +76,7 @@ class AccountCredentialsServiceImplTest {
         
         CredentialsManager accountManager = new CredentialsManager(securePasswordProvider, passwordValidator);
 
-        accountCredentialsService = new AccountCredentialsServiceImpl(accountsService,
+        accountCredentialsService = new AccountCredentialsServiceImpl(accountsService, accountsRepository,
                 accountAuditRepository, accountTokensRepository,
                 securePasswordProvider, accountManager, messageBus, serviceMapper);
     }
@@ -103,8 +103,20 @@ class AccountCredentialsServiceImplTest {
         Mockito.when(accountsService.getByIdUnsafe(accountId, "main"))
                 .thenReturn(Uni.createFrom().item(accountBO));
 
-        Mockito.when(accountsService.update(Mockito.any(), Mockito.eq("main")))
-                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AccountBO.class))));
+        Mockito.when(accountsService.getById(accountId, "main"))
+                .thenReturn(Uni.createFrom().item(
+                        Optional.of(accountBO.withHashedPassword(null)
+                                .withPasswordUpdatedAt(Instant.now()))));
+
+        Mockito.when(accountsRepository.updateUserPassword(Mockito.any(), Mockito.any()))
+                .thenAnswer(invocation -> {
+                    AccountDO toUpdate = invocation.getArgument(0, AccountDO.class);
+                    PasswordDO password = invocation.getArgument(1, PasswordDO.class);
+
+                    toUpdate.setHashedPassword(password);
+
+                    return Uni.createFrom().item(toUpdate);
+                });
 
         Mockito.when(accountAuditRepository.save(any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CredentialsAuditDO.class)));
@@ -262,8 +274,20 @@ class AccountCredentialsServiceImplTest {
         Mockito.when(accountsService.getByIdUnsafe(accountId, "main"))
                 .thenReturn(Uni.createFrom().item(accountBO));
 
-        Mockito.when(accountsService.update(Mockito.any(), Mockito.eq("main")))
-                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AccountBO.class))));
+        Mockito.when(accountsService.getById(accountId, "main"))
+                .thenReturn(Uni.createFrom().item(
+                        Optional.of(accountBO.withHashedPassword(null)
+                                .withPasswordUpdatedAt(Instant.now()))));
+
+        Mockito.when(accountsRepository.updateUserPassword(Mockito.any(), Mockito.any()))
+                .thenAnswer(invocation -> {
+                    AccountDO toUpdate = invocation.getArgument(0, AccountDO.class);
+                    PasswordDO password = invocation.getArgument(1, PasswordDO.class);
+
+                    toUpdate.setHashedPassword(password);
+
+                    return Uni.createFrom().item(toUpdate);
+                });
 
         Mockito.when(accountAuditRepository.save(any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CredentialsAuditDO.class)));
@@ -326,6 +350,7 @@ class AccountCredentialsServiceImplTest {
                 .id(1)
                 .addIdentifiers(UserIdentifierBO.builder()
                         .identifier(identifier)
+                        .type(UserIdentifier.Type.USERNAME)
                         .build())
                 .hashedPassword(HashedPasswordBO.builder()
                         .salt("salty")
@@ -338,8 +363,21 @@ class AccountCredentialsServiceImplTest {
         Mockito.when(accountsService.getByIdentifierUnsafe(identifier, "main"))
                 .thenReturn(Uni.createFrom().item(Optional.of(accountBO)));
 
-        Mockito.when(accountsService.update(Mockito.any(), Mockito.eq("main")))
-                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AccountBO.class))));
+        Mockito.when(accountsService.getById(accountBO.getId(), "main"))
+                .thenReturn(Uni.createFrom().item(
+                        Optional.of(accountBO.withHashedPassword(null)
+                                .withPasswordUpdatedAt(Instant.now()))
+                ));
+
+        Mockito.when(accountsRepository.updateUserPassword(Mockito.any(), Mockito.any()))
+                .thenAnswer(invocation -> {
+                    AccountDO toUpdate = invocation.getArgument(0, AccountDO.class);
+                    PasswordDO password = invocation.getArgument(1, PasswordDO.class);
+
+                    toUpdate.setHashedPassword(password);
+
+                    return Uni.createFrom().item(toUpdate);
+                });
 
         Mockito.when(accountAuditRepository.save(any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, CredentialsAuditDO.class)));
@@ -448,6 +486,8 @@ class AccountCredentialsServiceImplTest {
                 .id(accountId)
                 .addIdentifiers(UserIdentifierBO.builder()
                         .identifier("username")
+                        .active(true)
+                        .type(UserIdentifier.Type.USERNAME)
                         .build())
                 .hashedPassword(HashedPasswordBO.builder()
                         .salt("salty")
@@ -456,17 +496,29 @@ class AccountCredentialsServiceImplTest {
                 .passwordVersion(1)
                 .build();
 
-        Mockito.when(accountsService.getByIdUnsafe(accountId, "main"))
-                .thenReturn(Uni.createFrom().item(accountBO));
-        Mockito.when(accountsService.update(Mockito.any(), Mockito.eq("main")))
-                .thenAnswer(invocation -> Uni.createFrom().item(Optional.of(invocation.getArgument(0, AccountBO.class))));
-
         UserIdentifierBO newIdentifier = UserIdentifierBO.builder()
                 .identifier("new_username")
                 .active(true)
+                .type(UserIdentifier.Type.USERNAME)
                 .build();
 
-        AccountBO actual = accountCredentialsService.replaceIdentifier(accountId, "username", newIdentifier, "main").subscribeAsCompletionStage().join();
+        Mockito.when(accountsService.getByIdUnsafe(accountId, "main"))
+                .thenReturn(Uni.createFrom().item(accountBO));
+        Mockito.when(accountsService.getById(accountId, "main"))
+                .thenReturn(Uni.createFrom().item(
+                        Optional.of(accountBO
+                                .withHashedPassword(null)
+                                .withIdentifiers(UserIdentifierBO.builder()
+                                        .identifier("new_username")
+                                        .active(true)
+                                        .type(UserIdentifier.Type.USERNAME)
+                                        .build()))
+                ));
+        Mockito.when(accountsRepository.replaceIdentifierInPlace(Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountDO.class)));
+
+        AccountBO actual = accountCredentialsService.replaceIdentifier(accountId, "username", newIdentifier, "main")
+                .subscribeAsCompletionStage().join();
 
         AccountBO expected = AccountBO.builder()
                 .id(accountId)

@@ -2,6 +2,7 @@ package com.nexblocks.authguard.service.impl;
 
 import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.model.AppDO;
+import com.nexblocks.authguard.dal.model.PermissionDO;
 import com.nexblocks.authguard.dal.persistence.ApplicationsRepository;
 import com.nexblocks.authguard.dal.persistence.LongPage;
 import com.nexblocks.authguard.emb.MessageBus;
@@ -17,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import io.smallrye.mutiny.Uni;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -166,30 +166,28 @@ public class ApplicationsServiceImpl implements ApplicationsService {
     }
 
     @Override
-    public Uni<Optional<AppBO>> grantPermissions(long id, List<PermissionBO> permissions, String domain) {
+    public Uni<AppBO> grantPermissions(long id, List<PermissionBO> permissions, String domain) {
         return getById(id, domain)
                 .flatMap(AsyncUtils::uniFromAppOptional)
-                .flatMap(app -> verifyPermissionsOrFail(permissions, domain)
+                .flatMap(app -> verifyPermissionsOrFail(permissions, app.getDomain())
                         .map(ignored -> app))
                 .flatMap(app -> {
-                    List<PermissionBO> combinedPermissions = Stream.concat(app.getPermissions().stream(), permissions.stream())
-                            .distinct()
-                            .collect(Collectors.toList());
+                    List<PermissionDO> permissionsToAdd = permissions.stream()
+                            .map(serviceMapper::toDO)
+                            .toList();
 
-                    AppBO withNewPermissions = app.withPermissions(combinedPermissions);
-
-                    return applicationsRepository.update(serviceMapper.toDO(withNewPermissions))
-                            .map(updated -> updated.map(appDO -> {
+                    return applicationsRepository.addAppPermissions(serviceMapper.toDO(app), permissionsToAdd)
+                            .map(updated -> {
                                 LOG.info("Granted app permissions. accountId={}, domain={}, permissions={}",
-                                        app.getId(), app.getDomain(), permissions);
+                                        updated.getId(), updated.getDomain(), permissions);
 
-                                return serviceMapper.toBO(appDO);
-                            }));
+                                return serviceMapper.toBO(updated);
+                            });
                 });
     }
 
     @Override
-    public Uni<Optional<AppBO>> revokePermissions(long id, List<PermissionBO> permissions, String domain) {
+    public Uni<AppBO> revokePermissions(long id, List<PermissionBO> permissions, String domain) {
         return getById(id, domain)
                 .flatMap(AsyncUtils::uniFromAppOptional)
                 .flatMap(app -> {
@@ -197,22 +195,18 @@ public class ApplicationsServiceImpl implements ApplicationsService {
                             .map(Permission::getFullName)
                             .collect(Collectors.toSet());
 
-                    LOG.info("Revoke app permissions request. accountId={}, domain={}, permissions={}",
-                            app.getId(), app.getDomain(), permissionsFullNames);
+                    List<PermissionDO> permissionsToRemove = app.getPermissions().stream()
+                            .filter(permission -> permissionsFullNames.contains(permission.getFullName()))
+                            .map(serviceMapper::toDO)
+                            .toList();
 
-                    List<PermissionBO> filteredPermissions = app.getPermissions().stream()
-                            .filter(permission -> !permissionsFullNames.contains(permission.getFullName()))
-                            .collect(Collectors.toList());
-
-                    AppBO withNewPermissions = app.withPermissions(filteredPermissions);
-
-                    return applicationsRepository.update(serviceMapper.toDO(withNewPermissions))
-                            .map(updated -> updated.map(appDO -> {
+                    return applicationsRepository.removeAppPermissions(serviceMapper.toDO(app), permissionsToRemove)
+                            .map(updated -> {
                                 LOG.info("Revoked app permissions. accountId={}, domain={}, permissions={}",
-                                        app.getId(), app.getDomain(), permissionsFullNames);
+                                        updated.getId(), updated.getDomain(), permissionsFullNames);
 
-                                return serviceMapper.toBO(appDO);
-                            }));
+                                return serviceMapper.toBO(updated);
+                            });
                 });
     }
 
