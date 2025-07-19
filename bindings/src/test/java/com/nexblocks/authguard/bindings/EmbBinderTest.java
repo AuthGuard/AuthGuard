@@ -1,10 +1,14 @@
 package com.nexblocks.authguard.bindings;
 
+import com.google.inject.Binder;
+import com.google.inject.Module;
 import com.nexblocks.authguard.emb.MessageSubscriber;
 import com.nexblocks.authguard.emb.model.Message;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
+import io.vertx.core.eventbus.EventBus;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.Set;
@@ -34,7 +38,7 @@ class EmbBinderTest {
     }
 
     static class NeedsSubscribers {
-        final Set<MessageSubscriber> subscribers;
+        Set<MessageSubscriber> subscribers;
 
         @Inject
         public NeedsSubscribers(final Set<MessageSubscriber> subscribers) {
@@ -44,11 +48,14 @@ class EmbBinderTest {
 
     @Test
     void subscribersInjected() {
-        final EmbBinder embBinder = new EmbBinder(Collections.singletonList("com.nexblocks.authguard.bindings"));
-        final NeedsSubscribers instance = Guice.createInjector(embBinder)
+        EmbBinder embBinder = new EmbBinder(Collections.singletonList("com.nexblocks.authguard.bindings"));
+        NeedsSubscribers instance = Guice.createInjector(
+                        embBinder, binder -> {
+                            binder.bind(EventBus.class).toInstance(Mockito.mock(EventBus.class));
+                        })
                 .getInstance(NeedsSubscribers.class);
 
-        final Set<MessageSubscriber> subscribers = instance.subscribers;
+        Set<MessageSubscriber> subscribers = instance.subscribers;
 
         assertThat(subscribers).containsOnly(new SomeSubscriber(), new OtherSubscriber());
     }
