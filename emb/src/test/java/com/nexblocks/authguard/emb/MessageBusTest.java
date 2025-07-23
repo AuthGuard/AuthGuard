@@ -1,12 +1,13 @@
 package com.nexblocks.authguard.emb;
 
-import com.nexblocks.authguard.config.ConfigContext;
-import com.nexblocks.authguard.config.JacksonConfigContext;
-import com.nexblocks.authguard.emb.model.Message;
-import com.nexblocks.authguard.emb.rxjava.RxPublisherFactory;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.nexblocks.authguard.config.ConfigContext;
+import com.nexblocks.authguard.config.JacksonConfigContext;
+import com.nexblocks.authguard.emb.model.Message;
+import com.nexblocks.authguard.emb.vertx.VertxPublisherFactory;
+import io.vertx.core.Vertx;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -20,29 +21,30 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MessageBusTest {
     private MessageBus messageBus;
 
-    private List<Message> receivedFromAccounts = new ArrayList<>();
-    private List<Message> receivedFromAuth = new ArrayList<>();
-    private List<Message> receivedFromAll = new ArrayList<>();
+    private final List<Message<?>> receivedFromAccounts = new ArrayList<>();
+    private final List<Message<?>> receivedFromAuth = new ArrayList<>();
+    private final List<Message<?>> receivedFromAll = new ArrayList<>();
 
     @BeforeAll
     void setup()  {
-        final ObjectNode configNode = new ObjectNode(JsonNodeFactory.instance);
+        ObjectNode configNode = new ObjectNode(JsonNodeFactory.instance);
 
         configNode.set("channels", new ArrayNode(JsonNodeFactory.instance)
                 .add("accounts")
                 .add("auth")
         );
 
-        final ConfigContext configContext = new JacksonConfigContext(configNode);
+        ConfigContext configContext = new JacksonConfigContext(configNode);
 
-        messageBus = new MessageBus(new RxPublisherFactory(), configContext);
+        Vertx vertx = Vertx.vertx();
+        messageBus = new MessageBus(new VertxPublisherFactory(vertx.eventBus()), configContext);
     }
 
     @Test
     void pubSub() throws InterruptedException {
-        messageBus.subscribe("accounts", message -> receivedFromAccounts.add(message));
-        messageBus.subscribe("auth", message -> receivedFromAuth.add(message));
-        messageBus.subscribe("*", message -> receivedFromAll.add(message));
+        messageBus.subscribe("accounts", receivedFromAccounts::add);
+        messageBus.subscribe("auth", receivedFromAuth::add);
+        messageBus.subscribe("*", receivedFromAll::add);
 
         messageBus.publish("accounts", Message.builder()
                 .messageBody("Accounts Message")

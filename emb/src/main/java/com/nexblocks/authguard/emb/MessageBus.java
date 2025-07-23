@@ -26,8 +26,8 @@ public class MessageBus {
     @Inject
     public MessageBus(final MessagePublisherFactory factory,
                       final @Named("emb") ConfigContext channelsConfig) {
-        final ImmutableMap.Builder<String, MessagePublisher> channelsMapBuilder = ImmutableMap.builder();
-        final Collection<String> channelsNames = channelsConfig.getAsCollection("channels", String.class);
+        ImmutableMap.Builder<String, MessagePublisher> channelsMapBuilder = ImmutableMap.builder();
+        Collection<String> channelsNames = channelsConfig.getAsCollection("channels", String.class);
 
         if (channelsNames != null) {
             channelsNames
@@ -47,11 +47,11 @@ public class MessageBus {
         this.globalSubscribers = new ArrayList<>();
     }
 
-    public void publish(final String channel, final Message message) {
-        final MessagePublisher publisher = get(channel);
+    public void publish(final String channel, final Message<?> message) {
+        MessagePublisher publisher = get(channel);
 
         if (publisher == null) {
-            LOG.debug("Attempt to publish to non-existing channel " + channel);
+            LOG.debug("Attempt to publish to non-existing channel {}", channel);
         } else {
             publisher.publish(message);
         }
@@ -74,7 +74,7 @@ public class MessageBus {
     }
 
     private MessagePublisher getOrCreateIfMissing(final String channel) {
-        final MessagePublisher publisher = channels.get(channel);
+        MessagePublisher publisher = channels.get(channel);
 
         if (publisher == null) {
             final MessagePublisher createdPublisher = factory.create(null);
@@ -94,7 +94,7 @@ public class MessageBus {
     }
 
     private void subscribeToChannel(final String channel, final MessageSubscriber subscriber) {
-        final MessagePublisher publisher = getNullable(channel);
+        MessagePublisher publisher = getNullable(channel);
 
         if (publisher == null) {
             throw new IllegalArgumentException("Cannot subscribe to non-existing channel " + channel);
