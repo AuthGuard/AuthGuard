@@ -40,7 +40,7 @@ class OpenIdConnectServiceTest {
             .id(1)
             .domain("test")
             .clientType(Client.ClientType.SSO)
-            .baseUrl("test-domain.com")
+            .baseUrl("http://test-domain.com")
             .build();
 
     private final RequestContextBO context = RequestContextBO.builder().build();
@@ -170,6 +170,7 @@ class OpenIdConnectServiceTest {
                 .build();
         AuthResponseBO expectedResponse = AuthResponseBO.builder()
                 .token("auth code")
+                .client(client)
                 .build();
 
         Mockito.when(clientsService.getById(1, "main"))
@@ -371,6 +372,7 @@ class OpenIdConnectServiceTest {
                 .build();
         AuthResponseBO expectedResponse = AuthResponseBO.builder()
                 .token("auth code")
+                .client(client)
                 .build();
 
         Mockito.when(clientsService.getById(1, "main"))

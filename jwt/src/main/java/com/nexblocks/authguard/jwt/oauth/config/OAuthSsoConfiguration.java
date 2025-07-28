@@ -18,6 +18,7 @@ public interface OAuthSsoConfiguration {
     boolean useUsername();
     boolean useEmail();
     boolean usePhoneNumber();
+    ImmutableMfaConfiguration useMultiFactorAuthentication();
 
     @Value.Default
     default String getLoginPage() {
@@ -32,5 +33,17 @@ public interface OAuthSsoConfiguration {
     @Value.Default
     default Set<String> getDomains() {
         return Collections.emptySet();
+    }
+
+    @Value.Immutable
+    @Value.Style(
+            validationMethod = Value.Style.ValidationMethod.NONE,
+            jdkOnly = true
+    )
+    @JsonSerialize(as = ImmutableMfaConfiguration.class)
+    @JsonDeserialize(as = ImmutableMfaConfiguration.class)
+    interface MfaConfiguration {
+        boolean useEmailOtp();
+        boolean useSmsOtp();
     }
 }

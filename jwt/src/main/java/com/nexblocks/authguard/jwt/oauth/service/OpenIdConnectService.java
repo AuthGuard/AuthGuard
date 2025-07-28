@@ -55,8 +55,8 @@ public class OpenIdConnectService {
     }
 
     public Uni<AccountTokenDO> createRequestToken(final RequestContextBO requestContext,
-                                                                final OpenIdConnectRequest request,
-                                                                final String domain) {
+                                                  final OpenIdConnectRequest request,
+                                                  final String domain) {
         String token = cryptographicRandom.base64Url(REQUEST_TOKEN_SIZE);
         Map<String, String> parameters = new TreeMap<>();
 
@@ -86,8 +86,8 @@ public class OpenIdConnectService {
     }
 
     public Uni<OpenIdConnectRequest> getRequestFromToken(final String token,
-                                                                       final RequestContextBO requestContext,
-                                                                       final String domain) {
+                                                         final RequestContextBO requestContext,
+                                                         final String domain) {
         return accountTokensRepository.getByToken(token)
                 .flatMap(opt -> {
                     if (opt.isEmpty()) {
@@ -126,8 +126,8 @@ public class OpenIdConnectService {
     }
 
     public Uni<AuthResponseBO> processAuth(final OpenIdConnectRequest request,
-                                                         final RequestContextBO requestContext,
-                                                         final String domain) {
+                                           final RequestContextBO requestContext,
+                                           final String domain) {
         if (!Objects.equals(request.getResponseType(), OAuthConst.ResponseTypes.Code)) {
             return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
                     "Invalid response type"));
@@ -159,8 +159,10 @@ public class OpenIdConnectService {
                         return Uni.createFrom().failure(validatedRequest.getCause());
                     }
 
-                    return exchangeService.exchange(validatedRequest.get(), BASIC_TOKEN_TYPE, AUTH_CODE_TOKEN_TYPE,
-                            requestContext.withClientId(String.valueOf(request.getClientId())));
+                    return exchangeService.exchange(validatedRequest.get(),
+                                    BASIC_TOKEN_TYPE, AUTH_CODE_TOKEN_TYPE,
+                                    requestContext.withClientId(String.valueOf(request.getClientId())))
+                            .map(response -> response.withClient(client));
                 });
     }
 
@@ -208,7 +210,8 @@ public class OpenIdConnectService {
                     "Invalid redirect URL"));
         }
 
-        if (!parsedUrl.host().equalsIgnoreCase(client.getBaseUrl())) {
+        String parsedBaseUrl = ClientUrlUtils.getStandardBaseUrl(parsedUrl);
+        if (!parsedBaseUrl.equalsIgnoreCase(client.getBaseUrl())) {
             return Try.failure(new ServiceException(ErrorCode.GENERIC_AUTH_FAILURE,
                     "Redirect URL doesn't match the client base URL"));
         }
