@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
 import com.nexblocks.authguard.api.common.RequestContextExtractor;
+import com.nexblocks.authguard.api.dto.entities.AuthResponseDTO;
 import com.nexblocks.authguard.api.dto.entities.RequestValidationError;
 import com.nexblocks.authguard.api.routes.VertxApiHandler;
 import com.nexblocks.authguard.config.ConfigContext;
@@ -25,7 +26,6 @@ import io.vavr.control.Either;
 import io.vertx.core.json.Json;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import okhttp3.HttpUrl;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
@@ -71,6 +71,7 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
         router.get("/oidc/:domain/auth").handler(this::authFlowPage);
         router.get("/oidc/:domain/login").handler(this::loginPage);
         router.post("/oidc/:domain/auth").handler(this::authFlowAuthApi);
+        router.post("/oidc/:domain/otp").handler(this::authFlowOtpApi);
         router.post("/oidc/:domain/token").handler(this::authFlowTokenApi);
         router.get("/oidc/:domain/otp").handler(this::otpPage);
 
@@ -178,7 +179,84 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
                             .password(request.getPassword())
                             .build();
 
-                    return openIdConnectService.processAuth(realRequest, requestContext, domain)
+                    boolean useOtp = configuration.useMultiFactorAuthentication() != null
+                            && configuration.useMultiFactorAuthentication().useOtp();
+
+                    Uni<AuthResponseBO> processUnit = useOtp ?
+                            openIdConnectService.processAuthBasicToOtpFlow(realRequest, requestContext, domain) :
+                            openIdConnectService.processAuthBasicToCodeFlow(realRequest, requestContext, domain);
+
+                    return processUnit
+                            .map(response -> {
+                                if (useOtp) {
+                                    AuthResponseDTO dto = AuthResponseDTO.builder()
+                                            .token(response.getToken().toString()) // this is actually the ID of the OTP
+                                            .type("otp")
+                                            .validFor(response.getValidFor())
+                                            .trackingSession(response.getTrackingSession())
+                                            .build();
+
+                                    return context.response()
+                                            .setStatusCode(200)
+                                            .end(Json.encode(dto));
+                                }
+
+                                String origin = response.getClient().getBaseUrl();
+
+                                String location = realRequest.getRedirectUri() + "?code=" +
+                                        URLEncoder.encode(response.getToken().toString(), StandardCharsets.UTF_8)
+                                        + "&state=" +
+                                        URLEncoder.encode(realRequest.getState(), StandardCharsets.UTF_8);
+
+                                context.response().setStatusCode(302)
+                                        .putHeader("Location", location)
+                                        .putHeader("Access-Control-Allow-Origin", origin)
+                                        .putHeader("Access-Control-Expose-Headers", "Location");
+
+                                return context.end();
+                            });
+                })
+                .subscribe()
+                .with(ignored -> {
+                    context.end();
+                }, e -> {
+                    String location;
+                    Throwable effectiveException = e instanceof CompletionException ? e.getCause() : e;
+
+                    if (effectiveException instanceof ServiceAuthorizationException ex) {
+                        String error = Objects.equals(ex.getErrorCode(), ErrorCode.GENERIC_AUTH_FAILURE.getCode()) ?
+                                OAuthConst.ErrorsMessages.UnsupportedResponseType :
+                                OAuthConst.ErrorsMessages.UnauthorizedClient;
+
+                        location = request.getRedirectUri() + "?error=" + error;
+                    } else if (effectiveException instanceof ServiceException ex) {
+                        location = request.getRedirectUri() + "?error=" + ex.getMessage();
+                    } else {
+                        location = request.getRedirectUri() + "?error=unknown_error";
+                    }
+
+                    context.response().setStatusCode(302)
+                            .putHeader("Location", location)
+                            .end();
+                });
+    }
+
+    private void authFlowOtpApi(final RoutingContext context) {
+        String domain = context.pathParam("domain");
+        OpenIdConnectRequest request = Json.decodeValue(context.body().asString(), ImmutableOpenIdConnectRequest.class);
+        RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
+
+        // TODO after getting the request, use it with the OTP to issue a code
+        openIdConnectService.getRequestFromToken(request.getRequestToken(), requestContext, domain)
+                .flatMap(originalRequest -> {
+                    OpenIdConnectRequest realRequest = ImmutableOpenIdConnectRequest.builder()
+                            .from(originalRequest)
+                            .identifier(request.getIdentifier())
+                            .password(request.getPassword())
+                            .trackingSession(request.getTrackingSession())
+                            .build();
+
+                    return openIdConnectService.processAuthOtpToCodeFlow(realRequest, requestContext, domain)
                             .map(response -> {
                                 String origin = response.getClient().getBaseUrl();
 

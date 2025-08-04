@@ -26,10 +26,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
-import io.smallrye.mutiny.Uni;
 
 public class OpenIdConnectService {
     private static final String BASIC_TOKEN_TYPE = "basic";
+    private static final String OTP_TOKEN_TYPE = "otp";
     private static final String AUTH_CODE_TOKEN_TYPE = "authorizationCode";
     private static final String REFRESH_TOKEN_TYPE = "refresh";
     private static final String OIDC_TOKEN_TYPE = "oidc";
@@ -125,9 +125,9 @@ public class OpenIdConnectService {
                 });
     }
 
-    public Uni<AuthResponseBO> processAuth(final OpenIdConnectRequest request,
-                                           final RequestContextBO requestContext,
-                                           final String domain) {
+    public Uni<AuthResponseBO> processAuthBasicToCodeFlow(final OpenIdConnectRequest request,
+                                                          final RequestContextBO requestContext,
+                                                          final String domain) {
         if (!Objects.equals(request.getResponseType(), OAuthConst.ResponseTypes.Code)) {
             return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
                     "Invalid response type"));
@@ -166,12 +166,101 @@ public class OpenIdConnectService {
                 });
     }
 
+    public Uni<AuthResponseBO> processAuthBasicToOtpFlow(final OpenIdConnectRequest request,
+                                                         final RequestContextBO requestContext,
+                                                         final String domain) {
+        if (!Objects.equals(request.getResponseType(), OAuthConst.ResponseTypes.Code)) {
+            return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
+                    "Invalid response type"));
+        }
+
+        long parsedId;
+
+        try {
+            parsedId = Long.parseLong(request.getClientId());
+        } catch (Exception e) {
+            return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.APP_DOES_NOT_EXIST,
+                    "Invalid client ID"));
+        }
+
+        return getClientIfValid(parsedId, domain)
+                .flatMap(client -> {
+                    Try<AuthRequestBO> validatedRequest = verifyClientRequest(client, request.getRedirectUri())
+                            .flatMap(ignored -> createRequest(request, client));
+
+                    if (validatedRequest.isFailure()) {
+                        return Uni.createFrom().failure(validatedRequest.getCause());
+                    }
+
+                    return exchangeService.exchange(validatedRequest.get(),
+                                    BASIC_TOKEN_TYPE, OTP_TOKEN_TYPE,
+                                    requestContext.withClientId(String.valueOf(request.getClientId())))
+                            .map(response -> response.withClient(client));
+                });
+    }
+
+    public Uni<AuthResponseBO> processAuthOtpToCodeFlow(final OpenIdConnectRequest request,
+                                                        final RequestContextBO requestContext,
+                                                        final String domain) {
+        if (!Objects.equals(request.getResponseType(), OAuthConst.ResponseTypes.Code)) {
+            return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.GENERIC_AUTH_FAILURE,
+                    "Invalid response type"));
+        }
+
+        long parsedId;
+
+        try {
+            parsedId = Long.parseLong(request.getClientId());
+        } catch (Exception e) {
+            return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.APP_DOES_NOT_EXIST,
+                    "Invalid client ID"));
+        }
+
+        return getClientIfValid(parsedId, domain)
+                .flatMap(client -> {
+                    // OtpVerifier requires this format so we'll go with it for now TODO give OTP -> OIDC requests their own structure
+                    Try<AuthRequestBO> validatedRequest = verifyClientRequest(client, request.getRedirectUri())
+                            .flatMap(ignored -> createRequest(request, client))
+                            .map(authRequest -> authRequest.withToken(authRequest.getIdentifier() + ":" + authRequest.getPassword()));
+
+                    if (validatedRequest.isFailure()) {
+                        return Uni.createFrom().failure(validatedRequest.getCause());
+                    }
+
+                    return exchangeService.exchange(validatedRequest.get(),
+                                    OTP_TOKEN_TYPE, AUTH_CODE_TOKEN_TYPE,
+                                    requestContext.withClientId(String.valueOf(request.getClientId())))
+                            .map(response -> response.withClient(client));
+                });
+    }
+
     public Uni<AuthResponseBO> processAuthCodeToken(AuthRequestBO request, RequestContextBO requestContext) {
         return exchangeService.exchange(request, AUTH_CODE_TOKEN_TYPE, OIDC_TOKEN_TYPE, requestContext);
     }
 
     public Uni<AuthResponseBO> processRefreshToken(AuthRequestBO request, RequestContextBO requestContext) {
         return exchangeService.exchange(request, REFRESH_TOKEN_TYPE, ACCESS_TOKEN_TYPE, requestContext);
+    }
+
+    private Uni<ClientBO> getClientIfValid(long clientId, String domain) {
+        return clientsService.getById(clientId, domain)
+                .flatMap(opt -> {
+                    if (opt.isEmpty()) {
+                        return Uni.createFrom().failure(
+                                new ServiceAuthorizationException(ErrorCode.APP_DOES_NOT_EXIST,
+                                        "Client does not exist")
+                        );
+                    }
+
+                    ClientBO client = opt.get();
+
+                    if (client.getClientType() != Client.ClientType.SSO) {
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.CLIENT_NOT_PERMITTED,
+                                "Client isn't permitted to perform OIDC requests"));
+                    }
+
+                    return Uni.createFrom().item(client);
+                });
     }
 
     private Try<AuthRequestBO> createRequest(OpenIdConnectRequest request, ClientBO client) {
@@ -186,6 +275,7 @@ public class OpenIdConnectService {
                             .password(request.getPassword())
                             .externalSessionId(request.getExternalSessionId())
                             .extraParameters(PkceParameters.forAuthCode(request.getCodeChallenge(), request.getCodeChallengeMethod()))
+                            .trackingSession(request.getTrackingSession())
                             .build());
         }
 
@@ -194,6 +284,7 @@ public class OpenIdConnectService {
                 .identifier(request.getIdentifier())
                 .password(request.getPassword())
                 .externalSessionId(request.getExternalSessionId())
+                .trackingSession(request.getTrackingSession())
                 .build());
     }
 

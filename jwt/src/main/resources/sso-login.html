@@ -1,21 +1,23 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
+
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Fosa Login</title>
-    <script src="/oidc/e2e/resources/tailwind.js"></script>
-    <!-- Preact UMD -->
-    <script src="/oidc/e2e/resources/preact.umd.js"></script>
-    <script src="/oidc/e2e/resources/hooks.umd.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fosa Login</title>
+  <script src="/oidc/e2e/resources/tailwind.js"></script>
+  <!-- Preact UMD -->
+  <script src="/oidc/e2e/resources/preact.umd.js"></script>
+  <script src="/oidc/e2e/resources/hooks.umd.js"></script>
 
-    <!-- HTM (hyperscript tag template literal) -->
-    <script src="/oidc/e2e/resources/htm.umd.js"></script>
+  <!-- HTM (hyperscript tag template literal) -->
+  <script src="/oidc/e2e/resources/htm.umd.js"></script>
 </head>
-<body class="bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center p-4">
-<div id="app"></div>
 
-<script type="module">
+<body class="bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center p-4">
+  <div id="app"></div>
+
+  <script type="module">
     const { h, render } = preact;
     const { useState } = preactHooks;
     const html = htm.bind(h);
@@ -46,8 +48,6 @@
         },
         body: JSON.stringify(data)
       });
-
-      console.log(response);
 
       if (response.type === "cors" && response.redirected === true) {
         window.location.href = response.url;
@@ -94,61 +94,62 @@
       const [error, setError] = useState('');
       const [showPassword, setShowPassword] = useState(false);
       const [transactionId, setTransactionId] = useState('');
+      const [sessionId, setSessionId] = useState('');
 
       async function handleLogin(e) {
-          e.preventDefault();
-          setLoading(true);
-          setError('');
-          const username = e.target.username.value;
-          const password = e.target.password.value;
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        const username = e.target.username.value;
+        const password = e.target.password.value;
 
-          try {
-            const data = await login(username, password);
+        try {
+          const data = await login(username, password);
 
-            if (data.tokenType === 'otp') {
-              setTransactionId(data.transactionId);
-              setStep('otp');
-            } else if (data.redirectUri) {
-              window.location.href = data.redirectUri;
-            } else if (data.errorCode) {
-              setError(mapAuthGuardErrorCode(data.errorCode));
-            } else {
-              setError("Unexpected response from server.");
-            }
-          } catch (err) {
-            console.error(err);
-            setError('Login request failed.');
-          } finally {
-            setLoading(false);
+          if (data.type === 'otp') {
+            setTransactionId(data.token);
+            setStep('otp');
+            setSessionId(data.trackingSession);
+          } else if (data.redirectUri) {
+            window.location.href = data.redirectUri;
+          } else if (data.errorCode) {
+            setError(mapAuthGuardErrorCode(data.errorCode));
+          } else {
+            setError("Unexpected response from server.");
           }
-       }
+        } catch (err) {
+          console.error(err);
+          setError('Login request failed.');
+        } finally {
+          setLoading(false);
+        }
+      }
 
 
       async function handleOTP(e) {
         e.preventDefault();
         setLoading(true);
         setError('');
-        const otp = e.target.otp.value;
 
-        try {
-          const res = await fetch('http://localhost:3200/otp/verify', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ otp, transactionId })
-          });
-          const data = await res.json();
-          if (data.redirectUri) {
-            window.location.href = data.redirectUri;
-          } else {
-            setError('OTP verification failed.');
-          }
-        } catch (err) {
-          setError('Error verifying OTP.');
-        } finally {
-          setLoading(false);
-        }
+        const path = window.location.pathname.split('/');
+        const domain = path[path.indexOf("oidc") + 1];
+        const searchParams = new URLSearchParams(window.location.search);
+        const clientId = searchParams.get("client_id");
+        const otp = e.target.otp.value;
+        const token = searchParams.get("token");
+        const redirectUri = searchParams.get("redirect_uri");
+
+        const requestBody = {
+          identifier: transactionId,
+          password: otp,
+          clientId: clientId,
+          redirectUri: redirectUri,
+          clientId: clientId,
+          requestToken: token,
+          trackingSession: sessionId
+        };
+
+        return await post("/oidc/" + domain + "/otp", requestBody);
       }
 
       return html`
@@ -170,7 +171,7 @@
                 <button type="button" onClick=${() => setShowPassword(!showPassword)}
                   class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300">
                   ${showPassword ?
-                   html`<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            html`<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7
                            a9.964 9.964 0 012.258-3.743m3.034-2.135
@@ -234,6 +235,7 @@
     }
 
     render(h(App), document.getElementById('app'));
-</script>
+  </script>
 </body>
+
 </html>

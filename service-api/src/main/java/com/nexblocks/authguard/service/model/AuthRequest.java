@@ -17,5 +17,6 @@ public interface AuthRequest {
     String getUserAgent();
     String getSourceIp();
     String getClientId();
+    String getTrackingSession(); // Should only be used for SSO cases for now
     Object getExtraParameters();
 }

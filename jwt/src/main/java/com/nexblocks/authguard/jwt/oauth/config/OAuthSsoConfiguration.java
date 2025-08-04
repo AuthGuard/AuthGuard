@@ -43,7 +43,6 @@ public interface OAuthSsoConfiguration {
     @JsonSerialize(as = ImmutableMfaConfiguration.class)
     @JsonDeserialize(as = ImmutableMfaConfiguration.class)
     interface MfaConfiguration {
-        boolean useEmailOtp();
-        boolean useSmsOtp();
+        boolean useOtp();
     }
 }
