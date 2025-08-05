@@ -18,6 +18,7 @@ public interface OAuthSsoConfiguration {
     boolean useUsername();
     boolean useEmail();
     boolean usePhoneNumber();
+    String getCsrfTokenKey();
     ImmutableMfaConfiguration useMultiFactorAuthentication();
 
     @Value.Default
@@ -26,6 +27,7 @@ public interface OAuthSsoConfiguration {
     }
 
     @Value.Default
+    @Deprecated
     default String getOtpPage() {
         return "resources/sso-otp.html";
     }

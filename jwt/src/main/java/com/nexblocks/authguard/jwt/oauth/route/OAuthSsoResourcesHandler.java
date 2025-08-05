@@ -21,10 +21,24 @@ public class OAuthSsoResourcesHandler implements VertxApiHandler {
     private final Map<String, byte[]> cache = new HashMap<>();
 
     public void register(final Router router) {
+        router.get("/oidc/:domain/resources/sso-script.js").handler(this::serveSsoScript);
         router.get("/oidc/:domain/resources/tailwind.js").handler(this::serveTailwind);
         router.get("/oidc/:domain/resources/preact.umd.js").handler(this::servePreact);
         router.get("/oidc/:domain/resources/hooks.umd.js").handler(this::serverPreactHooks);
         router.get("/oidc/:domain/resources/htm.umd.js").handler(this::serveHtm);
+    }
+
+    private void serveSsoScript(final RoutingContext context) {
+        Optional<byte[]> bytesOpt = getResource("/sso-script.js");
+
+        if (bytesOpt.isEmpty()) {
+            context.response().setStatusCode(404).end();
+            return;
+        }
+
+        context.response()
+                .putHeader(HttpHeaders.CONTENT_TYPE, "text/javascript")
+                .end(Buffer.buffer(bytesOpt.get()));
     }
 
     private void serveTailwind(final RoutingContext context) {

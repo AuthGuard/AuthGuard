@@ -23,6 +23,8 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.model.*;
 import io.smallrye.mutiny.Uni;
 import io.vavr.control.Either;
+import io.vertx.core.http.Cookie;
+import io.vertx.core.http.CookieSameSite;
 import io.vertx.core.json.Json;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -44,6 +46,7 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
     private final OpenIdConnectService openIdConnectService;
     private final ApiKeysService apiKeysService;
     private final ClientsService clientsService;
+    private final StatelessCsrf statelessCsrf;
     private final OAuthSsoConfiguration configuration;
 
     private final String loginPage;
@@ -63,6 +66,11 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
             throw new ConfigurationException("SSO must allow at least one identifier type.");
         }
 
+        if (configuration.getCsrfTokenKey() == null || configuration.getCsrfTokenKey().isBlank()) {
+            throw new ConfigurationException("SSO must include a CSRF token key.");
+        }
+
+        this.statelessCsrf = new StatelessCsrf(configuration.getCsrfTokenKey());
         this.loginPage = replaceParameters(readHtmlPage(configuration.getLoginPage()), configuration);
         this.otpPage = readHtmlPage(configuration.getOtpPage());
     }
@@ -135,7 +143,16 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
                     .putHeader("Content-Type", "application/json")
                     .end(Json.encode(request.getLeft()));
         } else {
-            context.response().putHeader("Content-Type", "text/html").end(loginPage);
+            String csrfToken = statelessCsrf.generate(request.get().getRequestToken());
+            Cookie cookie = Cookie.cookie(RoutesConstants.RES_CSRF_COOKIE, csrfToken)
+                    .setSameSite(CookieSameSite.STRICT)
+                    .setMaxAge(5 * 60);
+
+            context.response()
+                    .putHeader("Content-Type", "text/html")
+                    .putHeader("Content-Security-Policy", RoutesConstants.CspHeaderValue)
+                    .addCookie(cookie)
+                    .end(loginPage);
         }
     }
 
@@ -170,6 +187,18 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
         String domain = context.pathParam("domain");
         OpenIdConnectRequest request = Json.decodeValue(context.body().asString(), ImmutableOpenIdConnectRequest.class);
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
+
+        if (isRequestCsrfTokenValid(context, request.getRequestToken())) {
+            com.nexblocks.authguard.api.dto.entities.Error csrfError =
+                    new com.nexblocks.authguard.api.dto.entities.Error(ErrorCode.FAILED_CSRF_CHECK.getCode(),
+                            "Missing or invalid CSRF header");
+
+            context.response()
+                    .setStatusCode(400)
+                    .end(Json.encode(csrfError));
+
+            return;
+        }
 
         openIdConnectService.getRequestFromToken(request.getRequestToken(), requestContext, domain)
                 .flatMap(originalRequest -> {
@@ -246,7 +275,18 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
         OpenIdConnectRequest request = Json.decodeValue(context.body().asString(), ImmutableOpenIdConnectRequest.class);
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        // TODO after getting the request, use it with the OTP to issue a code
+        if (isRequestCsrfTokenValid(context, request.getRequestToken())) {
+            com.nexblocks.authguard.api.dto.entities.Error csrfError =
+                    new com.nexblocks.authguard.api.dto.entities.Error(ErrorCode.FAILED_CSRF_CHECK.getCode(),
+                            "Missing or invalid CSRF header");
+
+            context.response()
+                    .setStatusCode(400)
+                    .end(Json.encode(csrfError));
+
+            return;
+        }
+
         openIdConnectService.getRequestFromToken(request.getRequestToken(), requestContext, domain)
                 .flatMap(originalRequest -> {
                     OpenIdConnectRequest realRequest = ImmutableOpenIdConnectRequest.builder()
@@ -410,6 +450,15 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
                 })
                 .subscribe()
                 .asCompletionStage();
+    }
+
+    private boolean isRequestCsrfTokenValid(final RoutingContext context,
+                                            final String requestToken) {
+        String csrfToken = context.request().getHeader(RoutesConstants.REQ_CSRF_HEADER);
+
+        return csrfToken == null
+                || csrfToken.isBlank()
+                || !statelessCsrf.isValid(csrfToken, requestToken);
     }
 
     private Either<OpenIdConnectError, String[]> extractClientInfo(RoutingContext context) {
