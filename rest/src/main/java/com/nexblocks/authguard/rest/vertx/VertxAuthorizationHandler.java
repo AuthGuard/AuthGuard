@@ -10,8 +10,10 @@ import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletionException;
 
 public class VertxAuthorizationHandler {
@@ -20,6 +22,7 @@ public class VertxAuthorizationHandler {
 
     private final BasicAuthProvider basicAuth;
     private final ApiKeysService apiKeysService;
+    private Set<String> unprotectedPaths = Collections.emptySet();
 
     @Inject
     public VertxAuthorizationHandler(final BasicAuthProvider basicAuth, final ApiKeysService apiKeysService) {
@@ -27,7 +30,19 @@ public class VertxAuthorizationHandler {
         this.apiKeysService = apiKeysService;
     }
 
+    public VertxAuthorizationHandler setUnprotectedPaths(final Set<String> unprotectedPaths) {
+        this.unprotectedPaths = unprotectedPaths;
+        return this;
+    }
+
     public void handleAuthorization(RoutingContext ctx) {
+        String[] pathParts = ctx.request().path().split("/");
+
+        if (unprotectedPaths.contains(pathParts[1])) {
+            ctx.next();
+            return;
+        }
+
         String header = ctx.request().getHeader("Authorization");
         if (header == null) {
             ctx.next();

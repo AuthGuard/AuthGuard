@@ -6,7 +6,6 @@ import com.nexblocks.authguard.api.annotations.DependsOnConfiguration;
 import com.nexblocks.authguard.api.common.Domain;
 import com.nexblocks.authguard.api.common.RequestContextExtractor;
 import com.nexblocks.authguard.api.dto.entities.RequestValidationError;
-import com.nexblocks.authguard.api.routes.VertxApiHandler;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.jwt.exchange.PkceParameters;
 import com.nexblocks.authguard.jwt.oauth.config.ImmutableOAuthSsoConfiguration;
@@ -140,7 +139,7 @@ public class OAuthSsoPagesRoute {
                             .password(request.getPassword())
                             .build();
 
-                    return openIdConnectService.processAuth(realRequest, requestContext, domain)
+                    return openIdConnectService.processAuthBasicToCodeFlow(realRequest, requestContext, domain)
                             .map(response -> {
                                 return realRequest.getRedirectUri() + "?code=" + response.getToken()
                                         + "&state=" + request.getState();

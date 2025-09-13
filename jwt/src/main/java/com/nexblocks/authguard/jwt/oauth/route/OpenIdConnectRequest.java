@@ -35,4 +35,6 @@ public interface OpenIdConnectRequest {
     String getCodeVerifier();
 
     String getRequestToken();
+
+    String getTrackingSession();
 }

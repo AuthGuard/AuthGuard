@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.Optional;
-import io.smallrye.mutiny.Uni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,7 +39,7 @@ class OpenIdConnectServiceTest {
             .id(1)
             .domain("test")
             .clientType(Client.ClientType.SSO)
-            .baseUrl("test-domain.com")
+            .baseUrl("http://test-domain.com")
             .build();
 
     private final RequestContextBO context = RequestContextBO.builder().build();
@@ -148,8 +147,9 @@ class OpenIdConnectServiceTest {
                 .isEqualTo(ErrorCode.INVALID_TOKEN.getCode());
     }
 
+    // Basic -> code flow
     @Test
-    void processAuth() {
+    void processAuthBasicToCodeFlow() {
         OpenIdConnectRequest request = ImmutableOpenIdConnectRequest.builder()
                 .responseType("code")
                 .clientId("1")
@@ -170,6 +170,7 @@ class OpenIdConnectServiceTest {
                 .build();
         AuthResponseBO expectedResponse = AuthResponseBO.builder()
                 .token("auth code")
+                .client(client)
                 .build();
 
         Mockito.when(clientsService.getById(1, "main"))
@@ -178,12 +179,12 @@ class OpenIdConnectServiceTest {
         Mockito.when(exchangeService.exchange(expectedRequest, "basic", "authorizationCode", context))
                 .thenReturn(Uni.createFrom().item(expectedResponse));
 
-        assertThat(openIdConnectService.processAuth(request, context, "main").subscribeAsCompletionStage().join())
+        assertThat(openIdConnectService.processAuthBasicToCodeFlow(request, context, "main").subscribeAsCompletionStage().join())
                 .isEqualTo(expectedResponse);
     }
 
     @Test
-    void processAuthInvalidClient() {
+    void processAuthBasicToCodeFlowInvalidClient() {
         OpenIdConnectRequest request = ImmutableOpenIdConnectRequest.builder()
                 .responseType("code")
                 .clientId("1")
@@ -197,7 +198,7 @@ class OpenIdConnectServiceTest {
         Mockito.when(clientsService.getById(1, "main"))
                 .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        assertThatThrownBy(() -> openIdConnectService.processAuth(request, context, "main").subscribeAsCompletionStage().join())
+        assertThatThrownBy(() -> openIdConnectService.processAuthBasicToCodeFlow(request, context, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause()
                 .extracting(e -> ((ServiceException) e).getErrorCode())
@@ -205,7 +206,7 @@ class OpenIdConnectServiceTest {
     }
 
     @Test
-    void processAuthNonSsoClient() {
+    void processAuthBasicToCodeFlowNonSsoClient() {
         ClientBO client = ClientBO.builder()
                 .domain("test")
                 .clientType(Client.ClientType.AUTH)
@@ -224,7 +225,7 @@ class OpenIdConnectServiceTest {
         Mockito.when(clientsService.getById(1, "main"))
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
-        assertThatThrownBy(() -> openIdConnectService.processAuth(request, context, "main").subscribeAsCompletionStage().join())
+        assertThatThrownBy(() -> openIdConnectService.processAuthBasicToCodeFlow(request, context, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause()
                 .extracting(e -> ((ServiceException) e).getErrorCode())
@@ -232,7 +233,7 @@ class OpenIdConnectServiceTest {
     }
 
     @Test
-    void processAuthInvalidRedirectUri() {
+    void processAuthBasicToCodeFlowInvalidRedirectUri() {
         ClientBO client = ClientBO.builder()
                 .domain("test")
                 .clientType(Client.ClientType.SSO)
@@ -251,7 +252,7 @@ class OpenIdConnectServiceTest {
         Mockito.when(clientsService.getById(1, "main"))
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
-        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(request, context, "main").subscribeAsCompletionStage().join())
+        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuthBasicToCodeFlow(request, context, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause();
 
@@ -263,7 +264,7 @@ class OpenIdConnectServiceTest {
     }
 
     @Test
-    void processAuthRedirectUrlDifferentHost() {
+    void processAuthBasicToCodeFlowRedirectUrlDifferentHost() {
         ClientBO client = ClientBO.builder()
                 .domain("test")
                 .clientType(Client.ClientType.SSO)
@@ -283,7 +284,7 @@ class OpenIdConnectServiceTest {
         Mockito.when(clientsService.getById(1, "main"))
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
-        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuth(request, context, "main").subscribeAsCompletionStage().join())
+        AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(() -> openIdConnectService.processAuthBasicToCodeFlow(request, context, "main").subscribeAsCompletionStage().join())
                 .hasCauseInstanceOf(ServiceException.class)
                 .cause();
 
@@ -295,7 +296,7 @@ class OpenIdConnectServiceTest {
     }
 
     @Test
-    void processAuthRedirectUrlDifferentHostEmptyBaseUrl() {
+    void processAuthBasicToCodeFlowRedirectUrlDifferentHostEmptyBaseUrl() {
         ClientBO client = ClientBO.builder()
                 .domain("test")
                 .clientType(Client.ClientType.SSO)
@@ -316,7 +317,7 @@ class OpenIdConnectServiceTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
         AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(
-                () -> openIdConnectService.processAuth(request, context, "main").subscribeAsCompletionStage().join()
+                () -> openIdConnectService.processAuthBasicToCodeFlow(request, context, "main").subscribeAsCompletionStage().join()
         ).hasCauseInstanceOf(ServiceException.class).cause();
 
         cause.extracting(e -> ((ServiceException) e).getErrorCode())
@@ -327,7 +328,7 @@ class OpenIdConnectServiceTest {
     }
 
     @Test
-    void processAuthCodeToken() {
+    void processAuthBasicToCodeFlowCodeToken() {
         AuthRequestBO request = AuthRequestBO.builder()
                 .token("token")
                 .build();
@@ -355,7 +356,7 @@ class OpenIdConnectServiceTest {
     }
 
     @Test
-    void processAuthPkce() {
+    void processAuthBasicToCodeFlowPkce() {
         OpenIdConnectRequest pkceRequest = request
                 .withCodeChallenge("random-code-challenge")
                 .withCodeChallengeMethod("S256");
@@ -371,6 +372,7 @@ class OpenIdConnectServiceTest {
                 .build();
         AuthResponseBO expectedResponse = AuthResponseBO.builder()
                 .token("auth code")
+                .client(client)
                 .build();
 
         Mockito.when(clientsService.getById(1, "main"))
@@ -379,11 +381,12 @@ class OpenIdConnectServiceTest {
         Mockito.when(exchangeService.exchange(expectedRequest, "basic", "authorizationCode", context.withClientId("1")))
                 .thenReturn(Uni.createFrom().item(expectedResponse));
 
-        assertThat(openIdConnectService.processAuth(pkceRequest, context, "main").subscribeAsCompletionStage().join())
+        assertThat(openIdConnectService.processAuthBasicToCodeFlow(pkceRequest, context, "main").subscribeAsCompletionStage().join())
                 .isEqualTo(expectedResponse);
     }
+
     @Test
-    void processAuthPkceMissingCodeChallenge() {
+    void processAuthBasicToCodeFlowPkceMissingCodeChallenge() {
         OpenIdConnectRequest invalidRequest = request
                 .withCodeChallengeMethod("S256");
 
@@ -391,7 +394,7 @@ class OpenIdConnectServiceTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
         AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(
-                () -> openIdConnectService.processAuth(invalidRequest, context, "main").subscribeAsCompletionStage().join()
+                () -> openIdConnectService.processAuthBasicToCodeFlow(invalidRequest, context, "main").subscribeAsCompletionStage().join()
         ).hasCauseInstanceOf(ServiceException.class).cause();
 
         cause.extracting(e -> ((ServiceException) e).getErrorCode())
@@ -402,7 +405,7 @@ class OpenIdConnectServiceTest {
     }
 
     @Test
-    void processAuthPkceMissingCodeChallengeMethod() {
+    void processAuthBasicToCodeFlowPkceMissingCodeChallengeMethod() {
         OpenIdConnectRequest invalidRequest = request
                 .withCodeChallenge("random-code-challenge");
 
@@ -410,7 +413,7 @@ class OpenIdConnectServiceTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
         AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(
-                () -> openIdConnectService.processAuth(invalidRequest, context, "main").subscribeAsCompletionStage().join()
+                () -> openIdConnectService.processAuthBasicToCodeFlow(invalidRequest, context, "main").subscribeAsCompletionStage().join()
         ).hasCauseInstanceOf(ServiceException.class).cause();
 
         cause.extracting(e -> ((ServiceException) e).getErrorCode())
@@ -421,7 +424,7 @@ class OpenIdConnectServiceTest {
     }
 
     @Test
-    void processAuthPkceInvalidCodeChallengeMethod() {
+    void processAuthBasicToCodeFlowPkceInvalidCodeChallengeMethod() {
         OpenIdConnectRequest invalidRequest = request
                 .withCodeChallenge("random-code-challenge")
                 .withCodeChallengeMethod("invalid");
@@ -430,7 +433,7 @@ class OpenIdConnectServiceTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
         AbstractThrowableAssert<?, ?> cause = assertThatThrownBy(
-                () -> openIdConnectService.processAuth(invalidRequest, context, "main").subscribeAsCompletionStage().join()
+                () -> openIdConnectService.processAuthBasicToCodeFlow(invalidRequest, context, "main").subscribeAsCompletionStage().join()
         ).hasCauseInstanceOf(ServiceException.class).cause();
 
         cause.extracting(e -> ((ServiceException) e).getErrorCode())
@@ -438,5 +441,77 @@ class OpenIdConnectServiceTest {
 
         cause.extracting(Throwable::getMessage)
                 .isEqualTo("Code challenge method must be S256 (SHA-256)");
+    }
+
+    // Basic -> OTP -> code flow
+    @Test
+    void processAuthBasicToOtpFlow() {
+        OpenIdConnectRequest request = ImmutableOpenIdConnectRequest.builder()
+                .responseType("code")
+                .clientId("1")
+                .redirectUri("http://test-domain.com/oidc/login")
+                .identifier("user")
+                .password("password")
+                .build();
+
+        RequestContextBO context = RequestContextBO.builder()
+                .clientId("1")
+                .build();
+
+        AuthRequestBO expectedRequest = AuthRequestBO.builder()
+                .domain(client.getDomain())
+                .identifier(request.getIdentifier())
+                .password(request.getPassword())
+                .externalSessionId(request.getExternalSessionId())
+                .build();
+        AuthResponseBO expectedResponse = AuthResponseBO.builder()
+                .token("12345")
+                .client(client)
+                .build();
+
+        Mockito.when(clientsService.getById(1, "main"))
+                .thenReturn(Uni.createFrom().item(Optional.of(client)));
+
+        Mockito.when(exchangeService.exchange(expectedRequest, "basic", "otp", context))
+                .thenReturn(Uni.createFrom().item(expectedResponse));
+
+        assertThat(openIdConnectService.processAuthBasicToOtpFlow(request, context, "main").subscribeAsCompletionStage().join())
+                .isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void processAuthOtpToOidcFlow() {
+        OpenIdConnectRequest request = ImmutableOpenIdConnectRequest.builder()
+                .responseType("code")
+                .clientId("1")
+                .redirectUri("http://test-domain.com/oidc/login")
+                .identifier("otp-id")
+                .password("12345")
+                .build();
+
+        RequestContextBO context = RequestContextBO.builder()
+                .clientId("1")
+                .build();
+
+        AuthRequestBO expectedRequest = AuthRequestBO.builder()
+                .domain(client.getDomain())
+                .identifier(request.getIdentifier())
+                .password(request.getPassword())
+                .externalSessionId(request.getExternalSessionId())
+                .token("otp-id:12345")
+                .build();
+        AuthResponseBO expectedResponse = AuthResponseBO.builder()
+                .token("12345")
+                .client(client)
+                .build();
+
+        Mockito.when(clientsService.getById(1, "main"))
+                .thenReturn(Uni.createFrom().item(Optional.of(client)));
+
+        Mockito.when(exchangeService.exchange(expectedRequest, "otp", "authorizationCode", context))
+                .thenReturn(Uni.createFrom().item(expectedResponse));
+
+        assertThat(openIdConnectService.processAuthOtpToCodeFlow(request, context, "main").subscribeAsCompletionStage().join())
+                .isEqualTo(expectedResponse);
     }
 }

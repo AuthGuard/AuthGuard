@@ -41,6 +41,8 @@ public class VertxAuthGuardServer {
 
         VertxAuthorizationHandler authorizationHandler = injector.getInstance(VertxAuthorizationHandler.class);
 
+        authorizationHandler.setUnprotectedPaths(serverConfig.getUnprotectedPaths());
+
         router.route().handler(authorizationHandler::handleAuthorization);
 //        router.route("/domains/:domain/*").handler(authorizationHandler::domainAuthorization);
 
