@@ -48,7 +48,7 @@
         <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
         <mutiny.version>2.8.0</mutiny.version>
         <javalin.version>6.1.6</javalin.version>
-        <vertx-web.version>4.5.14</vertx-web.version>
+        <vertx-web.version>4.5.16</vertx-web.version>
         <logback.version>1.4.5</logback.version>
         <jackson.version>2.16.0</jackson.version>
         <immutables.version>2.9.3</immutables.version>
