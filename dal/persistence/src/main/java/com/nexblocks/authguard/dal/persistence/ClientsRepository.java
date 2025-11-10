@@ -9,6 +9,7 @@ import io.smallrye.mutiny.Uni;
 
 public interface ClientsRepository extends Repository<ClientDO> {
     Uni<Optional<ClientDO>> getByExternalId(String externalId);
+    Uni<Optional<ClientDO>> getByUri(String uri);
     Uni<List<ClientDO>> getAllForAccount(long accountId, Page<Long> page);
     Uni<List<ClientDO>> getByType(String type, Page<Long> page);
     Uni<List<ClientDO>> getByDomain(String domain, Page<Long> page);

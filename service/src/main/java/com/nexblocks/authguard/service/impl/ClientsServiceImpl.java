@@ -4,7 +4,6 @@ import com.google.inject.Inject;
 import com.nexblocks.authguard.dal.model.ClientDO;
 import com.nexblocks.authguard.dal.persistence.ClientsRepository;
 import com.nexblocks.authguard.dal.persistence.LongPage;
-import com.nexblocks.authguard.dal.persistence.Page;
 import com.nexblocks.authguard.emb.MessageBus;
 import com.nexblocks.authguard.service.AccountsService;
 import com.nexblocks.authguard.service.ClientsService;
@@ -90,6 +89,15 @@ public class ClientsServiceImpl implements ClientsService {
                 .map(optional -> optional
                         .filter(client -> Objects.equals(client.getDomain(), domain))
                         .map(serviceMapper::toBO));
+    }
+
+    @Override
+    public Uni<Optional<ClientBO>> getByUri(final String uri, final String domain) {
+        return clientsRepository.getByUri(uri)
+                .map(optional -> optional
+                        .filter(client -> Objects.equals(client.getDomain(), domain))
+                        .map(serviceMapper::toBO));
+
     }
 
     @Override

@@ -16,6 +16,7 @@ public interface CreateClientRequest extends DomainScoped {
     String getName();
     Long getAccountId();
     String getBaseUrl();
+    String getUri();
     ClientType getClientType();
 
     @Value.Default

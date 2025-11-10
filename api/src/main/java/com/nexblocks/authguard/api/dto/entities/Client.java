@@ -19,6 +19,7 @@ public interface Client extends DomainScoped {
     String getName();
     String getAccountId();
     String getBaseUrl();
+    String getUri();
     String getClientType();
     boolean isActive();
     boolean isDeleted();
