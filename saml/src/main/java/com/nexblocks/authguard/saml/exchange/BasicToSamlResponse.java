@@ -1,0 +1,75 @@
+package com.nexblocks.authguard.saml.exchange;
+
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import com.nexblocks.authguard.basic.BasicAuthProvider;
+import com.nexblocks.authguard.config.ConfigContext;
+import com.nexblocks.authguard.saml.SamlAuthnRequest;
+import com.nexblocks.authguard.saml.SamlConditionalAuthn;
+import com.nexblocks.authguard.saml.SamlErrorResponseProvider;
+import com.nexblocks.authguard.saml.config.ImmutableSamlConfiguration;
+import com.nexblocks.authguard.saml.config.SamlConfiguration;
+import com.nexblocks.authguard.service.exceptions.ServiceException;
+import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
+import com.nexblocks.authguard.service.exchange.Exchange;
+import com.nexblocks.authguard.service.exchange.TokenExchange;
+import com.nexblocks.authguard.service.mappers.TokenOptionsMapper;
+import com.nexblocks.authguard.service.model.AuthRequestBO;
+import com.nexblocks.authguard.service.model.AuthResponseBO;
+import com.nexblocks.authguard.service.model.TokenOptionsBO;
+import io.smallrye.mutiny.Uni;
+import org.opensaml.saml.saml2.core.Response;
+
+@TokenExchange(from = "basic", to = "samlResponse")
+public class BasicToSamlResponse implements Exchange {
+    private final BasicAuthProvider basicAuthProvider;
+    private final SamlResponseProvider samlResponseProvider;
+    private final SamlConfiguration configuration;
+
+    @Inject
+    public BasicToSamlResponse(final BasicAuthProvider basicAuthProvider,
+                               final @Named("saml") ConfigContext samlConfig) {
+        this(basicAuthProvider, samlConfig.asConfigBean(ImmutableSamlConfiguration.class));
+    }
+
+    public BasicToSamlResponse(final BasicAuthProvider basicAuthProvider,
+                               final SamlConfiguration samlConfig) {
+        this.basicAuthProvider = basicAuthProvider;
+        this.samlResponseProvider = new SamlResponseProvider(samlConfig);
+        this.configuration = samlConfig;
+    }
+
+    @Override
+    public Uni<AuthResponseBO> exchange(final AuthRequestBO request) {
+        if (request.getExtraParameters() == null || !SamlAuthnRequest.class.isAssignableFrom(request.getExtraParameters().getClass())) {
+            return Uni.createFrom().failure(new ServiceException(ErrorCode.INVALID_TOKEN, "Missing AuthnRequest parameters"));
+        }
+
+        SamlAuthnRequest authnRequest = (SamlAuthnRequest) request.getExtraParameters();
+
+        if (!SamlConditionalAuthn.satisfiesRequestedContext(authnRequest, "basic")) {
+            Response error = SamlErrorResponseProvider.authnFailed(
+                    configuration.getIssuer(),
+                    authnRequest.getAcsUrl(),
+                    authnRequest.getRequestId(),
+                    "RequestedAuthnContext not satisfied");
+
+            AuthResponseBO response = samlResponseProvider.generateError(authnRequest, error);
+
+            return Uni.createFrom().item(response);
+        }
+
+        return basicAuthProvider.authenticateAndGetAccountSession(request)
+                .map(accountSession -> {
+                    TokenOptionsBO options = TokenOptionsMapper.fromAuthRequest(request)
+                            .source("basic")
+                            .trackingSession(accountSession.getSession().getSessionToken())
+                            .extraParameters(request.getExtraParameters())
+                            .build();
+
+                    return samlResponseProvider.generateToken(authnRequest,
+                            accountSession.getAccount(),
+                            options);
+                });
+    }
+}

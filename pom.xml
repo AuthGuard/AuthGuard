@@ -38,6 +38,7 @@
         <module>bom</module>
         <module>benchmarks</module>
         <module>crypto</module>
+        <module>saml</module>
     </modules>
 
     <properties>
