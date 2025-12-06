@@ -18,11 +18,15 @@ function mapAuthGuardErrorCode(errorCode) {
   }
 }
 
+function getCookie(name) {
+  const cookie = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(name + "="));
+  return cookie ? cookie.split("=")[1] : null;
+}
+
 async function post(url, data) {
-  const csrfCookie = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("CSRF-TOKEN="))
-        ?.split("=")[1];
+  const csrfCookie = getCookie("CSRF-TOKEN");
 
   const response = await fetch(url, {
     method: "POST",
@@ -66,6 +70,29 @@ async function post(url, data) {
 }
 
 
+async function checkSession() {
+  const astCookie = getCookie("AST");
+  if (!astCookie) {
+    return { hasSession: false };
+  }
+
+  const path = window.location.pathname.split('/');
+  const domain = path[path.indexOf("saml") + 1];
+  const searchParams = new URLSearchParams(window.location.search);
+  const token = searchParams.get("token");
+
+  const requestBody = {
+    requestToken: token
+  };
+
+  try {
+    const response = await post("/saml/" + domain + "/session", requestBody);
+    return { hasSession: true, response: response };
+  } catch (err) {
+    return { hasSession: false, error: err };
+  }
+}
+
 async function login(identifier, password) {
   let path = window.location.pathname.split('/');
   let domain = path[path.indexOf("saml") + 1];
@@ -91,6 +118,26 @@ function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [transactionId, setTransactionId] = useState('');
   const [sessionId, setSessionId] = useState('');
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  // Check for existing session on mount
+  preactHooks.useEffect(() => {
+    async function performSessionCheck() {
+      const result = await checkSession();
+      
+      if (result.hasSession && result.response) {
+        // If response is html_navigation_started, the redirect is already happening
+        if (result.response.type === 'html_navigation_started') {
+          return;
+        }
+        // Otherwise show the login form
+      }
+      
+      setCheckingSession(false);
+    }
+    
+    performSessionCheck();
+  }, []);
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -149,11 +196,22 @@ function App() {
 
   return html`
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-8 flex flex-col gap-6">
-      <h1 class="text-2xl font-semibold text-center text-gray-800 dark:text-white">
-        ${step === 'login' ? 'Login' : 'Verify OTP'}
-      </h1>
+      ${checkingSession ? html`
+        <div class="flex flex-col items-center justify-center gap-4 py-8">
+          <svg class="animate-spin h-10 w-10 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+            viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          </svg>
+          <p class="text-gray-600 dark:text-gray-300">Checking session...</p>
+        </div>
+      ` : html`
+        <h1 class="text-2xl font-semibold text-center text-gray-800 dark:text-white">
+          ${step === 'login' ? 'Login' : 'Verify OTP'}
+        </h1>
 
-      ${error && html`<div class="text-sm text-red-600 text-center">${error}</div>`}
+        ${error && html`<div class="text-sm text-red-600 text-center">${error}</div>`}
 
       ${step === 'login' && html`
         <form onSubmit=${handleLogin} class="flex flex-col gap-4">
@@ -221,10 +279,11 @@ function App() {
         </form>
       `}
 
-      <div class="text-center mt-8 text-base">
-        <span class="text-black dark:text-white">Powered by </span>
-        <span class="text-[#4CAF50] font-bold">AuthGuard</span>
-      </div>
+        <div class="text-center mt-8 text-base">
+          <span class="text-black dark:text-white">Powered by </span>
+          <span class="text-[#4CAF50] font-bold">AuthGuard</span>
+        </div>
+      `}
     </div>
   `;
 }

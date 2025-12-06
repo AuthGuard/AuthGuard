@@ -14,4 +14,6 @@ public interface AuthResponse {
     Long getValidFor();
     String getTrackingSession();
     ClientBO getClient();
+    boolean isSuccessful();
+    String getAuthSessionToken();
 }

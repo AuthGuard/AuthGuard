@@ -3,6 +3,8 @@ package com.nexblocks.authguard.saml;
 import com.google.common.collect.ImmutableMap;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
+import com.nexblocks.authguard.saml.config.ImmutableSamlConfiguration;
+import com.nexblocks.authguard.saml.config.ImmutableSamlSsoSession;
 import com.nexblocks.authguard.service.ClientsService;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.TrackingSessionsService;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import com.nexblocks.authguard.saml.routes.ImmutableSamlLoginRequest;
 import com.nexblocks.authguard.saml.routes.SamlLoginRequest;
+import org.mockito.Mockito;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -51,11 +54,16 @@ class SamlServiceTest {
                 trackingSessionsService,
                 clientsService,
                 exchangeService,
-                accountTokensRepository);
+                accountTokensRepository,
+                ImmutableSamlConfiguration.builder()
+                        .sessions(ImmutableSamlSsoSession.builder()
+                                .lifetime("60m")
+                                .build())
+                        .build());
     }
 
     @Test
-    void getSessionIfActive() {
+    void getTrackingSessionIfActive() {
         String token = "session-token";
         Session session = SessionBO.builder()
                 .sessionToken(token)
@@ -67,7 +75,7 @@ class SamlServiceTest {
         when(trackingSessionsService.getByToken(token))
                 .thenReturn(Uni.createFrom().item(Optional.of(session)));
 
-        Optional<Session> result = samlService.getSessionIfActive(token, DOMAIN)
+        Optional<Session> result = samlService.getTrackingSessionIfActive(token, DOMAIN)
                 .subscribeAsCompletionStage()
                 .join();
 
@@ -75,7 +83,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void getSessionIfActiveInactiveSession() {
+    void getSessionIfActiveInactiveTrackingSession() {
         String token = "session-token";
         Session session = SessionBO.builder()
                 .sessionToken(token)
@@ -87,7 +95,7 @@ class SamlServiceTest {
         when(trackingSessionsService.getByToken(token))
                 .thenReturn(Uni.createFrom().item(Optional.of(session)));
 
-        Optional<Session> result = samlService.getSessionIfActive(token, DOMAIN)
+        Optional<Session> result = samlService.getTrackingSessionIfActive(token, DOMAIN)
                 .subscribeAsCompletionStage()
                 .join();
 
@@ -95,7 +103,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void getSessionIfActiveExpiredSession() {
+    void getSessionIfActiveExpiredTrackingSession() {
         String token = "session-token";
         Session session = SessionBO.builder()
                 .sessionToken(token)
@@ -107,7 +115,7 @@ class SamlServiceTest {
         when(trackingSessionsService.getByToken(token))
                 .thenReturn(Uni.createFrom().item(Optional.of(session)));
 
-        Optional<Session> result = samlService.getSessionIfActive(token, DOMAIN)
+        Optional<Session> result = samlService.getTrackingSessionIfActive(token, DOMAIN)
                 .subscribeAsCompletionStage()
                 .join();
 
@@ -115,7 +123,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void getSessionIfActiveDifferentDomain() {
+    void getTrackingSessionIfActiveDifferentDomain() {
         String token = "session-token";
         Session session = SessionBO.builder()
                 .sessionToken(token)
@@ -127,7 +135,7 @@ class SamlServiceTest {
         when(trackingSessionsService.getByToken(token))
                 .thenReturn(Uni.createFrom().item(Optional.of(session)));
 
-        Optional<Session> result = samlService.getSessionIfActive(token, DOMAIN)
+        Optional<Session> result = samlService.getTrackingSessionIfActive(token, DOMAIN)
                 .subscribeAsCompletionStage()
                 .join();
 
@@ -262,7 +270,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void processAuthBasicToSamlResponse_NonSsoClient() {
+    void processAuthBasicToSamlResponseNonSsoClient() {
         long clientId = 1L;
         ClientBO client = ClientBO.builder()
                 .id(clientId)
@@ -298,7 +306,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void processAuthBasicToSamlResponse_ClientDoesNotExist() {
+    void processAuthBasicToSamlResponseClientDoesNotExist() {
         long clientId = 1L;
 
         SamlAuthnRequest originalRequest = ImmutableSamlAuthnRequest.builder()
@@ -328,7 +336,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void processAuthBasicToSamlResponse_InvalidRedirectUrl() {
+    void processAuthBasicToSamlResponseInvalidRedirectUrl() {
         long clientId = 1L;
         ClientBO client = ClientBO.builder()
                 .id(clientId)
@@ -366,7 +374,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void processAuthBasicToSamlResponse_AcsUrlValidationFails() {
+    void processAuthBasicToSamlResponseInvalidAcsUrl() {
         long clientId = 1L;
         ClientBO client = ClientBO.builder()
                 .id(clientId)
@@ -405,7 +413,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void processAuthBasicToSamlResponse_Success_ExchangeCalledWithCorrectParams() {
+    void processAuthBasicToSamlResponse() {
         long clientId = 1L;
         ClientBO client = ClientBO.builder()
                 .id(clientId)
@@ -444,6 +452,8 @@ class SamlServiceTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
         when(exchangeService.exchange(any(AuthRequestBO.class), eq("basic"), eq("samlResponse"), same(requestContext)))
                 .thenReturn(Uni.createFrom().item(response));
+        when(accountTokensRepository.save(Mockito.any()))
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
         
         AuthResponseBO result = samlService.processAuthBasicToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage()
@@ -464,7 +474,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void processAuthOtpToSamlResponse_NonSsoClient() {
+    void processAuthOtpToSamlResponseNonSsoClient() {
         long clientId = 1L;
         ClientBO client = ClientBO.builder()
                 .id(clientId)
@@ -500,7 +510,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void processAuthOtpToSamlResponse_ClientDoesNotExist() {
+    void processAuthOtpToSamlResponseClientDoesNotExist() {
         long clientId = 1L;
 
         SamlAuthnRequest originalRequest = ImmutableSamlAuthnRequest.builder()
@@ -530,7 +540,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void processAuthOtpToSamlResponse_InvalidRedirectUrl() {
+    void processAuthOtpToSamlResponseInvalidRedirectUrl() {
         long clientId = 1L;
         ClientBO client = ClientBO.builder()
                 .id(clientId)
@@ -568,7 +578,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void processAuthOtpToSamlResponse_AcsUrlValidationFails() {
+    void processAuthOtpToSamlResponseInvalidAcsUrl() {
         long clientId = 1L;
         ClientBO client = ClientBO.builder()
                 .id(clientId)
@@ -607,7 +617,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void processAuthOtpToSamlResponse_Success_ExchangeCalledWithCorrectParams() {
+    void processAuthOtpToSamlResponse() {
         long clientId = 1L;
         ClientBO client = ClientBO.builder()
                 .id(clientId)
@@ -646,6 +656,8 @@ class SamlServiceTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
         when(exchangeService.exchange(any(AuthRequestBO.class), eq("otp"), eq("samlResponse"), same(requestContext)))
                 .thenReturn(Uni.createFrom().item(response));
+        when(accountTokensRepository.save(Mockito.any()))
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
         AuthResponseBO result = samlService.processAuthOtpToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage()
@@ -664,10 +676,9 @@ class SamlServiceTest {
         assertThat(captured.getTrackingSession()).isEqualTo("track-1");
         assertThat(captured.getExtraParameters()).isEqualTo(originalRequest);
     }
-    
-    //-------------
+
     @Test
-    void processAuthBasicToOtp_NonSsoClient() {
+    void processAuthBasicToOtpNonSsoClient() {
         long clientId = 1L;
         ClientBO client = ClientBO.builder()
                 .id(clientId)
@@ -703,7 +714,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void processAuthBasicToOtp_ClientDoesNotExist() {
+    void processAuthBasicToOtpClientDoesNotExist() {
         long clientId = 1L;
 
         SamlAuthnRequest originalRequest = ImmutableSamlAuthnRequest.builder()
@@ -733,7 +744,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void processAuthBasicToOtp_InvalidRedirectUrl() {
+    void processAuthBasicToOtpInvalidRedirectUrl() {
         long clientId = 1L;
         ClientBO client = ClientBO.builder()
                 .id(clientId)
@@ -771,7 +782,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void processAuthBasicToOtp_AcsUrlValidationFails() {
+    void processAuthBasicToOtpInvalidAcsUrl() {
         long clientId = 1L;
         ClientBO client = ClientBO.builder()
                 .id(clientId)
@@ -810,7 +821,7 @@ class SamlServiceTest {
     }
 
     @Test
-    void processAuthBasicToOtp_Success_ExchangeCalledWithCorrectParams() {
+    void processAuthBasicToOtp() {
         long clientId = 1L;
         ClientBO client = ClientBO.builder()
                 .id(clientId)
@@ -866,5 +877,166 @@ class SamlServiceTest {
         assertThat(captured.getPassword()).isEqualTo("secret");
         assertThat(captured.getTrackingSession()).isEqualTo("track-1");
         assertThat(captured.getExtraParameters()).isEqualTo(originalRequest);
+    }
+
+    @Test
+    void processSessionToSamlResponseForceAuthn() {
+        SamlAuthnRequest originalRequest = ImmutableSamlAuthnRequest.builder()
+                .issuer("urn:test-client")
+                .requestId("request-id")
+                .acsUrl("https://www.sp.com/callback")
+                .forceAuthn(true)
+                .serverSideDetails(ImmutableServerSideDetails.builder().clientId("1").build())
+                .build();
+
+        SamlLoginRequest loginRequest = ImmutableSamlLoginRequest.builder()
+                .identifier("user@example.com")
+                .password("secret")
+                .trackingSession("track-1")
+                .requestToken("token-1")
+                .build();
+
+        RequestContextBO requestContext = RequestContextBO.builder().build();
+
+        CompletableFuture<AuthResponseBO> future = samlService.processSessionToSamlResponse(
+                originalRequest, "session-token", loginRequest, requestContext, DOMAIN)
+                .subscribeAsCompletionStage();
+
+        assertThatThrownBy(future::join)
+                .hasCauseInstanceOf(ServiceException.class)
+                .cause()
+                .satisfies(e -> {
+                    ServiceException se = (ServiceException) e;
+                    assertThat(se.getErrorCode()).isEqualTo(ErrorCode.SESSION_DOES_NOT_MEET_REQUIREMENTS.getCode());
+                });
+    }
+
+    @Test
+    void processSessionToSamlResponseClientDoesNotExist() {
+        long clientId = 1L;
+
+        SamlAuthnRequest originalRequest = ImmutableSamlAuthnRequest.builder()
+                .issuer("urn:test-client")
+                .requestId("request-id")
+                .acsUrl("https://www.sp.com/callback")
+                .forceAuthn(false)
+                .serverSideDetails(ImmutableServerSideDetails.builder().clientId(String.valueOf(clientId)).build())
+                .build();
+
+        SamlLoginRequest loginRequest = ImmutableSamlLoginRequest.builder()
+                .identifier("user@example.com")
+                .password("secret")
+                .trackingSession("track-1")
+                .requestToken("token-1")
+                .build();
+
+        RequestContextBO requestContext = RequestContextBO.builder().build();
+
+        when(clientsService.getById(clientId, DOMAIN))
+                .thenReturn(Uni.createFrom().item(Optional.empty()));
+
+        CompletableFuture<AuthResponseBO> future = samlService.processSessionToSamlResponse(
+                originalRequest, "session-token", loginRequest, requestContext, DOMAIN)
+                .subscribeAsCompletionStage();
+
+        assertThatThrownBy(future::join)
+                .hasCauseInstanceOf(com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException.class);
+    }
+
+    @Test
+    void processSessionToSamlResponseNonSsoClient() {
+        long clientId = 1L;
+        ClientBO client = ClientBO.builder()
+                .id(clientId)
+                .clientType(Client.ClientType.ADMIN)
+                .domain(DOMAIN)
+                .baseUrl("https://www.sp.com/callback")
+                .build();
+
+        SamlAuthnRequest originalRequest = ImmutableSamlAuthnRequest.builder()
+                .issuer("urn:test-client")
+                .requestId("request-id")
+                .acsUrl("https://www.sp.com/callback")
+                .forceAuthn(false)
+                .serverSideDetails(ImmutableServerSideDetails.builder().clientId(String.valueOf(clientId)).build())
+                .build();
+
+        SamlLoginRequest loginRequest = ImmutableSamlLoginRequest.builder()
+                .identifier("user@example.com")
+                .password("secret")
+                .trackingSession("track-1")
+                .requestToken("token-1")
+                .build();
+
+        RequestContextBO requestContext = RequestContextBO.builder().build();
+
+        when(clientsService.getById(clientId, DOMAIN))
+                .thenReturn(Uni.createFrom().item(Optional.of(client)));
+
+        CompletableFuture<AuthResponseBO> future = samlService.processSessionToSamlResponse(
+                originalRequest, "session-token", loginRequest, requestContext, DOMAIN)
+                .subscribeAsCompletionStage();
+
+        assertThatThrownBy(future::join)
+                .hasCauseInstanceOf(ServiceException.class)
+                .cause()
+                .satisfies(e -> {
+                    ServiceException se = (ServiceException) e;
+                    assertThat(se.getErrorCode()).isEqualTo(ErrorCode.CLIENT_NOT_PERMITTED.getCode());
+                });
+    }
+
+    @Test
+    void processSessionToSamlResponse() {
+        long clientId = 1L;
+        ClientBO client = ClientBO.builder()
+                .id(clientId)
+                .clientType(Client.ClientType.SSO)
+                .domain(DOMAIN)
+                .baseUrl("https://www.sp.com/callback")
+                .build();
+
+        String acs = "https://www.sp.com/callback";
+        String sessionToken = "session-token";
+
+        SamlAuthnRequest originalRequest = ImmutableSamlAuthnRequest.builder()
+                .issuer("urn:test-client")
+                .requestId("request-id")
+                .acsUrl(acs)
+                .forceAuthn(false)
+                .serverSideDetails(ImmutableServerSideDetails.builder().clientId(String.valueOf(clientId)).build())
+                .build();
+
+        SamlLoginRequest loginRequest = ImmutableSamlLoginRequest.builder()
+                .identifier("user@example.com")
+                .password("secret")
+                .trackingSession("track-1")
+                .requestToken("token-1")
+                .build();
+
+        RequestContextBO requestContext = RequestContextBO.builder().build();
+
+        String sessionType = "ssoSession";
+        AuthResponseBO response = AuthResponseBO.builder()
+                .type(sessionType)
+                .token("dummy")
+                .entityType(EntityType.ACCOUNT)
+                .entityId(101)
+                .build();
+
+        when(clientsService.getById(clientId, DOMAIN))
+                .thenReturn(Uni.createFrom().item(Optional.of(client)));
+        when(exchangeService.exchange(any(AuthRequestBO.class), eq("ssoSession"), eq("samlResponse"), same(requestContext)))
+                .thenReturn(Uni.createFrom().item(response));
+
+        AuthResponseBO result = samlService.processSessionToSamlResponse(
+                originalRequest, sessionToken, loginRequest, requestContext, DOMAIN)
+                .subscribeAsCompletionStage()
+                .join();
+
+        assertThat(result).isNotNull();
+        assertThat(result.getClient()).isEqualTo(client);
+
+        verify(exchangeService).exchange(any(AuthRequestBO.class), eq("ssoSession"), eq("samlResponse"), same(requestContext));
     }
 }

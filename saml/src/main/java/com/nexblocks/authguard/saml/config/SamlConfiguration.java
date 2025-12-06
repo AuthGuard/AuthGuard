@@ -23,6 +23,7 @@ public interface SamlConfiguration {
     ImmutableAttributesConfiguration responseAttributes();
     ImmutableMfaConfiguration useMultiFactorAuthentication();
     ImmutableSamlSignatures getSignature();
+    ImmutableSamlSsoSession getSessions();
 
     @Value.Default
     default String getLoginPage() {
@@ -87,5 +88,16 @@ public interface SamlConfiguration {
         default boolean signResponse() {
             return false;
         }
+    }
+
+    @Value.Immutable
+    @Value.Style(
+            validationMethod = Value.Style.ValidationMethod.NONE,
+            jdkOnly = true
+    )
+    @JsonSerialize(as = ImmutableSamlSignatures.class)
+    @JsonDeserialize(as = ImmutableSamlSignatures.class)
+    interface SamlSsoSession {
+        String getLifetime();
     }
 }

@@ -41,6 +41,8 @@ public class SamlResponseProvider {
                 .type("samlResponse")
                 .entityType(EntityType.ACCOUNT)
                 .entityId(account.getId())
+                .successful(true)
+                .trackingSession(tokenOptions.getTrackingSession())
                 .build();
     }
 

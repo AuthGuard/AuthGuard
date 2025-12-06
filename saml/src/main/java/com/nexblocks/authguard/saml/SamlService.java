@@ -1,12 +1,16 @@
 package com.nexblocks.authguard.saml;
 
-import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
+import com.nexblocks.authguard.saml.config.ImmutableSamlConfiguration;
+import com.nexblocks.authguard.saml.config.SamlConfiguration;
 import com.nexblocks.authguard.saml.routes.SamlLoginRequest;
 import com.nexblocks.authguard.service.ClientsService;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.TrackingSessionsService;
+import com.nexblocks.authguard.service.config.ConfigParser;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
@@ -29,8 +33,10 @@ import java.util.TreeMap;
 public class SamlService {
     private static final String BASIC_TOKEN_TYPE = "basic";
     private static final String OTP_TOKEN_TYPE = "otp";
+    private static final String SESSION_TOKEN_TYPE = "ssoSession";
     private static final String SAML_RESPONSE_TOKEN_TYPE = "samlResponse";
     private static final int REQUEST_TOKEN_SIZE = 64;
+    private static final int SESSION_TOKEN_SIZE = 128;
     private static final Duration TOKEN_TTL = Duration.ofMinutes(5);
 
     private final CryptographicRandom cryptographicRandom;
@@ -38,6 +44,7 @@ public class SamlService {
     private final ClientsService clientsService;
     private final ExchangeService exchangeService;
     private final AccountTokensRepository accountTokensRepository;
+    private final Duration sessionLifetime;
 
     public static void initOpenSAML() {
         try {
@@ -47,21 +54,32 @@ public class SamlService {
         }
     }
 
-    @Inject
     public SamlService(final CryptographicRandom cryptographicRandom,
                        final TrackingSessionsService trackingSessionsService,
                        final ClientsService clientsService,
                        final ExchangeService exchangeService,
-                       final AccountTokensRepository accountTokensRepository) {
+                       final AccountTokensRepository accountTokensRepository,
+                       final @Named("saml") ConfigContext configContext) {
+        this(cryptographicRandom, trackingSessionsService, clientsService, exchangeService, accountTokensRepository,
+                configContext.asConfigBean(ImmutableSamlConfiguration.class));
+    }
+
+    public SamlService(final CryptographicRandom cryptographicRandom,
+                       final TrackingSessionsService trackingSessionsService,
+                       final ClientsService clientsService,
+                       final ExchangeService exchangeService,
+                       final AccountTokensRepository accountTokensRepository,
+                       final SamlConfiguration configuration) {
         this.cryptographicRandom = cryptographicRandom;
         this.trackingSessionsService = trackingSessionsService;
         this.clientsService = clientsService;
         this.exchangeService = exchangeService;
         this.accountTokensRepository = accountTokensRepository;
+        this.sessionLifetime = ConfigParser.parseDuration(configuration.getSessions().getLifetime());
     }
 
-    public Uni<Optional<Session>> getSessionIfActive(final String sessionToken,
-                                                     final String domain) {
+    public Uni<Optional<Session>> getTrackingSessionIfActive(final String sessionToken,
+                                                             final String domain) {
         return trackingSessionsService.getByToken(sessionToken)
                 .map(opt -> opt.filter(session -> session.isActive()
                         && Objects.equals(session.getDomain(), domain)
@@ -152,6 +170,23 @@ public class SamlService {
                 });
     }
 
+    public Uni<AccountTokenDO> startSession(final String trackingSessionToken,
+                                            final long accountId,
+                                            final Client client,
+                                            final String source) {
+        AccountTokenDO sessionToken = AccountTokenDO.builder()
+                .id(ID.generate())
+                .associatedAccountId(accountId)
+                .token(cryptographicRandom.base64(SESSION_TOKEN_SIZE))
+                .trackingSession(trackingSessionToken)
+                .clientId("" + client.getId())
+                .sourceAuthType(source)
+                .expiresAt(Instant.now().plus(sessionLifetime))
+                .build();
+
+        return accountTokensRepository.save(sessionToken);
+    }
+
     public Uni<AuthResponseBO> processAuthBasicToOtp(final SamlAuthnRequest originalRequest,
                                                      final SamlLoginRequest loginRequest,
                                                      final RequestContextBO requestContext,
@@ -176,6 +211,48 @@ public class SamlService {
 
                     return exchangeService.exchange(validatedRequest.get(),
                                     BASIC_TOKEN_TYPE, OTP_TOKEN_TYPE, requestContext)
+                            .map(response -> response.withClient(client));
+                });
+    }
+
+    public Uni<AuthResponseBO> processSessionToSamlResponse(final SamlAuthnRequest originalRequest,
+                                                            final String sessionToken,
+                                                            final SamlLoginRequest loginRequest,
+                                                            final RequestContextBO requestContext,
+                                                            final String domain) {
+        if (originalRequest.isForceAuthn()) {
+            return Uni.createFrom().failure(
+                    new ServiceException(ErrorCode.SESSION_DOES_NOT_MEET_REQUIREMENTS, "Request requires authenticating the user")
+            );
+        }
+
+        long parsedId;
+
+        try {
+            parsedId = Long.parseLong(originalRequest.getServerSideDetails().getClientId());
+        } catch (Exception e) {
+            return Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.APP_DOES_NOT_EXIST,
+                    "Invalid client ID"));
+        }
+
+        return clientsService.getById(parsedId, domain)
+                .flatMap(opt -> opt
+                        .map(item -> Uni.createFrom().item(item))
+                        .orElseGet(() -> Uni.createFrom().failure(new ServiceAuthorizationException(ErrorCode.APP_DOES_NOT_EXIST, "Client does not exist"))))
+                .flatMap(client -> {
+                    if (client.getClientType() != Client.ClientType.SSO) {
+                        return Uni.createFrom().failure(new ServiceException(ErrorCode.CLIENT_NOT_PERMITTED,
+                                "Client isn't permitted to perform SAML requests"));
+                    }
+
+                    Try<AuthRequestBO> validatedRequest = verifyClientRequest(client, originalRequest.getAcsUrl())
+                            .map(ignored -> createRequestFromSession(sessionToken, loginRequest, originalRequest, client));
+
+                    if (validatedRequest.isFailure()) {
+                        return Uni.createFrom().failure(validatedRequest.getCause());
+                    }
+
+                    return exchangeService.exchange(validatedRequest.get(), SESSION_TOKEN_TYPE, SAML_RESPONSE_TOKEN_TYPE, requestContext)
                             .map(response -> response.withClient(client));
                 });
     }
@@ -211,7 +288,7 @@ public class SamlService {
                     }
 
                     return exchangeService.exchange(validatedRequest.get(), BASIC_TOKEN_TYPE, SAML_RESPONSE_TOKEN_TYPE, requestContext)
-                            .map(response -> response.withClient(client));
+                            .flatMap(response -> tieResponseToSession(response, client));
                 });
     }
 
@@ -247,11 +324,13 @@ public class SamlService {
                     }
 
                     return exchangeService.exchange(validatedRequest.get(), OTP_TOKEN_TYPE, SAML_RESPONSE_TOKEN_TYPE, requestContext)
-                            .map(response -> response.withClient(client));
+                            .flatMap(response -> tieResponseToSession(response, client));
                 });
     }
 
-    private AuthRequestBO createRequest(SamlLoginRequest loginRequest, SamlAuthnRequest originalAuthnRequest, ClientBO client) {
+    private AuthRequestBO createRequest(final SamlLoginRequest loginRequest,
+                                        final SamlAuthnRequest originalAuthnRequest,
+                                        final ClientBO client) {
         return AuthRequestBO.builder()
                 .domain(client.getDomain())
                 .identifier(loginRequest.getIdentifier())
@@ -259,6 +338,25 @@ public class SamlService {
                 .trackingSession(loginRequest.getTrackingSession())
                 .extraParameters(originalAuthnRequest)
                 .build();
+    }
+
+    private AuthRequestBO createRequestFromSession(final String sessionToken,
+                                                   final SamlLoginRequest loginRequest,
+                                                   final SamlAuthnRequest originalAuthnRequest,
+                                                   final ClientBO client) {
+        return AuthRequestBO.builder()
+                .domain(client.getDomain())
+                .token(sessionToken)
+                .trackingSession(loginRequest.getTrackingSession())
+                .extraParameters(originalAuthnRequest)
+                .build();
+    }
+
+    private Uni<AuthResponseBO> tieResponseToSession(final AuthResponseBO response,
+                                                     final ClientBO client) {
+        return startSession(response.getTrackingSession(), response.getEntityId(), client, BASIC_TOKEN_TYPE)
+                .map(session -> response.withAuthSessionToken(session.getToken())
+                        .withClient(client));
     }
 
     // TODO way too much replication here, move to service layer

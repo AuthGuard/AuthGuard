@@ -77,6 +77,7 @@ public class SamlSsoPagesHandler implements VertxApiHandler {
         router.get("/saml/:domain/sso").handler(this::samlAuthPage);
         router.post("/saml/:domain/sso").handler(this::samlAuthPagePostBinding);
         router.get("/saml/:domain/login").handler(this::loginPage);
+        router.post("/saml/:domain/session").handler(this::sessionApi);
         router.post("/saml/:domain/auth").handler(this::authFlowAuthApi);
         router.post("/saml/:domain/otp").handler(this::authFlowOtpApi);
     }
@@ -232,6 +233,70 @@ public class SamlSsoPagesHandler implements VertxApiHandler {
                 .end(loginPage);
     }
 
+    private void sessionApi(final RoutingContext context) {
+        String domain = context.pathParam("domain");
+        SamlLoginRequest request = Json.decodeValue(context.body().asString(), ImmutableSamlLoginRequest.class);
+        RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
+
+        if (isRequestCsrfTokenValid(context, request.getRequestToken())) {
+            com.nexblocks.authguard.api.dto.entities.Error csrfError =
+                    new com.nexblocks.authguard.api.dto.entities.Error(ErrorCode.FAILED_CSRF_CHECK.getCode(),
+                            "Missing or invalid CSRF header");
+
+            context.response()
+                    .setStatusCode(400)
+                    .end(Json.encode(csrfError));
+
+            return;
+        }
+
+        Cookie sessionToken = context.request().cookies(RoutesConstants.AUTH_SESSION_TOKEN_COOKIE)
+                .stream().findFirst().orElse(null);
+
+        if (sessionToken == null) {
+            context.response()
+                    .setStatusCode(400)
+                    .putHeader("Content-Type", "application/json")
+                    .end(Json.encode(new Error(ErrorCode.INVALID_TOKEN.getCode(), "No session code was provided")));
+
+            return;
+        }
+
+        samlService.getRequestFromToken(request.getRequestToken(), requestContext, domain)
+                .flatMap(originalRequest -> samlService.processSessionToSamlResponse(originalRequest, sessionToken.getValue(), request, requestContext, domain)
+                        .map(response -> {
+                            String origin = response.getClient().getBaseUrl();
+                            String location = buildAcsUrl(originalRequest, response);
+                            String html = PostBindingPage.render(location, (String) response.getToken(), originalRequest.getRelayState());
+
+                            return context.response()
+                                    .putHeader("Access-Control-Allow-Origin", origin)
+                                    .putHeader("Content-Type", "text/html; charset=utf-8")
+                                    .putHeader("Cache-Control", "no-store")
+//                                    .addCookie(Cookie.cookie("AG_ST", response.getTrackingSession()))
+                                    .end(html);
+                        }))
+                .subscribe()
+                .with(ignored -> {
+                    if (!context.response().ended()) {
+                        context.end();
+                    }
+                }, e -> {
+                    Throwable effectiveException = e instanceof CompletionException ? e.getCause() : e;
+
+                    if (effectiveException instanceof ServiceException ex) {
+                        Error error = new Error(ex.getErrorCode(), ex.getMessage());
+                        context.response().setStatusCode(400)
+                                .putHeader("Content-Type", "application/json")
+                                .end(Json.encode(error));
+                    } else {
+                        LOG.error("SAML login failed with an unexpected error", e);
+                        context.response().setStatusCode(500)
+                                .end();
+                    }
+                });
+    }
+
     private void authFlowAuthApi(final RoutingContext context) {
         String domain = context.pathParam("domain");
         SamlLoginRequest request = Json.decodeValue(context.body().asString(), ImmutableSamlLoginRequest.class);
@@ -286,6 +351,9 @@ public class SamlSsoPagesHandler implements VertxApiHandler {
                                         .putHeader("Content-Type", "text/html; charset=utf-8")
                                         .putHeader("Cache-Control", "no-store")
                                         .addCookie(Cookie.cookie("AG_ST", response.getTrackingSession()))
+                                        // TODO add expiry options
+                                        .addCookie(Cookie.cookie(RoutesConstants.AUTH_SESSION_TOKEN_COOKIE,
+                                                response.getAuthSessionToken()))
                                         .end(html);
                             });
                 })
@@ -342,6 +410,9 @@ public class SamlSsoPagesHandler implements VertxApiHandler {
                                         .putHeader("Content-Type", "text/html; charset=utf-8")
                                         .putHeader("Cache-Control", "no-store")
                                         .addCookie(Cookie.cookie("AG_ST", response.getTrackingSession()))
+                                        // TODO add expiry options
+                                        .addCookie(Cookie.cookie(RoutesConstants.AUTH_SESSION_TOKEN_COOKIE,
+                                                response.getAuthSessionToken()))
                                         .end(html);
                             });
                 })
