@@ -76,7 +76,7 @@
 
         <surefire.version>3.0.0-M3</surefire.version>
         <junit.version>5.5.1</junit.version>
-        <assertj.version>3.23.1</assertj.version>
+        <assertj.version>3.27.7</assertj.version>
         <easy-random.version>4.0.0</easy-random.version>
         <mockito.version>3.0.0</mockito.version>
         <rest-assured.version>4.3.0</rest-assured.version>
