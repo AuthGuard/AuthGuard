@@ -5,6 +5,7 @@ import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
 import com.nexblocks.authguard.dal.model.AccountTokenDO;
 import com.nexblocks.authguard.saml.config.ImmutableSamlConfiguration;
 import com.nexblocks.authguard.saml.config.ImmutableSamlSsoSession;
+import com.nexblocks.authguard.saml.config.SamlConfiguration;
 import com.nexblocks.authguard.service.ClientsService;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.TrackingSessionsService;
@@ -41,7 +42,29 @@ class SamlServiceTest {
     private ExchangeService exchangeService;
     private AccountTokensRepository accountTokensRepository;
 
-    private SamlService samlService;
+    private SamlService defaultSamlService;
+
+    private static SamlConfiguration getConfiguration() {
+        return getConfiguration(false);
+    }
+
+    private static SamlConfiguration getConfiguration(boolean allowRefresh) {
+        return ImmutableSamlConfiguration.builder()
+                .sessions(ImmutableSamlSsoSession.builder()
+                        .lifetime("60m")
+                        .allowRefresh(allowRefresh)
+                        .build())
+                .build();
+    }
+
+    private SamlService getService(SamlConfiguration configuration) {
+        return new SamlService(new CryptographicRandom(),
+                trackingSessionsService,
+                clientsService,
+                exchangeService,
+                accountTokensRepository,
+                configuration);
+    }
 
     @BeforeEach
     void setup() {
@@ -50,16 +73,7 @@ class SamlServiceTest {
         exchangeService = mock(ExchangeService.class);
         accountTokensRepository = mock(AccountTokensRepository.class);
 
-        samlService = new SamlService(new CryptographicRandom(),
-                trackingSessionsService,
-                clientsService,
-                exchangeService,
-                accountTokensRepository,
-                ImmutableSamlConfiguration.builder()
-                        .sessions(ImmutableSamlSsoSession.builder()
-                                .lifetime("60m")
-                                .build())
-                        .build());
+        defaultSamlService = getService(getConfiguration());
     }
 
     @Test
@@ -75,7 +89,7 @@ class SamlServiceTest {
         when(trackingSessionsService.getByToken(token))
                 .thenReturn(Uni.createFrom().item(Optional.of(session)));
 
-        Optional<Session> result = samlService.getTrackingSessionIfActive(token, DOMAIN)
+        Optional<Session> result = defaultSamlService.getTrackingSessionIfActive(token, DOMAIN)
                 .subscribeAsCompletionStage()
                 .join();
 
@@ -95,7 +109,7 @@ class SamlServiceTest {
         when(trackingSessionsService.getByToken(token))
                 .thenReturn(Uni.createFrom().item(Optional.of(session)));
 
-        Optional<Session> result = samlService.getTrackingSessionIfActive(token, DOMAIN)
+        Optional<Session> result = defaultSamlService.getTrackingSessionIfActive(token, DOMAIN)
                 .subscribeAsCompletionStage()
                 .join();
 
@@ -115,7 +129,7 @@ class SamlServiceTest {
         when(trackingSessionsService.getByToken(token))
                 .thenReturn(Uni.createFrom().item(Optional.of(session)));
 
-        Optional<Session> result = samlService.getTrackingSessionIfActive(token, DOMAIN)
+        Optional<Session> result = defaultSamlService.getTrackingSessionIfActive(token, DOMAIN)
                 .subscribeAsCompletionStage()
                 .join();
 
@@ -135,7 +149,7 @@ class SamlServiceTest {
         when(trackingSessionsService.getByToken(token))
                 .thenReturn(Uni.createFrom().item(Optional.of(session)));
 
-        Optional<Session> result = samlService.getTrackingSessionIfActive(token, DOMAIN)
+        Optional<Session> result = defaultSamlService.getTrackingSessionIfActive(token, DOMAIN)
                 .subscribeAsCompletionStage()
                 .join();
 
@@ -179,7 +193,7 @@ class SamlServiceTest {
         when(accountTokensRepository.save(any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
-        AccountTokenDO result = samlService.createRequestToken(requestContext, samlAuthnRequest, DOMAIN)
+        AccountTokenDO result = defaultSamlService.createRequestToken(requestContext, samlAuthnRequest, DOMAIN)
                 .subscribeAsCompletionStage()
                 .join();
 
@@ -228,7 +242,7 @@ class SamlServiceTest {
         when(clientsService.getByUri(clientUri, DOMAIN))
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
-        CompletableFuture<AccountTokenDO> future = samlService.createRequestToken(requestContext, samlAuthnRequest, DOMAIN)
+        CompletableFuture<AccountTokenDO> future = defaultSamlService.createRequestToken(requestContext, samlAuthnRequest, DOMAIN)
                 .subscribeAsCompletionStage();
 
         assertThatThrownBy(future::join)
@@ -256,7 +270,7 @@ class SamlServiceTest {
         when(clientsService.getByUri(clientUri, DOMAIN))
                 .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        CompletableFuture<AccountTokenDO> future = samlService.createRequestToken(requestContext, samlAuthnRequest, DOMAIN)
+        CompletableFuture<AccountTokenDO> future = defaultSamlService.createRequestToken(requestContext, samlAuthnRequest, DOMAIN)
                 .subscribeAsCompletionStage();
 
         assertThatThrownBy(future::join)
@@ -298,7 +312,7 @@ class SamlServiceTest {
         when(clientsService.getById(clientId, DOMAIN))
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
         
-        CompletableFuture<AuthResponseBO> future = samlService.processAuthBasicToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
+        CompletableFuture<AuthResponseBO> future = defaultSamlService.processAuthBasicToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage();
         
         assertThatThrownBy(future::join)
@@ -328,7 +342,7 @@ class SamlServiceTest {
         when(clientsService.getById(clientId, DOMAIN))
                 .thenReturn(Uni.createFrom().item(Optional.empty()));
         
-        CompletableFuture<AuthResponseBO> future = samlService.processAuthBasicToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
+        CompletableFuture<AuthResponseBO> future = defaultSamlService.processAuthBasicToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage();
         
         assertThatThrownBy(future::join)
@@ -366,7 +380,7 @@ class SamlServiceTest {
         when(clientsService.getById(clientId, DOMAIN))
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
         
-        CompletableFuture<AuthResponseBO> future = samlService.processAuthBasicToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
+        CompletableFuture<AuthResponseBO> future = defaultSamlService.processAuthBasicToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage();
         
         assertThatThrownBy(future::join)
@@ -405,7 +419,7 @@ class SamlServiceTest {
         when(clientsService.getById(clientId, DOMAIN))
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
         
-        CompletableFuture<AuthResponseBO> future = samlService.processAuthBasicToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
+        CompletableFuture<AuthResponseBO> future = defaultSamlService.processAuthBasicToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage();
         
         assertThatThrownBy(future::join)
@@ -455,7 +469,7 @@ class SamlServiceTest {
         when(accountTokensRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
         
-        AuthResponseBO result = samlService.processAuthBasicToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
+        AuthResponseBO result = defaultSamlService.processAuthBasicToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage()
                 .join();
         
@@ -502,7 +516,7 @@ class SamlServiceTest {
         when(clientsService.getById(clientId, DOMAIN))
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
-        CompletableFuture<AuthResponseBO> future = samlService.processAuthOtpToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
+        CompletableFuture<AuthResponseBO> future = defaultSamlService.processAuthOtpToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage();
 
         assertThatThrownBy(future::join)
@@ -532,7 +546,7 @@ class SamlServiceTest {
         when(clientsService.getById(clientId, DOMAIN))
                 .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        CompletableFuture<AuthResponseBO> future = samlService.processAuthOtpToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
+        CompletableFuture<AuthResponseBO> future = defaultSamlService.processAuthOtpToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage();
 
         assertThatThrownBy(future::join)
@@ -570,7 +584,7 @@ class SamlServiceTest {
         when(clientsService.getById(clientId, DOMAIN))
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
-        CompletableFuture<AuthResponseBO> future = samlService.processAuthOtpToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
+        CompletableFuture<AuthResponseBO> future = defaultSamlService.processAuthOtpToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage();
 
         assertThatThrownBy(future::join)
@@ -609,7 +623,7 @@ class SamlServiceTest {
         when(clientsService.getById(clientId, DOMAIN))
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
-        CompletableFuture<AuthResponseBO> future = samlService.processAuthOtpToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
+        CompletableFuture<AuthResponseBO> future = defaultSamlService.processAuthOtpToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage();
 
         assertThatThrownBy(future::join)
@@ -659,7 +673,7 @@ class SamlServiceTest {
         when(accountTokensRepository.save(Mockito.any()))
                 .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
 
-        AuthResponseBO result = samlService.processAuthOtpToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
+        AuthResponseBO result = defaultSamlService.processAuthOtpToSamlResponse(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage()
                 .join();
 
@@ -706,7 +720,7 @@ class SamlServiceTest {
         when(clientsService.getById(clientId, DOMAIN))
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
-        CompletableFuture<AuthResponseBO> future = samlService.processAuthBasicToOtp(originalRequest, loginRequest, requestContext, DOMAIN)
+        CompletableFuture<AuthResponseBO> future = defaultSamlService.processAuthBasicToOtp(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage();
 
         assertThatThrownBy(future::join)
@@ -736,7 +750,7 @@ class SamlServiceTest {
         when(clientsService.getById(clientId, DOMAIN))
                 .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        CompletableFuture<AuthResponseBO> future = samlService.processAuthBasicToOtp(originalRequest, loginRequest, requestContext, DOMAIN)
+        CompletableFuture<AuthResponseBO> future = defaultSamlService.processAuthBasicToOtp(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage();
 
         assertThatThrownBy(future::join)
@@ -774,7 +788,7 @@ class SamlServiceTest {
         when(clientsService.getById(clientId, DOMAIN))
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
-        CompletableFuture<AuthResponseBO> future = samlService.processAuthBasicToOtp(originalRequest, loginRequest, requestContext, DOMAIN)
+        CompletableFuture<AuthResponseBO> future = defaultSamlService.processAuthBasicToOtp(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage();
 
         assertThatThrownBy(future::join)
@@ -813,7 +827,7 @@ class SamlServiceTest {
         when(clientsService.getById(clientId, DOMAIN))
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
-        CompletableFuture<AuthResponseBO> future = samlService.processAuthBasicToOtp(originalRequest, loginRequest, requestContext, DOMAIN)
+        CompletableFuture<AuthResponseBO> future = defaultSamlService.processAuthBasicToOtp(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage();
 
         assertThatThrownBy(future::join)
@@ -861,7 +875,7 @@ class SamlServiceTest {
         when(exchangeService.exchange(any(AuthRequestBO.class), eq("basic"), eq("otp"), same(requestContext)))
                 .thenReturn(Uni.createFrom().item(response));
 
-        AuthResponseBO result = samlService.processAuthBasicToOtp(originalRequest, loginRequest, requestContext, DOMAIN)
+        AuthResponseBO result = defaultSamlService.processAuthBasicToOtp(originalRequest, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage()
                 .join();
 
@@ -898,7 +912,7 @@ class SamlServiceTest {
 
         RequestContextBO requestContext = RequestContextBO.builder().build();
 
-        CompletableFuture<AuthResponseBO> future = samlService.processSessionToSamlResponse(
+        CompletableFuture<AuthResponseBO> future = defaultSamlService.processSessionToSamlResponse(
                 originalRequest, "session-token", loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage();
 
@@ -935,7 +949,7 @@ class SamlServiceTest {
         when(clientsService.getById(clientId, DOMAIN))
                 .thenReturn(Uni.createFrom().item(Optional.empty()));
 
-        CompletableFuture<AuthResponseBO> future = samlService.processSessionToSamlResponse(
+        CompletableFuture<AuthResponseBO> future = defaultSamlService.processSessionToSamlResponse(
                 originalRequest, "session-token", loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage();
 
@@ -973,7 +987,7 @@ class SamlServiceTest {
         when(clientsService.getById(clientId, DOMAIN))
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
 
-        CompletableFuture<AuthResponseBO> future = samlService.processSessionToSamlResponse(
+        CompletableFuture<AuthResponseBO> future = defaultSamlService.processSessionToSamlResponse(
                 originalRequest, "session-token", loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage();
 
@@ -998,6 +1012,16 @@ class SamlServiceTest {
 
         String acs = "https://www.sp.com/callback";
         String sessionToken = "session-token";
+
+        AccountTokenDO session = AccountTokenDO.builder()
+                .id(1)
+                .expiresAt(Instant.now().plusSeconds(100))
+                .associatedAccountId(101)
+                .token(sessionToken)
+                .clientId(String.valueOf(clientId))
+                .sourceAuthType("basic")
+                .trackingSession("tracking-session")
+                .build();
 
         SamlAuthnRequest originalRequest = ImmutableSamlAuthnRequest.builder()
                 .issuer("urn:test-client")
@@ -1028,8 +1052,10 @@ class SamlServiceTest {
                 .thenReturn(Uni.createFrom().item(Optional.of(client)));
         when(exchangeService.exchange(any(AuthRequestBO.class), eq("ssoSession"), eq("samlResponse"), same(requestContext)))
                 .thenReturn(Uni.createFrom().item(response));
+        when(accountTokensRepository.getByToken(sessionToken))
+                .thenReturn(Uni.createFrom().item(Optional.of(session)));
 
-        AuthResponseBO result = samlService.processSessionToSamlResponse(
+        AuthResponseBO result = defaultSamlService.processSessionToSamlResponse(
                 originalRequest, sessionToken, loginRequest, requestContext, DOMAIN)
                 .subscribeAsCompletionStage()
                 .join();
@@ -1037,6 +1063,102 @@ class SamlServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getClient()).isEqualTo(client);
 
-        verify(exchangeService).exchange(any(AuthRequestBO.class), eq("ssoSession"), eq("samlResponse"), same(requestContext));
+        verify(exchangeService).exchange(
+                any(AuthRequestBO.class),
+                eq("ssoSession"),
+                eq("samlResponse"),
+                same(requestContext)
+        );
+
+        // default configuration doesn't allow session refresh so no new tokens should be saved
+        verify(accountTokensRepository, Mockito.never()).save(any());
     }
+
+    @Test
+    void processSessionToSamlResponseWithRefresh() {
+        long clientId = 1L;
+        ClientBO client = ClientBO.builder()
+                .id(clientId)
+                .clientType(Client.ClientType.SSO)
+                .domain(DOMAIN)
+                .baseUrl("https://www.sp.com/callback")
+                .build();
+
+        String acs = "https://www.sp.com/callback";
+        String sessionToken = "session-token";
+
+        AccountTokenDO session = AccountTokenDO.builder()
+                .id(1)
+                .expiresAt(Instant.now().plusSeconds(100))
+                .associatedAccountId(101)
+                .token(sessionToken)
+                .clientId(String.valueOf(clientId))
+                .sourceAuthType("basic")
+                .trackingSession("tracking-session")
+                .build();
+
+        SamlAuthnRequest originalRequest = ImmutableSamlAuthnRequest.builder()
+                .issuer("urn:test-client")
+                .requestId("request-id")
+                .acsUrl(acs)
+                .forceAuthn(false)
+                .serverSideDetails(ImmutableServerSideDetails.builder().clientId(String.valueOf(clientId)).build())
+                .build();
+
+        SamlLoginRequest loginRequest = ImmutableSamlLoginRequest.builder()
+                .identifier("user@example.com")
+                .password("secret")
+                .trackingSession("track-1")
+                .requestToken("token-1")
+                .build();
+
+        RequestContextBO requestContext = RequestContextBO.builder().build();
+
+        String sessionType = "ssoSession";
+        AuthResponseBO response = AuthResponseBO.builder()
+                .type(sessionType)
+                .token("dummy")
+                .entityType(EntityType.ACCOUNT)
+                .entityId(101)
+                .build();
+
+        when(clientsService.getById(clientId, DOMAIN))
+                .thenReturn(Uni.createFrom().item(Optional.of(client)));
+        when(exchangeService.exchange(any(AuthRequestBO.class), eq("ssoSession"), eq("samlResponse"), same(requestContext)))
+                .thenReturn(Uni.createFrom().item(response));
+        when(accountTokensRepository.getByToken(sessionToken))
+                .thenReturn(Uni.createFrom().item(Optional.of(session)));
+        when(accountTokensRepository.save(Mockito.any()))
+                .thenAnswer(invocation -> Uni.createFrom().item(invocation.getArgument(0, AccountTokenDO.class)));
+
+        SamlService samlService = getService(getConfiguration(true));
+
+        AuthResponseBO result = samlService.processSessionToSamlResponse(
+                        originalRequest, sessionToken, loginRequest, requestContext, DOMAIN)
+                .subscribeAsCompletionStage()
+                .join();
+
+        assertThat(result).isNotNull();
+        assertThat(result.getClient()).isEqualTo(client);
+
+        verify(exchangeService).exchange(
+                any(AuthRequestBO.class),
+                eq("ssoSession"),
+                eq("samlResponse"),
+                same(requestContext)
+        );
+
+        // verify that the new session matches the old one but with a new expiry time
+        ArgumentCaptor<AccountTokenDO> tokenCaptor = ArgumentCaptor.forClass(AccountTokenDO.class);
+        verify(accountTokensRepository, Mockito.times(1))
+                .save(tokenCaptor.capture());
+
+        assertThat(tokenCaptor.getValue()).usingRecursiveComparison()
+                .ignoringFields("expiresAt")
+                .isEqualTo(session);
+
+        assertThat(tokenCaptor.getValue().getExpiresAt())
+                .isAfter(session.getExpiresAt());
+    }
+
 }

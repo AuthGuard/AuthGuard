@@ -1,5 +1,6 @@
 package com.nexblocks.authguard.saml;
 
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.nexblocks.authguard.config.ConfigContext;
 import com.nexblocks.authguard.dal.cache.AccountTokensRepository;
@@ -11,6 +12,7 @@ import com.nexblocks.authguard.service.ClientsService;
 import com.nexblocks.authguard.service.ExchangeService;
 import com.nexblocks.authguard.service.TrackingSessionsService;
 import com.nexblocks.authguard.service.config.ConfigParser;
+import com.nexblocks.authguard.service.exceptions.ConfigurationException;
 import com.nexblocks.authguard.service.exceptions.ServiceAuthorizationException;
 import com.nexblocks.authguard.service.exceptions.ServiceException;
 import com.nexblocks.authguard.service.exceptions.ServiceNotFoundException;
@@ -22,6 +24,8 @@ import io.smallrye.mutiny.Uni;
 import io.vavr.control.Try;
 import okhttp3.HttpUrl;
 import org.opensaml.core.config.InitializationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -31,6 +35,8 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 public class SamlService {
+    private static final Logger LOG = LoggerFactory.getLogger(SamlService.class);
+
     private static final String BASIC_TOKEN_TYPE = "basic";
     private static final String OTP_TOKEN_TYPE = "otp";
     private static final String SESSION_TOKEN_TYPE = "ssoSession";
@@ -45,6 +51,7 @@ public class SamlService {
     private final ExchangeService exchangeService;
     private final AccountTokensRepository accountTokensRepository;
     private final Duration sessionLifetime;
+    private final SamlConfiguration configuration;
 
     public static void initOpenSAML() {
         try {
@@ -54,6 +61,7 @@ public class SamlService {
         }
     }
 
+    @Inject
     public SamlService(final CryptographicRandom cryptographicRandom,
                        final TrackingSessionsService trackingSessionsService,
                        final ClientsService clientsService,
@@ -75,6 +83,13 @@ public class SamlService {
         this.clientsService = clientsService;
         this.exchangeService = exchangeService;
         this.accountTokensRepository = accountTokensRepository;
+        this.configuration = configuration;
+
+        if (configuration.getSessions() == null) {
+            throw new ConfigurationException("Session configuration is required for SAML. " +
+                    "Include 'saml.sessions' in your configuration");
+        }
+
         this.sessionLifetime = ConfigParser.parseDuration(configuration.getSessions().getLifetime());
     }
 
@@ -252,8 +267,10 @@ public class SamlService {
                         return Uni.createFrom().failure(validatedRequest.getCause());
                     }
 
-                    return exchangeService.exchange(validatedRequest.get(), SESSION_TOKEN_TYPE, SAML_RESPONSE_TOKEN_TYPE, requestContext)
-                            .map(response -> response.withClient(client));
+                    return exchangeService
+                            .exchange(validatedRequest.get(), SESSION_TOKEN_TYPE, SAML_RESPONSE_TOKEN_TYPE, requestContext)
+                            .map(response -> response.withClient(client))
+                            .flatMap(response -> refreshSessionIfAllowed(sessionToken, response));
                 });
     }
 
@@ -357,6 +374,40 @@ public class SamlService {
         return startSession(response.getTrackingSession(), response.getEntityId(), client, BASIC_TOKEN_TYPE)
                 .map(session -> response.withAuthSessionToken(session.getToken())
                         .withClient(client));
+    }
+
+    public Uni<AuthResponseBO> refreshSessionIfAllowed(final String sessionToken,
+                                                       final AuthResponseBO response) {
+        if (!configuration.getSessions().allowRefresh()) {
+            LOG.debug("Refresh is not allowed");
+            return Uni.createFrom().item(response);
+        }
+
+        return accountTokensRepository.getByToken(sessionToken)
+                .flatMap(opt -> {
+                    if (opt.isEmpty()) {
+                        LOG.error("Failed to refresh SSO session: session does not exist. This will not fail the request.");
+                        return Uni.createFrom().item(response);
+                    }
+
+                    AccountTokenDO session = opt.get();
+
+                    AccountTokenDO newSession = AccountTokenDO.builder()
+                            .id(session.getId())
+                            .associatedAccountId(session.getAssociatedAccountId())
+                            .token(session.getToken())
+                            .trackingSession(session.getTrackingSession())
+                            .clientId(session.getClientId())
+                            .sourceAuthType(session.getSourceAuthType())
+                            .expiresAt(Instant.now().plus(sessionLifetime))
+                            .build();
+
+                    LOG.debug("Refreshing session id={}, oldExpiryTime={}, newExpiryTime={}",
+                            session.getId(), session.getExpiresAt(), newSession.getExpiresAt());
+
+                    return accountTokensRepository.save(newSession)
+                            .flatMap(ignored -> Uni.createFrom().item(response));
+                });
     }
 
     // TODO way too much replication here, move to service layer

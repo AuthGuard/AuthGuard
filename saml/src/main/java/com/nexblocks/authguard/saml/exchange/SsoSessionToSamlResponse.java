@@ -16,9 +16,7 @@ import com.nexblocks.authguard.service.exceptions.codes.ErrorCode;
 import com.nexblocks.authguard.service.exchange.Exchange;
 import com.nexblocks.authguard.service.exchange.TokenExchange;
 import com.nexblocks.authguard.service.mappers.TokenOptionsMapper;
-import com.nexblocks.authguard.service.model.AuthRequestBO;
-import com.nexblocks.authguard.service.model.AuthResponseBO;
-import com.nexblocks.authguard.service.model.TokenOptionsBO;
+import com.nexblocks.authguard.service.model.*;
 import io.smallrye.mutiny.Uni;
 import org.opensaml.saml.saml2.core.Response;
 
@@ -60,14 +58,7 @@ public class SsoSessionToSamlResponse implements Exchange {
                         return Uni.createFrom().failure(new ServiceException(ErrorCode.INVALID_TOKEN, ""));
                     }
 
-                    AccountTokenDO session = opt.get();
-                    if (Objects.equals(session.getDomain(), request.getDomain())
-                            || session.getExpiresAt().isBefore(Instant.now())) {
-
-                        return Uni.createFrom().failure(new ServiceException(ErrorCode.EXPIRED_TOKEN, ""));
-                    }
-
-                    return Uni.createFrom().item(session);
+                    return verifySession(opt.get(), request);
                 })
                 .flatMap(session -> accountsService.getById(session.getAssociatedAccountId(), request.getDomain())
                         .flatMap(accountOpt -> {
@@ -75,27 +66,43 @@ public class SsoSessionToSamlResponse implements Exchange {
                                 return Uni.createFrom().failure(new ServiceException(ErrorCode.ACCOUNT_DOES_NOT_EXIST, ""));
                             }
 
-                            if (!SamlConditionalAuthn.satisfiesRequestedContext(authnRequest, session.getSourceAuthType())) {
-                                Response error = SamlErrorResponseProvider.authnFailed(
-                                        configuration.getIssuer(),
-                                        authnRequest.getAcsUrl(),
-                                        authnRequest.getRequestId(),
-                                        "RequestedAuthnContext not satisfied");
-
-                                AuthResponseBO response = samlResponseProvider.generateError(authnRequest, error);
-
-                                return Uni.createFrom().item(response);
-                            }
-
-                            TokenOptionsBO options = TokenOptionsMapper.fromAuthRequest(request)
-                                    .source(session.getSourceAuthType())
-                                    .trackingSession(request.getTrackingSession())
-                                    .extraParameters(request.getExtraParameters())
-                                    .build();
-
-                            return Uni.createFrom().item(samlResponseProvider.generateToken(authnRequest,
-                                    accountOpt.get(),
-                                    options));
+                            return processRequest(authnRequest, request, session, accountOpt.get());
                         }));
+    }
+
+    private Uni<AccountTokenDO> verifySession(final AccountTokenDO session,
+                                              final AuthRequest request) {
+        if (Objects.equals(session.getDomain(), request.getDomain())
+                || session.getExpiresAt().isBefore(Instant.now())) {
+
+            return Uni.createFrom().failure(new ServiceException(ErrorCode.EXPIRED_TOKEN, ""));
+        }
+
+        return Uni.createFrom().item(session);
+    }
+
+    private Uni<AuthResponseBO> processRequest(final SamlAuthnRequest authnRequest,
+                                               final AuthRequestBO request,
+                                               final AccountTokenDO session,
+                                               final AccountBO account) {
+        if (!SamlConditionalAuthn.satisfiesRequestedContext(authnRequest, session.getSourceAuthType())) {
+            Response error = SamlErrorResponseProvider.authnFailed(
+                    configuration.getIssuer(),
+                    authnRequest.getAcsUrl(),
+                    authnRequest.getRequestId(),
+                    "RequestedAuthnContext not satisfied");
+
+            AuthResponseBO response = samlResponseProvider.generateError(authnRequest, error);
+
+            return Uni.createFrom().item(response);
+        }
+
+        TokenOptionsBO options = TokenOptionsMapper.fromAuthRequest(request)
+                .source(session.getSourceAuthType())
+                .trackingSession(request.getTrackingSession())
+                .extraParameters(request.getExtraParameters())
+                .build();
+
+        return Uni.createFrom().item(samlResponseProvider.generateToken(authnRequest, account, options));
     }
 }

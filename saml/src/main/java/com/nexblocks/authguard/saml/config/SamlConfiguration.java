@@ -95,9 +95,10 @@ public interface SamlConfiguration {
             validationMethod = Value.Style.ValidationMethod.NONE,
             jdkOnly = true
     )
-    @JsonSerialize(as = ImmutableSamlSignatures.class)
-    @JsonDeserialize(as = ImmutableSamlSignatures.class)
+    @JsonSerialize(as = ImmutableSamlSsoSession.class)
+    @JsonDeserialize(as = ImmutableSamlSsoSession.class)
     interface SamlSsoSession {
         String getLifetime();
+        boolean allowRefresh();
     }
 }
