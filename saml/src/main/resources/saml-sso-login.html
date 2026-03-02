@@ -14,8 +14,12 @@
   <script src="/saml/e2e/resources/htm.umd.js"></script>
 </head>
 
-<body class="bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center p-4">
-  <div id="app"></div>
+<body class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-white">
+  <!-- Gradient Background - Slanted at 30 degrees -->
+  <div class="absolute top-0 left-0 right-0 h-1/3 origin-top-left" style="background: linear-gradient(30deg, #4ade80 0%, #22c55e 50%, #16a34a 100%); transform: skewY(-3deg) scale(1.1);"></div>
+  
+  <!-- App Container -->
+  <div id="app" class="relative z-10 w-1/2 max-w-lg"></div>
 
   <script type="module" src="/saml/e2e/resources/saml-sso-script.js"></script>
 </body>
