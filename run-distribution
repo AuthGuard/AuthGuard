@@ -1,0 +1,90 @@
+#!/bin/bash
+
+# Test Distribution Runner Script
+# This script runs the AuthGuard test distribution
+
+set -e
+
+# Default values
+BUILD=false
+PROFILE=""
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --build)
+            BUILD=true
+            shift
+            ;;
+        --profile)
+            PROFILE="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: $0 [--build] [--profile <profile_name>]"
+            echo "  --build              Build the project before running"
+            echo "  --profile <name>     Use test-distribution/src/main/resources/<name>.yaml as config"
+            exit 1
+            ;;
+    esac
+done
+
+echo "======================================"
+echo "AuthGuard Test Distribution Runner"
+echo "======================================"
+
+# Set one-time admin credentials
+export AUTHGUARD_OTA_USERNAME="admin"
+export AUTHGUARD_OTA_PASSWORD="Password"
+
+echo ""
+echo "Environment variables set:"
+echo "  AUTHGUARD_OTA_USERNAME: $AUTHGUARD_OTA_USERNAME"
+echo "  AUTHGUARD_OTA_PASSWORD: ********"
+echo ""
+
+# Build if requested
+if [ "$BUILD" = true ]; then
+    echo "Building test-distribution module..."
+    mvn package -DskipTests -pl test-distribution -am
+
+    if [ $? -ne 0 ]; then
+        echo "Build failed!"
+        exit 1
+    fi
+
+    echo ""
+    echo "Build successful!"
+    echo ""
+fi
+
+# Determine config file
+CONFIG_ARG=""
+if [ -n "$PROFILE" ]; then
+    CONFIG_FILE="test-distribution/src/main/resources/${PROFILE}.yaml"
+    if [ ! -f "$CONFIG_FILE" ]; then
+        echo "Error: Config file not found: $CONFIG_FILE"
+        exit 1
+    fi
+    CONFIG_ARG="--config $CONFIG_FILE"
+    echo "Using config profile: $PROFILE"
+    echo "Config file: $CONFIG_FILE"
+else
+    CONFIG_FILE="test-distribution/src/main/resources/application.yaml"
+    if [ -f "$CONFIG_FILE" ]; then
+        CONFIG_ARG="--config $CONFIG_FILE"
+        echo "Using default config: $CONFIG_FILE"
+    else
+        echo "No config file specified and default not found"
+        echo "Application will use embedded defaults or classpath resources"
+    fi
+fi
+
+echo ""
+echo "Starting AuthGuard test distribution..."
+echo "======================================"
+echo ""
+
+# Run the application
+java -jar test-distribution/target/test-distribution-0.23.0.jar $CONFIG_ARG

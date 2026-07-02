@@ -1,0 +1,218 @@
+authguard:
+  server:
+    port: 3200
+    unprotectedPaths: [ "sso", "oidc", "saml" ]
+
+  injection:
+    packages: [ "com.authguard", "com.nexblocks.authguard" ]
+
+  passwords:
+    algorithm: scrypt
+    scrypt:
+      blockSize: 16
+    conditions:
+      minLength: 3
+    version: 2
+    previousVersions:
+      - version: 1
+        algorithm: bcrypt
+
+  apiKeys:
+    type: "default"
+    hash:
+      algorithm: blake2b
+      key: "this is a test key"
+
+  cryptographic_keys:
+    encryptionKey: "file:keys/chacha20.txt"
+
+  totpAuthenticators:
+    generateQrCode: true
+    qrIssuer: e2e
+    qrUserIdentifierType: USERNAME
+    encryptionKey: "file:keys/chacha20.txt"
+
+  jwt:
+    algorithm: "HMAC256"
+    privateKey: "file:keys/hmac256.pem"
+    issuer: "AuthGuard"
+    allowedAlgorithms: ["HMAC256"]
+    trustedIssuers: ["self"]
+#    encryption:
+#      algorithm: "AES_CBC"
+#      privateKey: "file:keys/aes128.txt"
+
+  oauthSso:
+    enabled: true
+    useUsername: true
+    usePhoneNumber: true
+    domains: ["e2e"]
+    csrfTokenKey: "JBSWY3DPEHPK3PXP"
+    useMultiFactorAuthentication:
+      useOtp: false
+
+#  saml:
+#    issuer: "AuthGuard"
+#    useUsername: true
+#    csrfTokenKey: "JBSWY3DPEHPK3PXP"
+#    domains: ["e2e"]
+#    responseAttributes:
+#      includeUsername: true
+#      includeEmail: true
+#    signature:
+#      useKeyStore: true
+#      keyStorePath: keys/saml-idp-keystore.p12
+#      keyStoreKeyAlias: idp-signing
+#      keyStorePassword: test
+#      signAssertion: true
+#      signResponse: false
+#    sessions:
+#      lifetime: 1d
+#      allowRefresh: true
+
+  sessions:
+    randomSize: 16
+    lifeTime: "30m"
+
+  exchange:
+    providers: [ "accessToken", "sessionToken" ]
+    allowed:
+      - from: "basic"
+        to: "passwordless"
+      - from: "passwordless"
+        to: "oidc"
+      - from: "refresh"
+        to: "accessToken"
+      - from: "basic"
+        to: "accessToken"
+      - from: "refresh"
+        to: "accessToken"
+      - from: "basic"
+        to: "otp"
+      - from: "basic"
+        to: "sessionToken"
+      - from: "sessionToken"
+        to: "accountId"
+      - from: "sessionToken"
+        to: "session"
+      - from: "basic"
+        to: "oidc"
+      - from: "encryptedToken"
+        to: "accessToken"
+      - from: "encryptedToken"
+        to: "idToken"
+      - from: "otp"
+        to: "accessToken"
+      - from: "basic"
+        to: "authorizationCode"
+      - from: "authorizationCode"
+        to: "accessToken"
+      - from: "authorizationCode"
+        to: "oidc"
+      - from: "basic"
+        to: "totp"
+      - from: "totp"
+        to: "accessToken"
+      - from: "otp"
+        to: "authorizationCode"
+#      - from: "basic"
+#        to: "samlResponse"
+#      - from: "otp"
+#        to: "samlResponse"
+#      - from: "ssoSession"
+#        to: "samlResponse"
+
+  accessToken:
+    tokenLife: "10m"
+    refreshTokenLife: "1d"
+    useJti: true
+    includeRoles: true
+
+  idToken:
+    tokenLife: "1h"
+    refreshTokenLife: "1d"
+    useJti: true
+
+  otp:
+    lifeTime: "2m"
+    mode: "NUMERIC"
+    length: 6
+    generateToken: "accessToken"
+    method: EMAIL
+
+  passwordless:
+    tokenLife: "10m"
+    randomSize: 128
+    generateToken: "oidc"
+
+  authorizationCode:
+    lifeTime: "5m"
+    randomSize: 128
+
+  authentication:
+    generateToken: "accessToken"
+    logoutToken: "accessToken"
+
+  accounts:
+    authguardAdminRole: "authguard_admin"
+    defaultRolesByDomain:
+      e2e: [ "test-role" ]
+      other: [ "nope" ]
+    verifyEmail: true
+    defaultDomain: e2e
+
+  apps:
+    authguardAdminClientRole: "authguard_admin_client"
+
+  verification:
+    emailVerificationLife: "1d"
+
+  external:
+    email: true
+    sms: true
+
+  oneTimeAdmin:
+    usernameVariable: "AUTHGUARD_OTA_USERNAME"
+    passwordVariable: "AUTHGUARD_OTA_PASSWORD"
+
+  emb:
+    subscribers:
+      - com.nexblocks.authguard.external.email.subscribers.EmailPasswordlessSubscriber
+      - com.nexblocks.authguard.emb.log.LogMessagePublisher
+      - com.nexblocks.authguard.external.email.subscribers.EmailOtpSubscriber
+      - com.nexblocks.authguard.service.events.EventsRecorder
+    channels:
+      - accounts
+      - auth
+      - verification
+      - passwordless
+      - credentials
+      - otp
+      - roles
+      - permissions
+      - apps
+      - clients
+
+  accountLocker:
+    maxAttempt: 3
+
+#  mail:
+#    provider:
+##      username: apikey
+##      password: "env:SENDGRID_TOKEN"
+#      fromAddress: noreply@nexblocks.com
+#      fromName: Tests
+#      templates:
+#        passwordless:
+#          file: emails/passwordless.hbs
+#          subject: Passwordless Yay
+#        otp:
+#          file: emails/otp.hbs
+#          subject: OTP FTW
+#    javaMail:
+#      "mail.smtp.host": localhost
+#      "mail.smtp.port": 3025
+#      "mail.debug": true
+#      "mail.smtp.auth": true
+#      "mail.smtp.ssl.enable": true
+
