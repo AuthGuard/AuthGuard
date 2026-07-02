@@ -1,10 +1,10 @@
-package com.nexblocks.authguard.jwt.oauth.route;
+package com.nexblocks.authguard.api.routes;
 
-class RoutesConstants {
-    static final String RES_CSRF_COOKIE = "CSRF-TOKEN";
-    static final String REQ_CSRF_HEADER = "X-CSRF-TOKEN";
+public class RoutesConstants {
+    public static final String RES_CSRF_COOKIE = "CSRF-TOKEN";
+    public static final String REQ_CSRF_HEADER = "X-CSRF-TOKEN";
 
-    static final String CspHeaderValue = String.join(" ",
+    public static final String CspHeaderValue = String.join(" ",
             "default-src 'self';",
             "script-src 'self';",
             "style-src 'self' 'unsafe-inline';",

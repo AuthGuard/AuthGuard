@@ -38,6 +38,8 @@
         <module>bom</module>
         <module>benchmarks</module>
         <module>crypto</module>
+        <module>extensions</module>
+        <module>test-distribution</module>
     </modules>
 
     <properties>
@@ -46,6 +48,10 @@
         <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
         <maven-source-plugin.version>3.2.0</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
+        <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
+        <authguard.version>${project.version}</authguard.version>
+        <standard-extensions.version>${project.version}</standard-extensions.version>
+        <testcontainers.version>2.0.5</testcontainers.version>
         <mutiny.version>2.8.0</mutiny.version>
         <javalin.version>6.1.6</javalin.version>
         <vertx-web.version>4.5.14</vertx-web.version>
@@ -82,6 +88,29 @@
         <rest-assured.version>4.3.0</rest-assured.version>
         <wiremock.version>2.27.2</wiremock.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.immutables</groupId>
+                <artifactId>value</artifactId>
+                <version>${immutables.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.inject</groupId>
+                <artifactId>guice</artifactId>
+                <version>${guice.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <!-- logging -->

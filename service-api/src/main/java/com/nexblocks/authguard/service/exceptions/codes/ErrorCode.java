@@ -10,6 +10,7 @@ public enum ErrorCode {
 
     APP_DOES_NOT_EXIST("AP.011"),
 
+    CLIENT_DOES_NOT_EXIST("CL.011"),
     CLIENT_NOT_PERMITTED("CL.032"),
 
     API_KEY_DOES_NOT_EXIST("AK.011"),

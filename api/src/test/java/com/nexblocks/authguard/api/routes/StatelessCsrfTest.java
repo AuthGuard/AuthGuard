@@ -1,4 +1,4 @@
-package com.nexblocks.authguard.jwt.oauth.route;
+package com.nexblocks.authguard.api.routes;
 
 import org.junit.jupiter.api.Test;
 

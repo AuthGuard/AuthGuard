@@ -1,0 +1,174 @@
+# Bootstrap data for test distribution
+# This file contains initial roles, permissions, accounts, applications, and clients to be created on startup
+
+roles:
+  - name: "admin"
+    forAccounts: true
+    forApplications: false
+    domain: "main"
+
+  - name: "user"
+    forAccounts: true
+    forApplications: false
+    domain: "main"
+
+  - name: "app"
+    forAccounts: false
+    forApplications: true
+    domain: "main"
+
+permissions:
+  - group: "accounts"
+    name: "read"
+    forAccounts: true
+    forApplications: true
+    domain: "main"
+
+  - group: "accounts"
+    name: "create"
+    forAccounts: true
+    forApplications: true
+    domain: "main"
+
+  - group: "accounts"
+    name: "update"
+    forAccounts: true
+    forApplications: true
+    domain: "main"
+
+  - group: "accounts"
+    name: "delete"
+    forAccounts: true
+    forApplications: true
+    domain: "main"
+
+  - group: "accounts"
+    name: "*"
+    forAccounts: true
+    forApplications: false
+    domain: "main"
+
+  - group: "applications"
+    name: "read"
+    forAccounts: true
+    forApplications: true
+    domain: "main"
+
+  - group: "applications"
+    name: "create"
+    forAccounts: true
+    forApplications: false
+    domain: "main"
+
+  - group: "applications"
+    name: "update"
+    forAccounts: true
+    forApplications: false
+    domain: "main"
+
+  - group: "applications"
+    name: "delete"
+    forAccounts: true
+    forApplications: false
+    domain: "main"
+
+  - group: "applications"
+    name: "*"
+    forAccounts: true
+    forApplications: false
+    domain: "main"
+
+  - group: "clients"
+    name: "read"
+    forAccounts: true
+    forApplications: true
+    domain: "main"
+
+  - group: "clients"
+    name: "create"
+    forAccounts: true
+    forApplications: false
+    domain: "main"
+
+  - group: "clients"
+    name: "update"
+    forAccounts: true
+    forApplications: false
+    domain: "main"
+
+  - group: "clients"
+    name: "delete"
+    forAccounts: true
+    forApplications: false
+    domain: "main"
+
+  - group: "clients"
+    name: "*"
+    forAccounts: true
+    forApplications: false
+    domain: "main"
+
+accounts:
+  - externalId: "admin-001"
+    email:
+      email: "admin@example.com"
+      verified: true
+    firstName: "Admin"
+    lastName: "User"
+    fullName: "Admin User"
+    plainPassword: "admin123"
+    roles:
+      - "admin"
+    permissions:
+      - group: "accounts"
+        action: "*"
+      - group: "applications"
+        action: "*"
+      - group: "clients"
+        action: "*"
+    active: true
+    domain: "main"
+
+  - externalId: "user-001"
+    email:
+      email: "user@example.com"
+      verified: true
+    firstName: "Test"
+    lastName: "User"
+    fullName: "Test User"
+    plainPassword: "user123"
+    roles:
+      - "user"
+    active: true
+    domain: "main"
+
+applications:
+  - externalId: "app-001"
+    name: "Test Application"
+    accountId: "1"
+    roles:
+      - "app"
+    permissions:
+      - group: "accounts"
+        name: "read"
+    active: true
+    domain: "main"
+
+clients:
+  - externalId: "client-001"
+    name: "Test Client"
+    accountId: 1
+    baseUrl: "https://client.example.com"
+    uri: "test-client"
+    clientType: "AUTH"
+    active: true
+    domain: "main"
+
+  - externalId: "admin-client-001"
+    name: "Admin Client"
+    accountId: 1
+    baseUrl: "https://admin.example.com"
+    uri: "admin-client"
+    clientType: "ADMIN"
+    active: true
+    domain: "main"

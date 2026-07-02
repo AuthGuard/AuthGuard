@@ -25,6 +25,10 @@ import jakarta.persistence.Table;
         query = "SELECT client FROM ClientDO client WHERE client.externalId = :externalId AND client.deleted = false"
 )
 @NamedQuery(
+        name = "clients.getByUri",
+        query = "SELECT client FROM ClientDO client WHERE client.uri = :uri AND client.deleted = false"
+)
+@NamedQuery(
         name = "clients.getByAccountId",
         query = "SELECT client FROM ClientDO client WHERE client.accountId = :parentAccountId " +
                 "AND client.deleted = false AND client.id > :cursor " +
@@ -44,6 +48,7 @@ import jakarta.persistence.Table;
 )
 public class ClientDO extends AbstractDO {
     private String externalId;
+    private String uri;
     private String name;
     private Long accountId;
     private String domain;

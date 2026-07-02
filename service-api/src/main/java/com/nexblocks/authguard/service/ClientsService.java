@@ -9,6 +9,7 @@ import io.smallrye.mutiny.Uni;
 public interface ClientsService extends IdempotentCrudService<ClientBO> {
     Uni<Optional<ClientBO>> getByIdUnchecked(long id);
     Uni<Optional<ClientBO>> getByExternalId(String externalId, String domain);
+    Uni<Optional<ClientBO>> getByUri(String uri, String domain);
     Uni<ClientBO> activate(long id, String domain);
     Uni<ClientBO> deactivate(long id, String domain);
     Uni<List<ClientBO>> getByAccountId(long accountId, String domain, Long cursor);
