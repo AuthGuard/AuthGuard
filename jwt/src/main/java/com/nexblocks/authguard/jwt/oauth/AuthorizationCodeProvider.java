@@ -45,7 +45,7 @@ public class AuthorizationCodeProvider implements AuthProvider {
     @Override
     public Uni<AuthResponseBO> generateToken(final AccountBO account, final TokenRestrictionsBO restrictions,
                                                            final TokenOptionsBO options) {
-        String code = random.base64(config.getRandomSize());
+        String code = random.base64Url(config.getRandomSize());
 
         AccountTokenDO.AccountTokenDOBuilder<?, ?> accountToken = AccountTokenDO.builder()
                 .token(TOKEN_TYPE)

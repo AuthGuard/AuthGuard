@@ -18,59 +18,11 @@ function mapAuthGuardErrorCode(errorCode) {
   }
 }
 
-async function post(url, data) {
-  const csrfCookie = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("CSRF-TOKEN="))
-        ?.split("=")[1];
-  console.log(document.cookie.split("; "));
-  const response = await fetch(url, {
-    method: "POST",
-    cache: "no-cache",
-    redirect: "follow",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRF-TOKEN": csrfCookie
-    },
-    body: JSON.stringify(data)
-  });
-
-  if (response.type === "cors" && response.redirected === true) {
-    window.location.href = response.url;
-    return;
-  }
-
-  if (response.status === 302) {
-    const redirectUri = response.headers.get("Location");
-    if (redirectUri) {
-      window.location.href = redirectUri;
-      return null;
-    } else {
-      throw new Error("302 response missing Location header");
-    }
-  }
-
-  return await response.json();
-}
-
-
-async function login(identifier, password) {
-  let path = window.location.pathname.split('/');
-  let domain = path[path.indexOf("oidc") + 1];
-  let searchParams = new URLSearchParams(window.location.search);
-  let clientId = searchParams.get("client_id");
-  let redirectUri = searchParams.get("redirect_uri");
-  let token = searchParams.get("token");
-
-  let requestBody = {
-    identifier: identifier,
-    password: password,
-    clientId: clientId,
-    redirectUri: redirectUri,
-    requestToken: token
-  };
-
-  return await post("/oidc/" + domain + "/auth", requestBody);
+function getCsrfToken() {
+  return document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("CSRF-TOKEN="))
+    ?.split("=")[1] || "";
 }
 
 
@@ -82,79 +34,68 @@ function App() {
   const [transactionId, setTransactionId] = useState('');
   const [sessionId, setSessionId] = useState('');
 
-  async function handleLogin(e) {
-    e.preventDefault();
+  function handleLogin(e) {
     setLoading(true);
     setError('');
-    const username = e.target.username.value;
-    const password = e.target.password.value;
+  }
 
-    try {
-      const data = await login(username, password);
 
-      if (data.type === 'otp') {
-        setTransactionId(data.token);
-        setStep('otp');
-        setSessionId(data.trackingSession);
-      } else if (data.redirectUri) {
-        window.location.href = data.redirectUri;
-      } else if (data.errorCode) {
-        setError(mapAuthGuardErrorCode(data.errorCode));
-      } else {
-        setError("Unexpected response from server.");
-      }
-    } catch (err) {
-      setError('Login request failed.');
-    } finally {
-      setLoading(false);
+  function handleOTP(e) {
+    setLoading(true);
+    setError('');
+  }
+
+  function getFormAction() {
+    const path = window.location.pathname.split('/');
+    const domain = path[path.indexOf("oidc") + 1];
+    return step === 'login' ? `/oidc/${domain}/auth` : `/oidc/${domain}/otp`;
+  }
+
+  function getHiddenFields() {
+    const searchParams = new URLSearchParams(window.location.search);
+    const clientId = searchParams.get("client_id");
+    const redirectUri = searchParams.get("redirect_uri");
+    const token = searchParams.get("token");
+    const csrfToken = getCsrfToken();
+
+    if (step === 'login') {
+      return [
+        { name: 'clientId', value: clientId },
+        { name: 'redirectUri', value: redirectUri },
+        { name: 'requestToken', value: token },
+        { name: 'csrfToken', value: csrfToken }
+      ];
+    } else {
+      return [
+        { name: 'identifier', value: transactionId },
+        { name: 'clientId', value: clientId },
+        { name: 'redirectUri', value: redirectUri },
+        { name: 'requestToken', value: token },
+        { name: 'trackingSession', value: sessionId },
+        { name: 'csrfToken', value: csrfToken }
+      ];
     }
   }
 
-
-  async function handleOTP(e) {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    const path = window.location.pathname.split('/');
-    const domain = path[path.indexOf("oidc") + 1];
-    const searchParams = new URLSearchParams(window.location.search);
-    const clientId = searchParams.get("client_id");
-    const otp = e.target.otp.value;
-    const token = searchParams.get("token");
-    const redirectUri = searchParams.get("redirect_uri");
-
-    const requestBody = {
-      identifier: transactionId,
-      password: otp,
-      clientId: clientId,
-      redirectUri: redirectUri,
-      clientId: clientId,
-      requestToken: token,
-      trackingSession: sessionId
-    };
-
-    return await post("/oidc/" + domain + "/otp", requestBody);
-  }
-
   return html`
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-8 flex flex-col gap-6">
-      <h1 class="text-2xl font-semibold text-center text-gray-800 dark:text-white">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 flex flex-col gap-6">
+      <h1 class="text-2xl font-semibold text-center text-gray-800">
         ${step === 'login' ? 'Login' : 'Verify OTP'}
       </h1>
 
       ${error && html`<div class="text-sm text-red-600 text-center">${error}</div>`}
 
       ${step === 'login' && html`
-        <form onSubmit=${handleLogin} class="flex flex-col gap-4">
-          <input name="username" type="text" required placeholder="Username"
-            class="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-black dark:text-white focus:ring-2 focus:ring-green-500" />
+        <form action=${getFormAction()} method="POST" onSubmit=${handleLogin} class="flex flex-col gap-4">
+          ${getHiddenFields().map(field => html`<input type="hidden" name=${field.name} value=${field.value} />`)}
+          <input name="identifier" type="text" required placeholder="Username"
+            class="px-4 py-3 border border-gray-300 rounded-md bg-white text-black focus:ring-2 focus:ring-green-500" />
 
           <div class="relative">
             <input name="password" type=${showPassword ? 'text' : 'password'} required placeholder="Password"
-              class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md pr-12 bg-white dark:bg-gray-700 text-black dark:text-white focus:ring-2 focus:ring-green-500" />
+              class="w-full px-4 py-3 border border-gray-300 rounded-md pr-12 bg-white text-black focus:ring-2 focus:ring-green-500" />
             <button type="button" onClick=${() => setShowPassword(!showPassword)}
-              class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300">
+              class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
               ${showPassword ?
         html`<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -193,9 +134,10 @@ function App() {
       `}
 
       ${step === 'otp' && html`
-        <form onSubmit=${handleOTP} class="flex flex-col gap-4">
-          <input name="otp" type="text" required placeholder="Enter OTP"
-            class="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-black dark:text-white focus:ring-2 focus:ring-green-500" />
+        <form action=${getFormAction()} method="POST" onSubmit=${handleOTP} class="flex flex-col gap-4">
+          ${getHiddenFields().map(field => html`<input type="hidden" name=${field.name} value=${field.value} />`)}
+          <input name="password" type="text" required placeholder="Enter OTP"
+            class="px-4 py-3 border border-gray-300 rounded-md bg-white text-black focus:ring-2 focus:ring-green-500" />
 
           <button type="submit" class="bg-green-600 text-white rounded-md py-3 font-medium hover:bg-green-700 flex justify-center items-center gap-2" disabled=${loading}>
             <span>${loading ? 'Verifying...' : 'Verify OTP'}</span>
@@ -212,7 +154,7 @@ function App() {
       `}
 
       <div class="text-center mt-8 text-base">
-        <span class="text-black dark:text-white">Powered by </span>
+        <span class="text-black">Powered by </span>
         <span class="text-[#4CAF50] font-bold">AuthGuard</span>
       </div>
     </div>

@@ -30,6 +30,7 @@ import io.vertx.core.http.CookieSameSite;
 import io.vertx.core.json.Json;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.BodyHandler;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
@@ -42,6 +43,14 @@ import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+
+/**
+ * TODO:
+ * 1. either in token API or in page load redirect check if the user is already logged in with an SSO session
+ * 2. for multiple concurrent apps, each gets its own refresh token - when a user logs out from an app only that one is gone
+ * 3. if the user issues a single log out request then the session itself is invalid and all refresh tokens shouldn't work anymore
+ */
 
 @DependsOnConfiguration("oauthSso")
 public class OAuthSsoPagesHandler implements VertxApiHandler {
@@ -80,9 +89,17 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
     public void register(final Router router) {
         router.get("/oidc/:domain/auth").handler(this::authFlowPage);
         router.get("/oidc/:domain/login").handler(this::loginPage);
-        router.post("/oidc/:domain/auth").handler(this::authFlowAuthApi);
-        router.post("/oidc/:domain/otp").handler(this::authFlowOtpApi);
-        router.post("/oidc/:domain/token").handler(this::authFlowTokenApi);
+
+        router.post("/oidc/:domain/auth")
+                .handler(BodyHandler.create())
+                .handler(this::authFlowAuthApi);
+        router.post("/oidc/:domain/otp")
+                .handler(BodyHandler.create())
+                .handler(this::authFlowOtpApi);
+        router.post("/oidc/:domain/token")
+                .handler(BodyHandler.create())
+                .handler(this::authFlowTokenApi);
+
         router.get("/oidc/:domain/otp").handler(this::otpPage);
 
         // browser might do a CORS preflight check against /login and /auth
@@ -109,6 +126,8 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
         }
 
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
+
+        // TODO if the user is already logged in, redirect to the client page right away (check prompt parameter first)
 
         openIdConnectService.createRequestToken(requestContext, request.get(), domain)
                 .map(token -> {
@@ -187,10 +206,15 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
 
     private void authFlowAuthApi(final RoutingContext context) {
         String domain = context.pathParam("domain");
-        OpenIdConnectRequest request = Json.decodeValue(context.body().asString(), ImmutableOpenIdConnectRequest.class);
+        
+        String identifier = context.request().getFormAttribute("identifier");
+        String password = context.request().getFormAttribute("password");
+        String requestToken = context.request().getFormAttribute("requestToken");
+        String csrfToken = context.request().getFormAttribute("csrfToken");
+        
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        if (isRequestCsrfTokenValid(context, request.getRequestToken())) {
+        if (!statelessCsrf.isValid(csrfToken, requestToken)) {
             com.nexblocks.authguard.api.dto.entities.Error csrfError =
                     new com.nexblocks.authguard.api.dto.entities.Error(ErrorCode.FAILED_CSRF_CHECK.getCode(),
                             "Missing or invalid CSRF header");
@@ -202,12 +226,12 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
             return;
         }
 
-        openIdConnectService.getRequestFromToken(request.getRequestToken(), requestContext, domain)
+        openIdConnectService.getRequestFromToken(requestToken, requestContext, domain)
                 .flatMap(originalRequest -> {
                     OpenIdConnectRequest realRequest = ImmutableOpenIdConnectRequest.builder()
                             .from(originalRequest)
-                            .identifier(request.getIdentifier())
-                            .password(request.getPassword())
+                            .identifier(identifier)
+                            .password(password)
                             .build();
 
                     boolean useOtp = configuration.useMultiFactorAuthentication() != null
@@ -229,6 +253,7 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
 
                                     return context.response()
                                             .setStatusCode(200)
+                                            .putHeader("Content-Type", "application/json")
                                             .end(Json.encode(dto));
                                 }
 
@@ -249,35 +274,50 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
                 })
                 .subscribe()
                 .with(ignored -> {
-                    context.end();
+                    if (!context.response().ended()) {
+                        context.end();
+                    }
                 }, e -> {
-                    String location;
                     Throwable effectiveException = e instanceof CompletionException ? e.getCause() : e;
 
-                    if (effectiveException instanceof ServiceAuthorizationException ex) {
-                        String error = Objects.equals(ex.getErrorCode(), ErrorCode.GENERIC_AUTH_FAILURE.getCode()) ?
-                                OAuthConst.ErrorsMessages.UnsupportedResponseType :
-                                OAuthConst.ErrorsMessages.UnauthorizedClient;
+                    com.nexblocks.authguard.api.dto.entities.Error error;
 
-                        location = request.getRedirectUri() + "?error=" + error;
+                    if (effectiveException instanceof ServiceAuthorizationException ex) {
+                        error = new com.nexblocks.authguard.api.dto.entities.Error(
+                                ex.getErrorCode(),
+                                ex.getMessage()
+                        );
                     } else if (effectiveException instanceof ServiceException ex) {
-                        location = request.getRedirectUri() + "?error=" + ex.getMessage();
+                        error = new com.nexblocks.authguard.api.dto.entities.Error(
+                                ex.getErrorCode(),
+                                ex.getMessage()
+                        );
                     } else {
-                        location = request.getRedirectUri() + "?error=unknown_error";
+                        error = new com.nexblocks.authguard.api.dto.entities.Error(
+                                ErrorCode.GENERIC_AUTH_FAILURE.getCode(),
+                                "Unknown error"
+                        );
                     }
 
-                    context.response().setStatusCode(302)
-                            .putHeader("Location", location)
-                            .end();
+                    context.response()
+                            .setStatusCode(400)
+                            .putHeader("Content-Type", "application/json")
+                            .end(Json.encode(error));
                 });
     }
 
     private void authFlowOtpApi(final RoutingContext context) {
         String domain = context.pathParam("domain");
-        OpenIdConnectRequest request = Json.decodeValue(context.body().asString(), ImmutableOpenIdConnectRequest.class);
+        
+        String identifier = context.request().getFormAttribute("identifier");
+        String password = context.request().getFormAttribute("password");
+        String requestToken = context.request().getFormAttribute("requestToken");
+        String trackingSession = context.request().getFormAttribute("trackingSession");
+        String csrfToken = context.request().getFormAttribute("csrfToken");
+        
         RequestContextBO requestContext = RequestContextExtractor.extractWithoutIdempotentKey(context);
 
-        if (isRequestCsrfTokenValid(context, request.getRequestToken())) {
+        if (!statelessCsrf.isValid(csrfToken, requestToken)) {
             com.nexblocks.authguard.api.dto.entities.Error csrfError =
                     new com.nexblocks.authguard.api.dto.entities.Error(ErrorCode.FAILED_CSRF_CHECK.getCode(),
                             "Missing or invalid CSRF header");
@@ -289,54 +329,61 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
             return;
         }
 
-        openIdConnectService.getRequestFromToken(request.getRequestToken(), requestContext, domain)
+        openIdConnectService.getRequestFromToken(requestToken, requestContext, domain)
                 .flatMap(originalRequest -> {
                     OpenIdConnectRequest realRequest = ImmutableOpenIdConnectRequest.builder()
                             .from(originalRequest)
-                            .identifier(request.getIdentifier())
-                            .password(request.getPassword())
-                            .trackingSession(request.getTrackingSession())
+                            .identifier(identifier)
+                            .password(password)
+                            .trackingSession(trackingSession)
                             .build();
 
                     return openIdConnectService.processAuthOtpToCodeFlow(realRequest, requestContext, domain)
                             .map(response -> {
-                                String origin = response.getClient().getBaseUrl();
-
                                 String location = realRequest.getRedirectUri() + "?code=" +
                                         URLEncoder.encode(response.getToken().toString(), StandardCharsets.UTF_8)
                                         + "&state=" +
                                         URLEncoder.encode(realRequest.getState(), StandardCharsets.UTF_8);
 
-                                context.response().setStatusCode(302)
-                                        .putHeader("Location", location)
-                                        .putHeader("Access-Control-Allow-Origin", origin)
-                                        .putHeader("Access-Control-Expose-Headers", "Location");
+                                context.response()
+                                        .setStatusCode(200)
+                                        .putHeader("Content-Type", "application/json")
+                                        .end(Json.encode(java.util.Map.of("redirectUri", location)));
 
                                 return context;
                             });
                 })
                 .subscribe()
                 .with(ignored -> {
-                    context.end();
+                    if (!context.response().ended()) {
+                        context.end();
+                    }
                 }, e -> {
-                    String location;
                     Throwable effectiveException = e instanceof CompletionException ? e.getCause() : e;
 
-                    if (effectiveException instanceof ServiceAuthorizationException ex) {
-                        String error = Objects.equals(ex.getErrorCode(), ErrorCode.GENERIC_AUTH_FAILURE.getCode()) ?
-                                OAuthConst.ErrorsMessages.UnsupportedResponseType :
-                                OAuthConst.ErrorsMessages.UnauthorizedClient;
+                    com.nexblocks.authguard.api.dto.entities.Error error;
 
-                        location = request.getRedirectUri() + "?error=" + error;
+                    if (effectiveException instanceof ServiceAuthorizationException ex) {
+                        error = new com.nexblocks.authguard.api.dto.entities.Error(
+                                ex.getErrorCode(),
+                                ex.getMessage()
+                        );
                     } else if (effectiveException instanceof ServiceException ex) {
-                        location = request.getRedirectUri() + "?error=" + ex.getMessage();
+                        error = new com.nexblocks.authguard.api.dto.entities.Error(
+                                ex.getErrorCode(),
+                                ex.getMessage()
+                        );
                     } else {
-                        location = request.getRedirectUri() + "?error=unknown_error";
+                        error = new com.nexblocks.authguard.api.dto.entities.Error(
+                                ErrorCode.GENERIC_AUTH_FAILURE.getCode(),
+                                "Unknown error"
+                        );
                     }
 
-                    context.response().setStatusCode(302)
-                            .putHeader("Location", location)
-                            .end();
+                    context.response()
+                            .setStatusCode(400)
+                            .putHeader("Content-Type", "application/json")
+                            .end(Json.encode(error));
                 });
     }
 
@@ -353,7 +400,8 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
         }
 
         OpenIdConnectRequest openIdConnectRequest = request.get();
-        Long clientId = Long.parseLong(openIdConnectRequest.getClientId());
+        long clientId = Long.parseLong(openIdConnectRequest.getClientId());
+
         clientsService.getById(clientId, domain)
                 .subscribe()
                 .with(opt -> {
@@ -454,14 +502,6 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
                 .asCompletionStage();
     }
 
-    private boolean isRequestCsrfTokenValid(final RoutingContext context,
-                                            final String requestToken) {
-        String csrfToken = context.request().getHeader(RoutesConstants.REQ_CSRF_HEADER);
-
-        return csrfToken == null
-                || csrfToken.isBlank()
-                || !statelessCsrf.isValid(csrfToken, requestToken);
-    }
 
     private Either<OpenIdConnectError, String[]> extractClientInfo(RoutingContext context) {
         String clientId = context.request().getFormAttribute(OAuthConst.Params.ClientId);
@@ -489,7 +529,9 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
             clientSecret = decoded[1];
         }
 
-        String decodedSecret = URLDecoder.decode(clientSecret, StandardCharsets.UTF_8);
+        String decodedSecret = clientSecret == null ?
+                null :
+                URLDecoder.decode(clientSecret, StandardCharsets.UTF_8);
         return Either.right(new String[] { clientId, decodedSecret });
     }
 
@@ -520,7 +562,7 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
     }
 
     private Uni<Object> handleAuthorizationCode(RoutingContext context, Client client, String codeVerifier) {
-        String authorizationCode = context.request().getFormAttribute("code");
+        String authorizationCode = URLDecoder.decode(context.request().getFormAttribute("code"), StandardCharsets.UTF_8);
 
         if (authorizationCode == null || authorizationCode.isBlank()) {
             return Uni.createFrom().failure(new ServiceAuthorizationException("invalid_request", "Invalid authorization code"));
@@ -566,10 +608,6 @@ public class OAuthSsoPagesHandler implements VertxApiHandler {
                         refreshResponse.getValidFor()
                 ));
     }
-
-// ... remaining content
-
-
 
     private void otpPage(final RoutingContext context) {
         String domain = context.pathParam("domain");

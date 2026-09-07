@@ -33,10 +33,11 @@ authguard:
     encryptionKey: "file:keys/chacha20.txt"
 
   jwt:
-    algorithm: "HMAC256"
-    privateKey: "file:keys/hmac256.pem"
+    algorithm: "RSA512"
+    privateKey: "file:keys/rsa512-private.pem"
+    publicKey: "file:keys/rsa512-public.pem"
     issuer: "AuthGuard"
-    allowedAlgorithms: ["HMAC256"]
+    allowedAlgorithms: ["RS512"]
     trustedIssuers: ["self"]
 #    encryption:
 #      algorithm: "AES_CBC"
